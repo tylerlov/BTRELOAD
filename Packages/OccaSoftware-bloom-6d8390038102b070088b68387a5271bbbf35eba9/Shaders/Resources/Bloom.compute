@@ -1,0 +1,310 @@
+// Kernels
+#pragma kernel Downsample
+#pragma kernel Upsample
+#pragma kernel BlendToScreen
+#pragma kernel Ghost
+#pragma kernel ChromaShift
+#pragma kernel Threshold
+#pragma kernel Blur
+
+// Properties
+Texture2D<float4> _Src;
+Texture2D<float4> _Threshold;
+Texture2D<float4> _DownSrc;
+Texture2D<float4> _CameraColor;
+Texture2D<float4> _Bloom;
+Texture2D<float4> _Ghost;
+RWTexture2D<float4> _DstWritable;
+SamplerState my_linear_clamp_sampler;
+
+float4 _SrcScreenSizePx; // xy = resolution, zw = rcp(resolution)
+float4 _DstScreenSizePx; // xy = resolution, zw = rcp(resolution)
+
+float _InternalBlend;
+float _FinalBlend;
+
+float _ThresholdEdge;
+float _ThresholdRange;
+
+float _GhostIntensity;
+float3 _GhostChromaSpread;
+float3 _GhostTint;
+
+float _HaloIntensity;
+float _HaloFisheyeStrength;
+float _HaloFisheyeWidth;
+float3 _HaloChromaSpread;
+float3 _HaloTint;
+
+const float _GhostDistances[8];
+const float3 _GhostTints[8];
+
+
+float2 GetUV (uint3 id, float2 texelSize) 
+{
+	return (id.xy + 0.5) * texelSize;
+}
+
+[numthreads(8,8,1)]
+void Downsample (uint3 id : SV_DispatchThreadID)
+{
+  if(id.x > (uint)_DstScreenSizePx.x || id.y > (uint)_DstScreenSizePx.y)
+    return;
+
+  float2 offsets[13] = {
+    float2(-1.0,-1.0),
+    float2(-1.0, 1.0),
+    float2( 1.0, 1.0),
+    float2( 1.0,-1.0),
+
+    float2(-2.0,-2.0),
+    float2(-2.0, 0.0),
+    float2(-2.0, 2.0),
+    float2( 0.0, 2.0),
+    float2( 2.0, 2.0),
+    float2( 2.0, 0.0),
+    float2( 2.0,-2.0),
+    float2( 0.0,-2.0),
+
+    float2( 0.0, 0.0)
+  };
+
+  float weights[13] = {
+    0.125,
+    0.125,
+    0.125,
+    0.125,
+
+    0.055556,
+    0.055556,
+    0.055556,
+    0.055556,
+    0.055556,
+    0.055556,
+    0.055556,
+    0.055556,
+    0.055556
+  };
+
+  float2 uv = GetUV(id, _DstScreenSizePx.zw);
+  float4 v = 0;  
+  for(int i = 0; i < 13; i++)
+  {
+    v+= _Src.SampleLevel(my_linear_clamp_sampler, uv + _SrcScreenSizePx.zw * offsets[i], 0) * weights[i];
+  }
+
+  _DstWritable[id.xy] = float4(v.xyz,1);
+}
+
+[numthreads(8,8,1)]
+void Upsample (uint3 id : SV_DispatchThreadID)
+{
+  if(id.x > (uint)_DstScreenSizePx.x || id.y > (uint)_DstScreenSizePx.y)
+    return;
+  
+  float2 uv = GetUV(id, _DstScreenSizePx.zw);
+  float4 v = 0;
+  
+  float2 offsets[9] = {
+    float2(-1.0,-1.0),
+    float2(-1.0, 1.0),
+    float2( 1.0, 1.0),
+    float2( 1.0,-1.0),
+
+    float2(-1.0, 0.0),
+    float2( 0.0, 1.0),
+    float2( 1.0, 0.0),
+    float2( 0.0,-1.0),
+
+    float2( 0.0, 0.0)
+  };
+
+  float weights[9] = {
+    0.0625,
+    0.0625,
+    0.0625,
+    0.0625,
+
+    0.125,
+    0.125,
+    0.125,
+    0.125,
+
+    0.25
+  };
+
+  for(int i = 0; i < 9; i++)
+  {
+    v+= _Src.SampleLevel(my_linear_clamp_sampler, uv + _SrcScreenSizePx.zw * offsets[i], 0) * weights[i];
+  }
+  
+  float4 r = _DownSrc.SampleLevel(my_linear_clamp_sampler, uv, 0);
+  v = lerp(r, v, _InternalBlend);
+  _DstWritable[id.xy] = float4(v.xyz,1);
+}
+
+
+[numthreads(8,8,1)]
+void BlendToScreen (uint3 id : SV_DispatchThreadID)
+{
+  if(id.x > (uint)_DstScreenSizePx.x || id.y > (uint)_DstScreenSizePx.y)
+    return;
+  float2 uv = GetUV(id, _DstScreenSizePx.zw);
+  float4 cameraColor = _CameraColor.SampleLevel(my_linear_clamp_sampler, uv, 0);
+  float4 bloom = _Bloom.SampleLevel(my_linear_clamp_sampler, uv, 0);
+  float4 ghost = _Ghost.SampleLevel(my_linear_clamp_sampler, uv, 0);
+  _DstWritable[id.xy] = lerp(cameraColor, bloom + ghost, _FinalBlend);
+}
+
+float2 fisheye(float2 uv, float strength)
+{
+  float2 normalizedUV = (uv - 0.5) * 2.0;
+  float inverseStrength = rcp(strength);
+  float scale = strength * atan(inverseStrength);
+  float distance = length(normalizedUV) * scale;
+  float direction = strength * tan(distance * inverseStrength);
+  float phi = atan2(normalizedUV.y, normalizedUV.x);
+  return float2(direction * cos(phi) + 1.0, direction * sin(phi) + 1.0) * 0.5;
+}
+
+
+
+
+
+[numthreads(8,8,1)]
+void Ghost (uint3 id : SV_DispatchThreadID)
+{
+  
+
+  if(id.x > (uint)_DstScreenSizePx.x || id.y > (uint)_DstScreenSizePx.y)
+    return;
+  
+  float2 uv = GetUV(id, _DstScreenSizePx.zw);
+  
+  float3 v = 0;
+  
+  int validGhostCount = 8;
+  // Ghosts
+  for(int i = 0; i < validGhostCount; i++)
+  {
+    float2 sampleDistance = (uv - 0.5) * _GhostDistances[i] * 2.;
+    float d = saturate(1.0 - length(sampleDistance));
+    float mask = smoothstep(0.5, 1., d);
+    float2 samplePosition = sampleDistance + 0.5;
+    v += _Src.SampleLevel(my_linear_clamp_sampler, samplePosition, 0).rgb * mask * _GhostTints[i] * abs(_GhostDistances[i]);
+  }
+
+  // Halos
+  float2 center = float2(0.5, 0.5);
+  float2 fisheyeCoord = fisheye(uv, _HaloFisheyeStrength);
+  
+  float2 haloDirection = normalize(center - uv) * _HaloFisheyeWidth;
+
+  float2 uv_r = (fisheyeCoord - center) * (1.0 + _HaloChromaSpread.r) + center + haloDirection;
+  float2 uv_g = (fisheyeCoord - center) * (1.0 + _HaloChromaSpread.g) + center + haloDirection;
+  float2 uv_b = (fisheyeCoord - center) * (1.0 + _HaloChromaSpread.b) + center + haloDirection;
+
+  float r = _Threshold.SampleLevel(my_linear_clamp_sampler, uv_r, 0).r;
+  float g = _Threshold.SampleLevel(my_linear_clamp_sampler, uv_g, 0).g;
+  float b = _Threshold.SampleLevel(my_linear_clamp_sampler, uv_b, 0).b;
+  float3 halo = float3(r,g,b);
+  halo *= smoothstep(0.0, 1.0, 1.0 - length(uv - 0.5) * 2.0);
+  halo *= smoothstep(0.1, 1.0, length(uv - 0.5) * 2.0);
+  halo *= _HaloIntensity;
+  halo *= _HaloTint;
+  v += halo;
+
+  float vignette = smoothstep(-0.3, 1.0, 1.0 - length(uv - 0.5) * 2.0);
+  
+  _DstWritable[id.xy] = float4(v.rgb * vignette, 1);
+}
+
+  
+[numthreads(8,8,1)]
+void ChromaShift (uint3 id : SV_DispatchThreadID)
+{
+  if(id.x > (uint)_DstScreenSizePx.x || id.y > (uint)_DstScreenSizePx.y)
+    return;
+  
+  float2 uv = GetUV(id, _DstScreenSizePx.zw);
+  float2 center = float2(0.5, 0.5);
+
+  float2 uv_r = (uv - center) * (1.0 + _GhostChromaSpread.r) + center;
+  float2 uv_g = (uv - center) * (1.0 + _GhostChromaSpread.g) + center;
+  float2 uv_b = (uv - center) * (1.0 + _GhostChromaSpread.b) + center;
+
+  float r = _Src.SampleLevel(my_linear_clamp_sampler, uv_r, 0).r;
+  float g = _Src.SampleLevel(my_linear_clamp_sampler, uv_g, 0).g;
+  float b = _Src.SampleLevel(my_linear_clamp_sampler, uv_b, 0).b;
+  float3 color = float3(r,g,b) * _GhostIntensity * _GhostTint;
+  _DstWritable[id.xy] = float4(color, 1);
+}
+
+  
+  
+[numthreads(8,8,1)]
+void Threshold (uint3 id : SV_DispatchThreadID)
+{
+  if(id.x > (uint)_DstScreenSizePx.x || id.y > (uint)_DstScreenSizePx.y)
+    return;
+
+  float2 uv = GetUV(id, _DstScreenSizePx.zw);
+  float3 v = _Src.SampleLevel(my_linear_clamp_sampler, uv, 0).rgb;
+  float l = dot(v, 1);
+ 
+  float s = saturate((l - _ThresholdEdge) / _ThresholdRange);
+
+  _DstWritable[id.xy] = float4(v * s, 1);
+}
+
+  
+[numthreads(8,8,1)]
+void Blur (uint3 id : SV_DispatchThreadID)
+{
+  if(id.x > (uint)_DstScreenSizePx.x || id.y > (uint)_DstScreenSizePx.y)
+    return;
+
+  float2 offsets[13] = {
+    float2(-1.0,-1.0),
+    float2(-1.0, 1.0),
+    float2( 1.0, 1.0),
+    float2( 1.0,-1.0),
+
+    float2(-2.0,-2.0),
+    float2(-2.0, 0.0),
+    float2(-2.0, 2.0),
+    float2( 0.0, 2.0),
+    float2( 2.0, 2.0),
+    float2( 2.0, 0.0),
+    float2( 2.0,-2.0),
+    float2( 0.0,-2.0),
+
+    float2( 0.0, 0.0)
+  };
+
+  float weights[13] = {
+    0.125,
+    0.125,
+    0.125,
+    0.125,
+
+    0.055556,
+    0.055556,
+    0.055556,
+    0.055556,
+    0.055556,
+    0.055556,
+    0.055556,
+    0.055556,
+    0.055556
+  };
+  float2 uv = GetUV(id, _DstScreenSizePx.zw);
+
+  float3 v = 0;
+  for(int i = 0; i < 13; i++)
+  {
+    v += _Src.SampleLevel(my_linear_clamp_sampler, uv + _DstScreenSizePx.zw * offsets[i], 0).rgb * weights[i];
+  }
+  
+  _DstWritable[id.xy] = float4(v, 1);
+}

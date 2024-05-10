@@ -1,0 +1,54 @@
+{
+  "sections": [
+    {
+      "name": "Start",
+      "section": 0,
+      "waves": 0
+    },
+    {
+      "name": "Verse 1",
+      "section": 1,
+      "waves": 2
+    },
+    {
+      "name": "Transition",
+      "section": 2,
+      "waves": 0
+    },
+    {
+      "name": "Verse 2",
+      "section": 3,
+      "waves": 2
+    },
+    {
+      "name": "Transition",
+      "section": 2,
+      "waves": 0
+    },
+    {
+      "name": "Verse 3",
+      "section": 5,
+      "waves": 2
+    },
+    {
+      "name": "Transition",
+      "section": 2,
+      "waves": 0
+    },
+    {
+      "name": "Verse 1",
+      "section": 1,
+      "waves": 2
+    },
+    {
+      "name": "Transition",
+      "section": 2,
+      "waves": 0
+    },
+    {
+      "name": "Verse 2",
+      "section": 3,
+      "waves": 2
+    }
+  ]
+}

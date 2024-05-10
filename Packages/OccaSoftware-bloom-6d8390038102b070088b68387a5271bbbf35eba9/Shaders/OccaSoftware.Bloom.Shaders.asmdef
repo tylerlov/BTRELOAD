@@ -1,0 +1,14 @@
+{
+    "name": "OccaSoftware.Bloom.Shaders",
+    "rootNamespace": "OccaSoftware.Bloom.Shaders",
+    "references": [],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

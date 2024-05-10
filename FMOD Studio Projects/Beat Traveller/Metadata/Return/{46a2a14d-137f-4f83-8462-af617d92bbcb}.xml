@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<objects serializationModel="Studio.02.02.00">
+	<object class="MixerReturn" id="{46a2a14d-137f-4f83-8462-af617d92bbcb}">
+		<property name="overridingInputFormat">
+			<value>2</value>
+		</property>
+		<property name="name">
+			<value>Delay Reverb</value>
+		</property>
+		<relationship name="effectChain">
+			<destination>{a9b5b05a-81e0-462c-8dea-864a3c72d0de}</destination>
+		</relationship>
+		<relationship name="panner">
+			<destination>{76383aec-3316-4457-a30b-c3873942a323}</destination>
+		</relationship>
+		<relationship name="output">
+			<destination>{36c80c5d-d3b1-41b1-88d2-7e1bcc23322a}</destination>
+		</relationship>
+	</object>
+	<object class="MixerBusEffectChain" id="{a9b5b05a-81e0-462c-8dea-864a3c72d0de}">
+		<relationship name="effects">
+			<destination>{efea69c7-8114-48da-807e-047459e335ff}</destination>
+			<destination>{581c3b98-e35c-4507-ac25-5b30327cc380}</destination>
+			<destination>{ae964fea-8eb7-4d0c-b459-4fcdb8d79cc4}</destination>
+		</relationship>
+	</object>
+	<object class="MixerBusPanner" id="{76383aec-3316-4457-a30b-c3873942a323}" />
+	<object class="DelayEffect" id="{efea69c7-8114-48da-807e-047459e335ff}">
+		<property name="delay">
+			<value>93.3000031</value>
+		</property>
+		<property name="feedback">
+			<value>63.5</value>
+		</property>
+		<property name="dryLevel">
+			<value>-80</value>
+		</property>
+	</object>
+	<object class="SFXReverbEffect" id="{581c3b98-e35c-4507-ac25-5b30327cc380}">
+		<property name="wetLevel">
+			<value>-4</value>
+		</property>
+	</object>
+	<object class="MixerBusFader" id="{ae964fea-8eb7-4d0c-b459-4fcdb8d79cc4}" />
+</objects>

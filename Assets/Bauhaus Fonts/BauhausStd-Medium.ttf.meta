@@ -1,0 +1,23 @@
+fileFormatVersion: 2
+guid: 6b5ee337f974261499c35db74510ddfa
+TrueTypeFontImporter:
+  externalObjects: {}
+  serializedVersion: 4
+  fontSize: 16
+  forceTextureCase: -2
+  characterSpacing: 0
+  characterPadding: 1
+  includeFontData: 1
+  fontNames:
+  - Bauhaus Std
+  fallbackFontReferences:
+  - {fileID: 12800000, guid: 319df0404b9ab8b499fbeb7ff17756d4, type: 3}
+  - {fileID: 12800000, guid: f51e0a4987b5f8242ab49dd75b6f4afb, type: 3}
+  customCharacters: 
+  fontRenderingMode: 0
+  ascentCalculationMode: 1
+  useLegacyBoundsCalculation: 0
+  shouldRoundAdvanceValue: 1
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

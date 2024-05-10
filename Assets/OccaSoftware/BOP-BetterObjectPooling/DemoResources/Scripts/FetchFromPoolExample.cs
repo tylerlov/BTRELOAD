@@ -1,0 +1,47 @@
+using UnityEngine;
+
+namespace OccaSoftware.BOP.Demo
+{
+    public class FetchFromPoolExample : MonoBehaviour
+    {
+        [SerializeField] Pooler pooler;
+
+        void Update()
+        {
+            if (Input.GetKeyDown(KeyCode.Space))
+            {
+                GetFromPoolExample();
+            }
+
+            if (Input.GetKeyDown(KeyCode.Backspace))
+            {
+                DisposePoolExample();
+            }
+
+            if (Input.GetKeyDown(KeyCode.Return))
+            {
+                CreateNewPoolExample();
+            }
+        }
+
+        public void GetFromPoolExample()
+        {
+            pooler.GetFromPool();
+        }
+
+        public void DisposePoolExample()
+        {
+            pooler.DisposePool();
+        }
+
+        public void CreateNewPoolExample()
+        {
+            pooler.CreateNewPool(5);
+        }
+
+        public int GetPoolSize()
+        {
+            return pooler.GetPoolStats().PoolSize;
+        }
+    }
+}

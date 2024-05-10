@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<objects serializationModel="Studio.02.02.00">
+	<object class="ParameterPreset" id="{f7e4e4bc-baee-4332-a4dd-d51e6eefa8e0}">
+		<property name="name">
+			<value>Drum FX</value>
+		</property>
+		<relationship name="folder">
+			<destination>{5f740ce8-6d2b-40d7-990e-c9cdf916d6b8}</destination>
+		</relationship>
+		<relationship name="parameter">
+			<destination>{877fb50c-772e-4119-b5b9-e927d7c98946}</destination>
+		</relationship>
+	</object>
+	<object class="GameParameter" id="{877fb50c-772e-4119-b5b9-e927d7c98946}">
+		<property name="parameterType">
+			<value>2</value>
+		</property>
+		<property name="maximum">
+			<value>4</value>
+		</property>
+		<property name="enumerationLabels">
+			<value>None</value>
+			<value>DFX 1</value>
+			<value>DFX 2</value>
+			<value>DFX 3</value>
+		</property>
+		<property name="initialValue">
+			<value>0</value>
+		</property>
+	</object>
+</objects>
