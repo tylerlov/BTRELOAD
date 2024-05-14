@@ -63,6 +63,14 @@
         "com.unity.render-pipelines.universal": "14.0.7"
       }
     },
+    "com.occasoftware.outline-objects": {
+      "version": "file:com.occasoftware.outline-objects",
+      "depth": 0,
+      "source": "embedded",
+      "dependencies": {
+        "com.unity.render-pipelines.universal": "14.0.7"
+      }
+    },
     "com.occasoftware.toon-kit-2": {
       "version": "file:com.occasoftware.toon-kit-2",
       "depth": 0,
@@ -321,6 +329,13 @@
         "com.unity.shadergraph": "14.0.11",
         "com.unity.render-pipelines.core": "14.0.11"
       }
+    },
+    "jp.keijiro.duotone": {
+      "version": "2.1.1",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {},
+      "url": "https://registry.npmjs.com"
     },
     "com.unity.modules.ai": {
       "version": "1.0.0",
