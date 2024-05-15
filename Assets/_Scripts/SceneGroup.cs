@@ -11,15 +11,18 @@ public class SceneGroup
     public SceneAsset[] sceneAssets; // Use in the editor for drag-and-drop
     #endif
     public string[] scenes; // For runtime use
+    public string[] musicSectionNames; // Array to hold music section names for each scene
 
     // Call this method to update scene names based on SceneAssets
     #if UNITY_EDITOR
     public void UpdateSceneNames()
     {
         scenes = new string[sceneAssets.Length];
+        musicSectionNames = new string[sceneAssets.Length]; // Initialize the music names array
         for (int i = 0; i < sceneAssets.Length; i++)
         {
             scenes[i] = sceneAssets[i].name;
+            musicSectionNames[i] = ""; // Initialize with empty strings or default values
         }
     }
     #endif

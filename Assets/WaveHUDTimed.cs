@@ -41,7 +41,8 @@ namespace UltimateSpawner.Demo
                     else
                     {
                         waveText.enabled = true;
-                        waveText.text = string.Format("Wave {0}", currentWaveNumber);
+                        //waveText.text = string.Format("Wave {0}", currentWaveNumber);
+                        waveText.text = "ACTIVATE";
                         StartCoroutine(DisableWaveTextAfterTime(waveTextDisplayTime));
 
                         OnWaveStarted();

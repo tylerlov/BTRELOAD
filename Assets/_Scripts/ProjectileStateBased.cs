@@ -624,7 +624,8 @@ private IEnumerator LifetimeCoroutine()
             transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, dynamicRotateSpeed * Time.deltaTime);
         
             // Use initialSpeed for the velocity towards the target.
-            rb.velocity = directionToTarget * bulletSpeed; // Modified line
+            rb.velocity = directionToTarget * bulletSpeed * clock.localTimeScale;
+
 
         }
     }

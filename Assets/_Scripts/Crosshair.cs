@@ -133,6 +133,8 @@ public class Crosshair : MonoBehaviour
     private float tapStartTime;
     private const float tapThreshold = 0.1f; // Adjusted for a shorter quick tap sensitivity
     
+    [SerializeField] private float rewindTimeScale = -1f; // Default value set to -1f, adjustable in Inspector
+    [SerializeField] private float slowTimeScale = 0.1f; // Default value set to 0.1f, adjustable in Inspector
 
     void Awake()
     {
@@ -745,8 +747,8 @@ void OnMusicalLock(KoreographyEvent evt)
         delayLoop = true;
         ActivateRewindEffects(true);
         Clock clock = Timekeeper.instance.Clock("Test");
-        float startPosition = SetClockAndGetPosition(clock, -1f);
-        splineControl.Speed = 0;
+        float startPosition = SetClockAndGetPosition(clock, rewindTimeScale);
+        splineControl.Speed = tempSpeed * rewindTimeScale;;
         yield return new WaitForSeconds(3f);
         splineControl.Speed = tempSpeed;
         DeactivateRewindEffects();
@@ -766,9 +768,9 @@ void OnMusicalLock(KoreographyEvent evt)
         float tempSpeed = splineControl.Speed;
         delayLoop = true;
         HandleLockedTargets();
-        splineControl.Speed = tempSpeed * 0.1f;
+        splineControl.Speed = tempSpeed * slowTimeScale;
         Clock clock = Timekeeper.instance.Clock("Test");
-        float startPosition = SetClockAndGetPosition(clock, 0.1f);
+        float startPosition = SetClockAndGetPosition(clock, slowTimeScale);
         numOfRewinds++;
         //SwitchAttackModes();
         staminaController.StaminaRewind();
@@ -950,5 +952,4 @@ void OnMusicalLock(KoreographyEvent evt)
 
     
 }
-
 

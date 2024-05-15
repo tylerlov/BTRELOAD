@@ -10,8 +10,6 @@ public class GameManager : MonoBehaviour
     public CanvasGroup transitionCanvasGroup; // Adjusted to use CanvasGroup
     public float fadeDuration = 0.5f; // Adjusted for quicker fade
     public SceneListData sceneListData;
-    public string musicSectionSceneChangeName; // Add this line
-
     // Score and ShotTally properties
     public int Score { get; private set; }
     public int ShotTally { get; private set; }
@@ -45,6 +43,8 @@ public class GameManager : MonoBehaviour
     {
         Debug.Log($"Scene {scene.name} loaded.");
     }
+
+    
 
     public void ChangeToNextScene()
     {
@@ -140,25 +140,11 @@ public class GameManager : MonoBehaviour
 
         if (currentGroup != null && currentSceneIndex != -1)
         {
-            // Determine the next scene index, wrapping if necessary
             int nextSceneIndex = (currentSceneIndex + 1) % currentGroup.scenes.Length;
-            // Load the next scene with transition
-            StartCoroutine(LoadSceneAsync(currentGroup.scenes[nextSceneIndex]));
+            string nextSceneName = currentGroup.scenes[nextSceneIndex];
+            string musicSectionName = currentGroup.musicSectionNames[nextSceneIndex]; // Get the music section name
 
-            // Find and adjust music parameters only if musicSectionSceneChangeName is not blank
-            if (!string.IsNullOrEmpty(musicSectionSceneChangeName))
-            {
-                AdjustSongParameters musicParameters = FindObjectOfType<AdjustSongParameters>();
-                if (musicParameters != null)
-                {
-                    musicParameters.ChangeMusicSectionByName(musicSectionSceneChangeName);
-                }
-                else
-                {
-                    Debug.LogWarning("AdjustSongParameters component not found.");
-                }
-            }
-            // If musicSectionSceneChangeName is blank, do not attempt to change the music section
+            StartCoroutine(LoadSceneAsync(nextSceneName, musicSectionName));
         }
         else
         {
@@ -166,23 +152,29 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    IEnumerator LoadSceneAsync(string sceneName)
+    IEnumerator LoadSceneAsync(string sceneName, string musicSectionName)
     {
-        // Start fade out
-        yield return StartCoroutine(FadeEffect(true)); // Ensure this completes before proceeding
+        yield return StartCoroutine(FadeEffect(true)); // Start fade out
 
-        // Now start loading the scene asynchronously
         AsyncOperation asyncLoad = SceneManager.LoadSceneAsync(sceneName);
-        asyncLoad.allowSceneActivation = false; // Prevent immediate activation
+        asyncLoad.allowSceneActivation = false;
 
-        // Wait until the scene is nearly loaded
         while (!asyncLoad.isDone)
         {
             if (asyncLoad.progress >= 0.9f)
             {
-                // Scene is loaded but not activated
                 yield return StartCoroutine(FadeEffect(false)); // Start fade in
-                asyncLoad.allowSceneActivation = true; // Allow scene activation
+                asyncLoad.allowSceneActivation = true;
+
+                // Adjust music parameters only if the music section name is provided
+                if (!string.IsNullOrEmpty(musicSectionName))
+                {
+                    AdjustSongParameters musicParameters = FindObjectOfType<AdjustSongParameters>();
+                    if (musicParameters != null)
+                    {
+                        musicParameters.ChangeMusicSectionByName(musicSectionName);
+                    }
+                }
                 break;
             }
             yield return null;
