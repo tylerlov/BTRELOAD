@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<objects serializationModel="Studio.02.02.00">
+	<object class="AudioFile" id="{a2878458-263e-4716-9618-04020f8b81ad}">
+		<property name="assetPath">
+			<value>UWT02 12 03 Explosion, Underwater - Small Blast, Bomb.wav</value>
+		</property>
+		<property name="frequencyInKHz">
+			<value>44.0999985</value>
+		</property>
+		<property name="channelCount">
+			<value>2</value>
+		</property>
+		<property name="length">
+			<value>1.2770975056689342</value>
+		</property>
+		<relationship name="masterAssetFolder">
+			<destination>{ade45277-ef5e-405a-b429-ac698260ffc2}</destination>
+		</relationship>
+	</object>
+</objects>

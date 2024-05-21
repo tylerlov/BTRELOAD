@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI; // Add this
 using UnityEngine.EventSystems; // Add this
+using System.Linq; // Add this for LINQ methods like OfType
+using BehaviorDesigner.Runtime.Tactical; // Add this to access IDamageable
 
 
 public class EnemyKiller : MonoBehaviour, IPointerClickHandler // Implement the IPointerClickHandler interface
@@ -28,14 +30,16 @@ public class EnemyKiller : MonoBehaviour, IPointerClickHandler // Implement the 
 
     public void KillAllEnemies()
     {
-        // Find all active enemy game objects
-        GameObject[] enemies = GameObject.FindGameObjectsWithTag("Enemy");
-        //Debug.Log(enemies.Length + " are the number of enemies found");
+        // Find all game objects that implement the IDamageable interface
+        var damageables = UnityEngine.Object.FindObjectsOfType<MonoBehaviour>().OfType<IDamageable>();
 
-        // For each enemy, call the Death method
-        foreach (GameObject enemy in enemies)
+        // Apply damage to each damageable object
+        foreach (var damageable in damageables)
         {
-            enemy.GetComponent<EnemyBasicSetup>().DebugTriggerDeath();
+            if (damageable.IsAlive())
+            {
+                damageable.Damage(100); // Assuming you want to apply a damage of 100
+            }
         }
     }
     public void CallDeathOnLayerObjects(int layer)

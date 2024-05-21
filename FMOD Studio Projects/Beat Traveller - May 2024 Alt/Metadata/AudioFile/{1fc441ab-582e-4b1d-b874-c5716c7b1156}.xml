@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<objects serializationModel="Studio.02.02.00">
+	<object class="AudioFile" id="{1fc441ab-582e-4b1d-b874-c5716c7b1156}">
+		<property name="assetPath">
+			<value>GS_GHOSTV2_E_BASS_PNDMNM.wav</value>
+		</property>
+		<property name="frequencyInKHz">
+			<value>44.0999985</value>
+		</property>
+		<property name="channelCount">
+			<value>2</value>
+		</property>
+		<property name="length">
+			<value>1.0848299319727892</value>
+		</property>
+		<relationship name="masterAssetFolder">
+			<destination>{ade45277-ef5e-405a-b429-ac698260ffc2}</destination>
+		</relationship>
+	</object>
+</objects>

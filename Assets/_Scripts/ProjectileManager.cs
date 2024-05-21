@@ -13,15 +13,17 @@ public class ProjectileManager : MonoBehaviour
     [SerializeField] private ParticleSystem deathEffectPrefab; // Assign in inspector
     [SerializeField] private int initialDeathEffectPoolSize = 10;
 
-    private List<ProjectileStateBased> projectiles = new List<ProjectileStateBased>();
-    private Queue<ProjectileStateBased> staticEnemyProjectilePool = new Queue<ProjectileStateBased>();
-    private Queue<ProjectileStateBased> enemyBasicSetupProjectilePool = new Queue<ProjectileStateBased>();
-    private Queue<ParticleSystem> deathEffectPool = new Queue<ParticleSystem>();
+    private List<ProjectileStateBased> projectiles = new List<ProjectileStateBased>(100); // Adjust 100 based on expected usage
+    private Queue<ProjectileStateBased> staticEnemyProjectilePool = new Queue<ProjectileStateBased>(100);
+    private Queue<ProjectileStateBased> enemyBasicSetupProjectilePool = new Queue<ProjectileStateBased>(100);
+    private Queue<ParticleSystem> deathEffectPool = new Queue<ParticleSystem>(50);
 
     [SerializeField] private Timekeeper timekeeper;
     private Dictionary<GameObject, Vector3> lastPositions = new Dictionary<GameObject, Vector3>();
 
     [SerializeField] private Crosshair crosshair;
+
+    private GameObject playerGameObject; // Cache for player GameObject
 
     private void Awake()
     {
@@ -36,7 +38,17 @@ public class ProjectileManager : MonoBehaviour
         // Subscribe to the sceneLoaded event
         SceneManager.sceneLoaded += OnSceneLoaded;
 
-        
+        // Initialize all pools
+        InitializeStaticEnemyProjectilePool();
+        InitializeEnemyBasicSetupProjectilePool();
+        InitializeDeathEffectPool();
+
+        // Find and cache the player GameObject
+        playerGameObject = GameObject.FindGameObjectWithTag("Player");
+        if (playerGameObject == null)
+        {
+            Debug.LogWarning("Player GameObject not found during initialization.");
+        }
     }
 
     // This method will be called every time a scene is loaded
@@ -75,6 +87,7 @@ public class ProjectileManager : MonoBehaviour
 
     private void InitializeStaticEnemyProjectilePool()
     {
+        staticEnemyProjectilePool = new Queue<ProjectileStateBased>(initialPoolSize); // Predefine the capacity
         for (int i = 0; i < initialPoolSize; i++)
         {
             ProjectileStateBased proj = Instantiate(projectilePrefab, transform); // Parent set to ProjectileManager
@@ -86,6 +99,7 @@ public class ProjectileManager : MonoBehaviour
 
     private void InitializeEnemyBasicSetupProjectilePool()
     {
+        enemyBasicSetupProjectilePool = new Queue<ProjectileStateBased>(initialPoolSize); // Predefine the capacity
         for (int i = 0; i < initialPoolSize; i++)
         {
             ProjectileStateBased proj = Instantiate(projectilePrefab, transform); // Parent set to ProjectileManager
@@ -97,6 +111,7 @@ public class ProjectileManager : MonoBehaviour
 
     private void InitializeDeathEffectPool()
     {
+        deathEffectPool = new Queue<ParticleSystem>(initialDeathEffectPoolSize); // Predefine the capacity
         for (int i = 0; i < initialDeathEffectPoolSize; i++)
         {
             ParticleSystem effect = Instantiate(deathEffectPrefab, transform);
@@ -189,15 +204,24 @@ public class ProjectileManager : MonoBehaviour
         }
 
         ParticleSystem effect = deathEffectPool.Dequeue();
+        if (playerGameObject != null)
+        {
+            effect.transform.SetParent(playerGameObject.transform);
+        }
+        else
+        {
+            Debug.LogWarning("Player GameObject not found. Effect will not follow the player.");
+            effect.transform.SetParent(transform); // Fallback to the default parent
+        }
         effect.transform.position = position;
         effect.gameObject.SetActive(true);
         effect.Play();
 
         // Return the effect to the pool after it has finished playing
-        StartCoroutine(ReturnEffectToPoolAfterFinished(effect));
+        StartCoroutine(ReturnEffectToPoolAfterFinished(effect, playerGameObject != null ? playerGameObject.transform : transform));
     }
 
-    private IEnumerator ReturnEffectToPoolAfterFinished(ParticleSystem effect)
+    private IEnumerator ReturnEffectToPoolAfterFinished(ParticleSystem effect, Transform originalParent)
     {
         while (effect.isPlaying)
         {
@@ -205,6 +229,7 @@ public class ProjectileManager : MonoBehaviour
         }
 
         effect.gameObject.SetActive(false);
+        effect.transform.SetParent(originalParent); // Reset the parent to the original (ProjectileManager)
         deathEffectPool.Enqueue(effect);
     }
 

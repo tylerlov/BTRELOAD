@@ -79,6 +79,14 @@
         "com.unity.shadergraph": "14.0.7"
       }
     },
+    "com.occasoftware.ultimate-lit-shader": {
+      "version": "file:com.occasoftware.ultimate-lit-shader",
+      "depth": 0,
+      "source": "embedded",
+      "dependencies": {
+        "com.unity.render-pipelines.universal": "14.0.7"
+      }
+    },
     "com.occasoftware.vfx-library": {
       "version": "file:OccaSoftware-vfx-library-9b1c1a84a15f32ef2a97fb74dba95ddaa1367e64",
       "depth": 0,

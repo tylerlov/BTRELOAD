@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<objects serializationModel="Studio.02.02.00">
+	<object class="AudioFile" id="{3ec47804-f298-4a73-ab96-4b3f36498dba}">
+		<property name="assetPath">
+			<value>Slice 39 [2024-05-16 104750].wav</value>
+		</property>
+		<property name="frequencyInKHz">
+			<value>44.0999985</value>
+		</property>
+		<property name="channelCount">
+			<value>2</value>
+		</property>
+		<property name="length">
+			<value>0.69770975056689344</value>
+		</property>
+		<relationship name="masterAssetFolder">
+			<destination>{ade45277-ef5e-405a-b429-ac698260ffc2}</destination>
+		</relationship>
+	</object>
+</objects>

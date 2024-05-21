@@ -66,6 +66,7 @@ public class StaticEnemyShooting : MonoBehaviour
 
     void OnMusicalEnemyShoot(KoreographyEvent evt)
     {
+        Debug.Log("[StaticEnemyShooting] OnMusicalEnemyShoot called.");
         if (!gameObject.activeInHierarchy)
         {
             Debug.LogWarning("[StaticEnemyShooting] GameObject is not active in hierarchy.");
@@ -98,15 +99,22 @@ public class StaticEnemyShooting : MonoBehaviour
     IEnumerator AnimateShaderProperties()
     {
         float timeElapsed = 0f;
+        float updateInterval = 0.1f; // Update every 0.1 seconds to reduce the number of updates
+        float nextUpdateTime = 0f;
 
         while (timeElapsed < lerpDuration)
         {
-            float lerpFactor = timeElapsed / lerpDuration;
-            eyeMaterial.SetFloat("Vector1_520f2e2b2d664517a415c2d1d2d003e1", Mathf.Lerp(irisSizeStart, irisSizeEnd, lerpFactor));
-            eyeMaterial.SetFloat("Vector1_c88d82cf95c0459d90a5f7c35020e695", Mathf.Lerp(pupilSizeStart, pupilSizeEnd, lerpFactor));
-            eyeMaterial.SetFloat("Vector1_62c9d5aca0154b4386a16cd0625b239b", Mathf.Lerp(mainLightingIntensityStart, mainLightingIntensityEnd, lerpFactor));
+            if (timeElapsed >= nextUpdateTime)
+            {
+                float lerpFactor = timeElapsed / lerpDuration;
+                eyeMaterial.SetFloat("Vector1_520f2e2b2d664517a415c2d1d2d003e1", Mathf.Lerp(irisSizeStart, irisSizeEnd, lerpFactor));
+                eyeMaterial.SetFloat("Vector1_c88d82cf95c0459d90a5f7c35020e695", Mathf.Lerp(pupilSizeStart, pupilSizeEnd, lerpFactor));
+                eyeMaterial.SetFloat("Vector1_62c9d5aca0154b4386a16cd0625b239b", Mathf.Lerp(mainLightingIntensityStart, mainLightingIntensityEnd, lerpFactor));
 
-            timeElapsed += myTime.deltaTime; // Use Chronos' deltaTime instead of Time.deltaTime
+                nextUpdateTime += updateInterval;
+            }
+
+            timeElapsed += myTime.deltaTime;
             yield return null;
         }
 

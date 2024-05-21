@@ -338,6 +338,7 @@ public class ProjectileStateBased : BaseBehaviour
     private Coroutine lifetimeCoroutine;
     [HideInInspector] public float initialSpeed; // Add this line to store the initial speed
     internal bool projHitPlayer = false; // Renamed variable to track if the projectile has hit a player
+    [HideInInspector] public bool isLifetimePaused = false; // Add this line to track if the lifetime is paused
 
     public ProjectileState GetCurrentState()
     {
@@ -376,7 +377,6 @@ public class ProjectileStateBased : BaseBehaviour
         {
             modelRenderer.material.DOFloat(0f, "_AdvancedDissolveCutoutStandardClip", 1f);
         }
-
         ProjectileManager.Instance.RegisterProjectile(this);
 
         if (gameObject.tag == "LaunchableBulletLocked")
@@ -626,7 +626,24 @@ private IEnumerator LifetimeCoroutine()
             // Use initialSpeed for the velocity towards the target.
             rb.velocity = directionToTarget * bulletSpeed * clock.localTimeScale;
 
+            // Check distance to the current target and pause or extend lifetime if within a certain radius
+            float distanceToTarget = Vector3.Distance(transform.position, currentTarget.position);
+            float pauseRadius = 5.0f; // Set the radius within which the lifetime is paused or extended
 
+            if (distanceToTarget <= pauseRadius)
+            {
+                // Pause or extend the lifetime
+                // For example, add extra time to the lifetime
+                if (!isLifetimePaused)
+                {
+                    isLifetimePaused = true;
+                    lifetime += 5.0f; // Extend lifetime by 5 seconds
+                }
+            }
+            else
+            {
+                isLifetimePaused = false;
+            }
         }
     }
 

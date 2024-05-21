@@ -9,34 +9,46 @@ public class KoreoVFXTrigger : MonoBehaviour
 
     void Awake()
     {
-        // Find the VisualEffect component on the same GameObject
         vfxGraph = GetComponent<VisualEffect>();
         if (vfxGraph == null)
         {
             Debug.LogError("[KoreoVFXTrigger] No VisualEffect found on the GameObject.");
         }
+        else
+        {
+            Debug.Log("[KoreoVFXTrigger] VisualEffect component found and ready.");
+        }
     }
 
     void OnEnable()
     {
-        // Register for Koreographer events
-        Koreographer.Instance.RegisterForEvents(eventID, TriggerVFX);
+        if (Koreographer.Instance != null)
+        {
+            Koreographer.Instance.RegisterForEvents(eventID, TriggerVFX);
+            Debug.Log("[KoreoVFXTrigger] Registered for Koreographer events.");
+        }
+        else
+        {
+            Debug.LogError("[KoreoVFXTrigger] Koreographer instance not found.");
+        }
     }
 
     void OnDisable()
     {
-        // Unregister from Koreographer events
         if (Koreographer.Instance != null)
         {
             Koreographer.Instance.UnregisterForEvents(eventID, TriggerVFX);
+            Debug.Log("[KoreoVFXTrigger] Unregistered from Koreographer events.");
         }
     }
 
     void TriggerVFX(KoreographyEvent evt)
     {
+        Debug.Log("[KoreoVFXTrigger] TriggerVFX called.");
         if (vfxGraph != null)
         {
-            vfxGraph.Play(); // Play the Visual Effect Graph effect
+            vfxGraph.Play();
+            Debug.Log("[KoreoVFXTrigger] VisualEffect played.");
         }
         else
         {

@@ -1,6 +1,7 @@
 using System.Collections;
 using UnityEngine;
-using UnityEngine.UI;
+using TMPro; // Changed from UnityEngine.UI to TMPro
+using Febucci.UI;
 
 namespace UltimateSpawner.Demo
 {
@@ -11,8 +12,8 @@ namespace UltimateSpawner.Demo
         private int currentWaveNumber = -1;
 
         // Public
-        public Text waveText;
-        public Text nextWaveText;
+        public TextMeshProUGUI waveText; // Changed from TextAnimatorPlayer to TextMeshProUGUI
+        public TextMeshProUGUI nextWaveText; // Changed from Text to TextMeshProUGUI
         public float waveTextDisplayTime = 2.0f; // Set this value in Inspector
 
         // Methods
@@ -41,8 +42,7 @@ namespace UltimateSpawner.Demo
                     else
                     {
                         waveText.enabled = true;
-                        //waveText.text = string.Format("Wave {0}", currentWaveNumber);
-                        waveText.text = "ACTIVATE";
+                        waveText.text = "ACTIVATE"; // Directly set text
                         StartCoroutine(DisableWaveTextAfterTime(waveTextDisplayTime));
 
                         OnWaveStarted();
