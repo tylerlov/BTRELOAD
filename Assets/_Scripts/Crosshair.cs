@@ -109,9 +109,9 @@ public class Crosshair : MonoBehaviour
 
     // New variables to facilitate the rate-limited locking mechanic.
     private float lastBulletTime;
-    public float bulletLockInterval = 0.5f;  // Time in seconds between each bullet lock
+    public float bulletLockInterval = 0.1f;  // Time in seconds between each bullet lock
     private float lastEnemyTime;
-    public float enemyLockInterval = 1f;   // Time in seconds between each enemy lock
+    public float enemyLockInterval = 0.2f;   // Time in seconds between each enemy lock
 
     private DefaultControls playerInputActions;
 
@@ -952,4 +952,3 @@ void OnMusicalLock(KoreographyEvent evt)
 
     
 }
-

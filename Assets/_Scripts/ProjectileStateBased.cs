@@ -338,7 +338,7 @@ public class ProjectileStateBased : BaseBehaviour
     private Coroutine lifetimeCoroutine;
     [HideInInspector] public float initialSpeed; // Add this line to store the initial speed
     internal bool projHitPlayer = false; // Renamed variable to track if the projectile has hit a player
-    [HideInInspector] public bool isLifetimePaused = false; // Add this line to track if the lifetime is paused
+    [HideInInspector] public bool lifetimeExtended = false; // Renamed and used to track if the lifetime extension has occurred
 
     public ProjectileState GetCurrentState()
     {
@@ -368,6 +368,9 @@ public class ProjectileStateBased : BaseBehaviour
 
     private void OnEnable()
     {
+
+        // Reset the lifetimeExtended variable each time the projectile is enabled
+        lifetimeExtended = false;
 
         // Reset the projHitPlayer variable each time the projectile is enabled
         projHitPlayer = false;
@@ -628,21 +631,12 @@ private IEnumerator LifetimeCoroutine()
 
             // Check distance to the current target and pause or extend lifetime if within a certain radius
             float distanceToTarget = Vector3.Distance(transform.position, currentTarget.position);
-            float pauseRadius = 5.0f; // Set the radius within which the lifetime is paused or extended
+            float pauseRadius = 25.0f; // Updated pause radius to 25 units
 
-            if (distanceToTarget <= pauseRadius)
+            if (distanceToTarget <= pauseRadius && !lifetimeExtended)
             {
-                // Pause or extend the lifetime
-                // For example, add extra time to the lifetime
-                if (!isLifetimePaused)
-                {
-                    isLifetimePaused = true;
-                    lifetime += 5.0f; // Extend lifetime by 5 seconds
-                }
-            }
-            else
-            {
-                isLifetimePaused = false;
+                lifetimeExtended = true;
+                lifetime += 5.0f; // Extend lifetime by 5 seconds
             }
         }
     }

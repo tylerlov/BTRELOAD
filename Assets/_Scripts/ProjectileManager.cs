@@ -199,7 +199,7 @@ public class ProjectileManager : MonoBehaviour
     {
         if (deathEffectPool.Count == 0)
         {
-            ConditionalDebug.Log("No death effect available in pool, skipping effect.");
+            Debug.LogWarning("No death effect available in pool, skipping effect.");
             return;
         }
 
@@ -223,14 +223,13 @@ public class ProjectileManager : MonoBehaviour
 
     private IEnumerator ReturnEffectToPoolAfterFinished(ParticleSystem effect, Transform originalParent)
     {
-        while (effect.isPlaying)
-        {
-            yield return null;
-        }
+        yield return new WaitWhile(() => effect.isPlaying);
 
+        effect.Stop(); // Ensure the effect is stopped
         effect.gameObject.SetActive(false);
         effect.transform.SetParent(originalParent); // Reset the parent to the original (ProjectileManager)
         deathEffectPool.Enqueue(effect);
+        Debug.Log("Effect returned to pool. Pool size: " + deathEffectPool.Count);
     }
 
     public void ReturnProjectileToPool(ProjectileStateBased projectile)

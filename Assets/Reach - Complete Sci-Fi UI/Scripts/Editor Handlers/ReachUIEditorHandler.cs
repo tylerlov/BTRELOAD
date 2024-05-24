@@ -9,22 +9,41 @@ namespace Michsky.UI.Reach
         public static GUISkin GetDarkEditor(GUISkin tempSkin)
         {
             tempSkin = (GUISkin)Resources.Load("ReachEditor-Dark");
+            if (tempSkin == null) {
+                Debug.LogError("Failed to load 'ReachEditor-Dark' GUISkin.");
+            }
             return tempSkin;
         }
 
         public static GUISkin GetLightEditor(GUISkin tempSkin)
         {
             tempSkin = (GUISkin)Resources.Load("ReachEditor-Light");
+            if (tempSkin == null) {
+                Debug.LogError("Failed to load 'ReachEditor-Light' GUISkin.");
+            }
             return tempSkin;
         }
 
         public static void DrawProperty(SerializedProperty property, GUISkin skin, string content)
         {
+            if (property == null) {
+                Debug.LogError("SerializedProperty is null when trying to draw: " + content);
+                return;
+            }
+            if (skin == null) {
+                Debug.LogError("GUISkin is null when trying to draw: " + content);
+                return;
+            }
+
             GUILayout.BeginHorizontal(EditorStyles.helpBox);
+            GUIStyle textStyle = skin.FindStyle("Text");
+            if (textStyle == null) {
+                Debug.LogError("Text style not found in skin when trying to draw: " + content);
+                return;
+            }
 
-            EditorGUILayout.LabelField(new GUIContent(content), skin.FindStyle("Text"), GUILayout.Width(120));
+            EditorGUILayout.LabelField(new GUIContent(content), textStyle, GUILayout.Width(120));
             EditorGUILayout.PropertyField(property, new GUIContent(""));
-
             GUILayout.EndHorizontal();
         }
 
@@ -32,7 +51,12 @@ namespace Michsky.UI.Reach
         {
             GUILayout.BeginHorizontal(EditorStyles.helpBox);
 
-            EditorGUILayout.LabelField(new GUIContent(content, tooltip), skin.FindStyle("Text"), GUILayout.Width(120));
+            GUIStyle textStyle = skin.FindStyle("Text");
+            if (textStyle == null) {
+                Debug.LogError("Text style not found in skin.");
+                return;
+            }
+            EditorGUILayout.LabelField(new GUIContent(content, tooltip), textStyle, GUILayout.Width(120));
             EditorGUILayout.PropertyField(property, new GUIContent("", tooltip));
 
             GUILayout.EndHorizontal();
@@ -42,7 +66,12 @@ namespace Michsky.UI.Reach
         {
             GUILayout.BeginHorizontal();
 
-            EditorGUILayout.LabelField(new GUIContent(content), skin.FindStyle("Text"), GUILayout.Width(120));
+            GUIStyle textStyle = skin.FindStyle("Text");
+            if (textStyle == null) {
+                Debug.LogError("Text style not found in skin.");
+                return;
+            }
+            EditorGUILayout.LabelField(new GUIContent(content), textStyle, GUILayout.Width(120));
             EditorGUILayout.PropertyField(property, new GUIContent(""));
 
             GUILayout.EndHorizontal();
@@ -52,7 +81,12 @@ namespace Michsky.UI.Reach
         {
             GUILayout.BeginHorizontal();
 
-            EditorGUILayout.LabelField(new GUIContent(content, tooltip), skin.FindStyle("Text"), GUILayout.Width(120));
+            GUIStyle textStyle = skin.FindStyle("Text");
+            if (textStyle == null) {
+                Debug.LogError("Text style not found in skin.");
+                return;
+            }
+            EditorGUILayout.LabelField(new GUIContent(content, tooltip), textStyle, GUILayout.Width(120));
             EditorGUILayout.PropertyField(property, new GUIContent("", tooltip));
 
             GUILayout.EndHorizontal();
@@ -62,7 +96,12 @@ namespace Michsky.UI.Reach
         {
             GUILayout.BeginHorizontal(EditorStyles.helpBox);
 
-            EditorGUILayout.LabelField(new GUIContent(content), skin.FindStyle("Text"), GUILayout.Width(width));
+            GUIStyle textStyle = skin.FindStyle("Text");
+            if (textStyle == null) {
+                Debug.LogError("Text style not found in skin.");
+                return;
+            }
+            EditorGUILayout.LabelField(new GUIContent(content), textStyle, GUILayout.Width(width));
             EditorGUILayout.PropertyField(property, new GUIContent(""));
 
             GUILayout.EndHorizontal();
@@ -72,7 +111,12 @@ namespace Michsky.UI.Reach
         {
             GUILayout.BeginHorizontal(EditorStyles.helpBox);
 
-            EditorGUILayout.LabelField(new GUIContent(content, tooltip), skin.FindStyle("Text"), GUILayout.Width(width));
+            GUIStyle textStyle = skin.FindStyle("Text");
+            if (textStyle == null) {
+                Debug.LogError("Text style not found in skin.");
+                return;
+            }
+            EditorGUILayout.LabelField(new GUIContent(content, tooltip), textStyle, GUILayout.Width(width));
             EditorGUILayout.PropertyField(property, new GUIContent("", tooltip));
 
             GUILayout.EndHorizontal();
@@ -82,7 +126,12 @@ namespace Michsky.UI.Reach
         {
             GUILayout.BeginHorizontal();
 
-            EditorGUILayout.LabelField(new GUIContent(content), skin.FindStyle("Text"), GUILayout.Width(width));
+            GUIStyle textStyle = skin.FindStyle("Text");
+            if (textStyle == null) {
+                Debug.LogError("Text style not found in skin.");
+                return;
+            }
+            EditorGUILayout.LabelField(new GUIContent(content), textStyle, GUILayout.Width(width));
             EditorGUILayout.PropertyField(property, new GUIContent(""));
 
             GUILayout.EndHorizontal();

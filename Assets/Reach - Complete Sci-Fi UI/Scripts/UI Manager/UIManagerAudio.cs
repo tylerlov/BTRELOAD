@@ -1,5 +1,9 @@
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using FMODUnity; // Add FMODUnity namespace
+using FMOD.Studio;
+using UnityEngine.UI; // Required for UI elements like Slider
 
 namespace Michsky.UI.Reach
 {
@@ -13,10 +17,16 @@ namespace Michsky.UI.Reach
         // Resources
         public UIManager UIManagerAsset;
         [SerializeField] private StudioEventEmitter fmodEventEmitter; // Changed from AudioSource to FMOD's StudioEventEmitter
-        [SerializeField] private SliderManager masterSlider;
-        [SerializeField] private SliderManager musicSlider;
-        [SerializeField] private SliderManager SFXSlider;
-        [SerializeField] private SliderManager UISlider;
+        [SerializeField] private Slider masterSlider; // Assuming a slider for master volume is available
+        [SerializeField] private Slider playerSlider;
+        [SerializeField] private Slider uiSlider; // Renamed from menusSlider to uiSlider
+        [SerializeField] private Slider enemiesSlider;
+        private VCA masterVCA, playerVCA, uiVCA, enemiesVCA; // Changed from Bus to VCA
+
+        public StudioEventEmitter FmodEventEmitter
+        {
+            get { return fmodEventEmitter; }
+        }
 
         void Awake()
         {
@@ -25,26 +35,93 @@ namespace Michsky.UI.Reach
 
         void Start()
         {
-            if (fmodEventEmitter == null) { fmodEventEmitter = gameObject.GetComponent<StudioEventEmitter>(); }
+            StartCoroutine(InitializeAudio());
+        }
+
+        IEnumerator InitializeAudio()
+        {
+            yield return new WaitForSeconds(0.1f); // Delay to ensure all systems are ready
+
+            masterVCA = RuntimeManager.GetVCA("vca:/Master VCA");
+            playerVCA = RuntimeManager.GetVCA("vca:/Player VCA");
+            uiVCA = RuntimeManager.GetVCA("vca:/UI VCA");
+            enemiesVCA = RuntimeManager.GetVCA("vca:/Enemies VCA");
+
+            if (!masterVCA.isValid() || !playerVCA.isValid() || !uiVCA.isValid() || !enemiesVCA.isValid()) {
+                Debug.LogError("One or more VCAs could not be loaded or are invalid.");
+            }
+
             InitVolume();
         }
 
-         public StudioEventEmitter FmodEventEmitter
-    {
-        get { return fmodEventEmitter; }
-    }
+        public void SetMasterVolume(Slider slider)
+        {
+            if (masterVCA.isValid())
+            {
+                SetVCAVolume(masterVCA, slider.value);
+            }
+            else
+            {
+                Debug.LogWarning("Master VCA is not ready.");
+            }
+        }
+
+        public void SetPlayerVolume(Slider slider)
+        {
+            if (playerVCA.isValid())
+            {
+                SetVCAVolume(playerVCA, slider.value);
+            }
+            else
+            {
+                Debug.LogWarning("Player VCA is not ready.");
+            }
+        }
+
+        public void SetUIVolume(Slider slider) // Renamed from SetMenusVolume
+        {
+            if (uiVCA.isValid())
+            {
+                SetVCAVolume(uiVCA, slider.value);
+            }
+            else
+            {
+                Debug.LogWarning("UI VCA is not ready.");
+            }
+        }
+
+        public void SetEnemiesVolume(Slider slider)
+        {
+            if (enemiesVCA.isValid())
+            {
+                SetVCAVolume(enemiesVCA, slider.value);
+            }
+            else
+            {
+                Debug.LogWarning("Enemies VCA is not ready.");
+            }
+        }
+
+        private void SetVCAVolume(VCA vca, float volume)
+        {
+            if (vca.isValid())
+            {
+                float dB = Mathf.Log10(volume) * 20;
+                vca.setVolume(Mathf.Pow(10.0f, dB / 20.0f));
+            }
+            else
+            {
+                Debug.LogError("VCA is not valid. Cannot set volume.");
+            }
+        }
 
         public void InitVolume()
         {
-            // FMOD handles volume differently. You might need to use FMOD Studio's exposed parameters.
-            // This is a placeholder for the actual implementation.
+            if (masterSlider != null) SetMasterVolume(masterSlider);
+            if (playerSlider != null) SetPlayerVolume(playerSlider);
+            if (uiSlider != null) SetUIVolume(uiSlider);
+            if (enemiesSlider != null) SetEnemiesVolume(enemiesSlider);
         }
-
-        // Volume setting functions will need to interact with FMOD parameters.
-        // The following methods are placeholders and should be adapted to your FMOD event parameters.
-        public void SetMasterVolume(float volume) { /* Set FMOD master volume parameter */ }
-        public void SetMusicVolume(float volume) { /* Set FMOD music volume parameter */ }
-        public void SetSFXVolume(float volume) { /* Set FMOD SFX volume parameter */ }
-        public void SetUIVolume(float volume) { /* Set FMOD UI volume parameter */ }
     }
 }
+

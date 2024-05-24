@@ -30,6 +30,7 @@ public class ObjectTeleporter : MonoBehaviour
 
     private Dictionary<GameObject, Vector3> startPositions = new Dictionary<GameObject, Vector3>();
 
+
     private void Start()
     {
         PopulateChildObjectsMaterialsList();

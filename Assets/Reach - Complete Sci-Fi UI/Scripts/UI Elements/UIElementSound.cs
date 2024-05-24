@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
 using FMODUnity; // Add FMODUnity namespace
+using FMOD.Studio;
 
 namespace Michsky.UI.Reach
 {
