@@ -9,6 +9,7 @@ public class ProjectileManager : MonoBehaviour
     public static ProjectileManager Instance { get; private set; }
 
     [SerializeField] private ProjectileStateBased projectilePrefab; // Assign in inspector
+    [SerializeField] private GameObject enemyShotFXPrefab; // Assign in inspector
     [SerializeField] private int initialPoolSize = 10;
     [SerializeField] private ParticleSystem deathEffectPrefab; // Assign in inspector
     [SerializeField] private int initialDeathEffectPoolSize = 10;
@@ -162,37 +163,51 @@ public class ProjectileManager : MonoBehaviour
         }
 
         ProjectileStateBased projectile = enemyBasicSetupProjectilePool.Dequeue();
-        projectile.transform.SetParent(transform); // Ensure the projectile is parented to ProjectileManager
+        projectile.transform.SetParent(transform);
         projectile.transform.position = position;
         projectile.transform.rotation = rotation;
         projectile.gameObject.SetActive(true);
-        projectile.transform.localScale = Vector3.one * uniformScale; // Apply uniform scale
+        projectile.transform.localScale = Vector3.one * uniformScale; // Set the scale of the projectile
 
-        // Ensure Rigidbody is not kinematic
+        // Check if the Enemy Shot FX prefab is assigned before instantiating
+        if (enemyShotFXPrefab != null)
+        {
+            GameObject enemyShotFX = Instantiate(enemyShotFXPrefab, projectile.transform);
+            enemyShotFX.transform.localPosition = Vector3.zero; // Center it on the projectile
+            enemyShotFX.transform.localScale = Vector3.one * uniformScale; // Set the scale of the FX to match the projectile
+            SetChildrenScale(enemyShotFX, Vector3.one * uniformScale); // Recursively set scale for all children
+            enemyShotFX.SetActive(true);
+        }
+
         projectile.rb.isKinematic = false;
-        projectile.rb.velocity = rotation * Vector3.forward * speed; // Assumes the projectile has a Rigidbody component
-        projectile.bulletSpeed = speed; // Set the bullet speed here
+        projectile.rb.velocity = rotation * Vector3.forward * speed;
+        projectile.bulletSpeed = speed;
+        projectile.SetLifetime(lifetime);
+        projectile.EnableHoming(enableHoming);
 
-
-        projectile.SetLifetime(lifetime); // Set the lifetime of the projectile
-        projectile.EnableHoming(enableHoming); // Set homing based on the parameter
-
-        // Swap the material if a new one is provided and it's not already on the projectile
         if (material != null && projectile.modelRenderer.material != material)
         {
             projectile.modelRenderer.material = material;
-            projectile.UpdateMaterial(material); // Update the material reference in ProjectileStateBased
+            projectile.UpdateMaterial(material);
         }
 
-        // Set the projectile's timeline to the specified globalClockKey
         if (!string.IsNullOrEmpty(clockKey))
         {
-            projectile.SetClock(clockKey); // Assuming SetClockKey is the method to set the clock key. Adjust this line according to your actual method or property name.
+            projectile.SetClock(clockKey);
         }
 
-        projectile.initialSpeed = speed; // Set the initial speed here
+        projectile.initialSpeed = speed;
 
         RegisterProjectile(projectile);
+    }
+
+    private void SetChildrenScale(GameObject parent, Vector3 scale)
+    {
+        foreach (Transform child in parent.transform)
+        {
+            child.localScale = scale;
+            SetChildrenScale(child.gameObject, scale); // Recursive call to set scale for all sub-children
+        }
     }
 
     public void PlayDeathEffect(Vector3 position)
@@ -229,7 +244,6 @@ public class ProjectileManager : MonoBehaviour
         effect.gameObject.SetActive(false);
         effect.transform.SetParent(originalParent); // Reset the parent to the original (ProjectileManager)
         deathEffectPool.Enqueue(effect);
-        Debug.Log("Effect returned to pool. Pool size: " + deathEffectPool.Count);
     }
 
     public void ReturnProjectileToPool(ProjectileStateBased projectile)

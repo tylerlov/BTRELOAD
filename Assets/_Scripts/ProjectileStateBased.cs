@@ -366,8 +366,12 @@ public class ProjectileStateBased : BaseBehaviour
         initialSpeed = bulletSpeed; // Store the initial speed
     }
 
-    private void OnEnable()
+    void OnEnable()
     {
+        if (modelRenderer != null && modelRenderer.material != null && modelRenderer.material.HasProperty("_AdvancedDissolveCutoutStandardClip"))
+        {
+            modelRenderer.material.DOFloat(0f, "_AdvancedDissolveCutoutStandardClip", 1f);
+        }
 
         // Reset the lifetimeExtended variable each time the projectile is enabled
         lifetimeExtended = false;
@@ -467,9 +471,9 @@ public class ProjectileStateBased : BaseBehaviour
             lifetimeCoroutine = null;
         }
         // Proceed with DOTween animation if lifetime has expired
-        if (myMaterial != null)
+        if (myMaterial != null && myMaterial.HasProperty("_AdvancedDissolveCutoutStandardClip"))
         {
-            myMaterial.DOFloat(1f, "_AdvancedDissolveCutoutStandardClip", 0f).OnComplete(() =>
+            myMaterial.DOFloat(1f, "_AdvancedDissolveCutoutStandardClip", 1f).OnComplete(() =>
             {
                 // This code will execute after the DOTween animation completes.
                 // Now it's safe to recycle the projectile.
@@ -643,8 +647,25 @@ private IEnumerator LifetimeCoroutine()
 
     public void UpdateMaterial(Material newMaterial)
     {
-    modelRenderer.material = newMaterial;
-    myMaterial = newMaterial; 
+        if (modelRenderer != null)
+        {
+            modelRenderer.material = newMaterial;
+            myMaterial = newMaterial;
+
+            // Initialize the dissolve effect when a new material is set
+            if (modelRenderer.material.HasProperty("_AdvancedDissolveCutoutStandardClip"))
+            {
+                modelRenderer.material.SetFloat("_AdvancedDissolveCutoutStandardClip", 1f); // Ensure the material starts without being dissolved
+            }
+            else
+            {
+                Debug.LogWarning("The assigned material does not support the required dissolve property.");
+            }
+        }
+        else
+        {
+            Debug.LogError("ModelRenderer is not set on the projectile.");
+        }
     }
 
     public void SetClock(string clockKey)

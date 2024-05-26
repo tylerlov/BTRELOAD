@@ -3,7 +3,10 @@ using System.Collections;
 using FMODUnity;
 using Chronos;
 using BehaviorDesigner.Runtime.Tactical;
-using UnityEngine.Events; // Added line
+using UnityEngine.Events; 
+using SonicBloom.Koreo;
+using System.Collections.Generic;
+using UnityEngine.VFX;
 
 [RequireComponent(typeof(Timeline))] 
 public class EnemySnakeMidBoss : BaseBehaviour, IDamageable, ILimbDamageReceiver
@@ -21,28 +24,77 @@ public class EnemySnakeMidBoss : BaseBehaviour, IDamageable, ILimbDamageReceiver
     [SerializeField] private float projectileScale = 1f;
     [SerializeField] private Material alternativeProjectileMaterial;
     [SerializeField] private float shootInterval = 2f;
+    [EventID]
+    [SerializeField] private string koreographyEventID; // Serialized field to set in Inspector
     [SerializeField] private string projectileTimelineName;
+    [SerializeField] private VisualEffect vfxPrefab;
+
     private Timeline myTime;
     private Clock clock;
 
     // Animator parameters
     private readonly string damageAnimationTrigger = "TakeDamage";
 
+    private List<VisualEffect> vfxPool;
+    private int poolSize = 12;
 
     private void Awake()
     {
+        InitializeVFXPool();
+    }
 
+    private void InitializeVFXPool()
+    {
+        vfxPool = new List<VisualEffect>();
+        for (int i = 0; i < poolSize; i++)
+        {
+            VisualEffect vfxInstance = Instantiate(vfxPrefab, transform); // Parent to this GameObject
+            vfxInstance.gameObject.SetActive(false);
+            vfxPool.Add(vfxInstance);
+        }
+    }
+
+    private VisualEffect GetPooledVFX()
+    {
+        foreach (VisualEffect vfx in vfxPool)
+        {
+            if (!vfx.gameObject.activeInHierarchy)
+            {
+                return vfx;
+            }
+        }
+
+        // Optionally expand the pool if all objects are in use
+        VisualEffect newVFX = Instantiate(vfxPrefab);
+        newVFX.gameObject.SetActive(false);
+        vfxPool.Add(newVFX);
+        return newVFX;
+    }
+
+    private void ReturnVFXToPool(VisualEffect vfx)
+    {
+        vfx.gameObject.SetActive(false);
     }
 
     private void OnEnable()
     {
         InitializeEnemy();
+        if (shootInterval == 0)
+        {
+            if (Koreographer.Instance != null && !string.IsNullOrEmpty(koreographyEventID))
+            {
+                Koreographer.Instance.RegisterForEvents(koreographyEventID, OnShootSyncedWithMusic);
+            }
+        }
     }
 
     private void Start()
     {
         SetupEnemy();
-        StartCoroutine(TimedShooting()); // Start the timed shooting coroutine
+        if (shootInterval > 0)
+        {
+            StartCoroutine(TimedShooting()); // Start the timed shooting coroutine only if shootInterval is greater than zero
+        }
     }
 
     public void Damage(float amount)
@@ -131,6 +183,45 @@ public class EnemySnakeMidBoss : BaseBehaviour, IDamageable, ILimbDamageReceiver
             alternativeProjectileMaterial,
             projectileTimelineName
         );
+
+        // Handle VFX
+        VisualEffect vfx = GetPooledVFX();
+        vfx.transform.position = projectileOrigin.position;
+        vfx.transform.rotation = rotationTowardsTarget;
+        vfx.gameObject.SetActive(true);
+        vfx.Play(); // Ensure to start the effect
+
+        StartCoroutine(DeactivateVFX(vfx));
+
+        FMOD.Studio.EventInstance shootEvent = FMODUnity.RuntimeManager.CreateInstance("event:/Enemy/Snake/Shoot");
+        shootEvent.setPitch(originalPitch / (myTime.timeScale < 1.0f ? 4 : 1)); // Adjust pitch based on time scale
+        shootEvent.start();
+        shootEvent.release();
+    }
+
+    private IEnumerator DeactivateVFX(VisualEffect vfx)
+    {
+        yield return new WaitForSeconds(1.0f); // Wait for 1 second.
+
+        vfx.Stop(); // Optionally stop the effect to ensure it's not emitting any more particles.
+        vfx.gameObject.SetActive(false); // Deactivate the GameObject.
+        ReturnVFXToPool(vfx); // Return the VFX to the pool.
+    }
+
+    void OnShootSyncedWithMusic(KoreographyEvent evt)
+    {
+        ShootProjectile();
+    }
+
+    private void OnDisable()
+    {
+        if (shootInterval == 0)
+        {
+            if (Koreographer.Instance != null && !string.IsNullOrEmpty(koreographyEventID))
+            {
+                Koreographer.Instance.UnregisterForEvents(koreographyEventID, OnShootSyncedWithMusic);
+            }
+        }
     }
 
     private IEnumerator Death()
@@ -150,5 +241,34 @@ public class EnemySnakeMidBoss : BaseBehaviour, IDamageable, ILimbDamageReceiver
 
         // Call to GameManager to transition to the next scene
         GameManager.instance.ChangeSceneWithTransitionToNext();
+    }
+
+    private void Update()
+    {
+        CheckTimelineChanges();
+    }
+
+    private float previousTimeScale = 1.0f; // Default time scale
+    private float originalPitch = 1.0f; // Default pitch, adjust as needed
+
+    private void CheckTimelineChanges()
+    {
+        float currentTimeScale = myTime.timeScale;
+
+        if (currentTimeScale != previousTimeScale)
+        {
+            if (currentTimeScale < 1.0f) // Assuming slowdown corresponds to a lower than 1.0 time scale
+            {
+                // Decrease pitch by 12 semitones (assuming pitch scale where 0.5 is one octave down)
+                FMODUnity.RuntimeManager.StudioSystem.setParameterByName("Pitch", originalPitch / 4);
+            }
+            else if (currentTimeScale == 1.0f) // Timeline returned to normal
+            {
+                // Restore original pitch
+                FMODUnity.RuntimeManager.StudioSystem.setParameterByName("Pitch", originalPitch);
+            }
+
+            previousTimeScale = currentTimeScale;
+        }
     }
 }

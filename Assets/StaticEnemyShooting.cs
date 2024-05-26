@@ -66,7 +66,7 @@ public class StaticEnemyShooting : MonoBehaviour
 
     void OnMusicalEnemyShoot(KoreographyEvent evt)
     {
-        Debug.Log("[StaticEnemyShooting] OnMusicalEnemyShoot called.");
+        //Debug.Log("[StaticEnemyShooting] OnMusicalEnemyShoot called.");
         if (!gameObject.activeInHierarchy)
         {
             Debug.LogWarning("[StaticEnemyShooting] GameObject is not active in hierarchy.");

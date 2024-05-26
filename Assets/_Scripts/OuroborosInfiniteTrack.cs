@@ -1,9 +1,3 @@
-// =====================================================================
-// Copyright 2013-2022 ToolBuddy
-// All rights reserved
-// 
-// http://www.toolbuddy.net
-// =====================================================================
 
 using UnityEngine;
 using System.Collections;
@@ -213,7 +207,6 @@ CurvyGenerator buildGenerator()
                 if (instanceComponent != null)
                 {
                     // Debug statement before despawning
-                    Debug.Log($"Despawning: {prefab.name}");
                     instanceComponent.Despawn();
 
                     // Add the prefab to the list of despawned prefabs
