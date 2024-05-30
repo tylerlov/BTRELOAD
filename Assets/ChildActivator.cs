@@ -4,12 +4,19 @@ using System.Collections;
 
 public class ChildActivator : MonoBehaviour
 {
+    public bool isActive = true; // Public boolean to control activation
+
     private void Awake() {
-        SetChildrenActive(false);
+        if (isActive)
+        {
+            SetChildrenActive(false);
+        }
     }
 
     public void SetChildrenActive(bool isActive)
     {
+        if (!this.isActive) return; // Check if the script is active
+
         foreach (Transform child in transform)
         {
             child.gameObject.SetActive(isActive);

@@ -370,7 +370,7 @@ public class ProjectileStateBased : BaseBehaviour
     {
         if (modelRenderer != null && modelRenderer.material != null && modelRenderer.material.HasProperty("_AdvancedDissolveCutoutStandardClip"))
         {
-            modelRenderer.material.DOFloat(0f, "_AdvancedDissolveCutoutStandardClip", 1f);
+            modelRenderer.material.DOFloat(0.05f, "_AdvancedDissolveCutoutStandardClip", 1f);
         }
 
         // Reset the lifetimeExtended variable each time the projectile is enabled
@@ -382,7 +382,7 @@ public class ProjectileStateBased : BaseBehaviour
         // Animate the clip value from 1 to 0 when the projectile is reused.
         if (modelRenderer != null && modelRenderer.material != null)
         {
-            modelRenderer.material.DOFloat(0f, "_AdvancedDissolveCutoutStandardClip", 1f);
+            modelRenderer.material.DOFloat(0.05f, "_AdvancedDissolveCutoutStandardClip", 1f);
         }
         ProjectileManager.Instance.RegisterProjectile(this);
 
@@ -473,7 +473,7 @@ public class ProjectileStateBased : BaseBehaviour
         // Proceed with DOTween animation if lifetime has expired
         if (myMaterial != null && myMaterial.HasProperty("_AdvancedDissolveCutoutStandardClip"))
         {
-            myMaterial.DOFloat(1f, "_AdvancedDissolveCutoutStandardClip", 1f).OnComplete(() =>
+            myMaterial.DOFloat(0.05f, "_AdvancedDissolveCutoutStandardClip", 1f).OnComplete(() =>
             {
                 // This code will execute after the DOTween animation completes.
                 // Now it's safe to recycle the projectile.
@@ -587,7 +587,7 @@ private IEnumerator LifetimeCoroutine()
             // Trigger the dissolve effect.
             if (myMaterial != null)
             {
-                myMaterial.DOFloat(1f, "_AdvancedDissolveCutoutStandardClip", 1f).OnComplete(() =>
+                myMaterial.DOFloat(0.05f, "_AdvancedDissolveCutoutStandardClip", 1f).OnComplete(() =>
                 {
                     Death();
                 });
