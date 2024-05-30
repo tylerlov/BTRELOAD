@@ -7,14 +7,14 @@ using System.Collections.Generic; // Add this line at the top for List<T>
 public class GameManager : MonoBehaviour
 {
     public static GameManager instance;
-    public CanvasGroup transitionCanvasGroup; // Adjusted to use CanvasGroup
-    public float fadeDuration = 0.5f; // Adjusted for quicker fade
     public SceneListData sceneListData;
     // Score and ShotTally properties
     public int Score { get; private set; }
     public int ShotTally { get; private set; }
 
     public EnemyShootingManager enemyShootingManager;
+
+    private bool _isLoadingScene = false; // Add this line
 
     private void Awake()
     {
@@ -41,13 +41,33 @@ public class GameManager : MonoBehaviour
 
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
-        Debug.Log($"Scene {scene.name} loaded.");
-    }
+        _isLoadingScene = false; // Reset the flag here
 
-    
+        Debug.Log($"Scene {scene.name} loaded.");
+
+        // Debugging information
+        int totalScenes = SceneManager.sceneCountInBuildSettings;
+        Debug.Log($"Total scenes in build settings: {totalScenes}");
+
+        // Ensure the scene index is within range
+        if (scene.buildIndex < 0 || scene.buildIndex >= totalScenes)
+        {
+            Debug.LogError($"Scene index {scene.buildIndex} is out of range. Total scenes: {totalScenes}");
+            return;
+        }
+
+        // Delegate re-registration to ProjectileManager
+        if (ProjectileManager.Instance != null)
+        {
+            ProjectileManager.Instance.ReRegisterEnemiesAndProjectiles();
+        }
+    }
 
     public void ChangeToNextScene()
     {
+        if (_isLoadingScene) return; // Prevent multiple triggers
+        _isLoadingScene = true; // Set the flag
+
         string currentSceneName = SceneManager.GetActiveScene().name;
         SceneGroup currentGroup = null;
         int currentSceneIndex = -1;
@@ -78,11 +98,15 @@ public class GameManager : MonoBehaviour
         else
         {
             Debug.LogError("Current scene or scene group not found in SceneListData.");
+            _isLoadingScene = false; // Reset the flag if there's an error
         }
     }
 
     public void ChangeSceneWithTransitionToNext()
     {
+        if (_isLoadingScene) return; // Prevent multiple triggers
+        _isLoadingScene = true; // Set the flag
+
         // Check if enemyShootingManager is not null and then call its method
         if (enemyShootingManager != null)
         {
@@ -149,13 +173,12 @@ public class GameManager : MonoBehaviour
         else
         {
             Debug.LogError("Current scene or scene group not found in SceneListData.");
+            _isLoadingScene = false; // Reset the flag if there's an error
         }
     }
 
     IEnumerator LoadSceneAsync(string sceneName, string musicSectionName)
     {
-        yield return StartCoroutine(FadeEffect(true)); // Start fade out
-
         AsyncOperation asyncLoad = SceneManager.LoadSceneAsync(sceneName);
         asyncLoad.allowSceneActivation = false;
 
@@ -163,7 +186,6 @@ public class GameManager : MonoBehaviour
         {
             if (asyncLoad.progress >= 0.9f)
             {
-                yield return StartCoroutine(FadeEffect(false)); // Start fade in
                 asyncLoad.allowSceneActivation = true;
 
                 // Adjust music parameters only if the music section name is provided
@@ -177,19 +199,6 @@ public class GameManager : MonoBehaviour
                 }
                 break;
             }
-            yield return null;
-        }
-    }
-
-    IEnumerator FadeEffect(bool fadeOut)
-    {
-        float targetAlpha = fadeOut ? 1f : 0f;
-        float fadeSpeed = Mathf.Abs(transitionCanvasGroup.alpha - targetAlpha) / fadeDuration;
-
-        while (!Mathf.Approximately(transitionCanvasGroup.alpha, targetAlpha))
-        {
-            float newAlpha = Mathf.MoveTowards(transitionCanvasGroup.alpha, targetAlpha, fadeSpeed * Time.deltaTime);
-            transitionCanvasGroup.alpha = newAlpha;
             yield return null;
         }
     }
@@ -229,4 +238,12 @@ public class GameManager : MonoBehaviour
         Score = 0;
         // Optionally, update UI or other game elements here
     }
+
+    // Add this method to the GameManager class
+    public void DebugMoveToNextScene()
+    {
+        // Implement the logic for moving to the next scene for debugging purposes
+        ChangeToNextScene();
+    }
 }
+

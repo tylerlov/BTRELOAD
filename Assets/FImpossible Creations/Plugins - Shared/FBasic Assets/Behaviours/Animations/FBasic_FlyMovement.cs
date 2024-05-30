@@ -58,9 +58,9 @@ namespace FIMSpace.Basics
             float sinY = (Mathf.Cos(time) * randomVector1.y + Mathf.Sin(time * 1.75f + 4.2f) * randomVector2.y) * MainSpeed;
             float sinZ = (Mathf.Cos(time) * randomVector1.z + Mathf.Cos(time * 1.25f - 2.2f) * randomVector2.z) * MainSpeed;
 
-            offset.x += sinX * Time.deltaTime * 60f;
-            offset.y += sinY * Time.deltaTime * 60f;
-            offset.z += sinZ * Time.deltaTime * 60f;
+            offset.x += sinX;
+            offset.y += sinY;
+            offset.z += sinZ;
 
             // Calculating multipliers and translation
             Vector3 targetOffsetedPos = offset;

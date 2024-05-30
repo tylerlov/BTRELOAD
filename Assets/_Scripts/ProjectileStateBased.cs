@@ -480,7 +480,12 @@ public class ProjectileStateBased : BaseBehaviour
                 ProjectileManager.Instance.ReturnProjectileToPool(this);
             });
         }
-    }
+        else
+        {
+            // Ensure the projectile is returned to the pool even if the material does not have the required property.
+            ProjectileManager.Instance.ReturnProjectileToPool(this);
+        }
+        }
     else
     {
         if (lifetimeCoroutine != null)

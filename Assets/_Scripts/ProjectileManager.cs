@@ -402,4 +402,33 @@ public class ProjectileManager : MonoBehaviour
         }
     }
 }
+
+public void ReRegisterEnemiesAndProjectiles()
+{
+    // Clear existing projectiles and reinitialize pools
+    projectiles.Clear();
+    staticEnemyProjectilePool.Clear();
+    enemyBasicSetupProjectilePool.Clear();
+    deathEffectPool.Clear();
+
+    InitializeStaticEnemyProjectilePool();
+    InitializeEnemyBasicSetupProjectilePool();
+    InitializeDeathEffectPool();
+
+    // Re-register enemies
+    GameObject[] enemies = GameObject.FindGameObjectsWithTag("Enemy");
+    foreach (GameObject enemy in enemies)
+    {
+        var enemySetup = enemy.GetComponent<EnemyBasicSetup>();
+        if (enemySetup != null)
+        {
+            // Re-register enemy projectiles or any other necessary components
+            enemySetup.RegisterProjectiles();
+        }
+        else
+        {
+            Debug.LogWarning("EnemyBasicSetup component missing on enemy object", enemy);
+        }
+    }
+}
 }

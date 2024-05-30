@@ -11,14 +11,10 @@ public class SceneLoadActivationController : MonoBehaviour
 
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
-        if (SceneManager.sceneCount == 1)
+        // Check if the loaded scene is the active scene
+        if (scene == SceneManager.GetActiveScene())
         {
-            // Likely loaded individually
-            gameObject.SetActive(true);
-        }
-        else
-        {
-            // Loaded as part of a sequence or additively
+            // Disable the game object if coming from another scene
             gameObject.SetActive(false);
         }
     }

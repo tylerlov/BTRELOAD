@@ -88,6 +88,17 @@ public class EnemySnakeMidBoss : BaseBehaviour, IDamageable, ILimbDamageReceiver
         }
     }
 
+    private void OnDisable()
+    {
+        if (shootInterval == 0)
+        {
+            if (Koreographer.Instance != null && !string.IsNullOrEmpty(koreographyEventID))
+            {
+                Koreographer.Instance.UnregisterForEvents(koreographyEventID, OnShootSyncedWithMusic);
+            }
+        }
+    }
+
     private void Start()
     {
         SetupEnemy();
@@ -194,9 +205,20 @@ public class EnemySnakeMidBoss : BaseBehaviour, IDamageable, ILimbDamageReceiver
         StartCoroutine(DeactivateVFX(vfx));
 
         FMOD.Studio.EventInstance shootEvent = FMODUnity.RuntimeManager.CreateInstance("event:/Enemy/Snake/Shoot");
-        shootEvent.setPitch(originalPitch / (myTime.timeScale < 1.0f ? 4 : 1)); // Adjust pitch based on time scale
-        shootEvent.start();
-        shootEvent.release();
+        shootEvent.setPitch(originalPitch / (myTime.timeScale == 0 ? float.PositiveInfinity : myTime.timeScale < 1.0f ? 4 : 1));
+       
+       // Correct usage of getPlaybackState with an out parameter
+       FMOD.Studio.PLAYBACK_STATE state;
+       if (shootEvent.getPlaybackState(out state) == FMOD.RESULT.OK)
+       {
+           if (state == FMOD.Studio.PLAYBACK_STATE.STOPPED)
+           {
+               shootEvent.release();
+           }
+       }
+       
+       shootEvent.start();
+       shootEvent.release();
     }
 
     private IEnumerator DeactivateVFX(VisualEffect vfx)
@@ -206,22 +228,6 @@ public class EnemySnakeMidBoss : BaseBehaviour, IDamageable, ILimbDamageReceiver
         vfx.Stop(); // Optionally stop the effect to ensure it's not emitting any more particles.
         vfx.gameObject.SetActive(false); // Deactivate the GameObject.
         ReturnVFXToPool(vfx); // Return the VFX to the pool.
-    }
-
-    void OnShootSyncedWithMusic(KoreographyEvent evt)
-    {
-        ShootProjectile();
-    }
-
-    private void OnDisable()
-    {
-        if (shootInterval == 0)
-        {
-            if (Koreographer.Instance != null && !string.IsNullOrEmpty(koreographyEventID))
-            {
-                Koreographer.Instance.UnregisterForEvents(koreographyEventID, OnShootSyncedWithMusic);
-            }
-        }
     }
 
     private IEnumerator Death()
@@ -270,5 +276,11 @@ public class EnemySnakeMidBoss : BaseBehaviour, IDamageable, ILimbDamageReceiver
 
             previousTimeScale = currentTimeScale;
         }
+    }
+
+    private void OnShootSyncedWithMusic(KoreographyEvent koreoEvent)
+    {
+        // Implementation of shooting logic synchronized with music
+        ShootProjectile();
     }
 }

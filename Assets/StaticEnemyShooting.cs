@@ -55,7 +55,7 @@ public class StaticEnemyShooting : MonoBehaviour
         }
     }
 
-    void OnEnable()
+    public void OnEnable()
     {
         if (EnemyShootingManager.Instance != null){
             EnemyShootingManager.Instance.RegisterStaticEnemyShooting(this);
@@ -149,4 +149,13 @@ public class StaticEnemyShooting : MonoBehaviour
             Koreographer.Instance.UnregisterForEvents(eventID, OnMusicalEnemyShoot);
         }
     }
+
+    public void ReRegisterWithKoreographer()
+    {
+        if (Koreographer.Instance != null)
+        {
+            Koreographer.Instance.RegisterForEvents(eventID, OnMusicalEnemyShoot);
+        }
+    }
 }
+

@@ -144,4 +144,15 @@ public class AdjustSongParameters : MonoBehaviour
             }
         }
     }
+
+    public void HandleDebugSceneTransition()
+    {
+        // Simulate moving through X number of enemy waves
+        int wavesToSimulate = 3; // Adjust this number as needed
+        for (int i = 0; i < wavesToSimulate; i++)
+        {
+            waveCounterAdd();
+            updateStatus();
+        }
+    }
 }

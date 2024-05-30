@@ -23,9 +23,10 @@ public class SceneSwitchCleanup : MonoBehaviour
         // Directly activate objects if running in the editor, without waiting for scene load
         if (Application.isEditor)
         {
-            StartCoroutine(DelayedActivateObjects());
+            // Removed redundant activation logic when running in the editor
         }
     }
+   
 
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {

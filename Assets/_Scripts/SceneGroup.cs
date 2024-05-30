@@ -17,13 +17,21 @@ public class SceneGroup
     #if UNITY_EDITOR
     public void UpdateSceneNames()
     {
+        if (sceneAssets == null) return;
+
         scenes = new string[sceneAssets.Length];
         musicSectionNames = new string[sceneAssets.Length]; // Initialize the music names array
         for (int i = 0; i < sceneAssets.Length; i++)
         {
-            scenes[i] = sceneAssets[i].name;
+            scenes[i] = sceneAssets[i] != null ? sceneAssets[i].name : "";
             musicSectionNames[i] = ""; // Initialize with empty strings or default values
         }
+    }
+
+    // This method is called when the script is loaded or a value is changed in the Inspector
+    private void OnValidate()
+    {
+        UpdateSceneNames();
     }
     #endif
 }

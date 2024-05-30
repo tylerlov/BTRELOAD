@@ -272,4 +272,17 @@ public class EnemyBasicSetup : BaseBehaviour, IDamageable, IAttackAgent
             lastAttackTime = Time.time;
         }
     }
+
+    public void RegisterProjectiles()
+    {
+        // Assuming you have a list or array of projectiles associated with this enemy
+        foreach (var projectile in GetComponentsInChildren<ProjectileStateBased>())
+        {
+            if (projectile != null)
+            {
+                // Register the projectile with the ProjectileManager
+                ProjectileManager.Instance.RegisterProjectile(projectile);
+            }
+        }
+    }
 }
