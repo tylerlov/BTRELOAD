@@ -6,7 +6,7 @@ using UnityEngine.EventSystems;
 using System.Linq;
 using BehaviorDesigner.Runtime.Tactical;
 using UnityEngine.InputSystem;
-using UnityEngine.SceneManagement; // Add this directive
+using UnityEngine.SceneManagement;
 
 public class DebugControls : MonoBehaviour, IPointerClickHandler
 {
@@ -31,7 +31,7 @@ public class DebugControls : MonoBehaviour, IPointerClickHandler
 
     private void OnDestroy()
     {
-        // Disable the InputAction when the object is destroyed
+        // Disable the InputActions when the object is destroyed
         debugNextSceneAction.Disable();
         SceneManager.sceneLoaded -= OnSceneLoaded; // Unsubscribe from the event
     }
@@ -158,3 +158,4 @@ public class DebugControls : MonoBehaviour, IPointerClickHandler
         AddEventTriggerToUIElement();
     }
 }
+

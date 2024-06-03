@@ -5,16 +5,16 @@ using DG.Tweening;
 using Cinemachine;
 //using MoreMountains.Feedbacks;
 using UnityEngine.Rendering.PostProcessing;
-//using Opsive.Shared.Camera;
 using UnityEngine.InputSystem;
 using Chronos;
 
 public class ShooterMovement : MonoBehaviour
 {
-    public float xySpeed;    
+    public float xySpeed = 35f; // Speed of the reticle movement
     private Vector3 startingPosition;
 
     private DefaultControls playerInputActions;
+    private Vector2 inputVector;
 
     private Timeline timeline; 
 
@@ -26,32 +26,72 @@ public class ShooterMovement : MonoBehaviour
     private float toleranceX = 15f; // How close the reticle gets to the sides before rotation starts
     private float toleranceY = 20f; // How close the reticle gets to the top/bottom before rotation starts
 
-    void Start()
+    public bool enableClamping = true; // New boolean to enable/disable clamping
+
+    void Awake()
     {
         playerInputActions = new DefaultControls();
+    }
+
+    void Start()
+    {
+        if (objectToRotate == null)
+        {
+            Debug.LogError("objectToRotate is not assigned.");
+            enabled = false;
+            return;
+        }
+
         playerInputActions.Player.Enable();
-        playerInputActions.Player.ReticleMovement.performed += ReticleMovement_performed;
+        playerInputActions.Player.ReticleMovement.performed += OnReticleMovement;
+        playerInputActions.Player.ReticleMovement.canceled += OnReticleMovement; // Ensure to handle input stop
         timeline = GetComponent<Timeline>();
         startingPosition = transform.localPosition;
     }
-    private void ReticleMovement_performed(InputAction.CallbackContext context)
+
+    private void OnEnable()
     {
-        Vector2 inputVector = context.ReadValue<Vector2>();
-        // Log the input vector to the console
-        LocalMove(inputVector.x, inputVector.y, xySpeed);
+        if (playerInputActions != null)
+        {
+            playerInputActions.Player.Enable();
+            playerInputActions.Player.ReticleMovement.performed += OnReticleMovement;
+            playerInputActions.Player.ReticleMovement.canceled += OnReticleMovement;
+        }
     }
 
-     void LocalMove(float x, float y, float speed)
+    private void OnDisable()
     {
-        // Use Chronos' deltaTime instead of Unity's Time.deltaTime
-        float deltaTime = timeline.deltaTime;
+        if (playerInputActions != null)
+        {
+            playerInputActions.Player.ReticleMovement.performed -= OnReticleMovement;
+            playerInputActions.Player.ReticleMovement.canceled -= OnReticleMovement;
+            playerInputActions.Player.Disable();
+        }
+    }
 
-        transform.localPosition += new Vector3(x, y, 0) * speed * deltaTime;
+    private void OnReticleMovement(InputAction.CallbackContext context)
+    {
+        inputVector = context.ReadValue<Vector2>();
+    }
+
+    void Update()
+    {
+        MoveReticle(inputVector);
+    }
+
+    void MoveReticle(Vector2 direction)
+    {
+        // Use Chronos' deltaTime if available, otherwise use Unity's Time.deltaTime
+        float deltaTime = timeline != null ? timeline.deltaTime : Time.deltaTime;
+
+        transform.localPosition += new Vector3(direction.x, direction.y, 0) * xySpeed * deltaTime;
         ClampPosition();
     }
 
     void ClampPosition()
     {
+        if (!enableClamping) return; // Skip clamping if enableClamping is false
+
         Vector3 pos = transform.localPosition;
 
         // Define the min and max values for x and y in local space
@@ -95,12 +135,8 @@ public class ShooterMovement : MonoBehaviour
     }
 
     public void ResetToCenter()
-    {       
-        //Do I want to implement this function?
-    }
-
-    private void OnDisable()
     {
-        playerInputActions.Player.Disable();
+        transform.localPosition = startingPosition;
+        inputVector = Vector2.zero;
     }
 }
