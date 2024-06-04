@@ -361,7 +361,7 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.textmeshpro": {
-      "version": "3.0.8",
+      "version": "3.0.9",
       "depth": 0,
       "source": "registry",
       "dependencies": {
@@ -400,7 +400,7 @@
       }
     },
     "jp.keijiro.duotone": {
-      "version": "2.1.1",
+      "version": "2.1.2",
       "depth": 0,
       "source": "registry",
       "dependencies": {},

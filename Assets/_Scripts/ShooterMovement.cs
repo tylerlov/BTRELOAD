@@ -94,9 +94,9 @@ public class ShooterMovement : MonoBehaviour
 
         Vector3 pos = transform.localPosition;
 
-        // Define the min and max values for x and y in local space
-        float minX = -22f; 
-        float maxX = 22f; 
+        // Adjust the min and max values for x to allow more horizontal movement
+        float minX = -30f; // Increased from -22f
+        float maxX = 30f;  // Increased from 22f
         float minY = -12f; 
         float maxY = 15f; 
 
