@@ -516,115 +516,114 @@ void OnMusicalLock(KoreographyEvent evt)
         }
     }
     void OnMusicalShoot(KoreographyEvent evt)
-{
-
-    // Check all conditions for shooting
-    if ((!CheckLockProjectiles() /*|| triggeredLockFire == true*/) && LockedList.Count > 0 && Time.timeScale != 0f)
     {
-
-        //Debug.Log("OnMusicalShoot triggered");
-        List<PlayerLockedState> projectilesToLaunch = new List<PlayerLockedState>();
-
-        int comboScore = 0;
-        int tempLocks = Locks;
-
-        bool lockingEnding = true;
-
-        // Ensure there are items in LockedList before proceeding
+        // Check all conditions for shooting
         if ((!CheckLockProjectiles() /*|| triggeredLockFire == true*/) && LockedList.Count > 0 && Time.timeScale != 0f)
         {
-            locking = false;
+            List<PlayerLockedState> projectilesToLaunch = new List<PlayerLockedState>();
 
-            CleanLockedList();
+            int comboScore = 0;
+            int tempLocks = Locks;
 
-            for (int i = LockedList.Count - 1; i >= 0; i--)
+            bool lockingEnding = true;
+
+            // Ensure there are items in LockedList before proceeding
+            if ((!CheckLockProjectiles() /*|| triggeredLockFire == true*/) && LockedList.Count > 0 && Time.timeScale != 0f)
             {
-                ProjectileStateBased projectileStateBased = LockedList[i].GetComponent<ProjectileStateBased>();
-                if (!(projectileStateBased.GetCurrentState() is PlayerLockedState))
-                {
-                    projectileStateBased.ChangeState(new PlayerLockedState(projectileStateBased));
-                }
+                locking = false;
 
-                PlayerLockedState lockedState = projectileStateBased.GetCurrentState() as PlayerLockedState;
-                if (lockedState != null)
+                CleanLockedList();
+
+                for (int i = LockedList.Count - 1; i >= 0; i--)
                 {
-                    // Check if there are enemies to lock onto
-                    if (enemyTargetList.Count > 0)
+                    if (LockedList[i] == null) continue; // Skip if the Transform is null
+
+                    ProjectileStateBased projectileStateBased = LockedList[i].GetComponent<ProjectileStateBased>();
+                    if (!(projectileStateBased.GetCurrentState() is PlayerLockedState))
                     {
-                        // Ensure enemyTargetListIndex is within bounds
-                        if (enemyTargetListIndex <= 0 || enemyTargetListIndex > enemyTargetList.Count)
-                        {
-                            enemyTargetListIndex = enemyTargetList.Count; // Adjust index to be within bounds
-                        }
+                        projectileStateBased.ChangeState(new PlayerLockedState(projectileStateBased));
+                    }
 
-                        Transform currEnemyTarg = enemyTargetList[enemyTargetListIndex - 1];
-
-                        if (currEnemyTarg.gameObject.activeSelf)
+                    PlayerLockedState lockedState = projectileStateBased.GetCurrentState() as PlayerLockedState;
+                    if (lockedState != null)
+                    {
+                        // Check if there are enemies to lock onto
+                        if (enemyTargetList.Count > 0)
                         {
-                            lockedState.LaunchAtEnemy(currEnemyTarg);
+                            // Ensure enemyTargetListIndex is within bounds
+                            if (enemyTargetListIndex <= 0 || enemyTargetListIndex > enemyTargetList.Count)
+                            {
+                                enemyTargetListIndex = enemyTargetList.Count; // Adjust index to be within bounds
+                            }
+
+                            Transform currEnemyTarg = enemyTargetList[enemyTargetListIndex - 1];
+
+                            if (currEnemyTarg.gameObject.activeSelf)
+                            {
+                                lockedState.LaunchAtEnemy(currEnemyTarg);
+                            }
+                            else
+                            {
+                                enemyTargetList.Remove(currEnemyTarg);
+                                if (enemyTargetList.Count <= 0)
+                                {
+                                    projectilesToLaunch.Add(lockedState);
+                                }
+                            }
+
+                            enemyTargetListIndex--;
                         }
                         else
                         {
-                            enemyTargetList.Remove(currEnemyTarg);
-                            if (enemyTargetList.Count <= 0)
-                            {
-                                projectilesToLaunch.Add(lockedState);
-                            }
+                            projectilesToLaunch.Add(lockedState);
+                            Debug.Log("Outer LaunchBack() called.");
                         }
 
-                        enemyTargetListIndex--;
+                        staminaController.locking = false;
                     }
                     else
                     {
-                        projectilesToLaunch.Add(lockedState);
-                        Debug.Log("Outer LaunchBack() called.");
+                        Debug.LogError("Failed to cast to PlayerLockedState or change state to PlayerLockedState.");
                     }
 
-                    staminaController.locking = false;
+                    // Safely remove the current item from LockedList
+                    LockedList.RemoveAt(i);
+                }
+
+                StartCoroutine(LaunchProjectilesWithDelay(projectilesToLaunch));
+                StartCoroutine(ShootVibrate());
+                shootFeedback.PlayFeedbacks();
+
+                if (lockingEnding)
+                {
+                    playerLockingOff.Invoke();
+                    lockingEnding = false;
+                }
+                if (shootTag)
+                {
+                    PlayRandomShootTag();
                 }
                 else
                 {
-                    Debug.LogError("Failed to cast to PlayerLockedState or change state to PlayerLockedState.");
+                    PlayRandomShooting();
                 }
 
-                // Safely remove the current item from LockedList
-                LockedList.RemoveAt(i);
+                locking = true;
+                GameManager.instance.AddShotTally(1);
+                comboScore++;
+                Locks = Locks - 1;
+
+                musicPlayback.EventInstance.setParameterByName("Lock State", 0);
+                lockFeedback.StopFeedbacks();
+                FMODUnity.RuntimeManager.PlayOneShot("event:/Level - 172 Flux/Firing Blasts");
+
+                GameManager.instance.AddScore(10 * (comboScore * tempLocks));
             }
-
-            StartCoroutine(LaunchProjectilesWithDelay(projectilesToLaunch));
-            StartCoroutine(ShootVibrate());
-            shootFeedback.PlayFeedbacks();
-
-            if (lockingEnding)
-            {
-                playerLockingOff.Invoke();
-                lockingEnding = false;
-            }
-            if (shootTag)
-            {
-                PlayRandomShootTag();
-            }
-            else
-            {
-                PlayRandomShooting();
-            }
-
-            locking = true;
-            GameManager.instance.AddShotTally(1);
-            comboScore++;
-            Locks = Locks - 1;
-
-            musicPlayback.EventInstance.setParameterByName("Lock State", 0);
-            lockFeedback.StopFeedbacks();
-            FMODUnity.RuntimeManager.PlayOneShot("event:/Level - 172 Flux/Firing Blasts");
-
-            GameManager.instance.AddScore(10 * (comboScore * tempLocks));
+        }
+        else
+        {
         }
     }
-    else
-    {
-    }
-}
 
     private IEnumerator LaunchProjectilesWithDelay(List<PlayerLockedState> projectiles)
     {

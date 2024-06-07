@@ -14,6 +14,7 @@ namespace UltimateSpawner.Waves
         Instant,
         WhenAllDead,
         WhenAllSpawned,
+        MinimumDead,
     }
 
     public enum WaveCounterMode
@@ -51,6 +52,8 @@ namespace UltimateSpawner.Waves
 
         [Tooltip("When enabled, the spawn controller will wait for the item spawn request to be completed before continuing. This make take some time as the target spawn point may be occupied")]
         public bool waitForItemSpawn = true;
+
+        public int minimumKillCount = 3; // Added this line
 
         // Properties
         public override string NodeDisplayName
@@ -226,6 +229,37 @@ namespace UltimateSpawner.Waves
 
                             // Wait a frame
                             yield return null;
+                        }
+                        break;
+                    }
+
+                case WaveContinueMode.MinimumDead:
+                    {
+                        // Wait until the minimum number of enemies are killed
+                        while (true)
+                        {
+                            int deadCount = 0;
+
+                            // Check for any alive items
+                            for (int i = 0; i < spawnedItems.Count; i++)
+                                if (spawnedItems[i].IsAlive() == false)
+                                    deadCount++;
+
+                            // Check if the minimum kill count is reached
+                            if (deadCount >= minimumKillCount)
+                                break;
+
+                            // Wait a frame
+                            yield return null;
+                        }
+
+                        // Despawn remaining enemies
+                        for (int i = 0; i < spawnedItems.Count; i++)
+                        {
+                            if (spawnedItems[i].IsAlive())
+                            {
+                                UltimateSpawning.Despawn(spawnedItems[i].spawnedTransform);
+                            }
                         }
                         break;
                     }

@@ -32,6 +32,10 @@ namespace UltimateSpawner
         private int currentWaveDestroyedItemCount = 0;
         private WaveNodeType currentNodeType = WaveNodeType.None;
 
+        // Private field to store the current wave number for the inspector
+        [SerializeField]
+        private int currentWaveNumber;
+
         // Protected
         protected WaveState currentWaveState = null;
 
@@ -153,9 +157,28 @@ namespace UltimateSpawner
 
         public void RegenerateWaveGraph()
         {
-            foreach(WaveNode node in waveConfig.nodes)
+            if (waveConfig == null)
             {
-                node.OnGenerateWaveSession();
+                Debug.LogError("Wave configuration is not assigned.");
+                return;
+            }
+
+            if (waveConfig.nodes == null)
+            {
+                Debug.LogError("Wave configuration nodes are not initialized.");
+                return;
+            }
+
+            foreach (WaveNode node in waveConfig.nodes)
+            {
+                if (node != null)
+                {
+                    node.OnGenerateWaveSession();
+                }
+                else
+                {
+                    Debug.LogWarning("Encountered a null node in wave configuration.");
+                }
             }
         }
 
@@ -323,6 +346,18 @@ namespace UltimateSpawner
         protected override void OnControllerDestroyedItem(Transform item)
         {
             currentWaveDestroyedItemCount++;
+        }
+
+        // Update the current wave number in the inspector
+        private void UpdateCurrentWaveNumber()
+        {
+            currentWaveNumber = CurrentWave;
+        }
+
+        // Override the Update method to keep the wave number updated
+        private void Update()
+        {
+            UpdateCurrentWaveNumber();
         }
     }
 }

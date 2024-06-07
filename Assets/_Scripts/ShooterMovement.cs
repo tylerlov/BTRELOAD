@@ -26,7 +26,7 @@ public class ShooterMovement : MonoBehaviour
     private float toleranceX = 15f; // How close the reticle gets to the sides before rotation starts
     private float toleranceY = 20f; // How close the reticle gets to the top/bottom before rotation starts
 
-    public bool enableClamping = true; // New boolean to enable/disable clamping
+    public bool enableClamping = false; // New boolean to enable/disable clamping
 
     void Awake()
     {
@@ -138,5 +138,11 @@ public class ShooterMovement : MonoBehaviour
     {
         transform.localPosition = startingPosition;
         inputVector = Vector2.zero;
+    }
+
+    // New method to set clamping
+    public void SetClamping(bool enable)
+    {
+        enableClamping = enable;
     }
 }
