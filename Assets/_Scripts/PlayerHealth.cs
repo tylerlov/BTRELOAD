@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using BehaviorDesigner.Runtime.Tactical;
+using MoreMountains.Feedbacks;
 
 public class PlayerHealth : MonoBehaviour, IDamageable
 {
@@ -11,6 +12,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     public GameObject hitEffectPrefab; // Prefab for the hit effect
     public int poolSize = 10; // Size of the pool for hit effects
     private List<GameObject> hitEffectsPool; // Pool of hit effects
+    public GameObject hitFeedbackObject; // Reference to the feedback object
 
     public bool DodgeInvincibility { get; set; } = false;
 
@@ -75,6 +77,15 @@ public class PlayerHealth : MonoBehaviour, IDamageable
             StartCoroutine(DeactivateEffect(effect));
         }
 
+        if (hitFeedbackObject != null)
+        {
+            var feedbacks = hitFeedbackObject.GetComponent<MMFeedbacks>();
+            if (feedbacks != null)
+            {
+                feedbacks.PlayFeedbacks();
+            }
+        }
+
         if (GameManager.instance.Score == 0 && !invincible)
         {
             gameObject.SetActive(false);
@@ -94,6 +105,12 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     {
         yield return new WaitForSeconds(1.0f); // Wait for the duration of the effect
         effect.SetActive(false);
+    }
+
+    private IEnumerator DeactivateFeedbackObject(GameObject feedbackObject)
+    {
+        yield return new WaitForSeconds(1.0f); // Adjust the duration as needed
+        feedbackObject.SetActive(false);
     }
 
     public bool IsAlive()

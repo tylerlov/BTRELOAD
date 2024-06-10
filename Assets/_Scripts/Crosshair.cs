@@ -136,6 +136,11 @@ public class Crosshair : MonoBehaviour
     [SerializeField] private float rewindTimeScale = -1f; // Default value set to -1f, adjustable in Inspector
     [SerializeField] private float slowTimeScale = 0.1f; // Default value set to 0.1f, adjustable in Inspector
 
+    [Header("Lock-On Visuals")]
+    [SerializeField] private GameObject lockOnPrefab; // Prefab for visual effect on lock-on
+    [SerializeField] private float initialScale = 1f; // Initial scale for the prefab
+    [SerializeField] private float initialTransparency = 0.5f; // Initial transparency for the prefab
+
     void Awake()
     {
         playerInputActions = new DefaultControls();
@@ -508,11 +513,34 @@ void OnMusicalLock(KoreographyEvent evt)
             Locks++;
             projectileTargetList.Remove(projectileTargetList[0]);
 
+            // Instantiate and animate the lock-on prefab
+            if (lockOnPrefab != null)
+            {
+                GameObject lockOnInstance = Instantiate(lockOnPrefab, Reticle.transform);
+                lockOnInstance.SetActive(true);
+                lockOnInstance.transform.localPosition = Vector3.zero; // Center it on the Reticle
+                lockOnInstance.transform.localScale = Vector3.one * initialScale; // Set the initial scale
+
+                // Assuming the prefab has a SpriteRenderer component
+                SpriteRenderer spriteRenderer = lockOnInstance.GetComponent<SpriteRenderer>();
+                if (spriteRenderer != null)
+                {
+                    Color initialColor = spriteRenderer.color;
+                    initialColor.a = initialTransparency; // Set initial transparency to the specified value
+                    spriteRenderer.color = initialColor;
+
+                    // Animate transparency to fully visible
+                    spriteRenderer.DOFade(1f, 0.5f);
+                }
+
+                // Scale down and destroy
+                lockOnInstance.transform.DOScale(Vector3.zero, 1f).OnComplete(() => Destroy(lockOnInstance)); // Slower scaling
+            }
+
             if (!staminaController.canRewind)
             {
                 triggeredLockFire = true;
             }
-
         }
     }
     void OnMusicalShoot(KoreographyEvent evt)
@@ -703,6 +731,7 @@ void OnMusicalLock(KoreographyEvent evt)
     {
         if (Time.timeScale != 0f && CheckRewind())
         {
+            rewindFeedback.PlayFeedbacks(); // Play rewind feedback
             StartCoroutine(RewindToBeat());
         }
         if (Time.timeScale != 0f && SlowTime())

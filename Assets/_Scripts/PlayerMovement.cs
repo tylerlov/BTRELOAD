@@ -10,6 +10,7 @@ using System.Linq;
 using Chronos;
 using Lofelt.NiceVibrations;
 using SensorToolkit;
+using MoreMountains.Feedbacks;
 
 public class PlayerMovement : MonoBehaviour
 {
@@ -38,6 +39,9 @@ public class PlayerMovement : MonoBehaviour
 
     [Header("Look At Settings")]
     [SerializeField] private GameObject lookAtTarget;
+
+    [Header("Feedback Settings")]
+    [SerializeField] private GameObject ricochetFeedbackObject;
 
     #region Private Fields
 
@@ -295,6 +299,16 @@ public class PlayerMovement : MonoBehaviour
 
         // Trigger all Particle Systems in the Ricochet Blast GameObject
         PlayAllParticleSystems(ricochetBlast);
+
+        // Play the ricochet feedbacks
+        if (ricochetFeedbackObject != null)
+        {
+            var feedbacks = ricochetFeedbackObject.GetComponent<MMFeedbacks>();
+            if (feedbacks != null)
+            {
+                feedbacks.PlayFeedbacks();
+            }
+        }
     }
 
     private void PlayAllParticleSystems(GameObject root)
@@ -424,4 +438,3 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 }
-
