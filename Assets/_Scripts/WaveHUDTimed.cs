@@ -42,7 +42,7 @@ namespace UltimateSpawner.Demo
                     else
                     {
                         waveText.enabled = true;
-                        waveText.text = "ACTIVATE"; // Directly set text
+                        waveText.text = "<shake>ACTIVATE</shake>"; // Directly set text
                         StartCoroutine(DisableWaveTextAfterTime(waveTextDisplayTime));
 
                         OnWaveStarted();

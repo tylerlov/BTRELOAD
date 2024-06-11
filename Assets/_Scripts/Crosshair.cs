@@ -586,7 +586,7 @@ void OnMusicalLock(KoreographyEvent evt)
 
                             Transform currEnemyTarg = enemyTargetList[enemyTargetListIndex - 1];
 
-                            if (currEnemyTarg.gameObject.activeSelf)
+                            if (currEnemyTarg != null && currEnemyTarg.gameObject.activeSelf)
                             {
                                 lockedState.LaunchAtEnemy(currEnemyTarg);
                             }
@@ -616,6 +616,30 @@ void OnMusicalLock(KoreographyEvent evt)
 
                     // Safely remove the current item from LockedList
                     LockedList.RemoveAt(i);
+
+                    // Instantiate and animate the lock-on prefab for each projectile shot
+                    if (lockOnPrefab != null)
+                    {
+                        GameObject lockOnInstance = Instantiate(lockOnPrefab, Reticle.transform);
+                        lockOnInstance.SetActive(true);
+                        lockOnInstance.transform.localPosition = Vector3.zero; // Center it on the Reticle
+                        lockOnInstance.transform.localScale = Vector3.zero; // Set the initial scale to zero
+
+                        // Assuming the prefab has a SpriteRenderer component
+                        SpriteRenderer spriteRenderer = lockOnInstance.GetComponent<SpriteRenderer>();
+                        if (spriteRenderer != null)
+                        {
+                            Color initialColor = spriteRenderer.color;
+                            initialColor.a = 0f; // Set initial transparency to 0
+                            spriteRenderer.color = initialColor;
+
+                            // Animate transparency to fully visible and then back to not visible
+                            spriteRenderer.DOFade(1f, 0.25f).OnComplete(() => spriteRenderer.DOFade(0f, 0.25f));
+                        }
+
+                        // Scale up and destroy
+                        lockOnInstance.transform.DOScale(Vector3.one * initialScale, 0.5f).OnComplete(() => Destroy(lockOnInstance)); // Scale up
+                    }
                 }
 
                 StartCoroutine(LaunchProjectilesWithDelay(projectilesToLaunch));
@@ -650,6 +674,7 @@ void OnMusicalLock(KoreographyEvent evt)
         }
         else
         {
+            // Handle the case where the conditions are not met
         }
     }
 

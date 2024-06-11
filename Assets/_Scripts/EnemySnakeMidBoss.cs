@@ -28,6 +28,8 @@ public class EnemySnakeMidBoss : BaseBehaviour, IDamageable, ILimbDamageReceiver
     [SerializeField] private string koreographyEventID; // Serialized field to set in Inspector
     [SerializeField] private string projectileTimelineName;
     [SerializeField] private VisualEffect vfxPrefab;
+    [SerializeField] private EventReference shootEventPath; // Updated to use EventReference
+
 
     private Timeline myTime;
     private Clock clock;
@@ -195,6 +197,9 @@ public class EnemySnakeMidBoss : BaseBehaviour, IDamageable, ILimbDamageReceiver
             projectileTimelineName
         );
 
+        FMODUnity.RuntimeManager.PlayOneShot(shootEventPath, projectileOrigin.position);
+
+
         // Handle VFX
         VisualEffect vfx = GetPooledVFX();
         vfx.transform.position = projectileOrigin.position;
@@ -204,21 +209,6 @@ public class EnemySnakeMidBoss : BaseBehaviour, IDamageable, ILimbDamageReceiver
 
         StartCoroutine(DeactivateVFX(vfx));
 
-        FMOD.Studio.EventInstance shootEvent = FMODUnity.RuntimeManager.CreateInstance("event:/Enemy/Snake/Shoot");
-        shootEvent.setPitch(originalPitch / (myTime.timeScale == 0 ? float.PositiveInfinity : myTime.timeScale < 1.0f ? 4 : 1));
-       
-       // Correct usage of getPlaybackState with an out parameter
-       FMOD.Studio.PLAYBACK_STATE state;
-       if (shootEvent.getPlaybackState(out state) == FMOD.RESULT.OK)
-       {
-           if (state == FMOD.Studio.PLAYBACK_STATE.STOPPED)
-           {
-               shootEvent.release();
-           }
-       }
-       
-       shootEvent.start();
-       shootEvent.release();
     }
 
     private IEnumerator DeactivateVFX(VisualEffect vfx)

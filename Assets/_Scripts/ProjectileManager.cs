@@ -249,8 +249,9 @@ public class ProjectileManager : MonoBehaviour
     public void ReturnProjectileToPool(ProjectileStateBased projectile)
     {
         projectile.gameObject.SetActive(false);
+        projectile.rb.isKinematic = false; // Ensure it's non-kinematic
         projectile.rb.velocity = Vector3.zero; // Reset velocity
-        projectile.rb.isKinematic = true; // Optionally make it kinematic to avoid unnecessary physics calculations while inactive
+        projectile.rb.isKinematic = true; // Optionally make it kinematic again
 
         switch (projectile.poolType)
         {
@@ -432,3 +433,4 @@ public void ReRegisterEnemiesAndProjectiles()
     }
 }
 }
+
