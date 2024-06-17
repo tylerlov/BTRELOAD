@@ -1,0 +1,46 @@
+// Depth Ray Trace - iterates through all the tex3D pixels and returns a volume-space position of the raytraced ray.
+// Depth Sample Pixel - iterates through all the tex3D pixels and returns two values of red channel (sdf pixel intensity 0-1) and green channel (material value 0-1).
+// Written by Matej Vanco, January 2024.
+
+#pragma kernel DepthRayTrace
+#pragma kernel DepthSamplePixel
+
+uniform float3 RayOrigin;           // Ray origin in volume space
+uniform float3 RayDirection;        // Ray direction in volume space
+uniform int Iterations;             // Raytrace iterations (8-256)
+uniform float Threshold;            // Pixel detection threshold (0-1)
+uniform uint TexRes;                // 3D Texture resolution (8-256)
+Texture3D<float4> Tex3DInput;       // RW 3D Texture pixels (512-16777216)
+RWStructuredBuffer<float4> Result;  // 1-sized result; returns volume position xyz and w (1=hit,0=miss) or voxel value x and voxel material y
+
+[numthreads(8,8,8)]
+void DepthRayTrace(uint3 id : SV_DispatchThreadID)
+{
+    if(id.x >= TexRes || id.y >= TexRes || id.z >= TexRes)
+        return;
+
+    for (uint i = 0; i < asuint(Iterations); i++)
+    {
+        float3 p = lerp(RayOrigin, RayDirection, (float)i / Iterations);
+        if (Tex3DInput[p].r > Threshold)
+        {
+            Result[0].xyz = p.xyz;
+            Result[0].w = 1;
+            return;
+        }
+    }
+}
+
+[numthreads(8, 8, 8)]
+void DepthSamplePixel(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= TexRes || id.y >= TexRes || id.z >= TexRes)
+        return;
+
+    uint3 coords = uint3(RayOrigin).xyz;
+    if (coords.x >= TexRes || coords.y >= TexRes || coords.z >= TexRes)
+        return;
+    float4 ccolor = Tex3DInput[coords.xyz];
+    Result[0].x = ccolor.r;
+    Result[0].y = ccolor.g;
+}

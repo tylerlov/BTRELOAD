@@ -1,0 +1,192 @@
+﻿using UnityEngine;
+using FIMSpace.FOptimizing;
+
+/// <summary>
+/// FM: Helper class for single LOD level settings on #SCRIPTNAME#
+/// </summary>
+
+// REMOVE "[CreateAssetMenu...]" LINE AFTER CREATING LOD REFERENCE TO PUT IT INSIDE "Resources/Optimizers/Custom", THIS LINE WILL BE NOT NEEDED ANYMORE
+[CreateAssetMenu(fileName = "#SCRIPTNAME# Reference - Move it to Resources - Optimizers - Custom", menuName = "Custom Optimizers/#SCRIPTNAME# Reference (just first reference then remove this menu)")]
+
+// AFTER CREATING SCRIPT CHANGE IT'S FILENAME FROM COMPONENT TYPE TO "LOD_#SCRIPTNAME#""
+public sealed class LOD_#SCRIPTNAME# : FLOD_Base
+{
+    // !!!! Initial Values should be ones with THE BEST settings !!!! \\
+	// I RECOMMEND USING THIS VARIABLES WITH 0-1 RANGE AND CHANGE COMPONENTS' PARAMETERS
+	// BY MULTIPLYING VALUES WHICH COMPONENT HAVE WHEN GAME START() (IT'S ATOMATICALLY PROVIDED, JUST CHECK CODE AND COMMENTS)
+    [Space(4)]
+    [Range(0f, 1f)]
+    public float #SCRIPTNAME#_Param1 = 1f;
+    [Range(0f, 1f)]
+    public float #SCRIPTNAME#_Param2 = 1f;
+    public bool #SCRIPTNAME#_Bool = true;
+
+
+    #region Initialization (few adjustements needed)
+
+
+    /// PROVIDE SETTINGS FOR YOUR LOD
+    public LOD_#SCRIPTNAME#()
+    {
+        // If you don't want to use transitions (InterpolateBetween) - then set "SupportingTransitions" to false
+        // But if you implement interpolation then set it to true
+        SupportingTransitions = false; //!!!!!!!!!!!!!! TRUE OR FALSE - CHOOSE
+        HeaderText = "#SCRIPTNAME# LOD Settings";
+    }
+
+    /// DON'T CHANGE ANYTHING HERE
+    public override FLOD_Base GetLODInstance()
+    {
+        return CreateInstance<LOD_#SCRIPTNAME#>();
+    }
+
+    /// PROVIDE CORRECT COPYING
+    // IMPLEMENTATION REQUIRED !!!
+    public override FLOD_Base CreateNewCopy()
+    {
+        LOD_#SCRIPTNAME# lodA = CreateInstance<LOD_#SCRIPTNAME#>();
+        lodA.CopyBase(this);
+        lodA.#SCRIPTNAME#_Param1 = #SCRIPTNAME#_Param1;
+        lodA.#SCRIPTNAME#_Param2 = #SCRIPTNAME#_Param2;
+        lodA.#SCRIPTNAME#_Bool = #SCRIPTNAME#_Bool;
+        return lodA;
+    }
+
+    /// PROVIDE APPLYING EXACT VALUES OF YOUR COMPONENTVARIABLES TO PARAMETERS OF LOD
+    // IMPLEMENTATION REQUIRED !!!
+    public override void SetSameValuesAsComponent(Component component)
+    {
+        if (component == null) Debug.LogError("[Custom OPTIMIZERS] Given component is null instead of #SCRIPTNAME#!");
+
+        #SCRIPTNAME# comp = component as #SCRIPTNAME#;
+
+        if (comp != null)
+        {
+            // Assigning component's true values to this LOD class instance
+            //#SCRIPTNAME#_Param1 = comp.ComponentVariable1;
+            //#SCRIPTNAME#_Param2 = comp.ComponentVariable2;
+            //#SCRIPTNAME#_Bool = comp.ComponentVariable3;
+        }
+    }
+
+
+	#endregion
+
+
+	#region Operations (Some adjustements REQUIRED)
+
+	/// IMPLEMENT INTERPOLATION BETWEEN LOD VARIABLES, 
+	/// IF YOU DON'T WANT TO THEN CHANGE SupportingTransitions TO FALSE INSIDE CONTRUCTOR (INITIALIZATION REGION)
+	/// THEN YOU CAN ERASE THIS WHOLE METHOD
+	public override void InterpolateBetween(FLOD_Base lodA, FLOD_Base lodB, float transitionToB)
+    {
+        base.InterpolateBetween(lodA, lodB, transitionToB);
+
+        LOD_#SCRIPTNAME# a = lodA as LOD_#SCRIPTNAME#;
+        LOD_#SCRIPTNAME# b = lodB as LOD_#SCRIPTNAME#;
+
+        #SCRIPTNAME#_Param1 = Mathf.Lerp(a.#SCRIPTNAME#_Param1, b.#SCRIPTNAME#_Param1, transitionToB);
+        #SCRIPTNAME#_Param2 = Mathf.Lerp(a.#SCRIPTNAME#_Param2, b.#SCRIPTNAME#_Param2, transitionToB);
+        #SCRIPTNAME#_Bool = BoolTransition(#SCRIPTNAME#_Bool, a.#SCRIPTNAME#_Bool, b.#SCRIPTNAME#_Bool, transitionToB );
+		// You don't need to define InterpolateBetween() method - then set 'SupportingTransitions = false' inside LODSController_#SCRIPTNAME# script
+    }
+
+
+	/// IMPLEMENT APPLYING YOUR LOD SETTINGS TO TARGET COMPONENT (YOU CAN REFERENCE FROM INITIAL SETTINGS (there are not multipliers but components values, check SetSameValuesAsComponent() ) FOR MULTIPLIERS)
+	// IMPLEMENTATION REQUIRED !!!
+	public override void ApplySettingsToComponent(Component component, FLOD_Base initialSettingsReference)
+	{
+		// Casting LOD to correct type
+		LOD_#SCRIPTNAME# initialSettings = initialSettingsReference as LOD_#SCRIPTNAME#;
+
+		#region Security
+
+		// Checking if casting is right
+		if (initialSettings == null) { Debug.Log("[Custom OPTIMIZERS] Target LOD is not #SCRIPTNAME# LOD or is null"); return; }
+
+		#endregion
+
+		// YOUR CODE
+		#SCRIPTNAME# comp = component as #SCRIPTNAME#;
+
+		// Setting new settings to optimized component
+		//comp.param1 = #SCRIPTNAME#_Param1 * initialSettings.#SCRIPTNAME#_Param1;
+		//comp.param2 = #SCRIPTNAME#_Param2 * initialSettings.#SCRIPTNAME#_Param2;
+		//comp.param3 = #SCRIPTNAME#_Bool;
+		// YOUR CODE END
+
+        base.ApplySettingsToComponent(component, initialSettingsReference); // Enable disable component basing on "Enable" variable from parent class
+	}
+
+	#endregion
+
+
+	#region Auto Settings (YOU CAN ERASE IT ALL IF YOU DON'T WANT MAKE YOUR WORK FASTER WITH AUTO SETTINGS)
+
+
+	/// IMPLEMENT AUTO SETTING PARAMETERS FOR DIFFERENT LOD FOR LODS COUNT (IF YOU DONT WANT YOU DONT NEED TO IMPLEMENT THIS)
+	public override void SetAutoSettingsAsForLODLevel(int lodIndex, int lodCount, Component source)
+	{
+		#SCRIPTNAME# comp = source as #SCRIPTNAME#;
+		if (comp == null) Debug.LogError("[Custom OPTIMIZERS] Given component for reference values is null or is not #SCRIPTNAME# Component!");
+
+		// REMEMBER: LOD = 0 is not nearest but one after nearest
+		// Trying to auto configure universal LOD settings
+
+		float mul = GetValueForLODLevel(1f, 0f, lodIndex, lodCount); // Starts from 0.75 (LOD1), then 0.5, 0.25 and 0.0 (Culled) if lod count is = 4
+
+		// Your auto settings depending of LOD count
+        // For example LOD count = 3, you want every next LOD go with parameters from 1f, to 0.6f, 0.3f, 0f - when culled
+        #SCRIPTNAME#_Param1 = mul;
+        if ( lodIndex > 0 ) #SCRIPTNAME#_Param2 = mul;
+
+		name = "LOD" + (lodIndex + 2); // + 2 to view it in more responsive way for user inside inspector window
+	}
+
+
+	/// AUTO SETTING SETTINGS FOR CULLED LOD
+	public override void SetSettingsAsForCulled(Component component)
+	{
+		base.SetSettingsAsForCulled(component);
+		#SCRIPTNAME#_Param1 = 0f;
+		#SCRIPTNAME#_Param2 = 0f;
+		#SCRIPTNAME#_Bool = false;
+	}
+
+
+	/// AUTO SETTING SETTINGS FOR NEAREST (HIGHEST QUALITY) LOD (DONT NEED TO DO THIS IF INITIAL VALUES FOR YOUR VARIABLES ARE ALREADY MAX)
+	public override void SetSettingsAsForNearest(Component component)
+	{
+		base.SetSettingsAsForNearest(component);
+
+		#SCRIPTNAME# comp = component as #SCRIPTNAME#;
+		#SCRIPTNAME#_Param1 = 1f;
+		#SCRIPTNAME#_Param1 = 1f;
+	}
+
+
+	/// YOU CAN LEAVE IT AS IT IS, OR ADD OWN SETTINGS FOR  HIDDEN AUTO SETTINGS
+	public override void SetSettingsAsForHidden(Component component)
+    {
+        base.SetSettingsAsForHidden(component);
+		// FOR EXAMPLE: Disable = true;
+    }
+
+
+	#endregion
+
+
+	// NOTHING TO CHANGE, BUT MOVE THIS LOD FILE (Right mouse button in project folder, Custom Optimizers > Create Reference) TO "Resources/Optimizers/Custom" directory
+    public override FComponentLODsController GenerateLODController(Component target, FOptimizer_Base optimizer)
+    {
+        #SCRIPTNAME# c = target as #SCRIPTNAME#;
+        if (!c) c = target.GetComponentInChildren<#SCRIPTNAME#>();
+        if (c) if (!optimizer.ContainsComponent(c))
+            {
+                return new FComponentLODsController(optimizer, c, "#SCRIPTNAME#", this);
+            }
+
+        return null;
+    }
+
+}

@@ -1,0 +1,44 @@
+// Volume Mesh Printer - iterates through all the tex3D pixels and writes a vertex-point pixel value to the red channel & material instance to the green channel of RT in range 0-1.
+// Written by Matej Vanco, January 2024.
+
+#pragma kernel VolumeMeshPrinter
+
+uniform int VertexCount;            // Vertices length
+StructuredBuffer<float3> Vertices;  // Volume-space vertices (0-TexRes)
+uniform float BrushRadius;          // Brush radius (0-999)
+uniform float BrushSmoothness;      // Brush smoothness (0-1)
+uniform float BrushIntensity;       // Brush pixel intensity ~((-1)-1)
+uniform float MaterialValue;        // Existing material instance value of the common family (0-1)
+uniform uint TexRes;                // 3D Texture resolution (8-256)
+uniform int BrushShape;             // AAbb(1) or radial (0)?
+RWTexture3D<float4> Tex3DInput;     // RW 3D Texture pixels (512-16777216)
+
+[numthreads(8,8,8)]
+void VolumeMeshPrinter(uint3 id : SV_DispatchThreadID)
+{
+    if(id.x >= TexRes || id.y >= TexRes || id.z >= TexRes)
+        return;
+
+    float3 halfSize = 0.5 * float3(BrushRadius, BrushRadius, BrushRadius);
+    for (int i = 0; i < VertexCount; i++)
+    {
+        float4 ccolor = Tex3DInput[id.xyz];
+        float volume = 0;
+        float material = 0;
+        if (BrushShape == 0)
+        {
+            volume = 1 - smoothstep(BrushSmoothness, 1., length(Vertices[i].xyz - id.xyz) - BrushRadius);
+            material = 1 - smoothstep(BrushSmoothness, 1., length(Vertices[i].xyz - id.xyz) - BrushRadius * 1.2);
+        }
+        else
+        {
+            float3 delta = abs(Vertices[i].xyz - id.xyz);
+            volume = step(0.0, halfSize.x - delta.x) * step(0.0, halfSize.y - delta.y) * step(0.0, halfSize.z - delta.z);
+            material = step(0.0, halfSize.x - delta.x) * step(0.0, halfSize.y - delta.y) * step(0.0, halfSize.z - delta.z);
+        }
+        Tex3DInput[id.xyz] = float4(
+            saturate(saturate(ccolor.r + volume * BrushIntensity)),
+            lerp(ccolor.g, MaterialValue, material),
+            ccolor.ba);
+    }
+}

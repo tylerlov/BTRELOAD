@@ -1,0 +1,13 @@
+// RT Convertor - iterates through all the tex3D pixels and writes to the Render Texture 3D.
+// Written by Matej Vanco, January 2024.
+
+#pragma kernel RTConvertor
+
+Texture3D<float4> TexInput;		// Input 3D Texture pixels (512-16777216)
+RWTexture3D<float4> TexOutput;	// RW 3D Render Texture pixels (512-16777216)
+
+[numthreads(8,8,8)]
+void RTConvertor(uint3 id : SV_DispatchThreadID)
+{
+	TexOutput[id.xyz] = TexInput[id.xyz];
+}

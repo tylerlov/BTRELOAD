@@ -21,6 +21,9 @@ public class AdjustSongParameters : MonoBehaviour
 
     private CinemachineStateDrivenCamera stateDrivenCamera; // Reference to the State Driven Camera
 
+    [Header("Debug Info")]
+    [SerializeField] private string currentSectionName; // Add this field
+
     private void OnEnable()
     {
         SceneManager.sceneLoaded += OnSceneLoaded;
@@ -120,6 +123,8 @@ public class AdjustSongParameters : MonoBehaviour
             return;
         }
         musicPlayback.EventInstance.setParameterByName("Sections", _songArrangement.sections[currentSection].section);
+
+        currentSectionName = _songArrangement.sections[currentSection].name; // Update the section name
 
         if (_songArrangement.sections[currentSection].waves == 0)
         {

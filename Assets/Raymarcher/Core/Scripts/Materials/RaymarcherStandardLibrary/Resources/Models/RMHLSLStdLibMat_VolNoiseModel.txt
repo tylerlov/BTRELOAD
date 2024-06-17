@@ -1,0 +1,4 @@
+half4 CalculateVolNoiseModel(in RMStandardNoiseData data, in Ray ray, half4 sdfRGBA)
+{
+	return CalculateVolNoiseModelWrapper(data, ray, sdfRGBA);
+}

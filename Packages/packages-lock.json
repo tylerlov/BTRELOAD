@@ -93,9 +93,19 @@
       "source": "embedded",
       "dependencies": {}
     },
+    "com.projectdawn.impostor": {
+      "version": "file:com.projectdawn.impostor",
+      "depth": 0,
+      "source": "embedded",
+      "dependencies": {
+        "com.unity.shadergraph": "12.1.10",
+        "com.unity.render-pipelines.core": "12.1.10",
+        "com.unity.mathematics": "1.2.1"
+      }
+    },
     "com.unity.burst": {
       "version": "1.8.13",
-      "depth": 1,
+      "depth": 0,
       "source": "registry",
       "dependencies": {
         "com.unity.mathematics": "1.2.1",
@@ -133,7 +143,7 @@
     },
     "com.unity.editorcoroutines": {
       "version": "1.0.0",
-      "depth": 1,
+      "depth": 0,
       "source": "registry",
       "dependencies": {},
       "url": "https://packages.unity.com"

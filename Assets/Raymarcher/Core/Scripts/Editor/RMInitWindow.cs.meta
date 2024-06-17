@@ -1,0 +1,26 @@
+fileFormatVersion: 2
+guid: 5235d77a132bb8a4bba7e89263a91e58
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - m_ViewDataDictionary: {instanceID: 0}
+  - font: {fileID: 12800000, guid: 469ce8e9d0df8d94e8d286bfd00050ea, type: 3}
+  - eIcon_Head: {fileID: 2800000, guid: 2de3240bf20db5f4b858f1be4de454e4, type: 3}
+  - eIcon_EntityAssetName: {fileID: 2800000, guid: de95b1ecedbd9454c997d51cf8a97f4f, type: 3}
+  - eIcon_PipelineBuiltIn: {fileID: 2800000, guid: 3bc1438a6e4bd8d4aafbc58eae219250, type: 3}
+  - eIcon_PipelineURP: {fileID: 2800000, guid: 9eec1c39a28831e44ba3d0c8c5acb1bd, type: 3}
+  - eIcon_PipelineHDRP: {fileID: 2800000, guid: 4de3600a881569a4584b7b3fffc122ca, type: 3}
+  - eIcon_RenderQuality: {fileID: 2800000, guid: 2d35587d444c9924e8b224153e41e196, type: 3}
+  - eIcon_RenderStandard: {fileID: 2800000, guid: 7226809374dadf149ada0652dfc1489d, type: 3}
+  - eIcon_RenderPerformant: {fileID: 2800000, guid: 78dad06b9541de44182d7fc587a573f8, type: 3}
+  - eIcon_PlatformPCConsole: {fileID: 2800000, guid: 32cea1b0e11eb8d4185e57e582eaabe3, type: 3}
+  - eIcon_PlatformPCVR: {fileID: 2800000, guid: 4dfaf6d97cb7b4144aae1a9a291529f1, type: 3}
+  - eIcon_PlatformMobile: {fileID: 2800000, guid: 1a2c1b2929fcf8c449e3ff5f5e05cf5a, type: 3}
+  - eIcon_PlatformMobileVR: {fileID: 2800000, guid: 439ef29a5852a994a976d96b2efed8b3, type: 3}
+  - eIcon_PlatformWebGL: {fileID: 2800000, guid: a88c23142aac113488d1d385b4686e6e, type: 3}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

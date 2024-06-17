@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: bd8e511d53bb7e54d92971af690d9853
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - eIcon_Head: {fileID: 2800000, guid: ac1f419e52fdbe0489b882df5bf6b210, type: 3}
+  - eIcon_RenderSettings: {fileID: 2800000, guid: 8172c8d7d9226a54c9eedfdeb497e518, type: 3}
+  - eIcon_RenderFeatures: {fileID: 2800000, guid: e97afa0596afa6a4080df460fd8a3b36, type: 3}
+  - eIcon_RenderLighting: {fileID: 2800000, guid: f9b8262bfed31d14883a4c1fe3cd6d75, type: 3}
+  - eIcon_RenderMaterials: {fileID: 2800000, guid: 9affc3f23e2866648886d0d9c82c6b59, type: 3}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

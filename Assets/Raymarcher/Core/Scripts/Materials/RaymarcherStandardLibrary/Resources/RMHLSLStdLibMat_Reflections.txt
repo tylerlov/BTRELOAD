@@ -1,0 +1,45 @@
+﻿half4 CalculateReflections#RAYMARCHER-METHOD-MODIFIABLE#(in RMStandardPBRData data, in Ray ray, half4 sdfRGBA)
+{
+#ifndef STANDARD_REFLECTION
+	return sdfRGBA;
+#endif
+
+	half3 normals = CalculateNormals(ray.p, EPSILONUP);
+	normals *= lerp(1, HASH1(ray.p.x), data.reflectionJitter);
+
+	Ray r = (Ray)0;
+	r.sceneDepth = ray.sceneDepth;
+	r.d = reflect(ray.nd, normals);
+	r.nd = normalize(r.d);
+	r.o = ray.p + (r.nd * EPSILONUP);
+#ifdef RAYMARCHER_TYPE_QUALITY
+	half2x4 sdf = 0;
+#elif defined(RAYMARCHER_TYPE_STANDARD)
+	half4 sdf = 0;
+#else // PERFORMANT
+	half2 sdf = 0;
+#endif
+	if (RaymarchIntersection(r, sdf))
+	{ 
+#ifdef RAYMARCHER_TYPE_QUALITY
+		int sdfMaterialType = sdf[1].x;
+		int sdfMaterialInstance = sdf[1].y;
+		half4 color = half4(sdf[0].gba, 1);
+#else // STANDARD/PERFORMANT
+		int sdfMaterialType = -1;
+		int sdfMaterialInstance = -1;
+		const half3 COL = half3(.5, .5, .5);
+		const half3 COLRED = half3(1., .0, .0);
+		half4 color = half4(lerp(COL, ApplyHue(COLRED, sdf.y), RaymarcherGlobalHueSaturation), 1);
+#endif
+
+#ifdef RAYMARCHER_TYPE_STANDARD
+		sdfMaterialType = sdf.z;
+		sdfMaterialInstance = sdf.w;
+#endif
+		//sdfRGBA += float4(#RAYMARCHER-METHOD-RENDER-POINTER#(r, color, sdfMaterialType, sdfMaterialInstance).rgb, 0) * data.reflectionIntensity;
+		sdfRGBA += float4(RM_PerObjRenderMaterials(r, color, sdfMaterialType, sdfMaterialInstance).rgb, 0) * data.reflectionIntensity;
+	}
+
+	return sdfRGBA;
+}

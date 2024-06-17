@@ -184,6 +184,7 @@ public class Crosshair : MonoBehaviour
 
         // Reset or initialize any other scene-dependent settings here
         ResetSceneSpecificSettings();
+        ClearLockedTargets(); // Clear all locked targets on scene load
     }
 
     // Example method to reset or initialize scene-specific settings
@@ -1003,5 +1004,13 @@ void OnMusicalLock(KoreographyEvent evt)
     }
 #endif
 
-    
+    // Method to clear all locked targets
+    public void ClearLockedTargets()
+    {
+        enemyTargetList.Clear();
+        projectileTargetList.Clear();
+        LockedList.Clear();
+        enemyTarget = null;
+        Debug.Log("Cleared all locked targets.");
+    }
 }

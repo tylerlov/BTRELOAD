@@ -1,0 +1,2 @@
+# Impostor Graph
+The Impostor Graph is a tool that allows users to create custom impostors for real-time rendering of distant objects. It enables users to build a graph of nodes that output texture atlases, materials, meshes, or other custom data, providing complete control over the impostor building process.

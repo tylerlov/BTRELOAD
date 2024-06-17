@@ -1,0 +1,26 @@
+{
+    "name": "ProjectDawn.Impostor.HighDefinition",
+    "rootNamespace": "",
+    "references": [
+        "GUID:d8b63aba1907145bea998dd612889d6b",
+        "GUID:457756d89b35d2941b3e7b37b4ece6f1",
+        "GUID:df380645f10b7bc4b97d4f5eb6303d95",
+        "GUID:ca937d03ee5dd4d699091438dc0f3ae6",
+        "GUID:faf2522d659d7c440a792808dc782a65"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [
+        {
+            "name": "com.unity.render-pipelines.high-definition",
+            "expression": "12.1.10",
+            "define": "HIGH_DEFINITION_RENDER_PIPELINE"
+        }
+    ],
+    "noEngineReferences": false
+}

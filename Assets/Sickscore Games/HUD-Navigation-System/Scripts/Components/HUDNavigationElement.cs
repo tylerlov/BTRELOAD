@@ -111,8 +111,16 @@ namespace SickscoreGames.HUDNavigationSystem
 		{
 			if (!_isInitialized)
 				return;
-			
-			Initialize ();
+
+			// Initialize markers only if they are null
+			if (Radar == null) CreateRadarMarker();
+			if (CompassBar == null) CreateCompassBarMarker();
+			if (Indicator == null) CreateIndicatorMarker();
+			if (Minimap == null) CreateMinimapMarker();
+
+			// Add element to the navigation system
+			if (HUDNavigationSystem.Instance != null)
+				HUDNavigationSystem.Instance.AddNavigationElement(this);
 		}
 
 

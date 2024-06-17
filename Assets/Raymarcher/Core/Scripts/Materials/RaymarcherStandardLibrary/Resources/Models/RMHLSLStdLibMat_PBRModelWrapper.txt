@@ -1,0 +1,5 @@
+half4 CalculatePBRModelWrapper(in RMStandardPBRData data, in Ray ray, half4 sdfRGBA, in Texture2DArray texPack, in SamplerState texPackSampler, out half3 normal)
+{
+	sdfRGBA = CalculateLitModelWrapper(data.litData, ray, sdfRGBA, texPack, texPackSampler, normal);
+	return CalculateSceneRefraction(sdfRGBA, ray, normal, data.refractionIntensity, data.refractionOpacity, data.refractionInverse, data.refractionDensity);
+}

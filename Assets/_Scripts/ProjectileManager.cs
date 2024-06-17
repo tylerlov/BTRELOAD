@@ -3,6 +3,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement; // Required for scene management functions
+using SickscoreGames.HUDNavigationSystem; // Add this line
+
 
 public class ProjectileManager : MonoBehaviour
 {
@@ -151,6 +153,13 @@ public class ProjectileManager : MonoBehaviour
             projectile.UpdateMaterial(material); // Update the material reference in ProjectileStateBased
         }
 
+        // Disable HUDNavigationElement for static shooter
+        var hudNavigationElement = projectile.GetComponent<HUDNavigationElement>();
+        if (hudNavigationElement != null)
+        {
+            hudNavigationElement.enabled = false;
+        }
+
         RegisterProjectile(projectile);
     }
 
@@ -197,6 +206,13 @@ public class ProjectileManager : MonoBehaviour
         }
 
         projectile.initialSpeed = speed;
+
+        // Enable HUDNavigationElement for enemy shooter
+        var hudNavigationElement = projectile.GetComponent<HUDNavigationElement>();
+        if (hudNavigationElement != null)
+        {
+            hudNavigationElement.enabled = true;
+        }
 
         RegisterProjectile(projectile);
     }
@@ -433,4 +449,3 @@ public void ReRegisterEnemiesAndProjectiles()
     }
 }
 }
-

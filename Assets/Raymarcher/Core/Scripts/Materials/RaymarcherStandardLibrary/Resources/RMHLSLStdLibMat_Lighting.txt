@@ -1,0 +1,115 @@
+
+half4 CalculateFullLightingModel(half4 sdfRGBA, in RMStandardLitData data, in float3 rayHitPosition, in half3 rayNormalizedDirection, in half3 normals)
+{
+	half3 diffuse = half3(0, 0, 0);
+	half3 specular = half3(0, 0, 0);
+
+	// Main light Lambert
+#ifdef RAYMARCHER_MAIN_LIGHT
+
+	half3 mainLightDiffuse = (RaymarcherDirectionalLightColor.rgb * RaymarcherDirectionalLightColor.a)
+		* lerp(data.shadingTint, 1, CalculateLambertianModel(data.shadingCoverage, data.shadingSmoothness, normals, -RaymarcherDirectionalLightDir));
+
+	// Main light shadows
+	half mainLightShadow = 1.0;
+	#ifdef STANDARD_SHADOWS
+		mainLightShadow = lerp(1,
+			saturate(CalculateShadows(data, rayHitPosition + (normals * EPSILON), -RaymarcherDirectionalLightDir.xyz, 64)),
+			data.useShadows);
+		mainLightDiffuse *= mainLightShadow;
+	#endif
+
+	// Main light specular
+	#ifdef STANDARD_SPECULAR
+		specular = lerp(specular, RaymarcherDirectionalLightColor.rgb *
+			CalculateBlinnPhongSpecular(
+				data.specularSize,
+				data.specularGlossiness,
+				data.specularIntensity,
+				normals,
+				rayNormalizedDirection,
+				RaymarcherDirectionalLightDir.xyz,
+				1,
+				RaymarcherDirectionalLightColor.a) * pow(mainLightShadow, 4),
+			data.includeDirectionalLight);
+	#endif
+
+		diffuse = lerp(diffuse, mainLightDiffuse, data.includeDirectionalLight);
+
+#endif
+
+
+	// Add Lights Lambert
+#if defined(RAYMARCHER_LIGHT_COUNT) && defined(RAYMARCHER_ADDITIONAL_LIGHTS)
+
+	half3 addLightDiffuse = half3(0, 0, 0);
+	half addLightShadow = 1.0;
+	half3 addLightSpecular = half3(0, 0, 0);
+
+	[unroll(RAYMARCHER_LIGHT_COUNT)] for (uint i = 0; i < RAYMARCHER_LIGHT_COUNT; i += 3)
+	{
+		// Add-Light data
+		half4 p0 = RaymarcherAddLightsData[i];		// xyz = light position, w = light intensity
+		half4 p1 = RaymarcherAddLightsData[i + 1];	// rgb = light color, w = light range
+		half4 p2 = RaymarcherAddLightsData[i + 2];	// x = light shadow intensity, y = light shadow attenuation offset
+		p0.w = abs(p0.w);
+		p1.w = abs(p1.w);
+
+		float3 dirToLight = p0.xyz - rayHitPosition;
+		float distToLight = length(dirToLight);
+		half lambertReflection = CalculateLambertianModel(data.shadingCoverage, data.shadingSmoothness, normalize(dirToLight), normals);
+
+		// Attenuation & intensity
+	#ifdef STANDARD_ADDITIONAL_LIGHTS_LINEAR_ATTENUATION
+		float rangedAttenuation = saturate(1.0 - saturate(distToLight / p1.w)) * lambertReflection * p0.w;
+	#else
+		float rangedAttenuation = saturate(exp(-distToLight / (p1.w / 2.0))) * lambertReflection * p0.w;
+	#endif
+
+	#ifdef STANDARD_SAMPLE_TRANSLUCENCY
+		#ifdef RAYMARCHER_TYPE_QUALITY
+			float sdf = SdfObjectBuffer(p0.xyz + (normals * EPSILONUPUPTWO))[0].x;
+		#else
+			float sdf = SdfObjectBuffer(p0.xyz + (normals * EPSILONUPUPTWO)).x;
+		#endif
+			rangedAttenuation *= smoothstep(data.translucencyMinAbsorption, data.translucencyMaxAbsorption, sdf);
+	#endif
+
+		// Diffuse
+		half3 currentColor = p1.rgb * lerp(data.shadingTint, 1, rangedAttenuation);
+			
+		// Shadows
+	#ifdef STANDARD_SHADOWS
+		float currentShadow = saturate(CalculateShadows(data, rayHitPosition + (normals * EPSILONUP), normalize(dirToLight), distToLight, p2.y))
+			* rangedAttenuation * p2.x * data.includeAdditionalLights * data.useShadows;
+		addLightShadow += lerp(0, currentShadow, step(EPSILON, p2.x) * p2.x);
+		currentShadow = lerp(1, currentShadow, data.useShadows * p2.x);
+		currentColor *= currentShadow;
+	#endif
+
+		// Specular
+	#ifdef STANDARD_SPECULAR
+		half3 currentSpecular = p1.rgb * CalculateBlinnPhongSpecular(
+			data.specularSize,
+			data.specularGlossiness,
+			data.specularIntensity,
+			normals,
+			rayNormalizedDirection,
+			normalize(rayHitPosition - p0.xyz),
+			rangedAttenuation, p0.a) * rangedAttenuation;
+			#ifdef STANDARD_SHADOWS
+				currentSpecular *= currentShadow;
+			#endif
+			addLightSpecular += currentSpecular * data.includeAdditionalLights;
+	#endif
+
+		addLightDiffuse += currentColor * data.includeAdditionalLights;
+	}
+
+	diffuse += lerp(0, addLightDiffuse * addLightShadow, data.includeAdditionalLights);
+	specular += addLightSpecular;
+
+#endif
+
+	return sdfRGBA * half4(diffuse, 1) + half4(specular, 0);
+}

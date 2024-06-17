@@ -1,0 +1,27 @@
+
+half4 CalculateMobileSLitModelWrapper(in RMStandardMobileSLitData data, in Ray ray, half4 sdfRGBA, half3 normal)
+{
+#ifdef STANDARD_LIGHTING
+	half3 lightingColor = 1;
+	#ifdef RAYMARCHER_MAIN_LIGHT
+		lightingColor = RaymarcherDirectionalLightColor.rgb * lerp(data.shadingTint.rgb, 1, CalculateLambertianModel(data.shadingCovAndSmh.x, data.shadingCovAndSmh.y, normal, -RaymarcherDirectionalLightDir))
+			 * RaymarcherDirectionalLightColor.a;
+		sdfRGBA.rgb *= lightingColor;
+		// Specular
+		#ifdef STANDARD_SPECULAR
+			sdfRGBA.rgb += RaymarcherDirectionalLightColor.rgb * CalculateBlinnPhongSpecular(data.specularIntensAndGloss.y, data.specularIntensAndGloss.y, data.specularIntensAndGloss.x, normal, ray.nd, RaymarcherDirectionalLightDir.xyz, 1, RaymarcherDirectionalLightColor.a);
+		#endif
+	#endif
+#endif
+
+#ifdef STANDARD_REFRACTION
+	#ifdef STANDARD_REFRACTION_MAGNIFY
+		half3 sceneTex = CalculateSceneColor(ray.uv - normal.xy * 0.02).rgb;
+	#else
+		half3 sceneTex = CalculateSceneColor(ray.uv + normal.xy * 0.02).rgb;
+	#endif
+	sdfRGBA.rgb *= lerp(1., sceneTex, 0.8);
+#endif
+
+return sdfRGBA;
+}

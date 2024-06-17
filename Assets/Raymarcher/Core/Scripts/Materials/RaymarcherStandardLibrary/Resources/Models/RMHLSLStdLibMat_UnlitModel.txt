@@ -1,0 +1,5 @@
+half4 CalculateUnlitModel(in RMStandardUnlitData data, in Ray ray, half4 sdfRGBA)
+{
+	half3 normals;
+	return CalculateUnlitModelWrapper(data, ray, sdfRGBA, RMStandardUnlitDataTextures, sampler_RMStandardUnlitDataTextures, normals);
+}

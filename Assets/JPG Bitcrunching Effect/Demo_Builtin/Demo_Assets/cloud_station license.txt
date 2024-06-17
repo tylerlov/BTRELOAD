@@ -1,0 +1,8 @@
+Model Information:
+* title:	Cloud Station
+* source:	https://sketchfab.com/3d-models/cloud-station-26f81b24d83441ba88c7e80a52adbaaf
+* author:	Alexa Kruckenberg (https://sketchfab.com/AlexaKruckenberg)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.

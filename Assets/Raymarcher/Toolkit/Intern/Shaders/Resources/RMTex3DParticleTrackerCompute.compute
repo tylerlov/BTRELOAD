@@ -1,0 +1,32 @@
+// Particle Tracker - iterates through all the tex3D pixels and tracks each particle. Particle input contains particle xyz position and particle size (w).
+// Particle Clear - iterates through all the tex3D pixels and clears all the pixels.
+// Written by Matej Vanco, January 2024.
+
+#pragma kernel ParticleTracker
+#pragma kernel ParticleClear
+
+uniform float PointRadius;                  // Particle point radius (0-999)
+uniform float PointSmoothness;              // particle point smoothness (0-1)
+uniform uint TexRes;                        // 3D Texture resolution (8-256)
+uniform uint ParticleCount;                 // Max particle count (10-1000)
+RWTexture3D<float4> Tex3DInput;             // RW 3D Texture pixels (512-16777216)
+StructuredBuffer<float4> ParticlesInput;    // Particles input xyz (volume space position) w (particle size) [10-1000]
+
+[numthreads(8,8,8)]
+void ParticleTracker(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= TexRes || id.y >= TexRes || id.z >= TexRes)
+        return;
+    float accum = 0;
+    for (uint i = 0; i < ParticleCount; i++)
+        accum += (1 - smoothstep(PointSmoothness, 1., (length(ParticlesInput[i].xyz - id.xyz) - PointRadius * ParticlesInput[i].w))) * step(1.0e-4, ParticlesInput[i].w);
+    Tex3DInput[id.xyz] = float4(accum, Tex3DInput[id.xyz].gba);
+}
+
+[numthreads(8, 8, 8)]
+void ParticleClear(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= TexRes || id.y >= TexRes || id.z >= TexRes)
+        return;
+    Tex3DInput[id.xyz] = float4(0, Tex3DInput[id.xyz].gba);
+}

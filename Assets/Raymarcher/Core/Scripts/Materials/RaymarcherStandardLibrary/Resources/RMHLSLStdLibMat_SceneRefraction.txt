@@ -1,0 +1,20 @@
+﻿half4 CalculateSceneRefraction(in half4 sdfRGBA, in Ray ray, in half3 normal, in half refractionIntensity, in half refractionOpacity, in half refractionInverse, in half refractionDensity)
+{
+#ifdef STANDARD_REFRACTION
+	#ifdef STANDARD_REFRACTION_MAGNIFY
+		half3 sceneTex = CalculateSceneColor(ray.uv - normal.xy * refractionIntensity).rgb;
+	#else
+		half3 sceneTex = CalculateSceneColor(ray.uv + normal.xy * refractionIntensity).rgb;
+	#endif
+	#ifdef STANDARD_RESPECT_DENSITY
+		Ray r = ray;
+		r.o = ray.p;
+		float acc;
+		RaymarchIntersectionAccumulative(r, acc);
+		sdfRGBA.rgb *= lerp(1., sceneTex, saturate(refractionOpacity * abs(refractionInverse - acc) * refractionDensity + refractionOpacity));
+	#else
+		sdfRGBA.rgb *= lerp(1., sceneTex, refractionOpacity);
+	#endif
+#endif
+	return sdfRGBA;
+}

@@ -1,0 +1,32 @@
+// Volume Voxel Painter - iterates through all the tex3D pixels and writes a voxel-point pixel value to the red channel & material instance to the green channel of RT in range 0-1.
+// Written by Matej Vanco, January 2024.
+
+#pragma kernel VolumeVoxelPainter
+
+uniform float3 BrushCoords;     // Volume-space brush coordinates (0-TexRes)
+uniform float BrushRadius;      // Brush radius (0-999)
+uniform float BrushSmoothness;  // Brush smoothness (0-1)
+uniform float BrushIntensity;   // Brush pixel intensity ~((-1)-1)
+uniform float MaterialException;// Except material index (0-4)
+uniform float IncludeExcept;    // Include exception?
+uniform float MaterialValue;    // Existing material instance value of the common family (0-1)
+uniform float ExtraValue;       // Value for the extra channel (0-1)
+uniform float IncludeExtra;     // Include extra channel in this dispatch?
+uniform uint TexRes;            // 3D Texture resolution (8-256)
+RWTexture3D<float4> Tex3DInput; // RW 3D Texture pixels (512-16777216)
+
+[numthreads(8,8,8)]
+void VolumeVoxelPainter(uint3 id : SV_DispatchThreadID)
+{
+    if(id.x >= TexRes || id.y >= TexRes || id.z >= TexRes)
+        return;
+    float volume = 1 - smoothstep(BrushSmoothness, 1., length(BrushCoords.xyz - id.xyz) - BrushRadius);
+    float material = 1 - smoothstep(BrushSmoothness, 1., length(BrushCoords.xyz - id.xyz) - BrushRadius * 1.2);
+    float4 ccolor = Tex3DInput[id.xyz];
+    float except = lerp(1, step(ccolor.g, MaterialException), IncludeExcept);
+    Tex3DInput[id.xyz] = float4(
+        saturate(ccolor.r + volume * lerp(abs(BrushIntensity), BrushIntensity, except)),
+        lerp(ccolor.g, MaterialValue, material * except),
+        lerp(ccolor.b, ExtraValue, material * IncludeExtra),
+        ccolor.a);
+}

@@ -1,0 +1,23 @@
+fileFormatVersion: 2
+guid: f0ad555d63cf9ce40b90b3fb4eb0f411
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - LightReference: {fileID: 11400000, guid: 9933dd78ec3cbb643baeb88055e7420a, type: 2}
+  - AudioSourceReference: {fileID: 11400000, guid: bf2c1ce35abc908479b8a9b4639115cf,
+      type: 2}
+  - MonoBehReference: {fileID: 11400000, guid: 6e7d775e1b3a988409de6e372bc424ee, type: 2}
+  - NavMeshAgentReference: {fileID: 11400000, guid: 8af246d61af6d26469cf9fe8d289cb2a,
+      type: 2}
+  - ParticleSystemReference: {fileID: 11400000, guid: 9dee8e01fcff31541b9f24ff0bfe3f4f,
+      type: 2}
+  - RendererReference: {fileID: 11400000, guid: 1a52671867eb163498391b8a00097194,
+      type: 2}
+  - TerrainReference: {fileID: 11400000, guid: d08cb8106dec4624dbd0fa564adf3916, type: 2}
+  - HumanScaleGuide: {instanceID: 0}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

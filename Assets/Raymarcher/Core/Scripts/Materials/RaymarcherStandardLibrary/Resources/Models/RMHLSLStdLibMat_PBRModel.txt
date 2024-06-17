@@ -1,0 +1,5 @@
+half4 CalculatePBRModel(in RMStandardPBRData data, in Ray ray, half4 sdfRGBA)
+{
+	half3 normals;
+	return CalculatePBRModelWrapper(data, ray, sdfRGBA, RMStandardPBRDataTextures, sampler_RMStandardPBRDataTextures, normals);
+}

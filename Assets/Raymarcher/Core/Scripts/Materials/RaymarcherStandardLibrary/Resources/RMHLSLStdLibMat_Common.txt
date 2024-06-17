@@ -1,0 +1,35 @@
+
+float3 CalculateNormals(in float3 rayPosition, in half normalShift)
+{
+	half2 offset = half2(normalShift, 0.0);
+
+#ifdef RAYMARCHER_TYPE_QUALITY
+	return normalize(SdfObjectBuffer(rayPosition)[0].x - float3(
+		SdfObjectBuffer(rayPosition - offset.xyy)[0].x,
+		SdfObjectBuffer(rayPosition - offset.yxy)[0].x,
+		SdfObjectBuffer(rayPosition - offset.yyx)[0].x));
+#else
+	return normalize(SdfObjectBuffer(rayPosition).x - float3(
+		SdfObjectBuffer(rayPosition - offset.xyy).x,
+		SdfObjectBuffer(rayPosition - offset.yxy).x,
+		SdfObjectBuffer(rayPosition - offset.yyx).x));
+#endif
+}
+
+half3 CalculateTriplanarTexture(in half4 sdfRGBA, in float3 rayPosition, in half3 normal, 
+in Texture2DArray tex2DArray, in SamplerState tex2DArraySampler, 
+in half tiling, in half index, in half triBlend)
+{
+#ifdef STANDARD_TRIPLANAR_TEXTURE
+	half3 texXY = RM_SAMPLE_ARRAY_SPECIFIC(tex2DArray, tex2DArraySampler, rayPosition.xy * tiling, index).rgb;
+	half3 texXZ = RM_SAMPLE_ARRAY_SPECIFIC(tex2DArray, tex2DArraySampler, rayPosition.xz * tiling, index).rgb;
+	half3 texYZ = RM_SAMPLE_ARRAY_SPECIFIC(tex2DArray, tex2DArraySampler, rayPosition.yz * tiling, index).rgb;
+
+	half3 absNormal = abs(normal);
+	absNormal *= pow(absNormal, max(EPSILONUP, triBlend));
+	absNormal /= absNormal.x + absNormal.y + absNormal.z;
+	return texXY * absNormal.z + texXZ * absNormal.y + texYZ * absNormal.x;
+#else
+	return sdfRGBA.rgb;
+#endif
+}

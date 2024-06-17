@@ -1,0 +1,9 @@
+half4 CalculateLitModelWrapper(in RMStandardLitData data, in Ray ray, half4 sdfRGBA, in Texture2DArray texPack, in SamplerState texPackSampler, out half3 normal)
+{
+	sdfRGBA = CalculateUnlitModelWrapper(data.unlitData, ray, sdfRGBA, texPack, texPackSampler, normal);
+#ifdef STANDARD_LIGHTING
+	return CalculateFullLightingModel(sdfRGBA, data, ray.p, ray.nd, normal);
+#else
+	return sdfRGBA;
+#endif
+}

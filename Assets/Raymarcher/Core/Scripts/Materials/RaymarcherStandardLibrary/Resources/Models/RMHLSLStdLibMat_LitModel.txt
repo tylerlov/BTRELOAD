@@ -1,0 +1,5 @@
+half4 CalculateLitModel(in RMStandardLitData data, in Ray ray, half4 sdfRGBA)
+{
+	half3 normals;
+	return CalculateLitModelWrapper(data, ray, sdfRGBA, RMStandardLitDataTextures, sampler_RMStandardLitDataTextures, normals);
+}

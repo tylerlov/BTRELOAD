@@ -1,0 +1,20 @@
+// Experimental feature! Not ready for production use.
+// Collision Sampler - iterates through all the tex3D pixels and initialize point collider.
+// Extremelly heavy to calculate on the CPU side as each 'filled' point represents one unique box/sphere collider.
+// Written by Matej Vanco, January 2024.
+
+#pragma kernel CollisionSampler
+
+uniform uint TexRes;                // 3D Texture resolution (8-256)
+uniform float Threshold;            // Pixel threshold for detection (0-1)
+Texture3D<float4> Tex3DInput;       // RW 3D Texture pixels (512-16777216)
+RWStructuredBuffer<float4> Result;  // Vec4 result of voxels (512-16777216)
+
+[numthreads(8,8,8)]
+void CollisionSampler(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= TexRes || id.y >= TexRes || id.z >= TexRes)
+        return;
+    uint linearIndex = id.x + id.y * TexRes + id.z * TexRes * TexRes;
+    Result[linearIndex] = float4(id.xyz, Tex3DInput[id.xyz].r >= Threshold ? 1 : 0);
+}

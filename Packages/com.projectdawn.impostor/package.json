@@ -1,0 +1,38 @@
+{
+  "name": "com.projectdawn.impostor",
+  "displayName": "Impostor Graph",
+  "version": "1.1.7",
+  "unity": "2021.3",
+  "unityRelease": "19f1",
+  "keywords": [
+    "impostor",
+    "lod",
+    "billboard"
+  ],
+  "dependencies": {
+    "com.unity.shadergraph": "12.1.10",
+    "com.unity.render-pipelines.core": "12.1.10",
+    "com.unity.mathematics": "1.2.1"
+  },
+  "description": "The Impostor Graph is a tool that allows users to create custom impostors for real-time rendering of distant objects. It enables users to build a graph of nodes that output texture atlases, materials, meshes, or other custom data, providing complete control over the impostor building process.",
+  "type": "tool",
+  "author": {
+    "name": "Lukas Chodosevicius",
+    "email": "lukaschodosevicius@gmail.com",
+    "url": "https://assetstore.unity.com/publishers/62140"
+  },
+  "documentationUrl": "https://lukaschod.github.io/impostor-graph-docs/manual/index.html",
+  "changelogUrl": "https://lukaschod.github.io/impostor-graph-docs/changelog.html",
+  "samples": [
+    {
+      "displayName": "HDRPTerrain",
+      "description": "HDRP impostor  that uses HDRPTerrain assets.",
+      "path": "Samples~/HDRPTerrain"
+    },
+    {
+      "displayName": "URPGameKit",
+      "description": "URP impostor  that uses GameKit assets.",
+      "path": "Samples~/URPGameKit"
+    }
+  ]
+}

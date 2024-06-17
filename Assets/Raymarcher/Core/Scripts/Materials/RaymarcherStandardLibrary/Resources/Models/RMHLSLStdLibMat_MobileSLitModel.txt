@@ -1,0 +1,5 @@
+half4 CalculateMobileSLitModel(in RMStandardMobileSLitData data, in Ray ray, half4 sdfRGBA)
+{
+	sdfRGBA.rgb = lerp(sdfRGBA.rgb, data.colorOverride.rgb, data.colorOverride.a);
+	return CalculateMobileSLitModelWrapper(data, ray, sdfRGBA, CalculateNormals(ray.p, data.normalShift));
+}

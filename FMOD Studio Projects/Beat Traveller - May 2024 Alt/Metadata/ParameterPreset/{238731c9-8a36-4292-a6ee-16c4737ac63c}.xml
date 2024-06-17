@@ -16,7 +16,7 @@
 			<value>2</value>
 		</property>
 		<property name="maximum">
-			<value>7</value>
+			<value>11</value>
 		</property>
 		<property name="enumerationLabels">
 			<value>Start</value>
@@ -25,6 +25,10 @@
 			<value>Section 3</value>
 			<value>Section 4</value>
 			<value>Section 5</value>
+			<value>Section 6</value>
+			<value>Section 7</value>
+			<value>Section 8</value>
+			<value>Section 9</value>
 			<value>Death</value>
 		</property>
 		<property name="initialValue">

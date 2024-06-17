@@ -1,0 +1,17 @@
+{
+    "name": "ProjectDawn.Impostor.Samples.GameKit",
+    "rootNamespace": "",
+    "references": [
+        "GUID:faf2522d659d7c440a792808dc782a65",
+        "GUID:ca937d03ee5dd4d699091438dc0f3ae6"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

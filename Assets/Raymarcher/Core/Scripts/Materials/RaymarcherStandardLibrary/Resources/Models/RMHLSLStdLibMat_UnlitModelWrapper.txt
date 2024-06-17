@@ -1,0 +1,19 @@
+half4 CalculateUnlitModelWrapper(in RMStandardUnlitData data, in Ray ray, half4 sdfRGBA, in Texture2DArray texPack, in SamplerState texPackSampler, out half3 normal)
+{
+	sdfRGBA = lerp(sdfRGBA, data.colorOverride, data.colorBlend);
+	normal = CalculateNormals(ray.p, data.normalShift);
+
+	half3 tex = CalculateTriplanarTexture(
+	sdfRGBA, ray.p, normal, 
+	texPack, texPackSampler,
+	data.mainAlbedoTiling, data.mainAlbedoIndex, data.mainAlbedoTriplanarBlend);
+
+	sdfRGBA.rgb = lerp(sdfRGBA.rgb, tex, data.mainAlbedoOpacity);
+
+#ifdef STANDARD_FRESNEL
+	half fresnel = 1. - saturate((1. - data.fresnelCoverage) * pow(abs(1 - dot(ray.nd, normal)), data.fresnelDensity));
+	sdfRGBA = lerp(sdfRGBA, data.fresnelColor, fresnel);
+#endif
+
+	return sdfRGBA;
+}

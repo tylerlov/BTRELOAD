@@ -1,0 +1,75 @@
+.Port_Int32 {
+	--port-color: #84e4e7;
+}
+
+.Port_Single {
+	--port-color: #84e4e7;
+}
+
+.Port_Vector2 {
+	--port-color: #9aef92;
+}
+
+.Port_Vector3 {
+	--port-color: #f6ff9a;
+}
+
+.Port_Vector4 {
+	--port-color: #fbcbf4;
+}
+
+.Port_Object {
+	--port-color: #80FF00;
+}
+
+.Port_Color {
+	--port-color: #FF00FF;
+}
+
+.Port_GameObject {
+	--port-color: #FF0000;
+}
+
+.Port_String {
+	--port-color: #80FF80;
+}
+
+.Port_Boolean {
+	--port-color: #30FFFF;
+}
+
+.Port_ConditionalLink {
+	--port-color: #FFFF30;
+}
+
+.Port_AnimationCurve{
+	--port-color: #FF0080;
+}
+
+.Port_Gradient{
+	--port-color: #FF8000;
+}
+
+.Port_RenderTexture{
+	--port-color: #ffb66c;
+}
+
+.Port_Texture2D{
+	--port-color: #ff8b8b;
+}
+
+.Port_Mesh{
+	--port-color: #8484e7;
+}
+
+.Port_Material{
+	--port-color: #a9e784;
+}
+
+.Port_Scene{
+	--port-color: #e7cf84;
+}
+
+.Port_CapturePoints{
+	--port-color: #ec5fd0;
+}

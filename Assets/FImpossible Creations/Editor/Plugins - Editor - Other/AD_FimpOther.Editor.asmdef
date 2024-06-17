@@ -1,10 +1,12 @@
 {
     "name": "AD_FimpOther.Editor",
+    "rootNamespace": "",
     "references": [
         "GUID:5479aa867543fff4abb2baec926f721f",
         "GUID:0e6b1f35d8416da46a5e09a445db4184",
         "GUID:4d3c0eb3c5c6f2243952516f8611fff4",
-        "GUID:103829f02546ce64db83be245c91a2cc"
+        "GUID:103829f02546ce64db83be245c91a2cc",
+        "GUID:2665a8d13d1b3f18800f46e256720795"
     ],
     "includePlatforms": [
         "Editor"

@@ -1,0 +1,20 @@
+half4 CalculateSlopeLitModelWrapper(in RMStandardSlopeLitData data, in Ray ray, half4 sdfRGBA, in Texture2DArray texPack, in SamplerState texPackSampler, out half3 normal)
+{
+	sdfRGBA = CalculateUnlitModelWrapper(data.litData.unlitData, ray, sdfRGBA, texPack, texPackSampler, normal);
+
+	half3 tex = CalculateTriplanarTexture(
+	sdfRGBA, ray.p, normal, 
+	texPack, texPackSampler,
+	data.litData.unlitData.mainAlbedoTiling, data.slopeTextureIndex, data.slopeTextureBlend);
+
+	float scatter = pow(max(tex.r, EPSILON), max(EPSILONUP, data.slopeTextureScatter));
+	sdfRGBA.rgb = lerp(sdfRGBA.rgb, tex.rgb + lerp(tex.rgb, data.litData.unlitData.colorOverride.rgb, data.litData.unlitData.colorBlend) * scatter * data.slopeTextureEmission,
+		smoothstep(data.slopeCoverage - data.slopeSmoothness, data.slopeCoverage + data.slopeSmoothness, dot(half3(0, 1, 0), normal) * scatter)
+		* data.litData.unlitData.mainAlbedoOpacity);
+
+#ifdef STANDARD_LIGHTING
+	sdfRGBA = CalculateFullLightingModel(sdfRGBA, data.litData, ray.p, ray.nd, normal);
+#endif
+
+	return sdfRGBA;
+}

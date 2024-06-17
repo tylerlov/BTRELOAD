@@ -61,6 +61,12 @@ public class GameManager : MonoBehaviour
         {
             ProjectileManager.Instance.ReRegisterEnemiesAndProjectiles();
         }
+
+        // Clear locked targets in Crosshair
+        if (Crosshair.Instance != null)
+        {
+            Crosshair.Instance.ClearLockedTargets();
+        }
     }
 
     public void ChangeToNextScene()
@@ -246,4 +252,3 @@ public class GameManager : MonoBehaviour
         ChangeToNextScene();
     }
 }
-

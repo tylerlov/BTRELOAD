@@ -1,0 +1,5 @@
+half4 CalculateSlopeLitModel(in RMStandardSlopeLitData data, in Ray ray, half4 sdfRGBA)
+{
+	half3 normals;
+	return CalculateSlopeLitModelWrapper(data, ray, sdfRGBA, RMStandardSlopeLitDataTextures, sampler_RMStandardSlopeLitDataTextures, normals);
+}

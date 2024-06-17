@@ -1,0 +1,13 @@
+
+half CalculateBlinnPhongSpecular(in half specSize, in half specGlossiness, in half specIntensity, in float3 normals, in float3 rayDirection, in float3 directionToLight, in half attenuation = 1.0, in half overrideIntensity = 1.0)
+{
+	half specDot = max(0., dot(rayDirection, reflect(-directionToLight, normals)));
+	return smoothstep(0, max(EPSILONUP, specGlossiness),
+		pow(specDot, lerp(100. * lerp(5., 1., specSize), EPSILON, saturate(specSize))))
+		* specIntensity * attenuation * overrideIntensity;
+}
+
+half CalculateLambertianModel(in half shadingCoverage, in half shadingSmoothness, in float3 normals, in float3 lightDirection)
+{
+	return max(0., smoothstep(shadingCoverage - shadingSmoothness, shadingCoverage + shadingSmoothness, dot(lightDirection, normals)));
+}

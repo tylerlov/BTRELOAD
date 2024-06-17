@@ -12,6 +12,8 @@ using BehaviorDesigner.Runtime.Tasks.Unity.UnityGameObject;
 using SensorToolkit.Example;
 using BehaviorDesigner.Runtime.Tasks.Movement;
 using UnityEngine.VFX; // Add this line to use Visual Effect Graph
+using SickscoreGames;
+using SickscoreGames.HUDNavigationSystem;
 
 public enum ProjectilePoolType
 {
@@ -340,6 +342,9 @@ public class ProjectileStateBased : BaseBehaviour
     internal bool projHitPlayer = false; // Renamed variable to track if the projectile has hit a player
     [HideInInspector] public bool lifetimeExtended = false; // Renamed and used to track if the lifetime extension has occurred
 
+    public HUDNavigationElement hudNavigationElement;
+
+
     public ProjectileState GetCurrentState()
     {
         return currentState;
@@ -364,6 +369,8 @@ public class ProjectileStateBased : BaseBehaviour
         myMaterial = modelRenderer.material;
         originalProjectileColor = myMaterial.color;
         initialSpeed = bulletSpeed; // Store the initial speed
+        hudNavigationElement = GetComponent<HUDNavigationElement>();
+
     }
 
     void OnEnable()

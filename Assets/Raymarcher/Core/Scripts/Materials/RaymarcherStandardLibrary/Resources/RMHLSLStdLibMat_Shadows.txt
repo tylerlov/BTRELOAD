@@ -1,0 +1,31 @@
+﻿float CalculateShadows(in RMStandardLitData data, in float3 rayOrigin, in float3 rayDirection, in float distanceToLight, in half shadowDistMinOverride = 0.0)
+{
+	float result = 1.0;
+	float3 rayPos;
+
+	for(float i = data.shadowDistanceMinMax.x + shadowDistMinOverride; i < data.shadowDistanceMinMax.y;)
+	{
+		rayPos = rayOrigin + (rayDirection * i);
+
+#ifdef RAYMARCHER_TYPE_QUALITY
+		float sdf = SdfObjectBuffer(rayPos)[0].x;
+#else
+		float sdf = SdfObjectBuffer(rayPos).x;
+#endif
+
+		if(sdf < EPSILON)
+			return data.shadowAmbience;
+
+#ifdef STANDARD_SHADOWS_SOFT
+		result = min(result, _StandardShadowSoftness * (sdf / i));
+#else
+		result = max(result, 0.);
+#endif
+
+		i += clamp(sdf * _StandardShadowQuality, 0.01, 1.0); // shifting fixer
+
+		if (i >= distanceToLight)
+			break;
+	}
+	return result + data.shadowAmbience;
+}
