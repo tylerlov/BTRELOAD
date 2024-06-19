@@ -24,6 +24,12 @@
       },
       "url": "https://arongranberg.com/packages/81c7e795f8545d505aebdbb793fd55456283d908871e1"
     },
+    "com.kyrylokuzyk.primetween": {
+      "version": "file:../Assets/Plugins/PrimeTween/internal/com.kyrylokuzyk.primetween.tgz",
+      "depth": 0,
+      "source": "local-tarball",
+      "dependencies": {}
+    },
     "com.occasoftware.altos": {
       "version": "file:com.occasoftware.altos",
       "depth": 0,

@@ -3,20 +3,19 @@ using UnityEngine;
 public class SceneStarterForDev : MonoBehaviour
 {
     // References to the components
-    [SerializeField] private AdjustSongParameters adjustSongParameters;
     [SerializeField] public CinemachineCameraSwitching cinemachineCameraSwitching;
-
+    private GameManager gameManager;
     // Start is called before the first frame update
     void Start()
     {
         // Find the active AdjustSongParameters component
-        adjustSongParameters = FindObjectOfType<AdjustSongParameters>(true);
+        gameManager = GameManager.instance;
         cinemachineCameraSwitching = FindObjectOfType<CinemachineCameraSwitching>(true);
 
         // Ensure references are assigned        if (adjustSongParameters == null || cinemachineCameraSwitching == null)
-        if (adjustSongParameters == null || cinemachineCameraSwitching == null)
+        if (gameManager == null || cinemachineCameraSwitching == null)
         {
-            Debug.LogError("References to AdjustSongParameters or CinemachineCameraSwitching are not set.");
+            Debug.LogError("References to GameManager or CinemachineCameraSwitching are not set.");
             return;
         }
 
@@ -27,7 +26,7 @@ public class SceneStarterForDev : MonoBehaviour
     // Method to be called when the wave starts
     void OnWaveStarted()
     {
-        adjustSongParameters.updateStatus();
+        gameManager.updateStatus();
         cinemachineCameraSwitching.SetMainCamera();
     }
 }

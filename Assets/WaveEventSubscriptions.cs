@@ -9,7 +9,7 @@ public class WaveEventSubscriptions : MonoBehaviour
     [SerializeField] private UnityEvent onWaveEnded;
 
     private WaveSpawnController waveSpawnController;
-    private AdjustSongParameters adjustSongParam;
+    private GameManager gameManager;
     private CinemachineCameraSwitching cameraSwitching;
     private FmodOneshots fmodOneShots;
     private ShooterMovement shooterMovement;
@@ -37,7 +37,7 @@ public class WaveEventSubscriptions : MonoBehaviour
     {
         // Attempt to find and subscribe to active instances of each component
         waveSpawnController = FindActiveInstance<WaveSpawnController>();
-        adjustSongParam = FindActiveInstance<AdjustSongParameters>();
+        gameManager = GameManager.instance;
         cameraSwitching = FindActiveInstance<CinemachineCameraSwitching>();
         fmodOneShots = FindActiveInstance<FmodOneshots>();
         shooterMovement = FindActiveInstance<ShooterMovement>();
@@ -78,9 +78,9 @@ public class WaveEventSubscriptions : MonoBehaviour
     private void OnWaveStarted()
     {
         Debug.Log("Wave Started!");
-        if (adjustSongParam != null)
+        if (gameManager != null)
         {
-            adjustSongParam.updateStatus();
+            gameManager.updateStatus();
         }
         
         if (cameraSwitching != null)
@@ -105,10 +105,10 @@ public class WaveEventSubscriptions : MonoBehaviour
     private void OnWaveEnded()
     {
         Debug.Log("Wave Ended!");
-        if (adjustSongParam != null)
+        if (gameManager != null)
         {
-            adjustSongParam.waveCounterAdd();
-            adjustSongParam.updateStatus();
+            gameManager.waveCounterAdd();
+            gameManager.updateStatus();
         }
 
         if (shooterMovement != null)

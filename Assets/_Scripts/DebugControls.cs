@@ -11,7 +11,6 @@ using UnityEngine.SceneManagement;
 public class DebugControls : MonoBehaviour, IPointerClickHandler
 {
     private GameManager gameManager;
-    private AdjustSongParameters adjustSongParameters;
     private GameObject uiElement;
     private InputAction debugNextSceneAction;
     private bool isSceneTransitioning = false; // Flag to prevent multiple scene transitions
@@ -47,9 +46,10 @@ public class DebugControls : MonoBehaviour, IPointerClickHandler
             gameManager.DebugMoveToNextScene();
         }
 
-        if (adjustSongParameters != null)
+        if (gameManager != null)
         {
-            adjustSongParameters.HandleDebugSceneTransition();
+            gameManager.HandleDebugSceneTransition();
+
         }
 
         // Subscribe to the sceneLoaded event to reset the flag after the scene is loaded
@@ -144,11 +144,10 @@ public class DebugControls : MonoBehaviour, IPointerClickHandler
             Debug.LogError("GameManager component not found on the same GameObject.");
         }
 
-        // Get the AdjustSongParameters component in the scene
-        adjustSongParameters = FindObjectOfType<AdjustSongParameters>();
-        if (adjustSongParameters == null)
+        gameManager = GameManager.instance;
+        if (gameManager == null)
         {
-            Debug.LogError("AdjustSongParameters component not found in the scene.");
+            Debug.LogError("Gmae Manager component not found in the scene.");
         }
 
         // Find the UI element named "Score"
@@ -158,4 +157,3 @@ public class DebugControls : MonoBehaviour, IPointerClickHandler
         AddEventTriggerToUIElement();
     }
 }
-

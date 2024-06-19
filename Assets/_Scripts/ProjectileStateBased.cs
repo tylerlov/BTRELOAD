@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using SonicBloom.Koreo;
 using Chronos;
 using DG.Tweening;
 using HohStudios.Tools.ObjectParticleSpawner;
@@ -62,10 +61,9 @@ public class EnemyShotState : ProjectileState
             if (damageable != null)
             {
                 damageable.Damage(_projectile.damageAmount);
-                _projectile.projHitPlayer = true; // Updated to use the renamed variable
+                _projectile.projHitPlayer = true;
                 _projectile.Death();
-                // Play the sound only when the projectile hits a player
-                FMODUnity.RuntimeManager.PlayOneShot("event:/Projectile/Basic/Impact");
+                ProjectileManager.Instance.PlayOneShotSound("event:/Projectile/Basic/Impact", _projectile.transform.position);
             }
         }
         else
@@ -268,12 +266,7 @@ public class ProjectileStateBased : BaseBehaviour
     #region Fields
     private string _currentStateName;
     public string projectileType;
-    private FMOD.Studio.EventInstance instance;
-
     private bool disableOnProjMove;
-
-    [EventID]
-    public string eventID;
 
     [Space]
 
@@ -337,13 +330,9 @@ public class ProjectileStateBased : BaseBehaviour
     private ProjectileState currentState;
     internal bool shotAtEnemy;
     private Vector3 _previousPosition;
-    private Coroutine lifetimeCoroutine;
     [HideInInspector] public float initialSpeed; // Add this line to store the initial speed
     internal bool projHitPlayer = false; // Renamed variable to track if the projectile has hit a player
     [HideInInspector] public bool lifetimeExtended = false; // Renamed and used to track if the lifetime extension has occurred
-
-    public HUDNavigationElement hudNavigationElement;
-
 
     public ProjectileState GetCurrentState()
     {
@@ -369,8 +358,6 @@ public class ProjectileStateBased : BaseBehaviour
         myMaterial = modelRenderer.material;
         originalProjectileColor = myMaterial.color;
         initialSpeed = bulletSpeed; // Store the initial speed
-        hudNavigationElement = GetComponent<HUDNavigationElement>();
-
     }
 
     void OnEnable()
@@ -469,39 +456,19 @@ public class ProjectileStateBased : BaseBehaviour
         playerProjPath.enabled = false;
     }
 
-    // Check if lifetime is less than zero to decide the course of action
-    if (lifetime < 0)
+    // Proceed with DOTween animation if lifetime has expired
+    if (myMaterial != null && myMaterial.HasProperty("_AdvancedDissolveCutoutStandardClip"))
     {
-        if (lifetimeCoroutine != null)
+        myMaterial.DOFloat(0.05f, "_AdvancedDissolveCutoutStandardClip", 1f).OnComplete(() =>
         {
-            StopCoroutine(lifetimeCoroutine);
-            lifetimeCoroutine = null;
-        }
-        // Proceed with DOTween animation if lifetime has expired
-        if (myMaterial != null && myMaterial.HasProperty("_AdvancedDissolveCutoutStandardClip"))
-        {
-            myMaterial.DOFloat(0.05f, "_AdvancedDissolveCutoutStandardClip", 1f).OnComplete(() =>
-            {
-                // This code will execute after the DOTween animation completes.
-                // Now it's safe to recycle the projectile.
-                ProjectileManager.Instance.ReturnProjectileToPool(this);
-            });
-        }
-        else
-        {
-            // Ensure the projectile is returned to the pool even if the material does not have the required property.
+            // This code will execute after the DOTween animation completes.
+            // Now it's safe to recycle the projectile.
             ProjectileManager.Instance.ReturnProjectileToPool(this);
-        }
-        }
+        });
+    }
     else
     {
-        if (lifetimeCoroutine != null)
-        {
-            StopCoroutine(lifetimeCoroutine);
-            lifetimeCoroutine = null;
-        }
-
-        // If lifetime is not less than zero, skip the DOTween and immediately return to pool
+        // Ensure the projectile is returned to the pool even if the material does not have the required property.
         ProjectileManager.Instance.ReturnProjectileToPool(this);
     }
 }
@@ -556,58 +523,15 @@ public class ProjectileStateBased : BaseBehaviour
    public void SetLifetime(float seconds)
 {
     lifetime = seconds; // Set the lifetime variable to the specified seconds.
-    if (lifetimeCoroutine != null)
-    {
-        StopCoroutine(lifetimeCoroutine); // Stop the existing coroutine if it's running.
-    }
-    // Check if the GameObject is active in the hierarchy before starting the coroutine
-    if (gameObject.activeInHierarchy)
-    {
-        lifetimeCoroutine = StartCoroutine(LifetimeCoroutine()); // Start a new coroutine.
-    }
-    else
-    {
-        // Optionally, handle the case when the GameObject is not active
-        Debug.LogWarning("GameObject is inactive. Coroutine not started.");
-    }
 }
 
-private IEnumerator LifetimeCoroutine()
+public void UpdateLifetime(float deltaTime)
 {
-   bool dissolveTriggered = false;
-
-    while (lifetime > 0)
+    lifetime -= deltaTime;
+    if (lifetime <= 0)
     {
-        yield return null; // Wait for the next frame.
-
-        if (currentState is PlayerLockedState)
-        {
-            yield break; // Exit the coroutine.
-        }
-
-        lifetime -= clock.deltaTime;
-
-        // Check if lifetime is close to 1 second and the dissolve effect hasn't been triggered yet.
-        if (lifetime <= 1f && !dissolveTriggered)
-        {
-            dissolveTriggered = true; // Ensure this block only runs once.
-            // Trigger the dissolve effect.
-            if (myMaterial != null)
-            {
-                myMaterial.DOFloat(0.05f, "_AdvancedDissolveCutoutStandardClip", 1f).OnComplete(() =>
-                {
-                    Death();
-                });
-            }
-        }
-    }
-
-    if (lifetime < 0)
-    {
-        ConditionalDebug.Log("Lifetime is less than 0, calling Death");
         Death();
     }
-
 }
 
     public void SetHomingTarget(Transform target)

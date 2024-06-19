@@ -1,9 +1,8 @@
 using UnityEngine;
-using SonicBloom.Koreo;
-using FMODUnity;
-using FMOD.Studio;
 using Chronos;
-using System.Collections; 
+using System.Collections;
+using PrimeTween;
+
 public class StaticEnemyShooting : MonoBehaviour
 {
     [SerializeField] private string enemyType;
@@ -56,16 +55,16 @@ public class StaticEnemyShooting : MonoBehaviour
     {
         if (this == null || !gameObject.activeInHierarchy)
         {
-            Debug.LogWarning("[StaticEnemyShooting] GameObject is not active in hierarchy or has been destroyed.");
+            ConditionalDebug.LogWarning("[StaticEnemyShooting] GameObject is not active in hierarchy or has been destroyed.");
             return;
         }
 
-        StartCoroutine(AnimateShaderProperties());
+        AnimateShaderProperties();
         Vector3 directionToTarget = target != null ? (target.position - transform.position).normalized : transform.forward;
 
         if (ProjectileManager.Instance == null)
         {
-            Debug.LogError("[StaticEnemyShooting] ProjectileManager instance is null.");
+            ConditionalDebug.LogError("[StaticEnemyShooting] ProjectileManager instance is null.");
         }
         else
         {
@@ -74,46 +73,34 @@ public class StaticEnemyShooting : MonoBehaviour
         }
     }
 
-    IEnumerator AnimateShaderProperties()
+    private void AnimateShaderProperties()
     {
-        float timeElapsed = 0f;
-        float updateInterval = 0.1f; // Update every 0.1 seconds to reduce the number of updates
-        float nextUpdateTime = 0f;
+        // Animate to end values
+        Tween.Custom(irisSizeStart, irisSizeEnd, lerpDuration, newVal => eyeMaterial.SetFloat("Vector1_520f2e2b2d664517a415c2d1d2d003e1", newVal))
+            .OnComplete(target: this, target => target.OnTweenComplete());
 
-        while (timeElapsed < lerpDuration)
-        {
-            if (timeElapsed >= nextUpdateTime)
-            {
-                float lerpFactor = timeElapsed / lerpDuration;
-                eyeMaterial.SetFloat("Vector1_520f2e2b2d664517a415c2d1d2d003e1", Mathf.Lerp(irisSizeStart, irisSizeEnd, lerpFactor));
-                eyeMaterial.SetFloat("Vector1_c88d82cf95c0459d90a5f7c35020e695", Mathf.Lerp(pupilSizeStart, pupilSizeEnd, lerpFactor));
-                eyeMaterial.SetFloat("Vector1_62c9d5aca0154b4386a16cd0625b239b", Mathf.Lerp(mainLightingIntensityStart, mainLightingIntensityEnd, lerpFactor));
+        Tween.Custom(pupilSizeStart, pupilSizeEnd, lerpDuration, newVal => eyeMaterial.SetFloat("Vector1_c88d82cf95c0459d90a5f7c35020e695", newVal))
+            .OnComplete(target: this, target => target.OnTweenComplete());
 
-                nextUpdateTime += updateInterval;
-            }
+        Tween.Custom(mainLightingIntensityStart, mainLightingIntensityEnd, lerpDuration, newVal => eyeMaterial.SetFloat("Vector1_62c9d5aca0154b4386a16cd0625b239b", newVal))
+            .OnComplete(target: this, target => target.OnTweenComplete());
 
-            timeElapsed += myTime.deltaTime;
-            yield return null;
-        }
-
-        // Reset timeElapsed for the return journey
-        timeElapsed = 0f;
-        // Calculate the return duration as twice the approach duration
+        // Animate back to start values at half the speed
         float returnDuration = lerpDuration * 2;
 
-        // Animate back to the start values at half the speed
-        while (timeElapsed < returnDuration)
-        {
-            float lerpFactor = timeElapsed / returnDuration;
+        Tween.Custom(irisSizeEnd, irisSizeStart, returnDuration, newVal => eyeMaterial.SetFloat("Vector1_520f2e2b2d664517a415c2d1d2d003e1", newVal))
+            .OnComplete(target: this, target => target.OnTweenComplete());
 
-            eyeMaterial.SetFloat("Vector1_520f2e2b2d664517a415c2d1d2d003e1", Mathf.Lerp(irisSizeEnd, irisSizeStart, lerpFactor));
-            eyeMaterial.SetFloat("Vector1_c88d82cf95c0459d90a5f7c35020e695", Mathf.Lerp(pupilSizeEnd, pupilSizeStart, lerpFactor));
-            eyeMaterial.SetFloat("Vector1_62c9d5aca0154b4386a16cd0625b239b", Mathf.Lerp(mainLightingIntensityEnd, mainLightingIntensityStart, lerpFactor));
+        Tween.Custom(pupilSizeEnd, pupilSizeStart, returnDuration, newVal => eyeMaterial.SetFloat("Vector1_c88d82cf95c0459d90a5f7c35020e695", newVal))
+            .OnComplete(target: this, target => target.OnTweenComplete());
 
-            timeElapsed += myTime.deltaTime;
-            yield return null;
-        }
+        Tween.Custom(mainLightingIntensityEnd, mainLightingIntensityStart, returnDuration, newVal => eyeMaterial.SetFloat("Vector1_62c9d5aca0154b4386a16cd0625b239b", newVal))
+            .OnComplete(target: this, target => target.OnTweenComplete());
+    }
 
+    private void OnTweenComplete()
+    {
+        // This code will execute after the PrimeTween animation completes.
         // Ensure the final values are reset to the start values
         eyeMaterial.SetFloat("Vector1_520f2e2b2d664517a415c2d1d2d003e1", irisSizeStart);
         eyeMaterial.SetFloat("Vector1_c88d82cf95c0459d90a5f7c35020e695", pupilSizeStart);

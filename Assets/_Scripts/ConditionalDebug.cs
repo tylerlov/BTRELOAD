@@ -4,7 +4,14 @@ using UnityEngine;
 
 public static class ConditionalDebug
 {
-    public static bool IsLoggingEnabled;
+    public static bool IsLoggingEnabled = false;
+
+    static ConditionalDebug()
+    {
+        #if !UNITY_EDITOR && !DEVELOPMENT_BUILD
+        IsLoggingEnabled = true;
+        #endif
+    }
 
     [System.Diagnostics.Conditional("UNITY_EDITOR")]
     public static void Log(object message)

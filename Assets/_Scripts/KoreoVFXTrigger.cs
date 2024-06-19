@@ -12,11 +12,11 @@ public class KoreoVFXTrigger : MonoBehaviour
         vfxGraph = GetComponent<VisualEffect>();
         if (vfxGraph == null)
         {
-            Debug.LogError("[KoreoVFXTrigger] No VisualEffect found on the GameObject.");
+            ConditionalDebug.LogError("[KoreoVFXTrigger] No VisualEffect found on the GameObject.");
         }
         else
         {
-            Debug.Log("[KoreoVFXTrigger] VisualEffect component found and ready.");
+            ConditionalDebug.Log("[KoreoVFXTrigger] VisualEffect component found and ready.");
         }
     }
 
@@ -25,11 +25,11 @@ public class KoreoVFXTrigger : MonoBehaviour
         if (Koreographer.Instance != null)
         {
             Koreographer.Instance.RegisterForEvents(eventID, TriggerVFX);
-            Debug.Log("[KoreoVFXTrigger] Registered for Koreographer events.");
+            ConditionalDebug.Log("[KoreoVFXTrigger] Registered for Koreographer events.");
         }
         else
         {
-            Debug.LogError("[KoreoVFXTrigger] Koreographer instance not found.");
+            ConditionalDebug.LogError("[KoreoVFXTrigger] Koreographer instance not found.");
         }
     }
 
@@ -38,21 +38,21 @@ public class KoreoVFXTrigger : MonoBehaviour
         if (Koreographer.Instance != null)
         {
             Koreographer.Instance.UnregisterForEvents(eventID, TriggerVFX);
-            Debug.Log("[KoreoVFXTrigger] Unregistered from Koreographer events.");
+            ConditionalDebug.Log("[KoreoVFXTrigger] Unregistered from Koreographer events.");
         }
     }
 
     void TriggerVFX(KoreographyEvent evt)
     {
-        Debug.Log("[KoreoVFXTrigger] TriggerVFX called.");
+        ConditionalDebug.Log("[KoreoVFXTrigger] TriggerVFX called.");
         if (vfxGraph != null)
         {
             vfxGraph.Play();
-            Debug.Log("[KoreoVFXTrigger] VisualEffect played.");
+            ConditionalDebug.Log("[KoreoVFXTrigger] VisualEffect played.");
         }
         else
         {
-            Debug.LogWarning("[KoreoVFXTrigger] VisualEffect is not assigned or found.");
+            ConditionalDebug.LogWarning("[KoreoVFXTrigger] VisualEffect is not assigned or found.");
         }
     }
 }

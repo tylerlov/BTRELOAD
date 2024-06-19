@@ -15,6 +15,7 @@ public class ProjectileManager : MonoBehaviour
     [SerializeField] private int initialPoolSize = 10;
     [SerializeField] private ParticleSystem deathEffectPrefab; // Assign in inspector
     [SerializeField] private int initialDeathEffectPoolSize = 10;
+    [SerializeField] private int staticShootingRequestsPerFrame = 10; // Configurable batch size
 
     private List<ProjectileStateBased> projectiles = new List<ProjectileStateBased>(100); // Adjust 100 based on expected usage
     private Queue<ProjectileStateBased> staticEnemyProjectilePool = new Queue<ProjectileStateBased>(100);
@@ -23,10 +24,15 @@ public class ProjectileManager : MonoBehaviour
 
     [SerializeField] private Timekeeper timekeeper;
     private Dictionary<GameObject, Vector3> lastPositions = new Dictionary<GameObject, Vector3>();
-
-    [SerializeField] private Crosshair crosshair;
+    private Crosshair crosshair;
 
     private GameObject playerGameObject; // Cache for player GameObject
+
+    public GameObject projectileRadarSymbol;
+    [SerializeField] private int radarSymbolPoolSize = 50;
+    [SerializeField] private List<GameObject> radarSymbolPool = new List<GameObject>(50);
+
+    private Dictionary<ProjectileStateBased, float> projectileLifetimes = new Dictionary<ProjectileStateBased, float>();
 
     private void Awake()
     {
@@ -45,13 +51,48 @@ public class ProjectileManager : MonoBehaviour
         InitializeStaticEnemyProjectilePool();
         InitializeEnemyBasicSetupProjectilePool();
         InitializeDeathEffectPool();
+        InitializeRadarSymbolPool();
+
 
         // Find and cache the player GameObject
         playerGameObject = GameObject.FindGameObjectWithTag("Player");
         if (playerGameObject == null)
         {
-            Debug.LogWarning("Player GameObject not found during initialization.");
+            ConditionalDebug.LogWarning("Player GameObject not found during initialization.");
         }
+    }
+
+    private void InitializeRadarSymbolPool()
+    {
+        radarSymbolPool.Clear(); // Clear existing symbols
+        for (int i = 0; i < radarSymbolPoolSize; i++)
+        {
+            GameObject radarSymbol = Instantiate(projectileRadarSymbol, transform); // Parent set to ProjectileManager
+            radarSymbol.SetActive(false);
+            radarSymbolPool.Add(radarSymbol); // Use Add instead of Enqueue
+        }
+    }
+
+     public void ReturnRadarSymbolToPool(GameObject radarSymbol)
+    {
+        radarSymbol.SetActive(false);
+        radarSymbol.transform.SetParent(transform); // Reset parent to ProjectileManager
+        if (!radarSymbolPool.Contains(radarSymbol))
+        {
+            radarSymbolPool.Add(radarSymbol);
+        }
+    }
+
+    public GameObject GetRadarSymbolFromPool()
+    {
+        if (radarSymbolPool.Count > 0)
+        {
+            GameObject radarSymbol = radarSymbolPool[0];
+            radarSymbolPool.RemoveAt(0); // Remove at index 0 to simulate dequeue
+            radarSymbol.SetActive(true);
+            return radarSymbol;
+        }
+        return null; // Return null if no symbols are available
     }
 
     // This method will be called every time a scene is loaded
@@ -61,13 +102,13 @@ public class ProjectileManager : MonoBehaviour
         timekeeper = FindObjectOfType<Timekeeper>();
         if (timekeeper == null)
         {
-            Debug.LogWarning("Timekeeper not found in the scene.");
+            ConditionalDebug.LogWarning("Timekeeper not found in the scene.");
         }
 
         crosshair = FindObjectOfType<Crosshair>();
         if (crosshair == null)
         {
-            Debug.LogWarning("Crosshair not found in the scene.");
+            ConditionalDebug.LogWarning("Crosshair not found in the scene.");
         }
 
         // Clear existing pools and lists to reinitialize
@@ -123,47 +164,89 @@ public class ProjectileManager : MonoBehaviour
         }
     }
 
+    private Queue<ProjectileRequest> projectileRequests = new Queue<ProjectileRequest>();
+
+    private void Start()
+    {
+        StartCoroutine(ProcessProjectileRequests());
+    }
+
     public void ShootProjectile(Vector3 position, Quaternion rotation, float speed, float lifetime, float uniformScale, bool enableHoming = false, Material material = null)
+    {
+        projectileRequests.Enqueue(new ProjectileRequest(position, rotation, speed, lifetime, uniformScale, enableHoming, material));
+    }
+
+    private IEnumerator ProcessProjectileRequests()
+    {
+        while (true)
+        {
+            int processedCount = 0;
+            while (projectileRequests.Count > 0 && processedCount < staticShootingRequestsPerFrame)
+            {
+                var request = projectileRequests.Dequeue();
+                ProcessShootProjectile(request);
+                processedCount++;
+            }
+            yield return null; // Wait for the next frame
+        }
+    }
+
+    private void ProcessShootProjectile(ProjectileRequest request)
     {
         if (staticEnemyProjectilePool.Count == 0)
         {
-            Debug.LogWarning("[ProjectileManager] No projectile available in pool, skipping shot.");
+            ConditionalDebug.LogWarning("[ProjectileManager] No projectile available in pool, skipping shot.");
             return;
         }
 
         ProjectileStateBased projectile = staticEnemyProjectilePool.Dequeue();
         projectile.transform.SetParent(transform); // Ensure the projectile is parented to ProjectileManager
-        projectile.transform.position = position;
-        projectile.transform.rotation = rotation;
+        projectile.transform.position = request.Position;
+        projectile.transform.rotation = request.Rotation;
         projectile.gameObject.SetActive(true);
-        projectile.transform.localScale = Vector3.one * uniformScale; // Apply uniform scale
+        projectile.transform.localScale = Vector3.one * request.UniformScale; // Apply uniform scale
 
         // Ensure Rigidbody is not kinematic
         projectile.rb.isKinematic = false;
-        projectile.rb.velocity = rotation * Vector3.forward * speed; // Assumes the projectile has a Rigidbody component
-        projectile.bulletSpeed = speed; // Set the bullet speed here
+        projectile.rb.velocity = request.Rotation * Vector3.forward * request.Speed; // Assumes the projectile has a Rigidbody component
+        projectile.bulletSpeed = request.Speed; // Set the bullet speed here
 
-        projectile.SetLifetime(lifetime); // Set the lifetime of the projectile
-        projectile.EnableHoming(enableHoming); // Set homing based on the parameter
+        projectile.SetLifetime(request.Lifetime); // Set the lifetime of the projectile
+        projectile.EnableHoming(request.EnableHoming); // Set homing based on the parameter
 
         // Swap the material if a new one is provided and it's not already on the projectile
-        if (material != null && projectile.modelRenderer.material != material)
+        if (request.Material != null && projectile.modelRenderer.material != request.Material)
         {
-            projectile.modelRenderer.material = material;
-            projectile.UpdateMaterial(material); // Update the material reference in ProjectileStateBased
-        }
-
-        // Disable HUDNavigationElement for static shooter
-        var hudNavigationElement = projectile.GetComponent<HUDNavigationElement>();
-        if (hudNavigationElement != null)
-        {
-            hudNavigationElement.enabled = false;
+            projectile.modelRenderer.material = request.Material;
+            projectile.UpdateMaterial(request.Material); // Update the material reference in ProjectileStateBased
         }
 
         RegisterProjectile(projectile);
     }
 
-    public void ShootProjectileFromEnemy(Vector3 position, Quaternion rotation, float speed, float lifetime, float uniformScale, bool enableHoming = false, Material material = null, string clockKey = "")
+    private struct ProjectileRequest
+    {
+        public Vector3 Position;
+        public Quaternion Rotation;
+        public float Speed;
+        public float Lifetime;
+        public float UniformScale;
+        public bool EnableHoming;
+        public Material Material;
+
+        public ProjectileRequest(Vector3 position, Quaternion rotation, float speed, float lifetime, float uniformScale, bool enableHoming, Material material)
+        {
+            Position = position;
+            Rotation = rotation;
+            Speed = speed;
+            Lifetime = lifetime;
+            UniformScale = uniformScale;
+            EnableHoming = enableHoming;
+            Material = material;
+        }
+    }
+
+  public void ShootProjectileFromEnemy(Vector3 position, Quaternion rotation, float speed, float lifetime, float uniformScale, bool enableHoming = false, Material material = null, string clockKey = "")
     {
         if (enemyBasicSetupProjectilePool.Count == 0)
         {
@@ -188,6 +271,14 @@ public class ProjectileManager : MonoBehaviour
             enemyShotFX.SetActive(true);
         }
 
+         if (radarSymbolPool.Count > 0)
+        {
+            GameObject radarSymbol = GetRadarSymbolFromPool();
+            radarSymbol.transform.SetParent(projectile.transform);
+            radarSymbol.transform.localPosition = Vector3.zero; // Center it on the projectile
+            radarSymbol.SetActive(true);
+        }
+
         projectile.rb.isKinematic = false;
         projectile.rb.velocity = rotation * Vector3.forward * speed;
         projectile.bulletSpeed = speed;
@@ -207,13 +298,6 @@ public class ProjectileManager : MonoBehaviour
 
         projectile.initialSpeed = speed;
 
-        // Enable HUDNavigationElement for enemy shooter
-        var hudNavigationElement = projectile.GetComponent<HUDNavigationElement>();
-        if (hudNavigationElement != null)
-        {
-            hudNavigationElement.enabled = true;
-        }
-
         RegisterProjectile(projectile);
     }
 
@@ -230,7 +314,7 @@ public class ProjectileManager : MonoBehaviour
     {
         if (deathEffectPool.Count == 0)
         {
-            Debug.LogWarning("No death effect available in pool, skipping effect.");
+            ConditionalDebug.LogWarning("No death effect available in pool, skipping effect.");
             return;
         }
 
@@ -241,7 +325,7 @@ public class ProjectileManager : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning("Player GameObject not found. Effect will not follow the player.");
+            ConditionalDebug.LogWarning("Player GameObject not found. Effect will not follow the player.");
             effect.transform.SetParent(transform); // Fallback to the default parent
         }
         effect.transform.position = position;
@@ -269,6 +353,15 @@ public class ProjectileManager : MonoBehaviour
         projectile.rb.velocity = Vector3.zero; // Reset velocity
         projectile.rb.isKinematic = true; // Optionally make it kinematic again
 
+        // Detach and return Radar Symbol to pool
+        foreach (Transform child in projectile.transform)
+        {
+            if (child.gameObject.CompareTag("RadarSymbol")) // Assuming the Radar Symbol has a tag "RadarSymbol"
+            {
+                ReturnRadarSymbolToPool(child.gameObject);
+            }
+        }
+
         switch (projectile.poolType)
         {
             case ProjectilePoolType.StaticEnemy:
@@ -285,7 +378,7 @@ public class ProjectileManager : MonoBehaviour
                 break;
             // Handle other types as needed
             default:
-                Debug.LogError("Unhandled projectile pool type.");
+                ConditionalDebug.LogError("Unhandled projectile pool type.");
                 break;
         }
     }
@@ -295,6 +388,8 @@ public class ProjectileManager : MonoBehaviour
         if (!projectiles.Contains(projectile))
         {
             projectiles.Add(projectile);
+            projectileLifetimes[projectile] = projectile.lifetime;
+
         }
     }
 
@@ -303,6 +398,8 @@ public class ProjectileManager : MonoBehaviour
         if (projectiles.Contains(projectile))
         {
             projectiles.Remove(projectile);
+            projectileLifetimes.Remove(projectile);
+
         }
     }
 
@@ -310,6 +407,9 @@ public class ProjectileManager : MonoBehaviour
     {
         // Example of using Chronos to adjust time scale for projectiles
         float globalTimeScale = timekeeper.Clock("Test").localTimeScale; // Adjust "Global" to your specific clock name
+        
+        List<ProjectileStateBased> projectilesToRemove = new List<ProjectileStateBased>();
+
 
         foreach (var projectile in projectiles)
         {
@@ -322,7 +422,20 @@ public class ProjectileManager : MonoBehaviour
                 {
                     PredictAndRotateProjectile(projectile); // Ensure this method is refined and used
                 }
+
+                // Update lifetime
+                projectileLifetimes[projectile] -= Time.deltaTime * globalTimeScale;
+                if (projectileLifetimes[projectile] <= 0)
+                {
+                    projectilesToRemove.Add(projectile);
+                }
             }
+        }
+
+        // Handle projectiles that need to be removed
+        foreach (var projectile in projectilesToRemove)
+        {
+            projectile.Death();
         }
     }
 
@@ -415,7 +528,7 @@ public class ProjectileManager : MonoBehaviour
         }
         else
         {
-            Debug.LogError("Crosshair reference is not set in ProjectileManager.");
+            ConditionalDebug.LogError("Crosshair reference is not set in ProjectileManager.");
         }
     }
 }
@@ -444,8 +557,15 @@ public void ReRegisterEnemiesAndProjectiles()
         }
         else
         {
-            Debug.LogWarning("EnemyBasicSetup component missing on enemy object", enemy);
+            ConditionalDebug.LogWarning("EnemyBasicSetup component missing on enemy object");
         }
     }
 }
+
+public void PlayOneShotSound(string soundEvent, Vector3 position)
+{
+    FMODUnity.RuntimeManager.PlayOneShot(soundEvent, position);
 }
+}
+
+
