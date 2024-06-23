@@ -34,7 +34,7 @@ public class ChildActivator : MonoBehaviour
         StaticEnemyShooting shootingScript = child.GetComponent<StaticEnemyShooting>();
         if (shootingScript != null)
         {
-            Debug.Log($"Re-registering {child.name}'s StaticEnemyShooting script.");
+            ConditionalDebug.Log($"Re-registering {child.name}'s StaticEnemyShooting script.");
             shootingScript.OnEnable();
         }
     }

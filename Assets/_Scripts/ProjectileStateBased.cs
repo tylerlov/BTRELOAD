@@ -10,7 +10,7 @@ using BehaviorDesigner.Runtime.Tactical;
 using BehaviorDesigner.Runtime.Tasks.Unity.UnityGameObject;
 using SensorToolkit.Example;
 using BehaviorDesigner.Runtime.Tasks.Movement;
-using UnityEngine.VFX; // Add this line to use Visual Effect Graph
+using UnityEngine.VFX;
 using SickscoreGames;
 using SickscoreGames.HUDNavigationSystem;
 
@@ -325,6 +325,31 @@ public class ProjectileStateBased : BaseBehaviour
 
     private const string FIRST_TIME_ENABLED_KEY = "FIRST_TIME_ENABLED_KEY";
 
+    [Header("Movement Variability")]
+    public float orbitRadius = 5f;
+    public float orbitSpeed = 2f;
+    public float approachSpeed = 1f;
+    private Vector3 orbitAxis;
+    private float orbitAngle;
+    private ApproachPattern currentPattern;
+
+    private enum ApproachPattern
+    {
+        Direct,
+        Orbit,
+        Spiral,
+        Zigzag
+    }
+
+    [Range(0f, 1f)]
+    public float accuracy = 0.5f; // Default to 0.5 if not set
+
+    private Vector3 inaccuracyOffset;
+    private float inaccuracyUpdateInterval = 0.5f;
+    private float inaccuracyTimer = 0f;
+    public float maxInaccuracyRadius = 5f;
+    public float minInaccuracyRadius = 0.1f;
+
     #endregion
 
     private ProjectileState currentState;
@@ -406,6 +431,8 @@ public class ProjectileStateBased : BaseBehaviour
        // Koreographer.Instance.RegisterForEvents(eventID, OnMusicalProjMove);
 
         _currentTag = gameObject.tag;
+
+        InitializeApproachPattern();
     }
 
     private void OnDisable()
@@ -432,6 +459,32 @@ public class ProjectileStateBased : BaseBehaviour
         if (currentState != null)
         {
             currentState.CustomUpdate(timeScale);
+        }
+
+        if (homing && currentTarget != null)
+        {
+            Vector3 directionToTarget = (predictedPosition - transform.position).normalized;
+            float distance = Vector3.Distance(transform.position, predictedPosition);
+            
+            // Apply accuracy to rotation
+            float accuracyAdjustedRotateSpeed = Mathf.Lerp(_rotateSpeed * 0.5f, maxRotateSpeed, accuracy);
+            float dynamicRotateSpeed = Mathf.Lerp(accuracyAdjustedRotateSpeed, _rotateSpeed, distance / maxDistance);
+            
+            Quaternion targetRotation = Quaternion.LookRotation(directionToTarget);
+            transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, dynamicRotateSpeed * timeScale * Time.deltaTime);
+
+            // Apply accuracy to velocity
+            Vector3 desiredVelocity = transform.forward * bulletSpeed;
+            Vector3 velocityAdjustment = (desiredVelocity - rb.velocity) * accuracy;
+            rb.velocity += velocityAdjustment * timeScale * Time.deltaTime;
+            rb.velocity = Vector3.ClampMagnitude(rb.velocity, bulletSpeed);
+        }
+
+        // Update lifetime
+        lifetime -= Time.deltaTime * timeScale;
+        if (lifetime <= 0)
+        {
+            Death();
         }
     }
 
@@ -493,17 +546,6 @@ public class ProjectileStateBased : BaseBehaviour
         }
     }
 
-   /* void OnMusicalProjMove(KoreographyEvent evt)
-    {
-        if (Time.timeScale != 0f & movementParticles != null & disableOnProjMove == false)
-        {
-            movementParticles.GetComponent<ParticleSystem>().Play();
-
-            disableOnProjMove = true;
-        }
-    }*/
-
-
     public Vector3 CalculateTargetVelocity(GameObject target)
     {
         Vector3 currentPos = target.transform.position;
@@ -547,6 +589,21 @@ public void UpdateLifetime(float deltaTime)
 
     // Set the homing target and enable homing
 
+    public float smoothTime = 0.1f; // Adjust this value to change smoothing amount
+    private Vector3 currentVelocity;
+
+    public float maxTurnRate = 360f; // Maximum turn rate in degrees per second
+    public float minTurnRate = 45f;  // Minimum turn rate in degrees per second
+    public float turnRateDistance = 10f; // Distance at which turn rate starts to decrease
+
+    public float minApproachDistance = 1f; // Minimum distance to maintain from target
+
+    public float Kp = 1f; // Proportional gain
+    public float Ki = 0.1f; // Integral gain
+    public float Kd = 0.1f; // Derivative gain
+    private Vector3 previousError;
+    private Vector3 integralError;
+
     void Update()
     {
         if (currentState != null)
@@ -556,29 +613,66 @@ public void UpdateLifetime(float deltaTime)
 
         if (homing && currentTarget != null)
         {
-            Vector3 directionToTarget = (currentTarget.position - transform.position).normalized;
-            Quaternion targetRotation = Quaternion.LookRotation(directionToTarget);
-            
-            // Calculate dynamic rotation speed based on distance.
-            float distance = Vector3.Distance(transform.position, currentTarget.position);
-            float dynamicRotateSpeed = Mathf.Lerp(maxRotateSpeed, _rotateSpeed, distance / maxDistance);
-            
-            // Rotate towards the target.
-            transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, dynamicRotateSpeed * Time.deltaTime);
-        
-            // Use initialSpeed for the velocity towards the target.
-            rb.velocity = directionToTarget * bulletSpeed * clock.localTimeScale;
+            Vector3 targetPosition = ApplyInaccuracy(predictedPosition);
+            Vector3 directionToTarget = (targetPosition - transform.position).normalized;
+            float distanceToTarget = Vector3.Distance(transform.position, targetPosition);
 
-            // Check distance to the current target and pause or extend lifetime if within a certain radius
-            float distanceToTarget = Vector3.Distance(transform.position, currentTarget.position);
-            float pauseRadius = 25.0f; // Updated pause radius to 25 units
+            // Adjust turn rate based on accuracy and distance
+            float adjustedTurnRate = Mathf.Lerp(minTurnRate, maxTurnRate, accuracy);
+            adjustedTurnRate = Mathf.Lerp(adjustedTurnRate, maxTurnRate, 1f - (distanceToTarget / maxDistance));
 
-            if (distanceToTarget <= pauseRadius && !lifetimeExtended)
+            // Calculate steering
+            Vector3 desiredVelocity = directionToTarget * bulletSpeed;
+            Vector3 steering = desiredVelocity - rb.velocity;
+            steering = Vector3.ClampMagnitude(steering, adjustedTurnRate * Time.deltaTime);
+
+            // Apply steering with accuracy influence
+            rb.velocity += steering * Mathf.Lerp(0.5f, 1f, accuracy);
+            rb.velocity = rb.velocity.normalized * bulletSpeed;
+
+            // Rotate projectile towards velocity direction
+            if (rb.velocity.sqrMagnitude > 0.01f)
             {
-                lifetimeExtended = true;
-                lifetime += 5.0f; // Extend lifetime by 5 seconds
+                Quaternion targetRotation = Quaternion.LookRotation(rb.velocity);
+                transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, adjustedTurnRate * Time.deltaTime);
             }
         }
+    }
+
+    private Vector3 ApplyInaccuracy(Vector3 targetPosition)
+    {
+        inaccuracyTimer += Time.deltaTime;
+        if (inaccuracyTimer >= inaccuracyUpdateInterval)
+        {
+            inaccuracyTimer = 0f;
+            float distanceToTarget = Vector3.Distance(transform.position, targetPosition);
+            float inaccuracyRadius = Mathf.Lerp(maxInaccuracyRadius, minInaccuracyRadius, accuracy);
+            inaccuracyRadius *= Mathf.Clamp01(distanceToTarget / maxDistance);
+            inaccuracyOffset = UnityEngine.Random.insideUnitSphere * inaccuracyRadius;
+        }
+
+        return targetPosition + inaccuracyOffset;
+    }
+
+    private Vector3 CalculateOrbitPosition(Vector3 directionToTarget)
+    {
+        orbitAngle += orbitSpeed * Time.deltaTime;
+        Vector3 orbitOffset = Quaternion.AngleAxis(orbitAngle, orbitAxis) * (Vector3.up * orbitRadius);
+        return predictedPosition + Vector3.SlerpUnclamped(orbitOffset, directionToTarget * orbitRadius, approachSpeed * Time.deltaTime);
+    }
+
+    private Vector3 CalculateSpiralPosition(Vector3 directionToTarget)
+    {
+        orbitAngle += orbitSpeed * Time.deltaTime;
+        float spiralRadius = orbitRadius * (1 - approachSpeed * Time.deltaTime);
+        Vector3 spiralOffset = Quaternion.AngleAxis(orbitAngle, directionToTarget) * (Vector3.up * spiralRadius);
+        return predictedPosition + spiralOffset;
+    }
+
+    private Vector3 CalculateZigzagPosition(Vector3 directionToTarget)
+    {
+        Vector3 zigzagOffset = Vector3.Cross(directionToTarget, Vector3.up) * Mathf.Sin(Time.time * orbitSpeed) * orbitRadius;
+        return predictedPosition + zigzagOffset + directionToTarget * (approachSpeed * Time.deltaTime);
     }
 
     public void UpdateMaterial(Material newMaterial)
@@ -628,11 +722,14 @@ public void UpdateLifetime(float deltaTime)
             Gizmos.color = Color.red;
             Gizmos.DrawLine(transform.position, currentTarget.position);
 
-            // Assuming you store the predicted position in a variable
+            // Draw a line from the projectile to the predicted position
             Gizmos.color = Color.blue;
-            Gizmos.DrawLine(transform.position, predictedPosition); // Make sure you have a way to access `predictedPosition`
+            Gizmos.DrawLine(transform.position, predictedPosition);
 
-            // Draw a sphere at the predicted position
+            // Draw spheres at the current target and predicted positions
+            Gizmos.color = Color.red;
+            Gizmos.DrawSphere(currentTarget.position, 0.5f);
+            Gizmos.color = Color.blue;
             Gizmos.DrawSphere(predictedPosition, 0.5f);
         }
     }
@@ -657,5 +754,73 @@ public void UpdateLifetime(float deltaTime)
             // Optionally, you can log this action for debugging
             Debug.Log("Projectile is now moving in the opposite direction due to Ricochet Dodge.");
         }
+    }
+
+    public void ResetForPool()
+{
+    // Kill all tweens associated with this projectile
+    DOTween.Kill(this.transform);
+    DOTween.Kill(this.gameObject);
+    
+    if (myMaterial != null)
+    {
+        DOTween.Kill(myMaterial);
+        // Reset material properties
+        if (myMaterial.HasProperty("_AdvancedDissolveCutoutStandardClip"))
+        {
+            myMaterial.SetFloat("_AdvancedDissolveCutoutStandardClip", 1f);
+        }
+    }
+
+    // Reset other properties
+    transform.localScale = Vector3.one;
+    if (rb != null)
+    {
+        rb.velocity = Vector3.zero;
+        rb.angularVelocity = Vector3.zero;
+    }
+
+    // Stop any particle systems
+    ParticleSystem[] particleSystems = GetComponentsInChildren<ParticleSystem>();
+    foreach (ParticleSystem ps in particleSystems)
+    {
+        ps.Stop();
+        ps.Clear();
+    }
+
+    // Reset any other custom properties
+    homing = false;
+    currentTarget = null;
+    lifetimeExtended = false;
+    projHitPlayer = false;
+    bulletSpeed = initialSpeed;
+
+    // Reset state
+    ChangeState(new EnemyShotState(this));
+
+    // Disable any effects
+    if (LockedFX != null)
+    {
+        LockedFX.Stop();
+    }
+
+    if (playerProjPath != null)
+    {
+        playerProjPath.enabled = false;
+    }
+
+    // Reset material to original
+    if (modelRenderer != null && myMaterial != null)
+    {
+        modelRenderer.material = myMaterial;
+        myMaterial.SetColor("_BaseColor", originalProjectileColor);
+    }
+}
+
+    public void InitializeApproachPattern()
+    {
+        currentPattern = (ApproachPattern)UnityEngine.Random.Range(0, System.Enum.GetValues(typeof(ApproachPattern)).Length);
+        orbitAxis = UnityEngine.Random.onUnitSphere;
+        orbitAngle = UnityEngine.Random.Range(0f, 360f);
     }
 }

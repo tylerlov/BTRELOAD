@@ -6,6 +6,7 @@ using UnityEngine.UI;
 using FMODUnity;
 using Cinemachine;
 using System.Collections.Generic;
+using PrimeTween; // Added this using statement
 
 public class GameManager : MonoBehaviour
 {
@@ -18,12 +19,40 @@ public class GameManager : MonoBehaviour
 
     [Header("Debug Info")]
     [SerializeField] private string currentSectionName;
+    [SerializeField] private int _currentScene;
+    [SerializeField] private float _currentSongSection;
+    [SerializeField] private int _currWaveCount;
 
     public int Score { get; private set; }
     public int ShotTally { get; private set; }
-    public int currWaveCount;
-    public int currentScene; // Renamed from currentSection
-    public float currentSongSection;
+
+    public int currentScene 
+    { 
+        get => _currentScene;
+        private set
+        {
+            _currentScene = value;
+            OnValueChanged();
+        }
+    }
+    public float currentSongSection 
+    { 
+        get => _currentSongSection;
+        private set
+        {
+            _currentSongSection = value;
+            OnValueChanged();
+        }
+    }
+    public int currWaveCount
+    {
+        get => _currWaveCount;
+        set
+        {
+            _currWaveCount = value;
+            OnValueChanged();
+        }
+    }
 
     private bool _isLoadingScene = false;
     private UnityEvent transCamOn;
@@ -38,6 +67,7 @@ public class GameManager : MonoBehaviour
     {
         InitializeSingleton();
         FindActiveFMODInstance();
+        PrimeTweenConfig.SetTweensCapacity(1600); // Added this line to increase tweens capacity
     }
 
     private void OnEnable()
@@ -50,6 +80,36 @@ public class GameManager : MonoBehaviour
     {
         SceneManager.sceneLoaded -= OnSceneLoaded;
         SceneManager.sceneLoaded -= InitializeListenersAndComponents;
+    }
+
+    private void Start()
+    {
+        InitializeNextSceneValues();
+    }
+
+    private void InitializeNextSceneValues()
+    {
+        if (currentGroup == null || currentGroup.scenes.Length == 0)
+        {
+            Debug.LogError("CurrentGroup is null or has no scenes.");
+            return;
+        }
+
+        // Set next scene index to the second scene (index 1) or wrap around if there's only one scene
+        nextSceneIndex = currentGroup.scenes.Length > 1 ? 1 : 0;
+
+        // Set next song section to the first section of the next scene
+        if (currentGroup.scenes[nextSceneIndex].songSections.Length > 0)
+        {
+            nextSongSection = currentGroup.scenes[nextSceneIndex].songSections[0].section;
+        }
+        else
+        {
+            Debug.LogWarning($"No song sections defined for the next scene (index: {nextSceneIndex})");
+            nextSongSection = 0;
+        }
+
+        Debug.Log($"Initialized next scene values: Scene Index = {nextSceneIndex}, Song Section = {nextSongSection}");
     }
 
     #region Initialization
@@ -90,10 +150,6 @@ public class GameManager : MonoBehaviour
         transCamOn = new UnityEvent();
         transCamOff = new UnityEvent();
         StartingTransition = new UnityEvent();
-
-        currWaveCount = 0;
-        currentScene = 0;
-        currentSongSection = 0;
 
         InitializeCameraSwitching();
         InitializeCrosshair();
@@ -170,27 +226,17 @@ public class GameManager : MonoBehaviour
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
         _isLoadingScene = false;
-        Debug.Log($"Scene {scene.name} loaded.");
-        Debug.Log($"Total scenes in build settings: {SceneManager.sceneCountInBuildSettings}");
-
-        if (scene.buildIndex < 0 || scene.buildIndex >= SceneManager.sceneCountInBuildSettings)
-        {
-            Debug.LogError($"Scene index {scene.buildIndex} is out of range.");
-            return;
-        }
-
-        ProjectileManager.Instance?.ReRegisterEnemiesAndProjectiles();
-        Crosshair.Instance?.ClearLockedTargets();
-
-        // Update scene attributes for the newly loaded scene
-        UpdateSceneAttributes();
-
-        // Now update the current scene and song section to the next values
+        
         currentScene = nextSceneIndex;
         currentSongSection = nextSongSection;
-
-        // Update scene attributes for the newly loaded scene
+        
         UpdateSceneAttributes();
+        ApplyMusicChanges();
+
+        LogCurrentState();
+
+        GlobalVolumeManager.Instance.TransitionEffectIn(1.5f); // Added this line
+        GlobalVolumeManager.Instance.TransitionEffectOut(1.5f);
     }
 
     public void ChangeToNextScene()
@@ -203,49 +249,54 @@ public class GameManager : MonoBehaviour
         if (_isLoadingScene) return;
         _isLoadingScene = true;
 
+        // Stop all active tweens
+        Tween.StopAll();
+
         enemyShootingManager?.UnregisterAllStaticEnemyShootingsFromKoreographer();
         KillAllEnemies();
         KillAllProjectiles();
 
-        string currentSceneName = SceneManager.GetActiveScene().name;
-        int currentSceneIndex = -1;
-
-        FindCurrentSceneIndex(currentSceneName, out currentSceneIndex);
-
-        if (currentSceneIndex != -1)
+        // Calculate the correct next scene index
+        int correctNextSceneIndex = (currentScene + 1) % currentGroup.scenes.Length;
+        
+        // Find the next valid scene with defined songSections
+        while (correctNextSceneIndex != currentScene && 
+               (currentGroup.scenes[correctNextSceneIndex].songSections == null || 
+                currentGroup.scenes[correctNextSceneIndex].songSections.Length == 0))
         {
-            nextSceneIndex = (currentSceneIndex + 1) % currentGroup.scenes.Length;
-            string nextSceneName = currentGroup.scenes[nextSceneIndex].sceneName;
-
-            // Ensure there are song sections defined and set the nextSongSection correctly
-            if (currentGroup.scenes[nextSceneIndex].songSections.Length > 0)
-            {
-                nextSongSection = currentGroup.scenes[nextSceneIndex].songSections[0].section;
-
-                float musicSectionValue = currentGroup.scenes[nextSceneIndex].songSections[0].section;
-                LoadScene(nextSceneName, musicSectionValue);
-            }
-            else
-            {
-                Debug.LogError("No song sections defined for the next scene.");
-                _isLoadingScene = false;
-            }
+            correctNextSceneIndex = (correctNextSceneIndex + 1) % currentGroup.scenes.Length;
         }
-        else
+
+        // If we've looped back to the current scene, there are no valid next scenes
+        if (correctNextSceneIndex == currentScene)
         {
-            Debug.LogError("Current scene not found in SceneGroup.");
+            Debug.LogWarning("No valid next scene found. Staying on current scene.");
             _isLoadingScene = false;
+            return;
         }
+
+        // Get the correct next song section
+        float correctNextSongSection = 0;
+        if (currentGroup.scenes[correctNextSceneIndex].songSections.Length > 0)
+        {
+            correctNextSongSection = currentGroup.scenes[correctNextSceneIndex].songSections[0].section;
+        }
+
+        string nextSceneName = currentGroup.scenes[correctNextSceneIndex].sceneName;
+
+        // Update the next values
+        nextSceneIndex = correctNextSceneIndex;
+        nextSongSection = correctNextSongSection;
+
+        // Load the scene with correct next values
+        GlobalVolumeManager.Instance.TransitionEffectIn(1.5f); // Added this line
+        LoadScene(nextSceneName, correctNextSongSection);
     }
 
-    private void LoadScene(string sceneName, float sectionValue)
+    private void LoadScene(string sceneName, float songSection)
     {
         SceneManager.LoadScene(sceneName);
-        musicPlayback.SetParameter("Section", sectionValue);
         _isLoadingScene = false;
-
-        // Update scene attributes after the scene is loaded
-        UpdateSceneAttributes();
     }
 
     private void FindCurrentSceneIndex(string currentSceneName, out int sceneIndex)
@@ -270,33 +321,22 @@ public class GameManager : MonoBehaviour
             var sceneData = currentGroup.scenes[currentScene];
             currentSectionName = sceneData.sceneName;
 
-            // Ensure there are song sections defined
             if (sceneData.songSections.Length > 0)
             {
-                // Ensure currentSongSection is within the bounds of songSections array
-                if (currentSongSection < sceneData.songSections.Length)
-                {
-                    var songSection = sceneData.songSections[(int)currentSongSection];
-                    currWaveCount = songSection.waves;
-                    musicPlayback.SetParameter("Section", songSection.section);
-
-                    // Debug logs to trace the issue
-                    Debug.Log($"Updated Scene Attributes: Scene Name = {currentSectionName}, Section = {songSection.section}, Waves = {currWaveCount}");
-                }
-                else
-                {
-                    Debug.LogError("currentSongSection is out of bounds.");
-                    currentSongSection = 0; // Reset to a valid value
-                }
-            }
-            else
-            {
-                Debug.LogError("No song sections defined for the current scene.");
+                int sectionIndex = Mathf.Clamp((int)currentSongSection, 0, sceneData.songSections.Length - 1);
+                var songSection = sceneData.songSections[sectionIndex];
+                currWaveCount = songSection.waves;
             }
         }
-        else
+    }
+
+    private void ApplyMusicChanges()
+    {
+        if (musicPlayback != null && currentGroup != null && 
+            currentScene < currentGroup.scenes.Length)
         {
-            Debug.LogError("currentGroup is null or currentScene is out of bounds.");
+            float sectionValue = currentSongSection;
+            musicPlayback.SetParameter("Sections", sectionValue);
         }
     }
 
@@ -314,8 +354,16 @@ public class GameManager : MonoBehaviour
         var projectiles = FindObjectsOfType<ProjectileStateBased>();
         foreach (var projectile in projectiles)
         {
-            Destroy(projectile.gameObject);
+            ProjectileManager.Instance.ReturnProjectileToPool(projectile);
         }
+    }
+
+    private void LogCurrentState()
+    {
+        Debug.Log($"Current State - Scene: {currentScene}, Section: {currentSongSection}, Wave: {currWaveCount}");
+        #if UNITY_EDITOR
+        UnityEditor.EditorUtility.SetDirty(this);
+        #endif
     }
 
     #endregion
@@ -367,16 +415,82 @@ public class GameManager : MonoBehaviour
 
     public void updateStatus()
     {
-        if (currWaveCount >= currentGroup.scenes[currentScene].songSections[(int)currentSongSection].waves)
+        // Check if we're within bounds
+        if (currentScene >= currentGroup.scenes.Length)
         {
-            currentSongSection++;
-            if ((int)currentSongSection >= currentGroup.scenes[currentScene].songSections.Length)
-            {
-                currentScene++;
-                currentSongSection = 0;
-            }
+            Debug.LogWarning($"Current scene index {currentScene} is out of bounds. Resetting to 0.");
+            currentScene = 0;
+            currentSongSection = 0;
+            return;
+        }
+
+        // Get the current scene
+        var currentSceneData = currentGroup.scenes[currentScene];
+
+        // Check if the scene has any song sections
+        if (currentSceneData.songSections == null || currentSceneData.songSections.Length == 0)
+        {
+            Debug.Log($"Scene {currentSceneData.sceneName} has no song sections. Moving to next scene.");
+            MoveToNextScene();
+            return;
+        }
+
+        // Ensure currentSongSection is within bounds
+        int currentSectionIndex = Mathf.Clamp((int)currentSongSection, 0, currentSceneData.songSections.Length - 1);
+        var currentSection = currentSceneData.songSections[currentSectionIndex];
+
+        // If the current section has no waves, move to the next section or scene
+        if (currentSection.waves == 0)
+        {
+            Debug.Log($"Section {currentSection.name} has no waves. Moving to next section or scene.");
+            MoveToNextSectionOrScene();
+            return;
+        }
+
+        // Check if we've completed all waves in the current section
+        if (currWaveCount >= currentSection.waves)
+        {
+            Debug.Log($"Completed all waves in section {currentSection.name}. Moving to next section or scene.");
+            MoveToNextSectionOrScene();
+        }
+    }
+
+    private void MoveToNextSectionOrScene()
+    {
+        ClearAllProjectiles(); // Add this line to clear projectiles before moving to the next section or scene
+        currentSongSection++;
+        if ((int)currentSongSection >= currentGroup.scenes[currentScene].songSections.Length)
+        {
+            MoveToNextScene();
+        }
+        else
+        {
             changeSongSection();
-            currWaveCount = 0;
+        }
+        currWaveCount = 0;
+    }
+
+    private void MoveToNextScene()
+    {
+        ClearAllProjectiles(); // Add this line to clear projectiles before moving to the next scene
+        currentScene++;
+        if (currentScene >= currentGroup.scenes.Length)
+        {
+            currentScene = 0; // Loop back to the first scene
+        }
+        currentSongSection = 0;
+        changeSongSection();
+    }
+
+    public void ClearAllProjectiles()
+    {
+        if (ProjectileManager.Instance != null)
+        {
+            ProjectileManager.Instance.ClearAllProjectiles();
+        }
+        else
+        {
+            Debug.LogError("ProjectileManager instance not found.");
         }
     }
 
@@ -427,6 +541,13 @@ public class GameManager : MonoBehaviour
             waveCounterAdd();
             updateStatus();
         }
+    }
+
+    private void OnValueChanged()
+    {
+        #if UNITY_EDITOR
+        UnityEditor.EditorUtility.SetDirty(this);
+        #endif
     }
 
     #endregion

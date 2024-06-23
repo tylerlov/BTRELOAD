@@ -1,54 +1,103 @@
 using UnityEngine;
 using Chronos;
+using System.Collections.Generic;
 using System.Collections;
-using PrimeTween;
 
 public class StaticEnemyShooting : MonoBehaviour
 {
     [SerializeField] private string enemyType;
-    [SerializeField] private float lerpDuration = 1f; // Duration of the lerp animation
-    [SerializeField] private float irisSizeStart = 0.5f;
-    [SerializeField] private float irisSizeEnd = 1f;
-    [SerializeField] private float pupilSizeStart = 0.5f;
-    [SerializeField] private float pupilSizeEnd = 1f;
-    [SerializeField] private float mainLightingIntensityStart = 0.5f;
-    [SerializeField] private float mainLightingIntensityEnd = 1f;
-    private Material eyeMaterial; // This will now be assigned automatically
+    [SerializeField] private float animationDuration = 2f;
+    [SerializeField] private float irisSizeStart = 0.5f, irisSizeEnd = 1f;
+    [SerializeField] private float pupilSizeStart = 0.5f, pupilSizeEnd = 1f;
+    [SerializeField] private float mainLightingIntensityStart = 0.5f, mainLightingIntensityEnd = 1f;
+    [SerializeField] private float shootSpeed = 20f;
+    [SerializeField] private float projectileLifetime = 5f;
+    [SerializeField] private float projectileScale = 1f;
+    [SerializeField] private Material alternativeProjectileMaterial;
+    [SerializeField] private Transform target;
+
+    private static List<StaticEnemyShooting> activeInstances = new List<StaticEnemyShooting>();
+    private static MaterialPropertyBlock propertyBlock;
+    private static Coroutine sharedAnimationCoroutine;
+
+    private Renderer enemyRenderer;
     private Timeline myTime;
-    private int shootCounter = 0; // Counter to track the number of times OnMusicalEnemyShoot has been called
 
-    [SerializeField] private float shootSpeed = 20f; // Speed of the projectile
-    [SerializeField] private float projectileLifetime = 5f; // Lifetime of the projectile in seconds
-    [SerializeField] private float projectileScale = 1f; // Uniform scale of the projectile
-    [SerializeField] private Material alternativeProjectileMaterial; // Define alternative material in the inspector
-
-    [SerializeField] private Transform target; // Assign this in the inspector
+    private static readonly int IrisSizeID = Shader.PropertyToID("Vector1_520f2e2b2d664517a415c2d1d2d003e1");
+    private static readonly int PupilSizeID = Shader.PropertyToID("Vector1_c88d82cf95c0459d90a5f7c35020e695");
+    private static readonly int MainLightingIntensityID = Shader.PropertyToID("Vector1_62c9d5aca0154b4386a16cd0625b239b");
 
     void Awake()
     {
-        // Any initialization that doesn't depend on other objects
-    }
-
-    void Start()
-    {
+        enemyRenderer = GetComponent<Renderer>();
         myTime = GetComponent<Timeline>();
-        eyeMaterial = GetComponent<Renderer>().material; // Automatically assign the material
-    }
 
-    void OnDisable()
-    {
-        if (EnemyShootingManager.Instance != null)
-        {
-            EnemyShootingManager.Instance.UnregisterStaticEnemyShooting(this);
-        }
+        if (propertyBlock == null)
+            propertyBlock = new MaterialPropertyBlock();
     }
 
     public void OnEnable()
     {
-        if (EnemyShootingManager.Instance != null)
+        activeInstances.Add(this);
+        EnemyShootingManager.Instance?.RegisterStaticEnemyShooting(this);
+
+        if (sharedAnimationCoroutine == null)
+            sharedAnimationCoroutine = StartCoroutine(SharedAnimationCoroutine());
+    }
+
+    void OnDisable()
+    {
+        activeInstances.Remove(this);
+        EnemyShootingManager.Instance?.UnregisterStaticEnemyShooting(this);
+
+        if (activeInstances.Count == 0 && sharedAnimationCoroutine != null)
         {
-            EnemyShootingManager.Instance.RegisterStaticEnemyShooting(this);
+            StopCoroutine(sharedAnimationCoroutine);
+            sharedAnimationCoroutine = null;
         }
+    }
+
+    private static IEnumerator SharedAnimationCoroutine()
+    {
+        while (true)
+        {
+            float elapsedTime = 0f;
+            while (elapsedTime < activeInstances[0].animationDuration)
+            {
+                float t = elapsedTime / activeInstances[0].animationDuration;
+                UpdateAllInstances(t);
+                elapsedTime += Time.deltaTime;
+                yield return null;
+            }
+
+            elapsedTime = activeInstances[0].animationDuration;
+            while (elapsedTime > 0f)
+            {
+                float t = elapsedTime / activeInstances[0].animationDuration;
+                UpdateAllInstances(t);
+                elapsedTime -= Time.deltaTime;
+                yield return null;
+            }
+        }
+    }
+
+    private static void UpdateAllInstances(float t)
+    {
+        foreach (var instance in activeInstances)
+        {
+            instance.UpdateMaterialProperties(t);
+        }
+    }
+
+    private void UpdateMaterialProperties(float t)
+    {
+        enemyRenderer.GetPropertyBlock(propertyBlock);
+
+        propertyBlock.SetFloat(IrisSizeID, Mathf.Lerp(irisSizeStart, irisSizeEnd, t));
+        propertyBlock.SetFloat(PupilSizeID, Mathf.Lerp(pupilSizeStart, pupilSizeEnd, t));
+        propertyBlock.SetFloat(MainLightingIntensityID, Mathf.Lerp(mainLightingIntensityStart, mainLightingIntensityEnd, t));
+
+        enemyRenderer.SetPropertyBlock(propertyBlock);
     }
 
     public void Shoot()
@@ -59,7 +108,6 @@ public class StaticEnemyShooting : MonoBehaviour
             return;
         }
 
-        AnimateShaderProperties();
         Vector3 directionToTarget = target != null ? (target.position - transform.position).normalized : transform.forward;
 
         if (ProjectileManager.Instance == null)
@@ -68,42 +116,29 @@ public class StaticEnemyShooting : MonoBehaviour
         }
         else
         {
-            // Shoot the projectile
             ProjectileManager.Instance.ShootProjectile(transform.position, Quaternion.LookRotation(directionToTarget), shootSpeed, projectileLifetime, projectileScale, false, alternativeProjectileMaterial);
         }
     }
 
-    private void AnimateShaderProperties()
+    public void StopAllAnimations()
     {
-        // Animate to end values
-        Tween.Custom(irisSizeStart, irisSizeEnd, lerpDuration, newVal => eyeMaterial.SetFloat("Vector1_520f2e2b2d664517a415c2d1d2d003e1", newVal))
-            .OnComplete(target: this, target => target.OnTweenComplete());
-
-        Tween.Custom(pupilSizeStart, pupilSizeEnd, lerpDuration, newVal => eyeMaterial.SetFloat("Vector1_c88d82cf95c0459d90a5f7c35020e695", newVal))
-            .OnComplete(target: this, target => target.OnTweenComplete());
-
-        Tween.Custom(mainLightingIntensityStart, mainLightingIntensityEnd, lerpDuration, newVal => eyeMaterial.SetFloat("Vector1_62c9d5aca0154b4386a16cd0625b239b", newVal))
-            .OnComplete(target: this, target => target.OnTweenComplete());
-
-        // Animate back to start values at half the speed
-        float returnDuration = lerpDuration * 2;
-
-        Tween.Custom(irisSizeEnd, irisSizeStart, returnDuration, newVal => eyeMaterial.SetFloat("Vector1_520f2e2b2d664517a415c2d1d2d003e1", newVal))
-            .OnComplete(target: this, target => target.OnTweenComplete());
-
-        Tween.Custom(pupilSizeEnd, pupilSizeStart, returnDuration, newVal => eyeMaterial.SetFloat("Vector1_c88d82cf95c0459d90a5f7c35020e695", newVal))
-            .OnComplete(target: this, target => target.OnTweenComplete());
-
-        Tween.Custom(mainLightingIntensityEnd, mainLightingIntensityStart, returnDuration, newVal => eyeMaterial.SetFloat("Vector1_62c9d5aca0154b4386a16cd0625b239b", newVal))
-            .OnComplete(target: this, target => target.OnTweenComplete());
+        if (sharedAnimationCoroutine != null)
+        {
+            StopCoroutine(sharedAnimationCoroutine);
+            sharedAnimationCoroutine = null;
+        }
+        
+        ResetMaterialProperties();
     }
 
-    private void OnTweenComplete()
+    private void ResetMaterialProperties()
     {
-        // This code will execute after the PrimeTween animation completes.
-        // Ensure the final values are reset to the start values
-        eyeMaterial.SetFloat("Vector1_520f2e2b2d664517a415c2d1d2d003e1", irisSizeStart);
-        eyeMaterial.SetFloat("Vector1_c88d82cf95c0459d90a5f7c35020e695", pupilSizeStart);
-        eyeMaterial.SetFloat("Vector1_62c9d5aca0154b4386a16cd0625b239b", mainLightingIntensityStart);
+        enemyRenderer.GetPropertyBlock(propertyBlock);
+
+        propertyBlock.SetFloat(IrisSizeID, irisSizeStart);
+        propertyBlock.SetFloat(PupilSizeID, pupilSizeStart);
+        propertyBlock.SetFloat(MainLightingIntensityID, mainLightingIntensityStart);
+
+        enemyRenderer.SetPropertyBlock(propertyBlock);
     }
 }

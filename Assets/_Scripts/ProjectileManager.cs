@@ -28,6 +28,9 @@ public class ProjectileManager : MonoBehaviour
 
     private GameObject playerGameObject; // Cache for player GameObject
 
+     [Range(0f, 1f)]
+    public float projectileAccuracy = 0.5f; // 0 = always miss, 1 = perfect accuracy
+
     public GameObject projectileRadarSymbol;
     [SerializeField] private int radarSymbolPoolSize = 50;
     [SerializeField] private List<GameObject> radarSymbolPool = new List<GameObject>(50);
@@ -246,7 +249,7 @@ public class ProjectileManager : MonoBehaviour
         }
     }
 
-  public void ShootProjectileFromEnemy(Vector3 position, Quaternion rotation, float speed, float lifetime, float uniformScale, bool enableHoming = false, Material material = null, string clockKey = "")
+  public void ShootProjectileFromEnemy(Vector3 position, Quaternion rotation, float speed, float lifetime, float uniformScale, bool enableHoming = false, Material material = null, string clockKey = "", float accuracy = -1f)
     {
         if (enemyBasicSetupProjectilePool.Count == 0)
         {
@@ -298,6 +301,9 @@ public class ProjectileManager : MonoBehaviour
 
         projectile.initialSpeed = speed;
 
+        // Set the accuracy for this specific projectile
+        projectile.accuracy = accuracy >= 0f ? accuracy : projectileAccuracy;
+
         RegisterProjectile(projectile);
     }
 
@@ -347,41 +353,40 @@ public class ProjectileManager : MonoBehaviour
     }
 
     public void ReturnProjectileToPool(ProjectileStateBased projectile)
+{
+    projectile.ResetForPool();
+    projectile.gameObject.SetActive(false);
+
+    // Detach and return Radar Symbol to pool
+    foreach (Transform child in projectile.transform)
     {
-        projectile.gameObject.SetActive(false);
-        projectile.rb.isKinematic = false; // Ensure it's non-kinematic
-        projectile.rb.velocity = Vector3.zero; // Reset velocity
-        projectile.rb.isKinematic = true; // Optionally make it kinematic again
-
-        // Detach and return Radar Symbol to pool
-        foreach (Transform child in projectile.transform)
+        if (child.gameObject.CompareTag("RadarSymbol"))
         {
-            if (child.gameObject.CompareTag("RadarSymbol")) // Assuming the Radar Symbol has a tag "RadarSymbol"
-            {
-                ReturnRadarSymbolToPool(child.gameObject);
-            }
-        }
-
-        switch (projectile.poolType)
-        {
-            case ProjectilePoolType.StaticEnemy:
-                if (!staticEnemyProjectilePool.Contains(projectile))
-                {
-                    staticEnemyProjectilePool.Enqueue(projectile);
-                }
-                break;
-            case ProjectilePoolType.EnemyBasicSetup:
-                if (!enemyBasicSetupProjectilePool.Contains(projectile))
-                {
-                    enemyBasicSetupProjectilePool.Enqueue(projectile);
-                }
-                break;
-            // Handle other types as needed
-            default:
-                ConditionalDebug.LogError("Unhandled projectile pool type.");
-                break;
+            ReturnRadarSymbolToPool(child.gameObject);
         }
     }
+
+    switch (projectile.poolType)
+    {
+        case ProjectilePoolType.StaticEnemy:
+            if (!staticEnemyProjectilePool.Contains(projectile))
+            {
+                staticEnemyProjectilePool.Enqueue(projectile);
+            }
+            break;
+        case ProjectilePoolType.EnemyBasicSetup:
+            if (!enemyBasicSetupProjectilePool.Contains(projectile))
+            {
+                enemyBasicSetupProjectilePool.Enqueue(projectile);
+            }
+            break;
+        default:
+            ConditionalDebug.LogError("Unhandled projectile pool type.");
+            break;
+    }
+
+    UnregisterProjectile(projectile);
+}
 
     public void RegisterProjectile(ProjectileStateBased projectile)
     {
@@ -485,16 +490,29 @@ public class ProjectileManager : MonoBehaviour
 
         if (projectileSpeed < Mathf.Epsilon) return; // Avoid division by zero
 
-        float predictionTime = distanceToTarget / projectileSpeed;
+        float predictionTime = distanceToTarget / (projectileSpeed + targetVelocity.magnitude);
         Vector3 predictedPosition = projectile.currentTarget.position + targetVelocity * predictionTime;
 
-        projectile.predictedPosition = predictedPosition;
+        // Apply accuracy adjustment using the projectile's specific accuracy
+        Vector3 inaccuracyOffset = Random.insideUnitSphere * (1f - projectile.accuracy) * distanceToTarget * 0.1f;
+        Vector3 adjustedPredictedPosition = Vector3.Lerp(predictedPosition, projectile.transform.position + projectile.transform.forward * distanceToTarget, 1f - projectile.accuracy);
+        adjustedPredictedPosition += inaccuracyOffset;
 
-        Vector3 directionToTarget = predictedPosition - projectile.transform.position;
-        if (directionToTarget == Vector3.zero) return; // Check if direction is zero
+        projectile.predictedPosition = adjustedPredictedPosition;
 
+        Vector3 directionToTarget = (adjustedPredictedPosition - projectile.transform.position).normalized;
+        
+        // Apply accuracy to rotation speed
+        float accuracyAdjustedRotateSpeed = Mathf.Lerp(projectile._rotateSpeed * 0.5f, projectile._rotateSpeed * 2f, projectile.accuracy);
+        
         Quaternion targetRotation = Quaternion.LookRotation(directionToTarget);
-        projectile.rb.MoveRotation(Quaternion.RotateTowards(projectile.transform.rotation, targetRotation, projectile._rotateSpeed * Time.deltaTime));
+        projectile.transform.rotation = Quaternion.RotateTowards(projectile.transform.rotation, targetRotation, accuracyAdjustedRotateSpeed * Time.deltaTime);
+
+        // Apply accuracy to velocity adjustment
+        Vector3 desiredVelocity = directionToTarget * projectile.bulletSpeed;
+        Vector3 velocityAdjustment = (desiredVelocity - projectile.rb.velocity) * Mathf.Lerp(0.1f, 1f, projectile.accuracy);
+        projectile.rb.velocity += velocityAdjustment * Time.deltaTime;
+        projectile.rb.velocity = Vector3.ClampMagnitude(projectile.rb.velocity, projectile.bulletSpeed);
     }
 
     private Vector3 CalculateTargetVelocity(GameObject target)
@@ -562,10 +580,28 @@ public void ReRegisterEnemiesAndProjectiles()
     }
 }
 
+public void ClearAllProjectiles()
+    {
+        List<ProjectileStateBased> projectilesToClear = new List<ProjectileStateBased>(projectiles);
+        foreach (var projectile in projectilesToClear)
+        {
+            if (projectile != null)
+            {
+                projectile.Death();
+            }
+        }
+
+        // Clear any remaining projectiles in the list
+        projectiles.Clear();
+        projectileLifetimes.Clear();
+
+        // Clear the projectile requests queue
+        projectileRequests.Clear();
+
+        ConditionalDebug.Log($"Cleared all projectiles. Pools: StaticEnemy={staticEnemyProjectilePool.Count}, EnemyBasicSetup={enemyBasicSetupProjectilePool.Count}");
+    }
 public void PlayOneShotSound(string soundEvent, Vector3 position)
 {
     FMODUnity.RuntimeManager.PlayOneShot(soundEvent, position);
 }
 }
-
-

@@ -7,9 +7,29 @@ using UltimateSpawner;
 public class OnSwitchSceneEvent : MonoBehaviour
 {
     [HideInInspector] public WaveSpawnController waveSpawnController;
-    public UnityEvent onSwitchScene;
+    
+    [System.Serializable]
+    public class SwitchSceneEvent : UnityEvent { }
+
+    [SerializeField]
+    private SwitchSceneEvent onSwitchScene = new SwitchSceneEvent();
 
     private void Awake()
+    {
+        InitializeWaveSpawnController();
+    }
+
+    private void OnEnable()
+    {
+        ConnectToGameManager();
+    }
+
+    private void OnDisable()
+    {
+        DisconnectFromGameManager();
+    }
+
+    private void InitializeWaveSpawnController()
     {
         waveSpawnController = GetComponent<WaveSpawnController>();
 
@@ -19,7 +39,29 @@ public class OnSwitchSceneEvent : MonoBehaviour
         }
         else
         {
-            Debug.LogError("WaveSpawnController component not found on the GameObject.");
+            Debug.LogError($"WaveSpawnController component not found on {gameObject.name}.");
+        }
+    }
+
+    private void ConnectToGameManager()
+    {
+        if (GameManager.instance != null)
+        {
+            onSwitchScene.AddListener(GameManager.instance.ChangeToNextScene);
+            Debug.Log("Connected to GameManager and set up ChangeToNextScene method.");
+        }
+        else
+        {
+            Debug.LogError("GameManager instance not found.");
+        }
+    }
+
+    private void DisconnectFromGameManager()
+    {
+        if (GameManager.instance != null)
+        {
+            onSwitchScene.RemoveListener(GameManager.instance.ChangeToNextScene);
+            Debug.Log("Disconnected from GameManager.");
         }
     }
 
@@ -27,14 +69,14 @@ public class OnSwitchSceneEvent : MonoBehaviour
     {
         if (eventName == "Switch Scene")
         {
-            onSwitchScene.Invoke();
-            if (GameManager.instance != null)
+            if (onSwitchScene != null)
             {
-                GameManager.instance.ChangeSceneWithTransitionToNext();
+                onSwitchScene.Invoke();
+                Debug.Log("onSwitchScene event invoked.");
             }
             else
             {
-                Debug.LogError("GameManager instance not found.");
+                Debug.LogError("onSwitchScene event is null.");
             }
         }
         else
@@ -49,5 +91,7 @@ public class OnSwitchSceneEvent : MonoBehaviour
         {
             waveSpawnController.OnWaveCustomEvent.RemoveListener(HandleSwitchSceneEvent);
         }
+
+        DisconnectFromGameManager();
     }
 }
