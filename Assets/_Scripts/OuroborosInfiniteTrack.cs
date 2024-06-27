@@ -1,3 +1,9 @@
+// =====================================================================
+// Copyright 2013-2022 ToolBuddy
+// All rights reserved
+// 
+// http://www.toolbuddy.net
+// =====================================================================
 
 using UnityEngine;
 using System.Collections;
@@ -12,12 +18,12 @@ using OccaSoftware.BOP;
 using UnityEngine.UI;
 using Chronos; 
 
-namespace FluffyUnderware.Curvy.Examples
+namespace FluffyUnderware.Curvy.Controllers
 {
     public class OuroborosInfiniteTrack : MonoBehaviour  
     { [Header("Track Settings")]
         public CurvySpline TrackSpline;
-        public CurvyController Controller;
+        private SplineController Controller;
         public Material RoadMaterial;
 
         [Header("Curvation Settings")]
@@ -74,6 +80,29 @@ namespace FluffyUnderware.Curvy.Examples
 
         void Start()
         {
+            FindAndAssignController();
+        }
+
+        void FindAndAssignController()
+        {
+            GameObject playerPlane = GameObject.FindGameObjectWithTag("PlayerPlane");
+            if (playerPlane != null)
+            {
+                Controller = playerPlane.GetComponent<SplineController>();
+                if (Controller != null)
+                {
+                    // Register the OnControlPointReached event
+                    Controller.OnControlPointReached.AddListener(Track_OnControlPointReached);
+                }
+                else
+                {
+                    Debug.LogError("SplineController component not found on the PlayerPlane object.");
+                }
+            }
+            else
+            {
+                Debug.LogError("GameObject with tag 'PlayerPlane' not found in the scene.");
+            }
         }
 
         void FixedUpdate()
@@ -95,6 +124,16 @@ namespace FluffyUnderware.Curvy.Examples
         IEnumerator setup()
         {
             mInitState = 1;
+
+            if (Controller == null)
+            {
+                FindAndAssignController();
+                if (Controller == null)
+                {
+                    Debug.LogError("Failed to find and assign the SplineController. Setup cannot continue.");
+                    yield break;
+                }
+            }
 
             mGenerators = new CurvyGenerator[Sections];
 
@@ -207,6 +246,7 @@ CurvyGenerator buildGenerator()
                 if (instanceComponent != null)
                 {
                     // Debug statement before despawning
+                    Debug.Log($"Despawning: {prefab.name}");
                     instanceComponent.Despawn();
 
                     // Add the prefab to the list of despawned prefabs
@@ -371,6 +411,13 @@ CurvyGenerator buildGenerator()
             despawnedPrefabs.Clear();
         }
 
+        void OnDisable()
+        {
+            // Unregister the event when the script is disabled or destroyed
+            if (Controller != null)
+            {
+                Controller.OnControlPointReached.RemoveListener(Track_OnControlPointReached);
+            }
+        }
     }
 }
-

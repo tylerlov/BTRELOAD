@@ -5,6 +5,7 @@ using System.Collections;
 
 public class StaticEnemyShooting : MonoBehaviour
 {
+    [SerializeField] private static bool enableAnimation = false; // Make this static
     [SerializeField] private string enemyType;
     [SerializeField] private float animationDuration = 2f;
     [SerializeField] private float irisSizeStart = 0.5f, irisSizeEnd = 1f;
@@ -15,6 +16,7 @@ public class StaticEnemyShooting : MonoBehaviour
     [SerializeField] private float projectileScale = 1f;
     [SerializeField] private Material alternativeProjectileMaterial;
     [SerializeField] private Transform target;
+    [SerializeField] private float shootCooldown = 0.15f; // Cooldown time in seconds
 
     private static List<StaticEnemyShooting> activeInstances = new List<StaticEnemyShooting>();
     private static MaterialPropertyBlock propertyBlock;
@@ -22,6 +24,7 @@ public class StaticEnemyShooting : MonoBehaviour
 
     private Renderer enemyRenderer;
     private Timeline myTime;
+    private float lastShootTime;
 
     private static readonly int IrisSizeID = Shader.PropertyToID("Vector1_520f2e2b2d664517a415c2d1d2d003e1");
     private static readonly int PupilSizeID = Shader.PropertyToID("Vector1_c88d82cf95c0459d90a5f7c35020e695");
@@ -61,6 +64,12 @@ public class StaticEnemyShooting : MonoBehaviour
     {
         while (true)
         {
+            if (!enableAnimation) // Access the static field directly
+            {
+                yield return null;
+                continue;
+            }
+
             float elapsedTime = 0f;
             while (elapsedTime < activeInstances[0].animationDuration)
             {
@@ -102,6 +111,11 @@ public class StaticEnemyShooting : MonoBehaviour
 
     public void Shoot()
     {
+        if (Time.time - lastShootTime < shootCooldown)
+        {
+            return; // Exit if we're still in the cooldown period
+        }
+
         if (this == null || !gameObject.activeInHierarchy)
         {
             ConditionalDebug.LogWarning("[StaticEnemyShooting] GameObject is not active in hierarchy or has been destroyed.");
@@ -117,6 +131,8 @@ public class StaticEnemyShooting : MonoBehaviour
         else
         {
             ProjectileManager.Instance.ShootProjectile(transform.position, Quaternion.LookRotation(directionToTarget), shootSpeed, projectileLifetime, projectileScale, false, alternativeProjectileMaterial);
+            lastShootTime = Time.time; // Update the last shoot time
+            ConditionalDebug.Log($"[StaticEnemyShooting] Projectile fired from {gameObject.name} at {Time.time}");
         }
     }
 

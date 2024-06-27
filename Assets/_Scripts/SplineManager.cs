@@ -23,21 +23,45 @@ public class SplineManager : MonoBehaviour
         public CurvyClamping Clamping; // added new field
     }
 
-    [SerializeField] SplineController splineController;
+    private SplineController splineController;
     [SerializeField] GameObject Splines;
-    public GameObject Shooting;
+    private GameObject shooting;
     public List<SplineData> splineDatas;
     int currSpline;
 
     [SerializeField] private float speedMultiplier = 1.0f; // Add this field to adjust speed globally
     private bool isSplineNeeded => splineDatas.Count > 0; // Dynamically determine if spline is needed
 
+    private bool canIncrement = true;
+    private float incrementCooldown = 0.5f; // Cooldown duration between spline increments
+
     void Awake()
     {
-        splineController = gameObject.GetComponent<SplineController>();
+        // Find the PlayerPlane and get its SplineController
+        GameObject playerPlane = GameObject.FindGameObjectWithTag("PlayerPlane");
+        if (playerPlane != null)
+        {
+            splineController = playerPlane.GetComponent<SplineController>();
+            if (splineController == null)
+            {
+                Debug.LogError("SplineController not found on PlayerPlane!");
+            }
+        }
+        else
+        {
+            Debug.LogError("PlayerPlane not found!");
+        }
+
+        // Find the Shooting object
+        shooting = GameObject.FindGameObjectWithTag("Shooting");
+        if (shooting == null)
+        {
+            Debug.LogError("Shooting object not found!");
+        }
+
         currSpline = 0;
 
-        if (isSplineNeeded) // Check if spline is needed
+        if (isSplineNeeded && splineController != null)
         {
             SetSplineDataAttributes(currSpline);
         }
@@ -53,30 +77,58 @@ public class SplineManager : MonoBehaviour
         }
     }
 
-    public void IncrementSpline()
+    private void PerformSplineIncrement()
     {
-        if (isSplineNeeded && currSpline < splineDatas.Count - 1) 
+        if (isSplineNeeded && currSpline < splineDatas.Count - 1)
         {
             currSpline++;
             SetSplineDataAttributes(currSpline);
-            StartCoroutine(lockShooter(2f));
-
-            ConditionalDebug.Log("Spline Incremented");
+            Debug.Log("Spline Incremented");
         }
         else
         {
-            ConditionalDebug.Log("Next Spline is not available, maintaining current Spline");
+            Debug.Log("Next Spline is not available, maintaining current Spline");
         }
+    }
+
+    public void IncrementSpline()
+    {
+        if (!canIncrement) 
+        {
+            Debug.Log("Increment attempted during cooldown, ignoring.");
+            return;
+        }
+
+        PerformSplineIncrement();
+        StartCoroutine(lockShooter(2f));
+        StartCoroutine(IncrementCooldown());
+    }
+
+    private IEnumerator IncrementCooldown()
+    {
+        canIncrement = false;
+        yield return new WaitForSeconds(incrementCooldown);
+        canIncrement = true;
     }
 
     IEnumerator lockShooter(float waitTime)
     {
-        float timer = 0f;
-        while (timer < waitTime)
+        if (shooting != null)
         {
-            Shooting.transform.localPosition = new Vector3(0, 0, Shooting.transform.localPosition.z);
-            timer += Time.deltaTime;
-            yield return null;
+            float timer = 0f;
+            while (timer < waitTime)
+            {
+                shooting.transform.localPosition = new Vector3(0, 0, shooting.transform.localPosition.z);
+                timer += Time.deltaTime;
+                yield return null;
+            }
+            
+            // Perform the second increment after the lock period
+            PerformSplineIncrement();
+        }
+        else
+        {
+            Debug.LogWarning("Shooting object is null, cannot lock shooter.");
         }
     }
 }

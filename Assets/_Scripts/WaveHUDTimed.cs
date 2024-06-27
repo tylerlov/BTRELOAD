@@ -16,14 +16,25 @@ namespace UltimateSpawner.Demo
         public TextMeshProUGUI nextWaveText; // Changed from Text to TextMeshProUGUI
         public float waveTextDisplayTime = 2.0f; // Set this value in Inspector
 
+        private const float CONTROLLER_CHECK_INTERVAL = 0.5f; // Interval to check for the controller
+
         // Methods
         public void Start()
         {
-            waveController = Component.FindObjectOfType<WaveSpawnController>();
+            StartCoroutine(InitializeWaveController());
+        }
 
-            if (waveController != null)
+        private IEnumerator InitializeWaveController()
+        {
+            while (waveController == null)
             {
-                waveController.OnWaveStarted.AddListener(OnWaveStarted);
+                waveController = FindObjectOfType<WaveSpawnController>();
+                if (waveController != null)
+                {
+                    waveController.OnWaveStarted.AddListener(OnWaveStarted);
+                    break;
+                }
+                yield return new WaitForSeconds(CONTROLLER_CHECK_INTERVAL);
             }
         }
 

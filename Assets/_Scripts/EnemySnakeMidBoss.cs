@@ -7,8 +7,9 @@ using UnityEngine.Events;
 using SonicBloom.Koreo;
 using System.Collections.Generic;
 using UnityEngine.VFX;
+using UnityEngine.Animations;
 
-[RequireComponent(typeof(Timeline))] 
+[RequireComponent(typeof(Timeline))]
 public class EnemySnakeMidBoss : BaseBehaviour, IDamageable, ILimbDamageReceiver
 {
     

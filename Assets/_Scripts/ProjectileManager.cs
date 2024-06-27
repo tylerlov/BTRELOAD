@@ -221,7 +221,7 @@ public class ProjectileManager : MonoBehaviour
         if (request.Material != null && projectile.modelRenderer.material != request.Material)
         {
             projectile.modelRenderer.material = request.Material;
-            projectile.UpdateMaterial(request.Material); // Update the material reference in ProjectileStateBased
+            projectile.UpdateMaterial(request.Material.color); // Update the material reference in ProjectileStateBased
         }
 
         RegisterProjectile(projectile);
@@ -291,7 +291,7 @@ public class ProjectileManager : MonoBehaviour
         if (material != null && projectile.modelRenderer.material != material)
         {
             projectile.modelRenderer.material = material;
-            projectile.UpdateMaterial(material);
+            projectile.UpdateMaterial(material.color);
         }
 
         if (!string.IsNullOrEmpty(clockKey))
@@ -389,60 +389,69 @@ public class ProjectileManager : MonoBehaviour
 }
 
     public void RegisterProjectile(ProjectileStateBased projectile)
+{
+    if (!projectiles.Contains(projectile))
     {
-        if (!projectiles.Contains(projectile))
-        {
-            projectiles.Add(projectile);
-            projectileLifetimes[projectile] = projectile.lifetime;
-
-        }
+        projectiles.Add(projectile);
+        projectileLifetimes[projectile] = projectile.lifetime;
+        ConditionalDebug.Log($"Registered projectile: {projectile.name}");
     }
+}
 
     public void UnregisterProjectile(ProjectileStateBased projectile)
+{
+    projectiles.Remove(projectile);
+    projectileLifetimes.Remove(projectile);
+}
+
+ private void Update()
+{
+    // Example of using Chronos to adjust time scale for projectiles
+    float globalTimeScale = timekeeper.Clock("Test").localTimeScale;
+    
+    List<ProjectileStateBased> projectilesToRemove = new List<ProjectileStateBased>();
+
+    // Use ToArray() to create a copy of the list for safe iteration
+    foreach (var projectile in projectiles.ToArray())
     {
-        if (projectiles.Contains(projectile))
+        if (projectile != null)
         {
-            projectiles.Remove(projectile);
-            projectileLifetimes.Remove(projectile);
-
-        }
-    }
-
-    private void Update()
-    {
-        // Example of using Chronos to adjust time scale for projectiles
-        float globalTimeScale = timekeeper.Clock("Test").localTimeScale; // Adjust "Global" to your specific clock name
-        
-        List<ProjectileStateBased> projectilesToRemove = new List<ProjectileStateBased>();
-
-
-        foreach (var projectile in projectiles)
-        {
-            if (projectile != null)
+            // Adjust projectile logic based on globalTimeScale
+            projectile.CustomUpdate(globalTimeScale);
+            if (projectile.homing)
             {
-                // Adjust projectile logic based on globalTimeScale
-                // This could involve modifying movement speed, animation speed, etc.
-                projectile.CustomUpdate(globalTimeScale);
-                if (projectile.homing)
-                {
-                    PredictAndRotateProjectile(projectile); // Ensure this method is refined and used
-                }
+                PredictAndRotateProjectile(projectile);
+            }
 
-                // Update lifetime
-                projectileLifetimes[projectile] -= Time.deltaTime * globalTimeScale;
-                if (projectileLifetimes[projectile] <= 0)
+            // Update lifetime
+            if (projectileLifetimes.TryGetValue(projectile, out float lifetime))
+            {
+                lifetime -= Time.deltaTime * globalTimeScale;
+                projectileLifetimes[projectile] = lifetime;
+                if (lifetime <= 0)
                 {
                     projectilesToRemove.Add(projectile);
                 }
             }
+            else
+            {
+                ConditionalDebug.LogWarning($"Projectile {projectile.name} not found in projectileLifetimes dictionary.");
+                projectilesToRemove.Add(projectile);
+            }
         }
-
-        // Handle projectiles that need to be removed
-        foreach (var projectile in projectilesToRemove)
+        else
         {
-            projectile.Death();
+            projectilesToRemove.Add(projectile);
         }
     }
+
+    // Handle projectiles that need to be removed
+    foreach (var projectile in projectilesToRemove)
+    {
+        UnregisterProjectile(projectile);
+        projectile.Death();
+    }
+}
 
     public void UpdateProjectileTargets()
     {
@@ -459,60 +468,19 @@ public class ProjectileManager : MonoBehaviour
         }
     }
 
-    private void PerformHomingWithObstacleAvoidance(ProjectileStateBased projectile)
-    {
-        Vector3 directionToTarget = (projectile.currentTarget.position - projectile.transform.position).normalized;
-        Vector3 currentPosition = projectile.transform.position;
-
-        // Check for obstacles in the path to the target
-        if (Physics.Raycast(currentPosition, directionToTarget, out RaycastHit hit, Mathf.Infinity, LayerMask.GetMask("Ground")))
-        {
-            // Obstacle detected, calculate a new direction to avoid the ground
-            Vector3 avoidDirection = Vector3.ProjectOnPlane(directionToTarget, hit.normal).normalized;
-
-            // Adjust the projectile's velocity to steer away from the obstacle
-            projectile.rb.velocity = Vector3.Lerp(projectile.rb.velocity, avoidDirection * projectile.bulletSpeed, Time.deltaTime * projectile.turnRate);
-        }
-        else
-        {
-            // No obstacle, proceed towards the target
-            projectile.rb.velocity = directionToTarget * projectile.bulletSpeed;
-        }
-    }
-
     public void PredictAndRotateProjectile(ProjectileStateBased projectile)
     {
-        if (crosshair == null || projectile.currentTarget == null) return;
+        if (projectile.currentTarget == null) return;
 
         Vector3 targetVelocity = CalculateTargetVelocity(projectile.currentTarget.gameObject);
-        float distanceToTarget = Vector3.Distance(projectile.transform.position, projectile.currentTarget.position);
-        float projectileSpeed = projectile.rb.velocity.magnitude;
+        Vector3 toTarget = projectile.currentTarget.position - projectile.transform.position;
+        float distanceToTarget = toTarget.magnitude;
+        float projectileSpeed = projectile.bulletSpeed;
 
-        if (projectileSpeed < Mathf.Epsilon) return; // Avoid division by zero
-
-        float predictionTime = distanceToTarget / (projectileSpeed + targetVelocity.magnitude);
+        float predictionTime = distanceToTarget / projectileSpeed;
         Vector3 predictedPosition = projectile.currentTarget.position + targetVelocity * predictionTime;
 
-        // Apply accuracy adjustment using the projectile's specific accuracy
-        Vector3 inaccuracyOffset = Random.insideUnitSphere * (1f - projectile.accuracy) * distanceToTarget * 0.1f;
-        Vector3 adjustedPredictedPosition = Vector3.Lerp(predictedPosition, projectile.transform.position + projectile.transform.forward * distanceToTarget, 1f - projectile.accuracy);
-        adjustedPredictedPosition += inaccuracyOffset;
-
-        projectile.predictedPosition = adjustedPredictedPosition;
-
-        Vector3 directionToTarget = (adjustedPredictedPosition - projectile.transform.position).normalized;
-        
-        // Apply accuracy to rotation speed
-        float accuracyAdjustedRotateSpeed = Mathf.Lerp(projectile._rotateSpeed * 0.5f, projectile._rotateSpeed * 2f, projectile.accuracy);
-        
-        Quaternion targetRotation = Quaternion.LookRotation(directionToTarget);
-        projectile.transform.rotation = Quaternion.RotateTowards(projectile.transform.rotation, targetRotation, accuracyAdjustedRotateSpeed * Time.deltaTime);
-
-        // Apply accuracy to velocity adjustment
-        Vector3 desiredVelocity = directionToTarget * projectile.bulletSpeed;
-        Vector3 velocityAdjustment = (desiredVelocity - projectile.rb.velocity) * Mathf.Lerp(0.1f, 1f, projectile.accuracy);
-        projectile.rb.velocity += velocityAdjustment * Time.deltaTime;
-        projectile.rb.velocity = Vector3.ClampMagnitude(projectile.rb.velocity, projectile.bulletSpeed);
+        projectile.predictedPosition = predictedPosition;
     }
 
     private Vector3 CalculateTargetVelocity(GameObject target)

@@ -1,35 +1,40 @@
 using UnityEngine;
-using System.Collections.Generic;
+using System.Collections;
 
 [ExecuteInEditMode] // This will ensure that the script also runs in the editor
 public class ButoParent : MonoBehaviour
 {
     // This will appear as a drop-down list in the inspector, populated with all available tags.
     public string parentTag;
+    public float maxWaitTime = 5f; // Maximum time to wait for parent object
+    public float retryInterval = 0.1f; // Time between retry attempts
 
-    void Awake()
+    void Start()
     {
-        // Since Awake is called in the editor as well, we check if we are actually playing
         if (Application.isPlaying)
         {
-            ParentToObjectWithTag();
+            StartCoroutine(TryParentToObjectWithTag());
         }
     }
 
-    private void ParentToObjectWithTag()
+    private IEnumerator TryParentToObjectWithTag()
     {
-        // Find all game objects with the selected tag.
-        GameObject[] parentObjects = GameObject.FindGameObjectsWithTag(parentTag);
+        float elapsedTime = 0f;
 
-        // If there is at least one object with the tag, parent this object to the first one found.
-        if (parentObjects.Length > 0)
+        while (elapsedTime < maxWaitTime)
         {
-            transform.SetParent(parentObjects[0].transform, false);
+            GameObject[] parentObjects = GameObject.FindGameObjectsWithTag(parentTag);
+
+            if (parentObjects.Length > 0)
+            {
+                transform.SetParent(parentObjects[0].transform, false);
+                yield break; // Exit the coroutine once parenting is successful
+            }
+
+            elapsedTime += retryInterval;
+            yield return new WaitForSeconds(retryInterval);
         }
-        else
-        {
-            Debug.LogError("No object with tag " + parentTag + " found.");
-        }
+
+        Debug.LogError($"No object with tag {parentTag} found after waiting for {maxWaitTime} seconds.");
     }
-    
 }

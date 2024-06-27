@@ -30,7 +30,7 @@ public abstract class ProjectileState
         _projectile = projectile;
     }
 
-    public virtual void FixedUpdate() {}
+    public virtual void FixedUpdate(float timeScale) { }
     public virtual void OnTriggerEnter(Collider other) { }
     public virtual void OnDeath() { }
     public virtual void OnStateEnter() { }
@@ -49,6 +49,11 @@ public class EnemyShotState : ProjectileState
         // Enemy Shot State initialization logic here...
         _projectile.currentTarget = GameObject.FindWithTag("Player Aim Target").transform;
         _projectile.SetLifetime(10f);
+
+        _projectile.minTurnRadius = 5f;  // Reduced from 10f
+        _projectile.maxTurnRadius = 20f; // Reduced from 50f
+        _projectile.approachAngle = UnityEngine.Random.Range(15f, 30f); // Reduced range
+        _projectile.turnRate = 180f; // Increased turn rate for sharper turns
     }
 
     public override void OnTriggerEnter(Collider other)
@@ -89,28 +94,26 @@ public class PlayerLockedState : ProjectileState
 
         _projectile.TLine.globalClockKey = "Test";
 
-        GameObject shootingObject = GameObject.FindGameObjectWithTag("Shooting");
-
-        if (shootingObject != null)
+        if (ProjectileStateBased.shootingObject != null)
         {
            // Set the projectile's parent to the Shooting GameObject
-            _projectile.transform.SetParent(shootingObject.transform, true);
+            _projectile.transform.SetParent(ProjectileStateBased.shootingObject.transform, true);
 
             // Calculate the new position in front of the shootingObject by 2 units
-            Vector3 newPosition = shootingObject.transform.position + shootingObject.transform.forward * 2f;
+            Vector3 newPosition = ProjectileStateBased.shootingObject.transform.position + ProjectileStateBased.shootingObject.transform.forward * 2f;
 
             // Since the projectile is a child of the shootingObject, set its local position accordingly
             _projectile.transform.position = newPosition;
             
             // Optionally, if you want the projectile to inherit the parent's orientation but offset in position:
-            _projectile.transform.rotation = shootingObject.transform.rotation;
+            _projectile.transform.rotation = ProjectileStateBased.shootingObject.transform.rotation;
 
             // Freeze Rigidbody constraints
             _projectile.rb.constraints = RigidbodyConstraints.FreezeAll;
         }
         else
         {
-            ConditionalDebug.LogError("SHooting not found. Make sure there is a GameObject tagged 'Shooting' in the scene.");
+            ConditionalDebug.LogError("Shooting not found. Make sure there is a GameObject tagged 'Shooting' in the scene.");
         }
 
         _projectile.playerProjPath.enabled = true;
@@ -170,13 +173,11 @@ public class PlayerLockedState : ProjectileState
     }
     public void LaunchBack()
     {
-        GameObject shootingObject = GameObject.FindGameObjectWithTag("Shooting");
-
-        if (shootingObject != null)
+        if (ProjectileStateBased.shootingObject != null)
         {
             _projectile.rb.constraints = RigidbodyConstraints.None;
             // Assuming the shootingObject's forward is the opposite direction of launch
-            Vector3 launchDirection = shootingObject.transform.forward;
+            Vector3 launchDirection = ProjectileStateBased.shootingObject.transform.forward;
 
             _projectile.transform.parent = null;
 
@@ -325,22 +326,6 @@ public class ProjectileStateBased : BaseBehaviour
 
     private const string FIRST_TIME_ENABLED_KEY = "FIRST_TIME_ENABLED_KEY";
 
-    [Header("Movement Variability")]
-    public float orbitRadius = 5f;
-    public float orbitSpeed = 2f;
-    public float approachSpeed = 1f;
-    private Vector3 orbitAxis;
-    private float orbitAngle;
-    private ApproachPattern currentPattern;
-
-    private enum ApproachPattern
-    {
-        Direct,
-        Orbit,
-        Spiral,
-        Zigzag
-    }
-
     [Range(0f, 1f)]
     public float accuracy = 0.5f; // Default to 0.5 if not set
 
@@ -350,6 +335,16 @@ public class ProjectileStateBased : BaseBehaviour
     public float maxInaccuracyRadius = 5f;
     public float minInaccuracyRadius = 0.1f;
 
+    public float minTurnRadius = 10f; // Minimum turn radius
+    public float maxTurnRadius = 50f; // Maximum turn radius
+    public float approachAngle = 45f; // Angle of approach in degrees
+
+    public float closeProximityThreshold = 2f; // Distance at which to start smooth approach
+    public float smoothApproachFactor = 0.1f; // Factor for smooth approach (0-1)
+
+    public float minDistanceToTarget = 0.1f; // Minimum distance to consider the target reached
+    public float maxRotationSpeed = 360f; // Maximum rotation speed in degrees per second
+
     #endregion
 
     private ProjectileState currentState;
@@ -358,6 +353,13 @@ public class ProjectileStateBased : BaseBehaviour
     [HideInInspector] public float initialSpeed; // Add this line to store the initial speed
     internal bool projHitPlayer = false; // Renamed variable to track if the projectile has hit a player
     [HideInInspector] public bool lifetimeExtended = false; // Renamed and used to track if the lifetime extension has occurred
+
+    // Add this field to the ProjectileStateBased class
+    internal static GameObject shootingObject;
+
+    private static readonly int BaseColorProperty = Shader.PropertyToID("_BaseColor");
+    private static readonly int DissolveCutoutProperty = Shader.PropertyToID("_AdvancedDissolveCutoutStandardClip");
+    private MaterialPropertyBlock propBlock;
 
     public ProjectileState GetCurrentState()
     {
@@ -383,6 +385,15 @@ public class ProjectileStateBased : BaseBehaviour
         myMaterial = modelRenderer.material;
         originalProjectileColor = myMaterial.color;
         initialSpeed = bulletSpeed; // Store the initial speed
+
+        // Cache the "Shooting" GameObject reference
+        if (shootingObject == null)
+        {
+            shootingObject = GameObject.FindGameObjectWithTag("Shooting");
+        }
+
+        // Initialize the MaterialPropertyBlock
+        propBlock = new MaterialPropertyBlock();
     }
 
     void OnEnable()
@@ -431,8 +442,6 @@ public class ProjectileStateBased : BaseBehaviour
        // Koreographer.Instance.RegisterForEvents(eventID, OnMusicalProjMove);
 
         _currentTag = gameObject.tag;
-
-        InitializeApproachPattern();
     }
 
     private void OnDisable()
@@ -496,35 +505,50 @@ public class ProjectileStateBased : BaseBehaviour
         }
     }
 
- public void Death()
-{
-    // Log the debug message with lifetime and hit status
-    ConditionalDebug.Log($"Death called on projectile. Lifetime remaining: {lifetime}. Hit Player: {projHitPlayer}");
-
-    // Stop the lifetime coroutine if it's running.
-    ProjectileManager.Instance.PlayDeathEffect(this.transform.position);
-
-    if (playerProjPath != null)
+    public void Death()
     {
-        playerProjPath.enabled = false;
-    }
+        // Log the debug message with lifetime and hit status
+        ConditionalDebug.Log($"Death called on projectile. Lifetime remaining: {lifetime}. Hit Player: {projHitPlayer}");
 
-    // Proceed with DOTween animation if lifetime has expired
-    if (myMaterial != null && myMaterial.HasProperty("_AdvancedDissolveCutoutStandardClip"))
-    {
-        myMaterial.DOFloat(0.05f, "_AdvancedDissolveCutoutStandardClip", 1f).OnComplete(() =>
+        // Freeze the projectile in place
+        if (rb != null)
         {
-            // This code will execute after the DOTween animation completes.
-            // Now it's safe to recycle the projectile.
+            rb.velocity = Vector3.zero;
+            rb.angularVelocity = Vector3.zero;
+            rb.isKinematic = true; // This prevents any further physics interactions
+        }
+
+        // Stop any ongoing movement or rotation
+        transform.DOKill(); // This stops any DOTween animations on the transform
+
+        // Disable any scripts that might be moving the projectile
+        this.enabled = false;
+
+        // Stop the lifetime coroutine if it's running.
+        ProjectileManager.Instance.PlayDeathEffect(this.transform.position);
+
+        if (playerProjPath != null)
+        {
+            playerProjPath.enabled = false;
+        }
+
+        // Proceed with DOTween animation if lifetime has expired
+        if (myMaterial != null && myMaterial.HasProperty("_AdvancedDissolveCutoutStandardClip"))
+        {
+            // Changed the duration from 1f to 0.1f for a much quicker dissolve effect
+            myMaterial.DOFloat(0.05f, "_AdvancedDissolveCutoutStandardClip", 0.1f).OnComplete(() =>
+            {
+                // This code will execute after the DOTween animation completes.
+                // Now it's safe to recycle the projectile.
+                ProjectileManager.Instance.ReturnProjectileToPool(this);
+            });
+        }
+        else
+        {
+            // Ensure the projectile is returned to the pool even if the material does not have the required property.
             ProjectileManager.Instance.ReturnProjectileToPool(this);
-        });
+        }
     }
-    else
-    {
-        // Ensure the projectile is returned to the pool even if the material does not have the required property.
-        ProjectileManager.Instance.ReturnProjectileToPool(this);
-    }
-}
 
     public void ChangeState(ProjectileState newState)
     {
@@ -562,19 +586,19 @@ public class ProjectileStateBased : BaseBehaviour
         return velocity;
     }
 
-   public void SetLifetime(float seconds)
-{
-    lifetime = seconds; // Set the lifetime variable to the specified seconds.
-}
-
-public void UpdateLifetime(float deltaTime)
-{
-    lifetime -= deltaTime;
-    if (lifetime <= 0)
+    public void SetLifetime(float seconds)
     {
-        Death();
+        lifetime = seconds; // Set the lifetime variable to the specified seconds.
     }
-}
+
+    public void UpdateLifetime(float deltaTime)
+    {
+        lifetime -= deltaTime;
+        if (lifetime <= 0)
+        {
+            Death();
+        }
+    }
 
     public void SetHomingTarget(Transform target)
     {
@@ -604,97 +628,68 @@ public void UpdateLifetime(float deltaTime)
     private Vector3 previousError;
     private Vector3 integralError;
 
-    void Update()
+    void FixedUpdate()
     {
         if (currentState != null)
         {
-            currentState.Update();
+            float timeScale = clock != null ? clock.localTimeScale : Time.timeScale;
+
+            currentState.FixedUpdate(timeScale);
+
+            if (homing && currentTarget != null)
+            {
+                // Calculate direction to target with inaccuracy
+                Vector3 targetPosition = ApplyInaccuracy(currentTarget.position);
+                Vector3 directionToTarget = (targetPosition - transform.position).normalized;
+
+                // Rotate towards the target
+                Quaternion targetRotation = Quaternion.LookRotation(directionToTarget);
+                transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, turnRate * Time.fixedDeltaTime * timeScale);
+
+                // Move forward
+                rb.velocity = transform.forward * bulletSpeed;
+            }
         }
 
-        if (homing && currentTarget != null)
+        // Update lifetime
+        float deltaTime = Time.fixedDeltaTime * (clock != null ? clock.localTimeScale : Time.timeScale);
+        lifetime -= deltaTime;
+        if (lifetime <= 0)
         {
-            Vector3 targetPosition = ApplyInaccuracy(predictedPosition);
-            Vector3 directionToTarget = (targetPosition - transform.position).normalized;
-            float distanceToTarget = Vector3.Distance(transform.position, targetPosition);
-
-            // Adjust turn rate based on accuracy and distance
-            float adjustedTurnRate = Mathf.Lerp(minTurnRate, maxTurnRate, accuracy);
-            adjustedTurnRate = Mathf.Lerp(adjustedTurnRate, maxTurnRate, 1f - (distanceToTarget / maxDistance));
-
-            // Calculate steering
-            Vector3 desiredVelocity = directionToTarget * bulletSpeed;
-            Vector3 steering = desiredVelocity - rb.velocity;
-            steering = Vector3.ClampMagnitude(steering, adjustedTurnRate * Time.deltaTime);
-
-            // Apply steering with accuracy influence
-            rb.velocity += steering * Mathf.Lerp(0.5f, 1f, accuracy);
-            rb.velocity = rb.velocity.normalized * bulletSpeed;
-
-            // Rotate projectile towards velocity direction
-            if (rb.velocity.sqrMagnitude > 0.01f)
-            {
-                Quaternion targetRotation = Quaternion.LookRotation(rb.velocity);
-                transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, adjustedTurnRate * Time.deltaTime);
-            }
+            Death();
         }
     }
 
     private Vector3 ApplyInaccuracy(Vector3 targetPosition)
     {
-        inaccuracyTimer += Time.deltaTime;
-        if (inaccuracyTimer >= inaccuracyUpdateInterval)
-        {
-            inaccuracyTimer = 0f;
-            float distanceToTarget = Vector3.Distance(transform.position, targetPosition);
-            float inaccuracyRadius = Mathf.Lerp(maxInaccuracyRadius, minInaccuracyRadius, accuracy);
-            inaccuracyRadius *= Mathf.Clamp01(distanceToTarget / maxDistance);
-            inaccuracyOffset = UnityEngine.Random.insideUnitSphere * inaccuracyRadius;
-        }
+        if (accuracy >= 1f) return targetPosition; // Perfect accuracy, no deviation
 
-        return targetPosition + inaccuracyOffset;
+        float inaccuracyRadius = Mathf.Lerp(maxInaccuracyRadius, minInaccuracyRadius, accuracy);
+        Vector3 randomOffset = UnityEngine.Random.insideUnitSphere * inaccuracyRadius;
+        return targetPosition + randomOffset;
     }
 
-    private Vector3 CalculateOrbitPosition(Vector3 directionToTarget)
+    // Add this method to update non-physics related stuff
+    void Update()
     {
-        orbitAngle += orbitSpeed * Time.deltaTime;
-        Vector3 orbitOffset = Quaternion.AngleAxis(orbitAngle, orbitAxis) * (Vector3.up * orbitRadius);
-        return predictedPosition + Vector3.SlerpUnclamped(orbitOffset, directionToTarget * orbitRadius, approachSpeed * Time.deltaTime);
+        UpdateLifetime(Time.deltaTime);
     }
 
-    private Vector3 CalculateSpiralPosition(Vector3 directionToTarget)
-    {
-        orbitAngle += orbitSpeed * Time.deltaTime;
-        float spiralRadius = orbitRadius * (1 - approachSpeed * Time.deltaTime);
-        Vector3 spiralOffset = Quaternion.AngleAxis(orbitAngle, directionToTarget) * (Vector3.up * spiralRadius);
-        return predictedPosition + spiralOffset;
-    }
-
-    private Vector3 CalculateZigzagPosition(Vector3 directionToTarget)
-    {
-        Vector3 zigzagOffset = Vector3.Cross(directionToTarget, Vector3.up) * Mathf.Sin(Time.time * orbitSpeed) * orbitRadius;
-        return predictedPosition + zigzagOffset + directionToTarget * (approachSpeed * Time.deltaTime);
-    }
-
-    public void UpdateMaterial(Material newMaterial)
+    public void UpdateMaterial(Color color)
     {
         if (modelRenderer != null)
         {
-            modelRenderer.material = newMaterial;
-            myMaterial = newMaterial;
-
-            // Initialize the dissolve effect when a new material is set
-            if (modelRenderer.material.HasProperty("_AdvancedDissolveCutoutStandardClip"))
-            {
-                modelRenderer.material.SetFloat("_AdvancedDissolveCutoutStandardClip", 1f); // Ensure the material starts without being dissolved
-            }
-            else
-            {
-                Debug.LogWarning("The assigned material does not support the required dissolve property.");
-            }
+            propBlock.SetColor(BaseColorProperty, color);
+            modelRenderer.SetPropertyBlock(propBlock);
         }
-        else
+    }
+
+    public void UpdateDissolveCutout(float cutoutValue)
+    {
+        if (modelRenderer != null)
         {
-            Debug.LogError("ModelRenderer is not set on the projectile.");
+            propBlock.SetFloat(DissolveCutoutProperty, cutoutValue);
+            modelRenderer.SetPropertyBlock(propBlock);
         }
     }
 
@@ -714,7 +709,7 @@ public void UpdateLifetime(float deltaTime)
         }
     }
 
-    void OnDrawGizmos()
+    void OnDrawGizmosSelected()
     {
         if (homing && currentTarget != null)
         {
@@ -757,70 +752,66 @@ public void UpdateLifetime(float deltaTime)
     }
 
     public void ResetForPool()
-{
-    // Kill all tweens associated with this projectile
-    DOTween.Kill(this.transform);
-    DOTween.Kill(this.gameObject);
-    
-    if (myMaterial != null)
     {
-        DOTween.Kill(myMaterial);
-        // Reset material properties
-        if (myMaterial.HasProperty("_AdvancedDissolveCutoutStandardClip"))
+        // Kill all tweens associated with this projectile
+        DOTween.Kill(this.transform);
+        DOTween.Kill(this.gameObject);
+        
+        if (myMaterial != null)
         {
-            myMaterial.SetFloat("_AdvancedDissolveCutoutStandardClip", 1f);
+            DOTween.Kill(myMaterial);
+            // Reset material properties
+            if (myMaterial.HasProperty("_AdvancedDissolveCutoutStandardClip"))
+            {
+                myMaterial.SetFloat("_AdvancedDissolveCutoutStandardClip", 1f);
+            }
         }
-    }
 
-    // Reset other properties
-    transform.localScale = Vector3.one;
-    if (rb != null)
-    {
-        rb.velocity = Vector3.zero;
-        rb.angularVelocity = Vector3.zero;
-    }
+        // Reset other properties
+        transform.localScale = Vector3.one;
+        if (rb != null)
+        {
+            rb.velocity = Vector3.zero;
+            rb.angularVelocity = Vector3.zero;
+            rb.isKinematic = false; // Re-enable physics interactions
+        }
 
-    // Stop any particle systems
-    ParticleSystem[] particleSystems = GetComponentsInChildren<ParticleSystem>();
-    foreach (ParticleSystem ps in particleSystems)
-    {
-        ps.Stop();
-        ps.Clear();
-    }
+        this.enabled = true; // Re-enable the script
 
-    // Reset any other custom properties
-    homing = false;
-    currentTarget = null;
-    lifetimeExtended = false;
-    projHitPlayer = false;
-    bulletSpeed = initialSpeed;
+        // Stop any particle systems
+        ParticleSystem[] particleSystems = GetComponentsInChildren<ParticleSystem>();
+        foreach (ParticleSystem ps in particleSystems)
+        {
+            ps.Stop();
+            ps.Clear();
+        }
 
-    // Reset state
-    ChangeState(new EnemyShotState(this));
+        // Reset any other custom properties
+        homing = false;
+        currentTarget = null;
+        lifetimeExtended = false;
+        projHitPlayer = false;
+        bulletSpeed = initialSpeed;
 
-    // Disable any effects
-    if (LockedFX != null)
-    {
-        LockedFX.Stop();
-    }
+        // Reset state
+        ChangeState(new EnemyShotState(this));
 
-    if (playerProjPath != null)
-    {
-        playerProjPath.enabled = false;
-    }
+        // Disable any effects
+        if (LockedFX != null)
+        {
+            LockedFX.Stop();
+        }
 
-    // Reset material to original
-    if (modelRenderer != null && myMaterial != null)
-    {
-        modelRenderer.material = myMaterial;
-        myMaterial.SetColor("_BaseColor", originalProjectileColor);
-    }
-}
+        if (playerProjPath != null)
+        {
+            playerProjPath.enabled = false;
+        }
 
-    public void InitializeApproachPattern()
-    {
-        currentPattern = (ApproachPattern)UnityEngine.Random.Range(0, System.Enum.GetValues(typeof(ApproachPattern)).Length);
-        orbitAxis = UnityEngine.Random.onUnitSphere;
-        orbitAngle = UnityEngine.Random.Range(0f, 360f);
+        // Reset material to original
+        if (modelRenderer != null && myMaterial != null)
+        {
+            modelRenderer.material = myMaterial;
+            myMaterial.SetColor("_BaseColor", originalProjectileColor);
+        }
     }
 }

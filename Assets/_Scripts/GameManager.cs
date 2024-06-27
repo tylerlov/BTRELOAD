@@ -6,14 +6,17 @@ using UnityEngine.UI;
 using FMODUnity;
 using Cinemachine;
 using System.Collections.Generic;
-using PrimeTween; // Added this using statement
+using PrimeTween;
+using Chronos;
+using System.Linq;
 
 public class GameManager : MonoBehaviour
 {
     public static GameManager instance;
 
+    #region Serialized Fields
     [Header("Dependencies")]
-    public SceneGroup currentGroup; // Changed from SceneListData to SceneGroup
+    public SceneGroup currentGroup;
     public EnemyShootingManager enemyShootingManager;
     public StudioEventEmitter musicPlayback;
 
@@ -23,6 +26,15 @@ public class GameManager : MonoBehaviour
     [SerializeField] private float _currentSongSection;
     [SerializeField] private int _currWaveCount;
 
+    [Header("Scene Management")]
+    [SerializeField] private string baseSceneName;
+
+    [Header("Time Management")]
+    [SerializeField] private Timeline timeline;
+    [SerializeField] private float scoreDecayRate = 1f; // Points lost per second
+    #endregion
+
+    #region Properties
     public int Score { get; private set; }
     public int ShotTally { get; private set; }
 
@@ -53,21 +65,29 @@ public class GameManager : MonoBehaviour
             OnValueChanged();
         }
     }
+    #endregion
 
+    #region Private Fields
+    private Scene baseScene;
+    private Scene currentAdditiveScene;
     private bool _isLoadingScene = false;
     private UnityEvent transCamOn;
     private UnityEvent transCamOff;
     private UnityEvent StartingTransition;
     private CinemachineStateDrivenCamera stateDrivenCamera;
-
     private int nextSceneIndex;
     private float nextSongSection;
+    private float lastScoreUpdateTime;
+    private float accumulatedScoreDecrease = 0f;
+    #endregion
 
+    #region Unity Lifecycle Methods
     private void Awake()
     {
         InitializeSingleton();
         FindActiveFMODInstance();
-        PrimeTweenConfig.SetTweensCapacity(1600); // Added this line to increase tweens capacity
+        PrimeTweenConfig.SetTweensCapacity(1600);
+        InitializeTimeline();
     }
 
     private void OnEnable()
@@ -85,35 +105,30 @@ public class GameManager : MonoBehaviour
     private void Start()
     {
         InitializeNextSceneValues();
+        LoadBaseScene();
+        
+        // Check for already open scene from Ouroboros group
+        if (!TryUseOpenOuroborosScene())
+        {
+            LoadFirstAdditiveScene();
+        }
     }
 
-    private void InitializeNextSceneValues()
+    private void Update()
     {
-        if (currentGroup == null || currentGroup.scenes.Length == 0)
+        if (timeline != null)
         {
-            Debug.LogError("CurrentGroup is null or has no scenes.");
-            return;
-        }
-
-        // Set next scene index to the second scene (index 1) or wrap around if there's only one scene
-        nextSceneIndex = currentGroup.scenes.Length > 1 ? 1 : 0;
-
-        // Set next song section to the first section of the next scene
-        if (currentGroup.scenes[nextSceneIndex].songSections.Length > 0)
-        {
-            nextSongSection = currentGroup.scenes[nextSceneIndex].songSections[0].section;
+            ConditionalDebug.Log($"Timeline time: {timeline.time}");
+            UpdateScoreOverTime();
         }
         else
         {
-            Debug.LogWarning($"No song sections defined for the next scene (index: {nextSceneIndex})");
-            nextSongSection = 0;
+            ConditionalDebug.LogWarning("Timeline is null in GameManager Update");
         }
-
-        Debug.Log($"Initialized next scene values: Scene Index = {nextSceneIndex}, Song Section = {nextSongSection}");
     }
+    #endregion
 
-    #region Initialization
-
+    #region Initialization Methods
     private void InitializeSingleton()
     {
         if (instance == null)
@@ -127,9 +142,18 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    private void InitializeNextSceneValues()
+    {
+        if (currentGroup == null || currentGroup.scenes.Length == 0)
+        {
+            ConditionalDebug.LogError("CurrentGroup is null or has no scenes.");
+            return;
+        }
+    }
+
     private void FindActiveFMODInstance()
     {
-        var fmodInstances = FindObjectsOfType<StudioEventEmitter>(true); // true to include inactive objects
+        var fmodInstances = FindObjectsOfType<StudioEventEmitter>(true);
         foreach (var instance in fmodInstances)
         {
             if (instance.gameObject.name == "FMOD Music" && instance.gameObject.activeInHierarchy)
@@ -141,11 +165,21 @@ public class GameManager : MonoBehaviour
 
         if (musicPlayback == null)
         {
-            Debug.LogError("Active FMOD Music instance not found in the scene.");
+            ConditionalDebug.LogError("Active FMOD Music instance not found in the scene.");
         }
     }
 
-    private void InitializeListenersAndComponents(Scene scene, LoadSceneMode mode)
+    private void InitializeTimeline()
+    {
+        timeline = GetComponent<Timeline>();
+        if (timeline == null)
+        {
+            ConditionalDebug.LogError("Timeline component not found on the GameManager object.");
+        }
+        lastScoreUpdateTime = timeline.time;
+    }
+
+     private void InitializeListenersAndComponents(Scene scene, LoadSceneMode mode)
     {
         transCamOn = new UnityEvent();
         transCamOff = new UnityEvent();
@@ -159,10 +193,25 @@ public class GameManager : MonoBehaviour
         stateDrivenCamera = FindObjectOfType<CinemachineStateDrivenCamera>();
         if (stateDrivenCamera == null)
         {
-            Debug.LogError("No Cinemachine State Driven Camera found in the scene.");
+            ConditionalDebug.LogError("No Cinemachine State Driven Camera found in the scene.");
         }
 
         StartingTransition.Invoke();
+    }
+
+    private void InitializeSplineManager()
+    {
+        // Remove the specific GameObject.Find for "PlayerPlane"
+        var splineManager = FindObjectOfType<SplineManager>();
+        if (splineManager != null)
+        {
+            transCamOn.AddListener(splineManager.IncrementSpline);
+            transCamOff.AddListener(splineManager.IncrementSpline);
+        }
+        else
+        {
+            ConditionalDebug.LogWarning("SplineManager component not found in the scene. It may be loaded later.");
+        }
     }
 
     private void InitializeCameraSwitching()
@@ -175,11 +224,11 @@ public class GameManager : MonoBehaviour
         }
         else
         {
-            Debug.LogError("CinemachineCameraSwitching component not found in the scene.");
+            ConditionalDebug.LogError("CinemachineCameraSwitching component not found in the scene.");
         }
     }
 
-    private void InitializeCrosshair()
+     private void InitializeCrosshair()
     {
         var crosshair = FindObjectOfType<Crosshair>();
         if (crosshair != null)
@@ -188,21 +237,7 @@ public class GameManager : MonoBehaviour
         }
         else
         {
-            Debug.LogError("Crosshair component not found in the scene.");
-        }
-    }
-
-    private void InitializeSplineManager()
-    {
-        var splineManager = GameObject.Find("PlayerPlane")?.GetComponent<SplineManager>();
-        if (splineManager != null)
-        {
-            transCamOn.AddListener(splineManager.IncrementSpline);
-            transCamOff.AddListener(splineManager.IncrementSpline);
-        }
-        else
-        {
-            Debug.LogError("SplineManager component not found on the PlayerPlane GameObject.");
+            ConditionalDebug.LogError("Crosshair component not found in the scene.");
         }
     }
 
@@ -215,13 +250,57 @@ public class GameManager : MonoBehaviour
         }
         else
         {
-            Debug.LogError("ShooterMovement component not found in the scene for transCamOff.");
+            ConditionalDebug.LogError("ShooterMovement component not found in the scene for transCamOff.");
         }
     }
 
     #endregion
 
-    #region Scene Management
+    private void LoadBaseScene()
+    {
+        if (string.IsNullOrEmpty(baseSceneName))
+        {
+            ConditionalDebug.LogError("Base scene name is not set in the inspector.");
+            return;
+        }
+
+        baseScene = SceneManager.GetSceneByName(baseSceneName);
+        if (!baseScene.isLoaded)
+        {
+            SceneManager.LoadScene(baseSceneName, LoadSceneMode.Single);
+        }
+    }
+
+    private void LoadFirstAdditiveScene()
+    {
+        if (currentGroup == null || currentGroup.scenes.Length == 0)
+        {
+            ConditionalDebug.LogError("No scenes defined in the current group.");
+            return;
+        }
+
+        string firstSceneName = currentGroup.scenes[0].sceneName;
+        LoadAdditiveScene(firstSceneName);
+    }
+
+    private void LoadAdditiveScene(string sceneName)
+    {
+        StartCoroutine(LoadAdditiveSceneCoroutine(sceneName));
+    }
+
+    private IEnumerator LoadAdditiveSceneCoroutine(string sceneName)
+    {
+        if (currentAdditiveScene.IsValid() && currentAdditiveScene.isLoaded)
+        {
+            yield return SceneManager.UnloadSceneAsync(currentAdditiveScene);
+        }
+
+        yield return SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Additive);
+        currentAdditiveScene = SceneManager.GetSceneByName(sceneName);
+        SceneManager.SetActiveScene(currentAdditiveScene);
+
+        OnSceneLoaded(currentAdditiveScene, LoadSceneMode.Additive);
+    }
 
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
@@ -235,8 +314,20 @@ public class GameManager : MonoBehaviour
 
         LogCurrentState();
 
-        GlobalVolumeManager.Instance.TransitionEffectIn(1.5f); // Added this line
+        GlobalVolumeManager.Instance.TransitionEffectIn(1.5f);
         GlobalVolumeManager.Instance.TransitionEffectOut(1.5f);
+
+        InitializeListenersAndComponents(scene, mode);
+
+        // Add this: Re-initialize SplineManager after scene is fully loaded
+        StartCoroutine(InitializeSplineManagerDelayed());
+    }
+
+    private IEnumerator InitializeSplineManagerDelayed()
+    {
+        yield return null; // Wait for one frame to ensure all objects are initialized
+
+        InitializeSplineManager();
     }
 
     public void ChangeToNextScene()
@@ -249,17 +340,14 @@ public class GameManager : MonoBehaviour
         if (_isLoadingScene) return;
         _isLoadingScene = true;
 
-        // Stop all active tweens
         Tween.StopAll();
 
         enemyShootingManager?.UnregisterAllStaticEnemyShootingsFromKoreographer();
         KillAllEnemies();
         KillAllProjectiles();
 
-        // Calculate the correct next scene index
         int correctNextSceneIndex = (currentScene + 1) % currentGroup.scenes.Length;
         
-        // Find the next valid scene with defined songSections
         while (correctNextSceneIndex != currentScene && 
                (currentGroup.scenes[correctNextSceneIndex].songSections == null || 
                 currentGroup.scenes[correctNextSceneIndex].songSections.Length == 0))
@@ -267,15 +355,13 @@ public class GameManager : MonoBehaviour
             correctNextSceneIndex = (correctNextSceneIndex + 1) % currentGroup.scenes.Length;
         }
 
-        // If we've looped back to the current scene, there are no valid next scenes
         if (correctNextSceneIndex == currentScene)
         {
-            Debug.LogWarning("No valid next scene found. Staying on current scene.");
+            ConditionalDebug.LogWarning("No valid next scene found. Staying on current scene.");
             _isLoadingScene = false;
             return;
         }
 
-        // Get the correct next song section
         float correctNextSongSection = 0;
         if (currentGroup.scenes[correctNextSceneIndex].songSections.Length > 0)
         {
@@ -284,13 +370,11 @@ public class GameManager : MonoBehaviour
 
         string nextSceneName = currentGroup.scenes[correctNextSceneIndex].sceneName;
 
-        // Update the next values
         nextSceneIndex = correctNextSceneIndex;
         nextSongSection = correctNextSongSection;
 
-        // Load the scene with correct next values
-        GlobalVolumeManager.Instance.TransitionEffectIn(1.5f); // Added this line
-        LoadScene(nextSceneName, correctNextSongSection);
+        GlobalVolumeManager.Instance.TransitionEffectIn(1.5f);
+        LoadAdditiveScene(nextSceneName);
     }
 
     private void LoadScene(string sceneName, float songSection)
@@ -301,7 +385,6 @@ public class GameManager : MonoBehaviour
 
     private void FindCurrentSceneIndex(string currentSceneName, out int sceneIndex)
     {
-        // Initialize to -1 to indicate the scene was not found
         sceneIndex = -1;
 
         for (int i = 0; i < currentGroup.scenes.Length; i++)
@@ -360,104 +443,78 @@ public class GameManager : MonoBehaviour
 
     private void LogCurrentState()
     {
-        Debug.Log($"Current State - Scene: {currentScene}, Section: {currentSongSection}, Wave: {currWaveCount}");
-        #if UNITY_EDITOR
-        UnityEditor.EditorUtility.SetDirty(this);
-        #endif
+        ConditionalDebug.Log($"Current State - Scene: {currentScene}, Section: {currentSongSection}, Wave: {currWaveCount}");
     }
-
-    #endregion
-
-    #region Score Management
 
     public void AddShotTally(int shotsToAdd)
     {
         ShotTally += shotsToAdd;
-        // Optionally, update UI or other game elements here
     }
 
     public void SetScore(int newScore)
     {
         Score = newScore;
-        // Optionally, update UI or other game elements here
     }
 
     public void AddScore(int amount)
     {
         Score += amount;
-        // Update UI or other systems as needed
     }
 
     public void ResetScore()
     {
         Score = 0;
-        // Update UI or other systems as needed
     }
 
     public int RetrieveScore()
     {
-        // Add any additional logic here if needed before returning the score
         return Score;
     }
-
-    #endregion
-
-    #region Debugging
 
     public void DebugMoveToNextScene()
     {
         ChangeToNextScene();
     }
 
-    #endregion
-
-    #region Music and Wave Management
-
     public void updateStatus()
     {
-        // Check if we're within bounds
         if (currentScene >= currentGroup.scenes.Length)
         {
-            Debug.LogWarning($"Current scene index {currentScene} is out of bounds. Resetting to 0.");
+            ConditionalDebug.LogWarning($"Current scene index {currentScene} is out of bounds. Resetting to 0.");
             currentScene = 0;
             currentSongSection = 0;
             return;
         }
 
-        // Get the current scene
         var currentSceneData = currentGroup.scenes[currentScene];
 
-        // Check if the scene has any song sections
         if (currentSceneData.songSections == null || currentSceneData.songSections.Length == 0)
         {
-            Debug.Log($"Scene {currentSceneData.sceneName} has no song sections. Moving to next scene.");
+            ConditionalDebug.Log($"Scene {currentSceneData.sceneName} has no song sections. Moving to next scene.");
             MoveToNextScene();
             return;
         }
 
-        // Ensure currentSongSection is within bounds
         int currentSectionIndex = Mathf.Clamp((int)currentSongSection, 0, currentSceneData.songSections.Length - 1);
         var currentSection = currentSceneData.songSections[currentSectionIndex];
 
-        // If the current section has no waves, move to the next section or scene
         if (currentSection.waves == 0)
         {
-            Debug.Log($"Section {currentSection.name} has no waves. Moving to next section or scene.");
+            ConditionalDebug.Log($"Section {currentSection.name} has no waves. Moving to next section or scene.");
             MoveToNextSectionOrScene();
             return;
         }
 
-        // Check if we've completed all waves in the current section
         if (currWaveCount >= currentSection.waves)
         {
-            Debug.Log($"Completed all waves in section {currentSection.name}. Moving to next section or scene.");
+            ConditionalDebug.Log($"Completed all waves in section {currentSection.name}. Moving to next section or scene.");
             MoveToNextSectionOrScene();
         }
     }
 
     private void MoveToNextSectionOrScene()
     {
-        ClearAllProjectiles(); // Add this line to clear projectiles before moving to the next section or scene
+        ClearAllProjectiles();
         currentSongSection++;
         if ((int)currentSongSection >= currentGroup.scenes[currentScene].songSections.Length)
         {
@@ -472,11 +529,11 @@ public class GameManager : MonoBehaviour
 
     private void MoveToNextScene()
     {
-        ClearAllProjectiles(); // Add this line to clear projectiles before moving to the next scene
+        ClearAllProjectiles();
         currentScene++;
         if (currentScene >= currentGroup.scenes.Length)
         {
-            currentScene = 0; // Loop back to the first scene
+            currentScene = 0;
         }
         currentSongSection = 0;
         changeSongSection();
@@ -490,7 +547,7 @@ public class GameManager : MonoBehaviour
         }
         else
         {
-            Debug.LogError("ProjectileManager instance not found.");
+            ConditionalDebug.LogError("ProjectileManager instance not found.");
         }
     }
 
@@ -498,7 +555,7 @@ public class GameManager : MonoBehaviour
     {
         if (musicPlayback == null || currentGroup == null || currentGroup.scenes == null || currentScene >= currentGroup.scenes.Length || (int)currentSongSection >= currentGroup.scenes[currentScene].songSections.Length)
         {
-            Debug.LogWarning("One or more references are null in changeSongSection, or currentScene or currentSongSection is out of bounds.");
+            ConditionalDebug.LogWarning("One or more references are null in changeSongSection, or currentScene or currentSongSection is out of bounds.");
             return;
         }
         musicPlayback.EventInstance.setParameterByName("Sections", currentGroup.scenes[currentScene].songSections[(int)currentSongSection].section);
@@ -545,10 +602,63 @@ public class GameManager : MonoBehaviour
 
     private void OnValueChanged()
     {
-        #if UNITY_EDITOR
-        UnityEditor.EditorUtility.SetDirty(this);
-        #endif
+        // This method is intentionally left empty or you can add logic here if needed
     }
 
-    #endregion
+    private void UpdateScoreOverTime()
+    {
+        float currentTime = timeline.time;
+        float deltaTime = currentTime - lastScoreUpdateTime;
+        
+        if (deltaTime > 0)
+        {
+            accumulatedScoreDecrease += scoreDecayRate * deltaTime;
+            int scoreDecrease = Mathf.FloorToInt(accumulatedScoreDecrease);
+            
+            if (scoreDecrease > 0)
+            {
+                Score = Mathf.Max(0, Score - scoreDecrease);
+                accumulatedScoreDecrease -= scoreDecrease;
+                
+                // Debug log to see when score actually decreases
+                ConditionalDebug.Log($"Score decreased by {scoreDecrease}. New score: {Score}");
+            }
+            
+            lastScoreUpdateTime = currentTime;
+        }
+    }
+
+    private bool TryUseOpenOuroborosScene()
+    {
+        for (int i = 0; i < SceneManager.sceneCount; i++)
+        {
+            Scene openScene = SceneManager.GetSceneAt(i);
+            if (openScene.isLoaded && IsSceneInOuroborosGroup(openScene.name))
+            {
+                currentAdditiveScene = openScene;
+                SceneManager.SetActiveScene(currentAdditiveScene);
+                
+                // Find the index of the open scene in the Ouroboros group
+                for (int j = 0; j < currentGroup.scenes.Length; j++)
+                {
+                    if (currentGroup.scenes[j].sceneName == openScene.name)
+                    {
+                        currentScene = j;
+                        currentSongSection = currentGroup.scenes[j].songSections[0].section;
+                        break;
+                    }
+                }
+            
+            OnSceneLoaded(currentAdditiveScene, LoadSceneMode.Additive);
+            return true;
+        }
+    }
+    return false;
+}
+
+private bool IsSceneInOuroborosGroup(string sceneName)
+{
+    return currentGroup.scenes.Any(scene => scene.sceneName == sceneName);
+}
+                
 }
