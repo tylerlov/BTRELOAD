@@ -54,17 +54,31 @@ public class EnemyBasicSetup : BaseBehaviour, IDamageable, IAttackAgent
     private Clock clock;
     private RVOController controller;
 
+    // Cached components
+    private StudioEventEmitter cachedMusicPlayback;
+    private Crosshair cachedShootRewind;
+    private Timeline cachedMyTime;
+    private Clock cachedClock;
+    private RVOController cachedController;
+
     // Awake method
     private void Awake()
     {
+        CacheComponents();
+    }
+
+    private void CacheComponents()
+    {
         FindMusicPlaybackEmitter();
-        shootRewind = FindObjectOfType<Crosshair>();
+        cachedShootRewind = FindObjectOfType<Crosshair>();
+        cachedMyTime = GetComponent<Timeline>();
+        cachedClock = Timekeeper.instance.Clock("Test");
+        cachedController = GetComponent<RVOController>();
     }
 
     // OnEnable method
     private void OnEnable()
     {
-        // Ensure Koreographer instance is available before registering for events
         if (Koreographer.Instance != null)
         {
             InitializeEnemy();
@@ -72,29 +86,26 @@ public class EnemyBasicSetup : BaseBehaviour, IDamageable, IAttackAgent
         }
         else
         {
-            // Listen to the sceneLoaded event to wait for the scene to be fully loaded
-            UnityEngine.SceneManagement.SceneManager.sceneLoaded += OnSceneLoaded;
+            StartCoroutine(WaitForKoreographer());
         }
     }
 
-    private void OnSceneLoaded(UnityEngine.SceneManagement.Scene scene, UnityEngine.SceneManagement.LoadSceneMode mode)
+    private IEnumerator WaitForKoreographer()
     {
-        // Unsubscribe to avoid this method being called again unnecessarily
-        UnityEngine.SceneManagement.SceneManager.sceneLoaded -= OnSceneLoaded;
-
-        // Now that the scene is loaded, attempt to initialize and register for events again
-        if (Koreographer.Instance != null)
+        while (Koreographer.Instance == null)
         {
-            InitializeEnemy();
-            Koreographer.Instance.RegisterForEvents(eventID, OnMusicalEnemyShoot);
+            yield return null;
         }
+        InitializeEnemy();
+        Koreographer.Instance.RegisterForEvents(eventID, OnMusicalEnemyShoot);
     }
 
-    // OnDisable method
     private void OnDisable()
     {
-        // Unregister from events to avoid calling methods on a destroyed object
-        Koreographer.Instance.UnregisterForEvents(eventID, OnMusicalEnemyShoot);
+        if (Koreographer.Instance != null)
+        {
+            Koreographer.Instance.UnregisterForEvents(eventID, OnMusicalEnemyShoot);
+        }
     }
 
 
@@ -140,9 +151,11 @@ public class EnemyBasicSetup : BaseBehaviour, IDamageable, IAttackAgent
         lockedonAnim.SetActive(status);
         if (!status && lockOnDisabledParticles != null)
         {
-            // Use the Pooler to get the particle effect from the pool at the current position and rotation
             lockOnDisabledParticles.GetFromPool(transform.position, Quaternion.identity);
         }
+        
+        // Inform GameManager of the lock state change
+        GameManager.instance.SetEnemyLockState(transform, status);
     }
 
     public bool IsAlive() => currentHealth > 0;
@@ -178,12 +191,12 @@ public class EnemyBasicSetup : BaseBehaviour, IDamageable, IAttackAgent
         {
             if (emitter.gameObject.name == "FMOD Music")
             {
-                musicPlayback = emitter;
+                cachedMusicPlayback = emitter;
                 break;
             }
         }
         
-        if (musicPlayback == null)
+        if (cachedMusicPlayback == null)
         {
             ConditionalDebug.LogError($"FMOD Studio Event Emitter with name FMOD Music not found in the scene.");
         }
@@ -196,9 +209,9 @@ public class EnemyBasicSetup : BaseBehaviour, IDamageable, IAttackAgent
         lockedStatus(false);
         currentHealth = startHealth;
         FMODUnity.RuntimeManager.PlayOneShotAttached("event:/Enemy/" + enemyType + "/Birth", gameObject);
-        shootRewind = GameObject.FindGameObjectWithTag("Shooting").GetComponent<Crosshair>();
-        clock = Timekeeper.instance.Clock("Test");
-        controller = gameObject.GetComponent<RVOController>();
+        cachedShootRewind = GameObject.FindGameObjectWithTag("Shooting").GetComponent<Crosshair>();
+        cachedClock = Timekeeper.instance.Clock("Test");
+        cachedController = gameObject.GetComponent<RVOController>();
         birthParticles.GetFromPool(transform.position, Quaternion.identity);
     }
 
@@ -207,7 +220,7 @@ public class EnemyBasicSetup : BaseBehaviour, IDamageable, IAttackAgent
         AssignPool();
         locked = false;
 
-        myTime = GetComponent<Timeline>();
+        cachedMyTime = GetComponent<Timeline>();
     }
 
     private void HandleDamage(float amount)
@@ -231,7 +244,7 @@ public class EnemyBasicSetup : BaseBehaviour, IDamageable, IAttackAgent
         deathParticles.GetFromPool(transform.position, Quaternion.identity);
         FMODUnity.RuntimeManager.PlayOneShot("event:/Enemy/" + enemyType + "/Death", transform.position);
 
-        StartCoroutine(shootRewind.RewindToBeatEnemyDeath());
+        StartCoroutine(cachedShootRewind.RewindToBeatEnemyDeath());
 
         yield return new WaitForSeconds(0.5f);
         enemyModel.SetActive(false);
@@ -246,31 +259,25 @@ public class EnemyBasicSetup : BaseBehaviour, IDamageable, IAttackAgent
 
     void OnMusicalEnemyShoot(KoreographyEvent evt)
     {
-        // Check if playerTarget is null or destroyed before proceeding
-        if (playerTarget == null || !playerTarget.activeInHierarchy)
+        if (Time.timeScale == 0f || !CanAttack() || playerTarget == null || !playerTarget.activeInHierarchy)
         {
-            return; // Exit the method if playerTarget is not valid
+            return;
         }
 
-        if (Time.timeScale != 0f && CanAttack())
-        {
-            // Assuming you have a target for homing projectiles. 
-            // This could be the player or any other target in your game.
-            Transform homingTarget = playerTarget.transform; // Example target
+        Vector3 targetPosition = playerTarget.transform.position;
+        Vector3 shootDirection = (targetPosition - transform.position).normalized;
+        
+        ProjectileManager.Instance.ShootProjectileFromEnemy(
+            transform.position,
+            Quaternion.LookRotation(shootDirection),
+            shootSpeed,
+            projectileLifetime,
+            projectileScale,
+            true,
+            alternativeProjectileMaterial
+        );
 
-            // Call ProjectileManager to shoot a homing projectile
-            ProjectileManager.Instance.ShootProjectileFromEnemy(
-                transform.position, // Position from where the projectile is shot
-                Quaternion.LookRotation(homingTarget.position - transform.position), // Rotation towards the target
-                shootSpeed, // Speed of the projectile
-                projectileLifetime, // Lifetime of the projectile
-                projectileScale, // Scale of the projectile
-                true, // Enable homing
-                alternativeProjectileMaterial // Pass the alternative material instead of color
-            );
-
-            lastAttackTime = Time.time;
-        }
+        lastAttackTime = Time.time;
     }
 
     public void RegisterProjectiles()

@@ -1,0 +1,82 @@
+using UnityEngine;
+using UnityEngine.SceneManagement;
+using System.Collections;
+
+public class MainMenuSwitchScene : MonoBehaviour
+{
+    [SerializeField] private GameObject objectToDisable;
+    [SerializeField] private float minimumLoadTime = 0.5f; // Minimum time to show transition
+    
+    private static MainMenuSwitchScene instance;
+
+    private void Awake()
+    {
+        if (instance == null)
+        {
+            instance = this;
+            DontDestroyOnLoad(gameObject);
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
+    }
+
+    public void SwitchToScene(string sceneName)
+    {
+        StartCoroutine(LoadSceneAsync(sceneName));
+    }
+
+    public void SwitchToSceneByIndex(int sceneIndex)
+    {
+        string sceneName = SceneUtility.GetScenePathByBuildIndex(sceneIndex);
+        StartCoroutine(LoadSceneAsync(sceneName));
+    }
+
+    private IEnumerator LoadSceneAsync(string sceneName)
+    {
+        // Disable the specified object
+        if (objectToDisable != null) objectToDisable.SetActive(false);
+
+        // Unload all loaded assets
+        Resources.UnloadUnusedAssets();
+
+        // Start loading the new scene
+        AsyncOperation asyncLoad = SceneManager.LoadSceneAsync(sceneName);
+        asyncLoad.allowSceneActivation = false;
+
+        float elapsedTime = 0f;
+
+        // Wait until the scene is fully loaded and minimum time has passed
+        while (!asyncLoad.isDone || elapsedTime < minimumLoadTime)
+        {
+            elapsedTime += Time.deltaTime;
+
+            if (asyncLoad.progress >= 0.9f && elapsedTime >= minimumLoadTime)
+            {
+                asyncLoad.allowSceneActivation = true;
+            }
+
+            yield return null;
+        }
+
+        // Clean up this instance if it's not needed in the new scene
+        if (instance == this && !ShouldPersist())
+        {
+            Destroy(gameObject);
+        }
+    }
+
+    private bool ShouldPersist()
+    {
+        // Implement logic to determine if this object should persist
+        // For example, you might want to persist only when switching to certain scenes
+        return false; // Default to not persisting
+    }
+
+    public void ReloadCurrentScene()
+    {
+        string currentSceneName = SceneManager.GetActiveScene().name;
+        StartCoroutine(LoadSceneAsync(currentSceneName));
+    }
+}

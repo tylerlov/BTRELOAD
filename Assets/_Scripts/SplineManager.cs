@@ -21,10 +21,11 @@ public class SplineManager : MonoBehaviour
         public GameObject Spline;
         public float BaseSpeed; // Renamed to BaseSpeed for clarity
         public CurvyClamping Clamping; // added new field
+        public bool Reverse; // New attribute
     }
 
     private SplineController splineController;
-    [SerializeField] GameObject Splines;
+    [SerializeField] GameObject SplineContainer; // Renamed from Splines
     private GameObject shooting;
     public List<SplineData> splineDatas;
     int currSpline;
@@ -34,6 +35,10 @@ public class SplineManager : MonoBehaviour
 
     private bool canIncrement = true;
     private float incrementCooldown = 0.5f; // Cooldown duration between spline increments
+
+    private int splineSwitchCounter = 0; // Add this line
+    private float lastSwitchTime = 0f; // Add this line
+    private const float MIN_SWITCH_INTERVAL = 0.5f; // Add this line
 
     void Awake()
     {
@@ -71,9 +76,13 @@ public class SplineManager : MonoBehaviour
     {
         if (splineIndex >= 0 && splineIndex < splineDatas.Count) // Additional safety check
         {
-            splineController.Spline = splineDatas[splineIndex].Spline.GetComponent<CurvySpline>();
-            splineController.Speed = splineDatas[splineIndex].BaseSpeed * speedMultiplier; // Apply multiplier
-            splineController.Clamping = splineDatas[splineIndex].Clamping;
+            SplineData data = splineDatas[splineIndex];
+            splineController.Spline = data.Spline.GetComponent<CurvySpline>();
+            splineController.Speed = data.BaseSpeed * speedMultiplier; // Apply multiplier
+            splineController.Clamping = data.Clamping;
+            
+            // Set the movement direction based on the Reverse attribute
+            splineController.MovementDirection = data.Reverse ? MovementDirection.Backward : MovementDirection.Forward;
         }
     }
 
@@ -81,9 +90,18 @@ public class SplineManager : MonoBehaviour
     {
         if (isSplineNeeded && currSpline < splineDatas.Count - 1)
         {
+            float currentTime = Time.time;
+            if (currentTime - lastSwitchTime < MIN_SWITCH_INTERVAL)
+            {
+                Debug.LogWarning($"Spline switch attempted too soon. Time since last switch: {currentTime - lastSwitchTime}");
+                return;
+            }
+
             currSpline++;
             SetSplineDataAttributes(currSpline);
-            Debug.Log("Spline Incremented");
+            splineSwitchCounter++;
+            lastSwitchTime = currentTime;
+            Debug.Log($"Spline Incremented. Current spline: {currSpline}, Total switches: {splineSwitchCounter}, Time: {currentTime}");
         }
         else
         {
@@ -93,12 +111,14 @@ public class SplineManager : MonoBehaviour
 
     public void IncrementSpline()
     {
+        Debug.Log($"IncrementSpline called from:\n{UnityEngine.StackTraceUtility.ExtractStackTrace()}");
         if (!canIncrement) 
         {
-            Debug.Log("Increment attempted during cooldown, ignoring.");
+            Debug.Log($"Increment attempted during cooldown, ignoring. Time since last increment: {Time.time - lastSwitchTime}");
             return;
         }
 
+        Debug.Log($"IncrementSpline called. Current spline before increment: {currSpline}");
         PerformSplineIncrement();
         StartCoroutine(lockShooter(2f));
         StartCoroutine(IncrementCooldown());

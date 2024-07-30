@@ -731,13 +731,15 @@ namespace FIMSpace.FTail
                     {
                         DragAndDrop.AcceptDrag();
 
+                        var tails = GetSelectedTailAnimators();
+                        if (tails.Contains(Get) == false) tails.Add(Get);
+
                         foreach (var dragged in DragAndDrop.objectReferences)
                         {
                             GameObject draggedObject = dragged as GameObject;
 
                             if (draggedObject)
                             {
-                                var tails = GetSelectedTailAnimators();
 
                                 for (int t = 0; t < tails.Count; t++)
                                 {
@@ -756,7 +758,7 @@ namespace FIMSpace.FTail
                                         Collider2D[] coll = draggedObject.GetComponents<Collider2D>();
                                         for (int ci = 0; ci < coll.Length; ci++)
                                         {
-                                            if (coll[ci] is CharacterController) continue;
+                                            //if (coll[ci] is CharacterController) continue;
                                             tail.AddCollider(coll[ci]);
                                         }
                                     }

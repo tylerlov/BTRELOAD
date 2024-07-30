@@ -136,15 +136,11 @@ MonoBehaviour:
   - {fileID: 8926484042661614613}
   - {fileID: 8926484042661614641}
   - {fileID: 8926484042661614643}
-  - {fileID: 8926484042661614609}
-  - {fileID: 8926484042661614627}
   - {fileID: 8926484042661614656}
   - {fileID: 8926484042661614694}
   - {fileID: 8926484042661614722}
   - {fileID: 8926484042661614752}
   - {fileID: 8926484042661614758}
-  - {fileID: 8926484042661614670}
-  - {fileID: 8926484042661614754}
   - {fileID: 8926484042661614783}
   - {fileID: 8926484042661614788}
   - {fileID: 8926484042661614790}
@@ -154,8 +150,6 @@ MonoBehaviour:
   - {fileID: 8926484042661614808}
   - {fileID: 8926484042661614836}
   - {fileID: 8926484042661614838}
-  - {fileID: 8926484042661614804}
-  - {fileID: 8926484042661614822}
   - {fileID: 8926484042661614863}
   - {fileID: 8926484042661614868}
   - {fileID: 8926484042661614884}
@@ -253,7 +247,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_UIIgnoredErrors: []
-  m_Parent: {fileID: 114350483966674976}
+  m_Parent: {fileID: 0}
   m_Children: []
   m_UIPosition: {x: 0, y: 0}
   m_UICollapsed: 1
@@ -842,7 +836,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_UIIgnoredErrors: []
-  m_Parent: {fileID: 114350483966674976}
+  m_Parent: {fileID: 0}
   m_Children: []
   m_UIPosition: {x: 0, y: 0}
   m_UICollapsed: 1
@@ -1361,7 +1355,7 @@ MonoBehaviour:
   zTestMode: 0
   useAlphaClipping: 0
   generateMotionVector: 0
-  excludeFromTAA: 0
+  excludeFromTUAndAA: 0
   sortingPriority: 0
   m_SubOutputs: []
   colorMapping: 0
@@ -1378,8 +1372,7 @@ MonoBehaviour:
   castShadows: 0
   useExposureWeight: 0
   needsOwnSort: 0
-  shaderGraph: {fileID: -5475051401550479605, guid: 57f38b68cb2fcdb49ba7caecdec03232,
-    type: 3}
+  shaderGraph: {fileID: -5475051401550479605, guid: 57f38b68cb2fcdb49ba7caecdec03232, type: 3}
   materialSettings:
     m_PropertyNames: []
     m_PropertyValues: []
@@ -2203,7 +2196,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_UIIgnoredErrors: []
-  m_Parent: {fileID: 114350483966674976}
+  m_Parent: {fileID: 0}
   m_Children: []
   m_UIPosition: {x: 0, y: 0}
   m_UICollapsed: 1
@@ -3038,7 +3031,7 @@ MonoBehaviour:
   zTestMode: 0
   useAlphaClipping: 0
   generateMotionVector: 0
-  excludeFromTAA: 0
+  excludeFromTUAndAA: 0
   sortingPriority: 0
   m_SubOutputs: []
   colorMapping: 0
@@ -4265,7 +4258,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_UIIgnoredErrors: []
-  m_Parent: {fileID: 114350483966674976}
+  m_Parent: {fileID: 0}
   m_Children: []
   m_UIPosition: {x: 0, y: 0}
   m_UICollapsed: 1
@@ -5823,7 +5816,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_UIIgnoredErrors: []
-  m_Parent: {fileID: 114350483966674976}
+  m_Parent: {fileID: 0}
   m_Children: []
   m_UIPosition: {x: 0, y: 0}
   m_UICollapsed: 1
@@ -6412,7 +6405,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_UIIgnoredErrors: []
-  m_Parent: {fileID: 114350483966674976}
+  m_Parent: {fileID: 0}
   m_Children: []
   m_UIPosition: {x: 0, y: 0}
   m_UICollapsed: 1
@@ -6929,7 +6922,7 @@ MonoBehaviour:
   zTestMode: 0
   useAlphaClipping: 0
   generateMotionVector: 0
-  excludeFromTAA: 0
+  excludeFromTUAndAA: 0
   sortingPriority: 0
   m_SubOutputs: []
   colorMapping: 0
@@ -6946,8 +6939,7 @@ MonoBehaviour:
   castShadows: 0
   useExposureWeight: 0
   needsOwnSort: 0
-  shaderGraph: {fileID: -5475051401550479605, guid: 23e0ee6156f71bb4698ee1d96f07d197,
-    type: 3}
+  shaderGraph: {fileID: -5475051401550479605, guid: 23e0ee6156f71bb4698ee1d96f07d197, type: 3}
   materialSettings:
     m_PropertyNames: []
     m_PropertyValues: []
@@ -7999,8 +7991,7 @@ MonoBehaviour:
   - {fileID: 8926484042661614944}
   m_OutputSlots:
   - {fileID: 8926484042661614945}
-  m_Subgraph: {fileID: 5371698745253816930, guid: 701a6b22675436941ad8b02cb3bfb479,
-    type: 3}
+  m_Subgraph: {fileID: 5371698745253816930, guid: 701a6b22675436941ad8b02cb3bfb479, type: 3}
 --- !u!114 &8926484042661614935
 MonoBehaviour:
   m_ObjectHideFlags: 0

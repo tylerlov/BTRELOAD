@@ -84,6 +84,16 @@ public class DebugControls : MonoBehaviour, IPointerClickHandler
                 damageable.Damage(100); // Assuming you want to apply a damage of 100
             }
         }
+
+        // Handle projectiles
+        var projectiles = FindObjectsOfType<ProjectileStateBased>();
+        foreach (var projectile in projectiles)
+        {
+            projectile.Death();
+        }
+
+        // Clear all projectiles from the ProjectileManager
+        ProjectileManager.Instance.ClearAllProjectiles();
     }
 
     public void CallDeathOnLayerObjects(int layer)

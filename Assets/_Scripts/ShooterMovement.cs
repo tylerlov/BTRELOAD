@@ -145,4 +145,16 @@ public class ShooterMovement : MonoBehaviour
     {
         enableClamping = enable;
     }
+
+    public void OnRotate180()
+    {
+        // Reset the reticle position to center
+        ResetToCenter();
+        
+        // Reset any rotation on the objectToRotate
+        if (objectToRotate != null)
+        {
+            objectToRotate.transform.localRotation = Quaternion.identity;
+        }
+    }
 }

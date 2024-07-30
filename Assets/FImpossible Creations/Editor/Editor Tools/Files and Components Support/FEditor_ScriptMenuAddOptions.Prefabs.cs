@@ -1,6 +1,7 @@
 ﻿#if UNITY_2019_4_OR_NEWER
 using System.IO;
 using UnityEditor;
+using UnityEditor.Hardware;
 using UnityEngine;
 
 namespace FIMSpace.FEditor

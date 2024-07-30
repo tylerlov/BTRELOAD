@@ -28,7 +28,7 @@ public class EnemySnakeMidBoss : BaseBehaviour, IDamageable, ILimbDamageReceiver
     [EventID]
     [SerializeField] private string koreographyEventID; // Serialized field to set in Inspector
     [SerializeField] private string projectileTimelineName;
-    [SerializeField] private VisualEffect vfxPrefab;
+    [SerializeField] private VisualEffect vfxPrefab; // Keep this line as is
     [SerializeField] private EventReference shootEventPath; // Updated to use EventReference
 
 
@@ -43,7 +43,10 @@ public class EnemySnakeMidBoss : BaseBehaviour, IDamageable, ILimbDamageReceiver
 
     private void Awake()
     {
-        InitializeVFXPool();
+        if (vfxPrefab != null)
+        {
+            InitializeVFXPool();
+        }
     }
 
     private void InitializeVFXPool()
@@ -193,7 +196,7 @@ public class EnemySnakeMidBoss : BaseBehaviour, IDamageable, ILimbDamageReceiver
             shootSpeed,
             projectileLifetime,
             projectileScale,
-            enableHoming: false,
+            true,
             alternativeProjectileMaterial,
             projectileTimelineName
         );
@@ -202,13 +205,16 @@ public class EnemySnakeMidBoss : BaseBehaviour, IDamageable, ILimbDamageReceiver
 
 
         // Handle VFX
-        VisualEffect vfx = GetPooledVFX();
-        vfx.transform.position = projectileOrigin.position;
-        vfx.transform.rotation = rotationTowardsTarget;
-        vfx.gameObject.SetActive(true);
-        vfx.Play(); // Ensure to start the effect
+        if (vfxPrefab != null)
+        {
+            VisualEffect vfx = GetPooledVFX();
+            vfx.transform.position = projectileOrigin.position;
+            vfx.transform.rotation = rotationTowardsTarget;
+            vfx.gameObject.SetActive(true);
+            vfx.Play();
 
-        StartCoroutine(DeactivateVFX(vfx));
+            StartCoroutine(DeactivateVFX(vfx));
+        }
 
     }
 
@@ -273,5 +279,17 @@ public class EnemySnakeMidBoss : BaseBehaviour, IDamageable, ILimbDamageReceiver
     {
         // Implementation of shooting logic synchronized with music
         ShootProjectile();
+    }
+
+    public void RegisterProjectiles()
+    {
+        var projectiles = GetComponentsInChildren<ProjectileStateBased>();
+        foreach (var projectile in projectiles)
+        {
+            if (projectile != null)
+            {
+                ProjectileManager.Instance.RegisterProjectile(projectile);
+            }
+        }
     }
 }

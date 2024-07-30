@@ -52,6 +52,9 @@ namespace UltimateSpawner
 
         [HideInInspector]
         public UnityStringEvent OnWaveCustomEvent;
+
+        // Add this new event
+        public event Action<Transform> OnEnemySpawned;
         
         // Properties
         public WaveState CurrentState
@@ -341,6 +344,9 @@ namespace UltimateSpawner
         protected override void OnControllerSpawnedItem(Transform item)
         {
             currentWaveSpawnedItemCount++;
+            
+            // Trigger the new event
+            OnEnemySpawned?.Invoke(item);
         }
 
         protected override void OnControllerDestroyedItem(Transform item)

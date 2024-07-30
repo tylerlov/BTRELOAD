@@ -4,8 +4,7 @@ using DG.Tweening; // Required for DOTween animations
 
 public class ColliderHitCallback : BaseBehaviour, IDamageable
 {
-    [SerializeField] private GameObject bossObject; // Serialize a GameObject reference
-
+    public GameObject bossObject; 
     private ILimbDamageReceiver bossScript; // Keep the interface reference, but don't serialize it
 
     [SerializeField] private GameObject lockedOnIndicator; // Add a reference to a locked-on indicator, such as a visual effect or model

@@ -6,7 +6,6 @@ using System.Collections.Generic;
 
 public class PlayerHealth : MonoBehaviour, IDamageable
 {
-    public bool invincible;
     public int startScore = 100;
     
     [SerializeField] private GameObject hitEffectPrefab;
@@ -16,6 +15,8 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     private List<GameObject> hitEffectsPool;
     public bool DodgeInvincibility { get; set; } = false;
 
+    private bool isInvincible = false;
+
     private void Start()
     {
         InitializeHitEffectsPool();
@@ -24,7 +25,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
 
     public void Damage(float amount)
     {
-        if (DodgeInvincibility || invincible) return;
+        if (DodgeInvincibility || isInvincible) return;
 
         GameManager.instance.AddScore(-(int)amount);
         SpawnHitEffect();
@@ -94,12 +95,12 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         gameObject.SetActive(true);
     }
 
-    public void SetInvincible(bool value)
+    public void SetInvincibleInternal(bool value)
     {
-        invincible = value;
-        if (invincible && GameManager.instance.Score < 1000)
+        isInvincible = value;
+        if (isInvincible)
         {
-            GameManager.instance.SetScore(999999999);
+            GameManager.instance.SetScore(999999);
         }
     }
 }

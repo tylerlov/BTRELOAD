@@ -1,3 +1,5 @@
+
+
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.SceneManagement;
@@ -9,10 +11,39 @@ using System.Collections.Generic;
 using PrimeTween;
 using Chronos;
 using System.Linq;
+using System.Threading.Tasks;
+using System.Runtime.CompilerServices;
+using System;
+
+public static class AsyncOperationExtensions
+{
+    public struct AsyncOperationAwaiter : INotifyCompletion
+    {
+        private AsyncOperation asyncOperation;
+
+        public AsyncOperationAwaiter(AsyncOperation asyncOperation) => this.asyncOperation = asyncOperation;
+
+        public bool IsCompleted => asyncOperation.isDone;
+
+        public void OnCompleted(Action continuation) => asyncOperation.completed += _ => continuation();
+
+        public void GetResult() { }
+    }
+
+    public static AsyncOperationAwaiter GetAwaiter(this AsyncOperation asyncOperation)
+    {
+        return new AsyncOperationAwaiter(asyncOperation);
+    }
+}
 
 public class GameManager : MonoBehaviour
 {
     public static GameManager instance;
+
+    [Header("Player Reference")]
+    [SerializeField] private PlayerMovement playerMovement;
+    private PlayerHealth playerHealth;
+    [SerializeField] private bool isPlayerInvincible = false;
 
     #region Serialized Fields
     [Header("Dependencies")]
@@ -24,7 +55,6 @@ public class GameManager : MonoBehaviour
     [SerializeField] private string currentSectionName;
     [SerializeField] private int _currentScene;
     [SerializeField] private float _currentSongSection;
-    [SerializeField] private int _currWaveCount;
 
     [Header("Scene Management")]
     [SerializeField] private string baseSceneName;
@@ -32,6 +62,11 @@ public class GameManager : MonoBehaviour
     [Header("Time Management")]
     [SerializeField] private Timeline timeline;
     [SerializeField] private float scoreDecayRate = 1f; // Points lost per second
+
+    [Header("Wave Management")]
+    [SerializeField] private int _totalWaveCount = 0;
+    [SerializeField] private int _currentSceneWaveCount = 0;
+
     #endregion
 
     #region Properties
@@ -56,12 +91,23 @@ public class GameManager : MonoBehaviour
             OnValueChanged();
         }
     }
-    public int currWaveCount
+
+    public int TotalWaveCount
     {
-        get => _currWaveCount;
-        set
+        get => _totalWaveCount;
+        private set
         {
-            _currWaveCount = value;
+            _totalWaveCount = value;
+            OnValueChanged();
+        }
+    }
+
+    public int CurrentSceneWaveCount
+    {
+        get => _currentSceneWaveCount;
+        private set
+        {
+            _currentSceneWaveCount = value;
             OnValueChanged();
         }
     }
@@ -79,6 +125,8 @@ public class GameManager : MonoBehaviour
     private float nextSongSection;
     private float lastScoreUpdateTime;
     private float accumulatedScoreDecrease = 0f;
+    private List<Transform> spawnedEnemies = new List<Transform>();
+    private Dictionary<Transform, bool> lockedEnemies = new Dictionary<Transform, bool>();
     #endregion
 
     #region Unity Lifecycle Methods
@@ -88,6 +136,40 @@ public class GameManager : MonoBehaviour
         FindActiveFMODInstance();
         PrimeTweenConfig.SetTweensCapacity(1600);
         InitializeTimeline();
+        InitializePlayerHealth();
+    }
+
+    private void InitializePlayerHealth()
+    {
+        if (playerHealth == null)
+        {
+            playerHealth = FindObjectOfType<PlayerHealth>();
+            if (playerHealth == null)
+            {
+                ConditionalDebug.LogError("PlayerHealth component not found in the scene.");
+            }
+        }
+    }
+
+    public void SetPlayerInvincibility(bool isInvincible)
+    {
+        if (isPlayerInvincible != isInvincible)
+        {
+            isPlayerInvincible = isInvincible;
+            if (playerHealth != null)
+            {
+                playerHealth.SetInvincibleInternal(isInvincible);
+            }
+            else
+            {
+                ConditionalDebug.LogError("PlayerHealth is not set in GameManager.");
+            }
+        }
+    }
+
+    public bool IsPlayerInvincible()
+    {
+        return isPlayerInvincible;
     }
 
     private void OnEnable()
@@ -102,15 +184,14 @@ public class GameManager : MonoBehaviour
         SceneManager.sceneLoaded -= InitializeListenersAndComponents;
     }
 
-    private void Start()
+    private async void Start()
     {
         InitializeNextSceneValues();
-        LoadBaseScene();
-        
-        // Check for already open scene from Ouroboros group
-        if (!TryUseOpenOuroborosScene())
+        await LoadBaseSceneAsync();
+
+        if (!await TryUseOpenOuroborosSceneAsync())
         {
-            LoadFirstAdditiveScene();
+            await LoadFirstAdditiveSceneAsync();
         }
     }
 
@@ -214,6 +295,23 @@ public class GameManager : MonoBehaviour
         }
     }
 
+        public void InitializeCurrentSceneIndex()
+    {
+        string currentSceneName = SceneManager.GetActiveScene().name;
+        for (int i = 0; i < currentGroup.scenes.Length; i++)
+        {
+            if (currentGroup.scenes[i].sceneName == currentSceneName)
+            {
+                currentScene = i;
+                currentSongSection = 0; // Assuming we start at the first section
+                return;
+            }
+        }
+        ConditionalDebug.LogWarning($"Current scene '{currentSceneName}' not found in Ouroboros asset. Defaulting to first scene.");
+        currentScene = 0;
+        currentSongSection = 0;
+    }
+
     private void InitializeCameraSwitching()
     {
         var cameraSwitching = FindObjectOfType<CinemachineCameraSwitching>();
@@ -256,7 +354,7 @@ public class GameManager : MonoBehaviour
 
     #endregion
 
-    private void LoadBaseScene()
+    private async Task LoadBaseSceneAsync()
     {
         if (string.IsNullOrEmpty(baseSceneName))
         {
@@ -267,11 +365,11 @@ public class GameManager : MonoBehaviour
         baseScene = SceneManager.GetSceneByName(baseSceneName);
         if (!baseScene.isLoaded)
         {
-            SceneManager.LoadScene(baseSceneName, LoadSceneMode.Single);
+            await SceneManager.LoadSceneAsync(baseSceneName, LoadSceneMode.Single);
         }
     }
 
-    private void LoadFirstAdditiveScene()
+     private async Task LoadFirstAdditiveSceneAsync()
     {
         if (currentGroup == null || currentGroup.scenes.Length == 0)
         {
@@ -280,34 +378,39 @@ public class GameManager : MonoBehaviour
         }
 
         string firstSceneName = currentGroup.scenes[0].sceneName;
-        LoadAdditiveScene(firstSceneName);
+        await LoadAdditiveSceneAsync(firstSceneName);
     }
 
-    private void LoadAdditiveScene(string sceneName)
-    {
-        StartCoroutine(LoadAdditiveSceneCoroutine(sceneName));
-    }
-
-    private IEnumerator LoadAdditiveSceneCoroutine(string sceneName)
+    private async Task LoadAdditiveSceneAsync(string sceneName)
     {
         if (currentAdditiveScene.IsValid() && currentAdditiveScene.isLoaded)
         {
-            yield return SceneManager.UnloadSceneAsync(currentAdditiveScene);
+            await SceneManager.UnloadSceneAsync(currentAdditiveScene);
         }
 
-        yield return SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Additive);
+        AsyncOperation asyncLoad = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Additive);
+        await asyncLoad; // This now works with our custom GetAwaiter
+
         currentAdditiveScene = SceneManager.GetSceneByName(sceneName);
         SceneManager.SetActiveScene(currentAdditiveScene);
 
+        // Reset the current scene wave count when loading a new scene
+        CurrentSceneWaveCount = 0;
+
         OnSceneLoaded(currentAdditiveScene, LoadSceneMode.Additive);
     }
+
 
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
         _isLoadingScene = false;
         
-        currentScene = nextSceneIndex;
-        currentSongSection = nextSongSection;
+        // Only update these if we're actually changing scenes
+        if (scene != currentAdditiveScene)
+        {
+            currentScene = nextSceneIndex;
+            currentSongSection = nextSongSection;
+        }
         
         UpdateSceneAttributes();
         ApplyMusicChanges();
@@ -319,7 +422,6 @@ public class GameManager : MonoBehaviour
 
         InitializeListenersAndComponents(scene, mode);
 
-        // Add this: Re-initialize SplineManager after scene is fully loaded
         StartCoroutine(InitializeSplineManagerDelayed());
     }
 
@@ -330,12 +432,12 @@ public class GameManager : MonoBehaviour
         InitializeSplineManager();
     }
 
-    public void ChangeToNextScene()
+    public async void ChangeToNextScene()
     {
-        ChangeSceneWithTransitionToNext();
+        await ChangeSceneWithTransitionToNext();
     }
 
-    public void ChangeSceneWithTransitionToNext()
+    public async Task ChangeSceneWithTransitionToNext()
     {
         if (_isLoadingScene) return;
         _isLoadingScene = true;
@@ -374,7 +476,7 @@ public class GameManager : MonoBehaviour
         nextSongSection = correctNextSongSection;
 
         GlobalVolumeManager.Instance.TransitionEffectIn(1.5f);
-        LoadAdditiveScene(nextSceneName);
+        await LoadAdditiveSceneAsync(nextSceneName);
     }
 
     private void LoadScene(string sceneName, float songSection)
@@ -408,7 +510,7 @@ public class GameManager : MonoBehaviour
             {
                 int sectionIndex = Mathf.Clamp((int)currentSongSection, 0, sceneData.songSections.Length - 1);
                 var songSection = sceneData.songSections[sectionIndex];
-                currWaveCount = songSection.waves;
+                CurrentSceneWaveCount = songSection.waves;
             }
         }
     }
@@ -443,7 +545,7 @@ public class GameManager : MonoBehaviour
 
     private void LogCurrentState()
     {
-        ConditionalDebug.Log($"Current State - Scene: {currentScene}, Section: {currentSongSection}, Wave: {currWaveCount}");
+        ConditionalDebug.Log($"Current State - Scene: {currentScene}, Section: {currentSongSection}, Wave: {CurrentSceneWaveCount}");
     }
 
     public void AddShotTally(int shotsToAdd)
@@ -505,7 +607,7 @@ public class GameManager : MonoBehaviour
             return;
         }
 
-        if (currWaveCount >= currentSection.waves)
+        if (CurrentSceneWaveCount >= currentSection.waves)
         {
             ConditionalDebug.Log($"Completed all waves in section {currentSection.name}. Moving to next section or scene.");
             MoveToNextSectionOrScene();
@@ -524,7 +626,7 @@ public class GameManager : MonoBehaviour
         {
             changeSongSection();
         }
-        currWaveCount = 0;
+        CurrentSceneWaveCount = 0;
     }
 
     private void MoveToNextScene()
@@ -566,11 +668,31 @@ public class GameManager : MonoBehaviour
         {
             transCamOn?.Invoke();
         }
+
+        ConditionalDebug.Log("changeSongSection called. About to reset player direction.");
+
+        if (playerMovement != null)
+        {
+            ConditionalDebug.Log($"Player state before PlayerDirectionForward: Rotation={playerMovement.transform.rotation.eulerAngles}, FacingDirection={playerMovement.GetPlayerFacingDirection()}");
+            playerMovement.PlayerDirectionForward();
+            ConditionalDebug.Log($"Player state after PlayerDirectionForward: Rotation={playerMovement.transform.rotation.eulerAngles}, FacingDirection={playerMovement.GetPlayerFacingDirection()}");
+            
+            // Force an immediate update of the player's visuals
+            playerMovement.UpdateAnimation();
+        }
+        else
+        {
+            ConditionalDebug.LogError("PlayerMovement reference is null in GameManager. Cannot reset player direction.");
+        }
+
+        ConditionalDebug.Log($"Song section changed to: {currentSectionName}");
     }
 
     public void waveCounterAdd()
     {
-        currWaveCount++;
+        CurrentSceneWaveCount++;
+        TotalWaveCount++;
+        ConditionalDebug.Log($"Wave added. Current scene wave: {CurrentSceneWaveCount}, Total waves: {TotalWaveCount}");
     }
 
     public void ChangeMusicSectionByName(string sectionName)
@@ -628,7 +750,7 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    private bool TryUseOpenOuroborosScene()
+     private async Task<bool> TryUseOpenOuroborosSceneAsync()
     {
         for (int i = 0; i < SceneManager.sceneCount; i++)
         {
@@ -638,27 +760,110 @@ public class GameManager : MonoBehaviour
                 currentAdditiveScene = openScene;
                 SceneManager.SetActiveScene(currentAdditiveScene);
                 
-                // Find the index of the open scene in the Ouroboros group
                 for (int j = 0; j < currentGroup.scenes.Length; j++)
                 {
                     if (currentGroup.scenes[j].sceneName == openScene.name)
                     {
                         currentScene = j;
+                        nextSceneIndex = j; // Set nextSceneIndex to match the current scene
                         currentSongSection = currentGroup.scenes[j].songSections[0].section;
+                        nextSongSection = currentSongSection; // Set nextSongSection to match the current section
                         break;
                     }
                 }
             
-            OnSceneLoaded(currentAdditiveScene, LoadSceneMode.Additive);
-            return true;
+                // Update scene attributes and apply music changes
+                UpdateSceneAttributes();
+                ApplyMusicChanges();
+                
+                // Call OnSceneLoaded to properly initialize the scene
+                OnSceneLoaded(currentAdditiveScene, LoadSceneMode.Additive);
+                return true;
+            }
         }
+        return false;
     }
-    return false;
-}
 
 private bool IsSceneInOuroborosGroup(string sceneName)
 {
     return currentGroup.scenes.Any(scene => scene.sceneName == sceneName);
 }
-                
+
+    public void RegisterEnemy(Transform enemy)
+    {
+        if (!spawnedEnemies.Contains(enemy))
+        {
+            spawnedEnemies.Add(enemy);
+            lockedEnemies[enemy] = false; // Initialize as unlocked
+            ConditionalDebug.Log($"Enemy registered: {enemy.name}");
+        }
+    }
+
+    public void SetEnemyLockState(Transform enemy, bool isLocked)
+    {
+        if (enemy == null)
+        {
+            lockedEnemies.Remove(enemy);
+            return;
+        }
+
+        if (lockedEnemies.ContainsKey(enemy))
+        {
+            lockedEnemies[enemy] = isLocked;
+            ConditionalDebug.Log($"Enemy {enemy.name} lock state set to: {isLocked}");
+        }
+        else
+        {
+            ConditionalDebug.LogWarning($"Attempted to set lock state for unregistered enemy: {enemy.name}");
+        }
+    }
+
+    public void ClearAllEnemyLocks()
+    {
+        var enemiesToRemove = new List<Transform>();
+        var enemyKeys = new List<Transform>(lockedEnemies.Keys);
+
+        foreach (var enemy in enemyKeys)
+        {
+            if (enemy == null)
+            {
+                enemiesToRemove.Add(enemy);
+                continue;
+            }
+
+            SetEnemyLockState(enemy, false);
+            EnemyBasicSetup enemySetup = enemy.GetComponent<EnemyBasicSetup>();
+            if (enemySetup != null)
+            {
+                enemySetup.lockedStatus(false);
+            }
+        }
+
+        foreach (var enemy in enemiesToRemove)
+        {
+            lockedEnemies.Remove(enemy);
+        }
+
+        Debug.Log("All enemy locks cleared");
+    }
+
+    public void ClearSpawnedEnemies()
+    {
+        spawnedEnemies.Clear();
+        lockedEnemies.Clear();
+    }
+
+    public void RemoveDestroyedEnemies()
+    {
+        spawnedEnemies.RemoveAll(enemy => enemy == null);
+        var destroyedEnemies = lockedEnemies.Keys.Where(enemy => enemy == null).ToList();
+        foreach (var enemy in destroyedEnemies)
+        {
+            lockedEnemies.Remove(enemy);
+        }
+    }
 }
+
+
+
+

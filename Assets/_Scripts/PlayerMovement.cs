@@ -11,6 +11,7 @@ using Chronos;
 using Lofelt.NiceVibrations;
 using SensorToolkit;
 using MoreMountains.Feedbacks;
+using FluffyUnderware.Curvy.Controllers;
 
 public class PlayerMovement : MonoBehaviour
 {
@@ -28,6 +29,8 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private GameObject horizontalRotatePlatform;
     [SerializeField] private GameObject enclosingSphere;
     [SerializeField] private GameObject shooting;
+    [SerializeField] private float rotationCooldown = 0.2f; // New: Cooldown between rotations
+    [SerializeField] private float rotationDuration = 0.5f; // Increased duration for smoother rotation
 
     [Header("RicochetDodge Mechanic")]
     [SerializeField] private float dodgeDistance = 5f;
@@ -42,6 +45,16 @@ public class PlayerMovement : MonoBehaviour
 
     [Header("Feedback Settings")]
     [SerializeField] private GameObject ricochetFeedbackObject;
+
+    [Header("Spline Controller")]
+    [SerializeField] private SplineController splineController;
+
+    [Header("Camera")]
+    [SerializeField] private CinemachineVirtualCamera mainVirtualCamera;
+    private CinemachineBrain cinemachineBrain;
+    private Vector3 cameraPositionBeforeRotation;
+
+    [SerializeField] private ShooterMovement shooterMovement;
 
     #region Private Fields
 
@@ -64,7 +77,7 @@ public class PlayerMovement : MonoBehaviour
     private bool shouldLerpHeight = false; // Flag to control height interpolation
 
     private float rotationDebounceTime = 0.1f; // 200 milliseconds debounce period
-    private float lastRotationTime = 0;
+    private float lastRotationTime;
 
     #endregion
 
@@ -73,8 +86,17 @@ public class PlayerMovement : MonoBehaviour
         playerInputActions = new DefaultControls();
         playerInputActions.Player.Enable();
 
+        // Bind the new input action for reversing direction
+        playerInputActions.Player.ReverseDirection.performed += OnReverseDirection;
+
         rigidbody = GetComponent<Rigidbody>();
         rigidbody.constraints = RigidbodyConstraints.FreezeRotationY | rigidbody.constraints;
+    }
+
+    private void OnDestroy()
+    {
+        // Unbind the input action when the object is destroyed
+        playerInputActions.Player.ReverseDirection.performed -= OnReverseDirection;
     }
 
     private void Start()
@@ -87,6 +109,12 @@ public class PlayerMovement : MonoBehaviour
 
         startingPosition = transform.localPosition;
         shootingZOffset = shooting.transform.localPosition.z;
+
+        cinemachineBrain = Camera.main.GetComponent<CinemachineBrain>();
+        if (cinemachineBrain == null)
+        {
+            Debug.LogError("CinemachineBrain not found on main camera!");
+        }
     }
 
     private void Update()
@@ -208,47 +236,43 @@ public class PlayerMovement : MonoBehaviour
 
     public void RotateLeft()
     {
-        if (isRotating || Time.time - lastRotationTime < rotationDebounceTime) return;
+        if (isRotating || Time.time - lastRotationTime < rotationCooldown) return;
 
         lastRotationTime = Time.time;
         isRotating = true;
-        playerFacingDirection--;
-
-        if (playerFacingDirection == -1)
-            playerFacingDirection = 3;
-
-        animator.SetInteger("PlayerDirection", playerFacingDirection);
-        RotatePlayer(-90, () => isRotating = false);
+        Rotate(-90);
     }
 
     public void RotateRight()
     {
-        if (isRotating || Time.time - lastRotationTime < rotationDebounceTime) return;
+        if (isRotating || Time.time - lastRotationTime < rotationCooldown) return;
 
         lastRotationTime = Time.time;
         isRotating = true;
-        playerFacingDirection++;
-
-        if (playerFacingDirection == 4)
-            playerFacingDirection = 0;
-
-        animator.SetInteger("PlayerDirection", playerFacingDirection);
-        RotatePlayer(90, () => isRotating = false);
+        Rotate(90);
     }
 
-    private void RotatePlayer(float rotationAmount, Action onComplete)
+    private void Rotate(float targetRotationDelta)
     {
-        Quaternion currentLocalRotation = horizontalRotatePlatform.transform.localRotation;
-        Quaternion targetLocalRotation = currentLocalRotation * Quaternion.Euler(0, rotationAmount, 0);
+        float currentRotation = horizontalRotatePlatform.transform.localEulerAngles.y;
+        float targetRotation = (currentRotation + targetRotationDelta + 360) % 360;
+
+        // Ensure we're rotating in the shortest direction
+        float rotationDelta = Mathf.DeltaAngle(currentRotation, targetRotation);
+
+        // Update playerFacingDirection based on the new rotation
+        playerFacingDirection = Mathf.RoundToInt(targetRotation / 90f) % 4;
+        playerFacingDirection = (playerFacingDirection + 4) % 4; // Ensure it's always 0, 1, 2, or 3
+        animator.SetInteger("PlayerDirection", playerFacingDirection);
+
         float zMultiplier = GetShootingZMultiplier(playerFacingDirection);
 
         shooting.transform.DOLocalMoveZ(shootingZOffset * zMultiplier, 0.5f, false);
 
-        horizontalRotatePlatform.transform.DOLocalRotateQuaternion(targetLocalRotation, 0.15f)
+        horizontalRotatePlatform.transform.DOLocalRotate(new Vector3(0, targetRotation, 0), 0.15f)
             .SetEase(Ease.InOutQuad)
             .OnComplete(() => {
                 isRotating = false;
-                onComplete?.Invoke();
             });
     }
 
@@ -260,7 +284,9 @@ public class PlayerMovement : MonoBehaviour
             case 2: return 2.8f;
             case 3: return 1.8f;
             case 0: return 1f;
-            default: throw new System.InvalidOperationException($"Invalid playerFacingDirection: {facingDirection}");
+            default: 
+                Debug.LogWarning($"Unexpected playerFacingDirection: {facingDirection}. Defaulting to 1.");
+                return 1f;
         }
     }
 
@@ -274,17 +300,20 @@ public class PlayerMovement : MonoBehaviour
         if (isDodging)
             return;
 
-        // Play the Ricochet Dodge sound event
-        FMODUnity.RuntimeManager.PlayOneShot("event:/Player/Ricochet");
-
-        HapticPatterns.PlayEmphasis(1.0f, 0.0f);
+        Vector3 dodgeDirection = GetRicochetDodgeDirection();
+        
+        // Check if there's actually a projectile to dodge and it hasn't hit the player yet
+        if (IsProjectileNearby(out ProjectileStateBased nearbyProjectile) && !nearbyProjectile.projHitPlayer)
+        {
+            PlayRicochetEffects();
+            TriggerProjectileBehaviorChange();
+        }
 
         isDodging = true;
         playerHealth.DodgeInvincibility = true;
 
         UpdateConsecutiveDodges();
 
-        Vector3 dodgeDirection = GetRicochetDodgeDirection();
         Vector3 dodgePosition = transform.position + dodgeDirection * dodgeDistance;
 
         string dodgeTweenId = "ricochetDodgeTween";
@@ -294,8 +323,30 @@ public class PlayerMovement : MonoBehaviour
             .SetEase(Ease.OutQuad)
             .SetId(dodgeTweenId)
             .SetLink(gameObject);
+    }
 
-        TriggerProjectileBehaviorChange();
+    private bool IsProjectileNearby(out ProjectileStateBased nearbyProjectile)
+    {
+        nearbyProjectile = null;
+        var sensor = GetComponent<RangeSensor>();
+        foreach (var obj in sensor.DetectedObjects)
+        {
+            var projectile = obj.GetComponent<ProjectileStateBased>();
+            if (projectile != null && !projectile.projHitPlayer)
+            {
+                nearbyProjectile = projectile;
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void PlayRicochetEffects()
+    {
+        // Play the Ricochet Dodge sound event
+        FMODUnity.RuntimeManager.PlayOneShot("event:/Player/Ricochet");
+
+        HapticPatterns.PlayEmphasis(1.0f, 0.0f);
 
         // Trigger all Particle Systems in the Ricochet Blast GameObject
         PlayAllParticleSystems(ricochetBlast);
@@ -339,7 +390,7 @@ public class PlayerMovement : MonoBehaviour
         foreach (var obj in sensor.DetectedObjects)
         {
             var projectile = obj.GetComponent<ProjectileStateBased>();
-            if (projectile != null)
+            if (projectile != null && !projectile.projHitPlayer)
             {
                 projectile.OnPlayerRicochetDodge();
             }
@@ -391,7 +442,7 @@ public class PlayerMovement : MonoBehaviour
         shooting.transform.localPosition = new Vector3(0, 0, shootingZOffset);
     }
 
-    public float GetPlayerFacingDirection()
+    public int GetPlayerFacingDirection()
     {
         return playerFacingDirection;
     }
@@ -435,6 +486,77 @@ public class PlayerMovement : MonoBehaviour
         {
             // If the GameObject doesn't have a parent, just ensure it's upright in world space
             transform.rotation = Quaternion.Euler(0, transform.eulerAngles.y, 0);
+        }
+    }
+
+    // New method to handle direction reversal
+    private void OnReverseDirection(InputAction.CallbackContext context)
+    {
+        if (splineController != null)
+        {
+            splineController.MovementDirection = splineController.MovementDirection == MovementDirection.Forward 
+                ? MovementDirection.Backward 
+                : MovementDirection.Forward;
+            
+            // Perform the 180-degree rotation
+            Rotate180();
+        }
+    }
+
+    private void Rotate180()
+    {
+        if (isRotating) return;
+
+        isRotating = true;
+        float currentRotation = horizontalRotatePlatform.transform.localEulerAngles.y;
+        float targetRotation = (currentRotation + 180) % 360;
+
+        // Disable ShooterMovement and LookAtReversed during rotation
+        ShooterMovement shooterMovement = shooting.GetComponent<ShooterMovement>();
+        LookAtReversed lookAtReversed = shooting.GetComponent<LookAtReversed>();
+        if (shooterMovement) shooterMovement.enabled = false;
+        if (lookAtReversed) lookAtReversed.enabled = false;
+
+        // Rotate the horizontalRotatePlatform
+        horizontalRotatePlatform.transform.DOLocalRotate(new Vector3(0, targetRotation, 0), rotationDuration)
+            .SetEase(Ease.InOutQuad)
+            .OnComplete(() => {
+                isRotating = false;
+                
+                // Re-enable ShooterMovement and LookAtReversed
+                if (shooterMovement) shooterMovement.enabled = true;
+                if (lookAtReversed) lookAtReversed.enabled = true;
+
+                // Update playerFacingDirection
+                playerFacingDirection = (playerFacingDirection + 2) % 4;
+                animator.SetInteger("PlayerDirection", playerFacingDirection);
+
+                // Call OnRotate180 on ShooterMovement
+                if (shooterMovement) shooterMovement.OnRotate180();
+            });
+    }
+
+    private IEnumerator FreezeCameraDuringRotation()
+    {
+        if (cinemachineBrain != null)
+        {
+            // Store the current camera position
+            cameraPositionBeforeRotation = Camera.main.transform.position;
+
+            // Disable Cinemachine updates
+            cinemachineBrain.enabled = false;
+
+            // Wait for the rotation to complete
+            yield return new WaitForSeconds(rotationDuration);
+
+            // Re-enable Cinemachine updates
+            cinemachineBrain.enabled = true;
+
+            // Force update the virtual camera to prevent any sudden movements
+            if (mainVirtualCamera != null)
+            {
+                mainVirtualCamera.OnTargetObjectWarped(transform, transform.position - mainVirtualCamera.transform.position);
+            }
         }
     }
 }

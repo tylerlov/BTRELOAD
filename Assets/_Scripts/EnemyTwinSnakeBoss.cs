@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using FMODUnity;
 using Chronos;
@@ -6,66 +7,71 @@ using BehaviorDesigner.Runtime.Tactical;
 using UnityEngine.Events;
 using SonicBloom.Koreo;
 
+[System.Serializable]
+public class SnakeData
+{
+    public GameObject snakeObject;
+    public Animator animator;
+    public Transform projectileOrigin;
+    public float currentHealth;
+    public Timeline timeline;
+    public string clockName;
+}
+
 [RequireComponent(typeof(Timeline))]
 public class EnemyTwinSnakeBoss : MonoBehaviour, ILimbDamageReceiver
 {
+    [Header("Snake Data")]
+    [SerializeField] private SnakeData[] snakes = new SnakeData[2];
+
     // Basic Enemy Information
     [Header("Basic Enemy Information")]
     [SerializeField] private string enemyType;
     [SerializeField] private float startHealth = 100;
-    [SerializeField] private Animator animator;
-
-    // Twin Snake Logic
-    [Header("Twin Snake Logic")]
-    public EnemyTwinSnakeBoss otherSnake; // Reference to the other part of the twin snake
 
     // Shooting Functionality
     [Header("Shooting Functionality")]
-    [SerializeField] private Transform projectileOrigin;
     [SerializeField] private float shootSpeed = 20f;
     [SerializeField] private float projectileLifetime = 5f;
     [SerializeField] private float projectileScale = 1f;
     [SerializeField] private Material alternativeProjectileMaterial;
-    [SerializeField] private string projectileTimelineName; // Added field for specifying projectile timeline
-    [SerializeField] private float noKoreoShootInterval = 2f; // Time in seconds between each shot, settable in the Inspector
-    public float shootDelay = 0.5f; // Time in seconds to delay the shooting action
+    [SerializeField] private float noKoreoShootInterval = 2f;
+    public float shootDelay = 0.5f;
 
     // Animation Triggers
     [Header("Animation Triggers")]
-    [SerializeField] private string attackAnimationTrigger = "Attack"; // Animation trigger for attacks
+    [SerializeField] private string attackLeftCondition = "Attack Left";
+    [SerializeField] private string attackRightCondition = "Attack Right";
 
     // Koreographer Shooting
     [Header("Koreographer Shooting")]
-    [SerializeField]
-    private string[] shootEventIDs = new string[1]; // Array to hold multiple shootEventIDs
+    [SerializeField] private string[] shootEventIDs = new string[1];
+    [EventID] public string activeShootEventID;
 
-    [EventID]
-    public string activeShootEventID; // Currently active Koreographer event ID for shooting
-
-    // Private fields (not shown in Inspector)
-    private float currentHealth;
-    private Timeline myTime;
-    private Clock clock;
+    private Clock[] clocks = new Clock[2];
 
     public Timeline MyTime
     {
-        get { return myTime; }
-        set { myTime = value; } // Added setter to allow modification
+        get { return snakes[0].timeline; }
+        set { snakes[0].timeline = value; }
     }
 
-    public string ClockName { get; private set; }
+    public float ShootInterval => noKoreoShootInterval;
 
-    public float ShootInterval
-    {
-        get { return noKoreoShootInterval; }
-    }
+    private int currentShootingSnakeIndex = 0;
 
-    // Removed Events section including onDamageTaken
+    private ProjectileManager projectileManager;
+
+    private Crosshair crosshair;
+
+    private GameObject playerTarget;
+
+    [Header("Eye Colliders")]
+    private List<ColliderHitCallback> leftSnakeEyes = new List<ColliderHitCallback>();
+    private List<ColliderHitCallback> rightSnakeEyes = new List<ColliderHitCallback>();
 
     private void Awake()
     {
-        // Removed onDamageTaken initialization
-        // Initialize the active shootEventID with the first one from the array
         if (shootEventIDs.Length > 0)
         {
             activeShootEventID = shootEventIDs[0];
@@ -75,10 +81,14 @@ public class EnemyTwinSnakeBoss : MonoBehaviour, ILimbDamageReceiver
     private void OnEnable()
     {
         InitializeEnemy();
-        // Register for events using the active shootEventID
         if (!string.IsNullOrEmpty(activeShootEventID))
         {
+            ConditionalDebug.Log($"Registering for Koreographer event: {activeShootEventID}");
             Koreographer.Instance.RegisterForEvents(activeShootEventID, OnMusicalShoot);
+        }
+        else
+        {
+            ConditionalDebug.LogWarning("activeShootEventID is empty or null");
         }
     }
 
@@ -93,135 +103,299 @@ public class EnemyTwinSnakeBoss : MonoBehaviour, ILimbDamageReceiver
     private void Start()
     {
         SetupEnemy();
+        projectileManager = ProjectileManager.Instance;
+        if (projectileManager == null)
+        {
+            ConditionalDebug.LogError("ProjectileManager not found!");
+        }
+
+        // Find and store the Crosshair reference
+        crosshair = FindObjectOfType<Crosshair>();
+        if (crosshair == null)
+        {
+            ConditionalDebug.LogError("Crosshair not found!");
+        }
+
+        // Initialize clocks
+        for (int i = 0; i < snakes.Length; i++)
+        {
+            clocks[i] = Timekeeper.instance.Clock(snakes[i].clockName);
+        }
+
+        // Subscribe to rewind events
+        if (crosshair != null)
+        {
+            crosshair.OnRewindStart += HandleRewindStart;
+            crosshair.OnRewindEnd += HandleRewindEnd;
+        }
+
+        playerTarget = GameObject.FindGameObjectWithTag("Player");
     }
 
-    public bool HasShootEventID()
+    private void OnDestroy()
     {
-        return !string.IsNullOrEmpty(activeShootEventID);
+        // Unsubscribe from rewind events
+        if (crosshair != null)
+        {
+            crosshair.OnRewindStart -= HandleRewindStart;
+            crosshair.OnRewindEnd -= HandleRewindEnd;
+        }
     }
 
-    public bool IsAlive() => currentHealth > 0;
-
-    public void Damage(float amount)
+    private void HandleRewindStart(float timeScale)
     {
-        HandleDamage(amount);
+        int targetSnakeIndex = DetermineTargetSnake();
+        if (targetSnakeIndex != -1)
+        {
+            ApplyTimeScaleToSnake(targetSnakeIndex, timeScale);
+        }
+    }
+
+    private void HandleRewindEnd()
+    {
+        // Reset time scale for both snakes
+        for (int i = 0; i < snakes.Length; i++)
+        {
+            ApplyTimeScaleToSnake(i, 1f);
+        }
+    }
+
+    private int DetermineTargetSnake()
+    {
+        if (crosshair == null) return -1;
+
+        Vector3 aimPoint = crosshair.RaycastTarget();
+        float closestDistance = float.MaxValue;
+        int closestSnakeIndex = -1;
+
+        for (int i = 0; i < snakes.Length; i++)
+        {
+            float distance = Vector3.Distance(aimPoint, snakes[i].snakeObject.transform.position);
+            if (distance < closestDistance)
+            {
+                closestDistance = distance;
+                closestSnakeIndex = i;
+            }
+        }
+
+        return closestSnakeIndex;
+    }
+
+    private void ApplyTimeScaleToSnake(int snakeIndex, float timeScale)
+    {
+        if (snakeIndex >= 0 && snakeIndex < snakes.Length)
+        {
+            clocks[snakeIndex].localTimeScale = timeScale;
+        }
+    }
+
+    public bool HasShootEventID() => !string.IsNullOrEmpty(activeShootEventID);
+
+    public bool IsAlive() => snakes[0].currentHealth > 0 || snakes[1].currentHealth > 0;
+
+    public void Damage(float amount, int snakeIndex)
+    {
+        if (snakeIndex >= 0 && snakeIndex < snakes.Length)
+        {
+            HandleDamage(amount, snakeIndex);
+        }
     }
 
     private void InitializeEnemy()
     {
-        currentHealth = startHealth;
-        // Assign the clock based on some logic or directly. This is just an example.
-        ClockName = gameObject.name.Contains("Snake1") ? "Boss Time 1" : "Boss Time 2";
-        clock = Timekeeper.instance.Clock(ClockName);
+        for (int i = 0; i < snakes.Length; i++)
+        {
+            snakes[i].currentHealth = startHealth;
+            snakes[i].clockName = $"Boss Time {i + 1}";
+            clocks[i] = Timekeeper.instance.Clock(snakes[i].clockName);
+        }
     }
 
     private void SetupEnemy()
     {
-        myTime = GetComponent<Timeline>();
+        for (int i = 0; i < snakes.Length; i++)
+        {
+            snakes[i].timeline = snakes[i].snakeObject.GetComponent<Timeline>();
+        }
     }
 
-    private void HandleDamage(float amount)
+    private void HandleDamage(float amount, int snakeIndex)
     {
-        currentHealth = Mathf.Max(currentHealth - amount, 0);
+        snakes[snakeIndex].currentHealth = Mathf.Max(snakes[snakeIndex].currentHealth - amount, 0);
 
-        // Removed onDamageTaken.Invoke();
-
-        if (currentHealth <= 0)
+        if (snakes[snakeIndex].currentHealth <= 0)
         {
-            StartCoroutine(Death());
+            StartCoroutine(Death(snakeIndex));
         }
     }
 
     public void DamageFromLimb(string limbName, float amount)
     {
-         Debug.Log($"Damaged limb: {limbName}");
-        HandleDamage(amount);
+        ConditionalDebug.Log($"Damaged limb: {limbName}");
+        int snakeIndex = DetermineSnakeIndex(limbName);
+        HandleDamage(amount, snakeIndex);
+        UpdateEyeLockStatus(snakeIndex, false);
+    }
+
+    private int DetermineSnakeIndex(string limbName)
+    {
+        return limbName.Contains("Snake1") ? 0 : 1;
+    }
+
+    private void UpdateEyeLockStatus(int snakeIndex, bool isLocked)
+    {
+        List<ColliderHitCallback> eyesToUpdate = snakeIndex == 0 ? leftSnakeEyes : rightSnakeEyes;
+        foreach (var eye in eyesToUpdate)
+        {
+            if (eye != null)
+            {
+                eye.SetLockedStatus(isLocked);
+            }
+        }
+    }
+
+    public void LockOnEye(string eyeName)
+    {
+        int snakeIndex = DetermineSnakeIndex(eyeName);
+        UpdateEyeLockStatus(snakeIndex, true);
+    }
+
+    public void UnlockEye(string eyeName)
+    {
+        int snakeIndex = DetermineSnakeIndex(eyeName);
+        UpdateEyeLockStatus(snakeIndex, false);
+    }
+
+    public void RegisterEye(ColliderHitCallback eye)
+    {
+        string eyeName = eye.gameObject.name.ToLower();
+        if (eyeName.Contains("snake1") || eyeName.Contains("left"))
+        {
+            leftSnakeEyes.Add(eye);
+        }
+        else if (eyeName.Contains("snake2") || eyeName.Contains("right"))
+        {
+            rightSnakeEyes.Add(eye);
+        }
+        else
+        {
+            Debug.LogWarning($"Unable to determine which snake the eye '{eyeName}' belongs to.");
+        }
+    }
+
+    private void DisableEyeColliders(int snakeIndex)
+    {
+        List<ColliderHitCallback> eyesToDisable = snakeIndex == 0 ? leftSnakeEyes : rightSnakeEyes;
+        foreach (var eye in eyesToDisable)
+        {
+            if (eye != null)
+            {
+                eye.gameObject.SetActive(false);
+            }
+        }
     }
 
     public void ShootProjectile()
     {
-        if (string.IsNullOrEmpty(activeShootEventID)) // No Koreographer event assigned
+        if (string.IsNullOrEmpty(activeShootEventID))
         {
-            StartCoroutine(DelayedShoot());
-        }
-        else
-        {
-              
+            for (int i = 0; i < snakes.Length; i++)
+            {
+                StartCoroutine(DelayedShoot(i));
+            }
         }
     }
 
-    private IEnumerator DelayedShoot()
+    private IEnumerator DelayedShoot(int snakeIndex)
     {
-        // Trigger the attack animation immediately, without waiting
-        animator.SetTrigger(attackAnimationTrigger);
+        ConditionalDebug.Log($"DelayedShoot started for snake {snakeIndex}");
+        
+        // Set the appropriate attack condition based on the snake index
+        string attackCondition = (snakeIndex == 0) ? attackLeftCondition : attackRightCondition;
+        snakes[snakeIndex].animator.SetBool(attackCondition, true);
 
-        // Now wait for the shootDelay before continuing with shooting the projectile
         yield return new WaitForSeconds(shootDelay);
 
-        if (ProjectileManager.Instance == null)
+        // Reset the attack condition
+        snakes[snakeIndex].animator.SetBool(attackCondition, false);
+
+        if (projectileManager == null)
         {
-            Debug.LogError("ProjectileManager instance not found.");
-            yield break; // Correct way to exit a coroutine early
+            ConditionalDebug.LogError("ProjectileManager instance not found.");
+            yield break;
         }
 
-        // Assuming the target is the player or another enemy. Adjust as necessary.
-        Vector3 targetPosition = GameObject.FindGameObjectWithTag("Player").transform.position;
-        Quaternion rotationTowardsTarget = Quaternion.LookRotation(targetPosition - projectileOrigin.position); // Use projectileOrigin.position
+        ConditionalDebug.Log($"Shooting projectile for snake {snakeIndex}");
+        if (playerTarget != null && playerTarget.activeInHierarchy)
+        {
+            Vector3 targetPosition = playerTarget.transform.position;
+            Quaternion rotationTowardsTarget = Quaternion.LookRotation(targetPosition - snakes[snakeIndex].projectileOrigin.position);
 
-        // Call ProjectileManager to shoot a projectile, now also passing the projectileTimelineName
-        // This call is now made after the delay, ensuring only the shooting is delayed
-        ProjectileManager.Instance.ShootProjectileFromEnemy(
-            projectileOrigin.position,
-            rotationTowardsTarget,
-            shootSpeed,
-            projectileLifetime,
-            projectileScale,
-            enableHoming: true,
-            alternativeProjectileMaterial,
-            projectileTimelineName // Pass the specified timeline name for the projectile
-        );
+            // Use ProjectileManager to shoot
+            projectileManager.ShootProjectileFromEnemy(
+                snakes[snakeIndex].projectileOrigin.position,
+                rotationTowardsTarget,
+                shootSpeed,
+                projectileLifetime,
+                projectileScale,
+                enableHoming: true,
+                alternativeProjectileMaterial,
+                snakes[snakeIndex].clockName
+            );
 
+            ConditionalDebug.Log($"Snake {snakeIndex} fired a projectile");
+        }
+        else
+        {
+            ConditionalDebug.LogWarning("Player target not found or inactive.");
+        }
     }
 
     private void OnMusicalShoot(KoreographyEvent evt)
     {
-         StartCoroutine(DelayedShoot());
+        ConditionalDebug.Log("OnMusicalShoot triggered");
+        ShootProjectileAlternating();
     }
 
-    private IEnumerator Death()
+    private void ShootProjectileAlternating()
     {
-        animator.SetTrigger("Die");
+        ConditionalDebug.Log($"ShootProjectileAlternating called for snake {currentShootingSnakeIndex}");
+        StartCoroutine(DelayedShoot(currentShootingSnakeIndex));
+        currentShootingSnakeIndex = (currentShootingSnakeIndex + 1) % snakes.Length;
+    }
 
-        yield return new WaitUntil(() => animator.GetCurrentAnimatorStateInfo(0).IsName("Death"));
-        float animationLength = animator.GetCurrentAnimatorStateInfo(0).length;
+    private IEnumerator Death(int snakeIndex)
+    {
+        snakes[snakeIndex].animator.SetTrigger("Die");
+
+        yield return new WaitUntil(() => snakes[snakeIndex].animator.GetCurrentAnimatorStateInfo(0).IsName("Death"));
+        float animationLength = snakes[snakeIndex].animator.GetCurrentAnimatorStateInfo(0).length;
         yield return new WaitForSeconds(animationLength);
 
-        FMODUnity.RuntimeManager.PlayOneShot("event:/Enemy/" + enemyType + "/Death", transform.position);
+        FMODUnity.RuntimeManager.PlayOneShot("event:/Enemy/" + enemyType + "/Death", snakes[snakeIndex].snakeObject.transform.position);
 
-        // Additional logic for twin snake boss death
-        if (!otherSnake.IsAlive())
+        if (!IsAlive())
         {
-            // Both snakes are dead
-            Debug.Log("Both Twin Snakes are defeated!");
+            ConditionalDebug.Log("Both Twin Snakes are defeated!");
             // Call to GameManager or any other logic to handle the defeat of both snakes
         }
+
+        // Disable all eye colliders for the defeated snake
+        UpdateEyeLockStatus(snakeIndex, false);
+        DisableEyeColliders(snakeIndex);
     }
 
-    // Method to update the active shootEventID based on your logic
     public void UpdateActiveShootEventID(int index)
     {
         if (index >= 0 && index < shootEventIDs.Length)
         {
-            // Unregister the current event ID
             if (!string.IsNullOrEmpty(activeShootEventID))
             {
                 Koreographer.Instance.UnregisterForEvents(activeShootEventID, OnMusicalShoot);
             }
 
-            // Update the active shootEventID
             activeShootEventID = shootEventIDs[index];
 
-            // Register the new event ID
             if (!string.IsNullOrEmpty(activeShootEventID))
             {
                 Koreographer.Instance.RegisterForEvents(activeShootEventID, OnMusicalShoot);
@@ -229,7 +403,7 @@ public class EnemyTwinSnakeBoss : MonoBehaviour, ILimbDamageReceiver
         }
         else
         {
-            Debug.LogError("Invalid shootEventID index.");
+            ConditionalDebug.LogError("Invalid shootEventID index.");
         }
     }
 }

@@ -1,10 +1,11 @@
 using Chronos;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.SceneManagement; // Required for scene management functions
-using SickscoreGames.HUDNavigationSystem; // Add this line
-
+using UnityEngine.SceneManagement; 
+using SickscoreGames.HUDNavigationSystem; 
+using UnityEngine.VFX;
 
 public class ProjectileManager : MonoBehaviour
 {
@@ -17,9 +18,9 @@ public class ProjectileManager : MonoBehaviour
     [SerializeField] private int initialDeathEffectPoolSize = 10;
     [SerializeField] private int staticShootingRequestsPerFrame = 10; // Configurable batch size
 
-    private List<ProjectileStateBased> projectiles = new List<ProjectileStateBased>(100); // Adjust 100 based on expected usage
-    private Queue<ProjectileStateBased> staticEnemyProjectilePool = new Queue<ProjectileStateBased>(100);
-    private Queue<ProjectileStateBased> enemyBasicSetupProjectilePool = new Queue<ProjectileStateBased>(100);
+    private List<ProjectileStateBased> projectiles = new List<ProjectileStateBased>(100);
+    private Dictionary<ProjectileStateBased, float> projectileLifetimes = new Dictionary<ProjectileStateBased, float>(100);
+    private Queue<ProjectileStateBased> projectilePool = new Queue<ProjectileStateBased>(200);
     private Queue<ParticleSystem> deathEffectPool = new Queue<ParticleSystem>(50);
 
     [SerializeField] private Timekeeper timekeeper;
@@ -35,7 +36,17 @@ public class ProjectileManager : MonoBehaviour
     [SerializeField] private int radarSymbolPoolSize = 50;
     [SerializeField] private List<GameObject> radarSymbolPool = new List<GameObject>(50);
 
-    private Dictionary<ProjectileStateBased, float> projectileLifetimes = new Dictionary<ProjectileStateBased, float>();
+    [SerializeField] private int maxEnemyShotsPerInterval = 4;
+    [SerializeField] private float enemyShotIntervalSeconds = 3f;
+    private Queue<Action> enemyShotQueue = new Queue<Action>();
+    private int currentEnemyShotCount = 0;
+    private float lastEnemyShotResetTime;
+
+    private ProjectileStateBased lastCreatedProjectile;
+
+    [SerializeField] private VisualEffect lockedFXPrefab;
+    [SerializeField] private int initialLockedFXPoolSize = 10;
+    private Queue<VisualEffect> lockedFXPool = new Queue<VisualEffect>();
 
     private void Awake()
     {
@@ -51,10 +62,10 @@ public class ProjectileManager : MonoBehaviour
         SceneManager.sceneLoaded += OnSceneLoaded;
 
         // Initialize all pools
-        InitializeStaticEnemyProjectilePool();
-        InitializeEnemyBasicSetupProjectilePool();
+        InitializeProjectilePool();
         InitializeDeathEffectPool();
         InitializeRadarSymbolPool();
+        InitializeLockedFXPool();
 
 
         // Find and cache the player GameObject
@@ -67,12 +78,12 @@ public class ProjectileManager : MonoBehaviour
 
     private void InitializeRadarSymbolPool()
     {
-        radarSymbolPool.Clear(); // Clear existing symbols
+        radarSymbolPool = new List<GameObject>(radarSymbolPoolSize);
         for (int i = 0; i < radarSymbolPoolSize; i++)
         {
-            GameObject radarSymbol = Instantiate(projectileRadarSymbol, transform); // Parent set to ProjectileManager
+            GameObject radarSymbol = Instantiate(projectileRadarSymbol, transform);
             radarSymbol.SetActive(false);
-            radarSymbolPool.Add(radarSymbol); // Use Add instead of Enqueue
+            radarSymbolPool.Add(radarSymbol);
         }
     }
 
@@ -90,8 +101,8 @@ public class ProjectileManager : MonoBehaviour
     {
         if (radarSymbolPool.Count > 0)
         {
-            GameObject radarSymbol = radarSymbolPool[0];
-            radarSymbolPool.RemoveAt(0); // Remove at index 0 to simulate dequeue
+            GameObject radarSymbol = radarSymbolPool[radarSymbolPool.Count - 1];
+            radarSymbolPool.RemoveAt(radarSymbolPool.Count - 1);
             radarSymbol.SetActive(true);
             return radarSymbol;
         }
@@ -116,13 +127,11 @@ public class ProjectileManager : MonoBehaviour
 
         // Clear existing pools and lists to reinitialize
         projectiles.Clear();
-        staticEnemyProjectilePool.Clear();
-        enemyBasicSetupProjectilePool.Clear();
+        projectilePool.Clear();
         deathEffectPool.Clear();
 
         // Reinitialize pools
-        InitializeStaticEnemyProjectilePool();
-        InitializeEnemyBasicSetupProjectilePool();
+        InitializeProjectilePool();
         InitializeDeathEffectPool();
     }
 
@@ -132,33 +141,20 @@ public class ProjectileManager : MonoBehaviour
         SceneManager.sceneLoaded -= OnSceneLoaded;
     }
 
-    private void InitializeStaticEnemyProjectilePool()
+    private void InitializeProjectilePool()
     {
-        staticEnemyProjectilePool = new Queue<ProjectileStateBased>(initialPoolSize); // Predefine the capacity
-        for (int i = 0; i < initialPoolSize; i++)
+        projectilePool = new Queue<ProjectileStateBased>(200);
+        for (int i = 0; i < 200; i++)
         {
-            ProjectileStateBased proj = Instantiate(projectilePrefab, transform); // Parent set to ProjectileManager
+            ProjectileStateBased proj = Instantiate(projectilePrefab, transform);
             proj.gameObject.SetActive(false);
-            proj.poolType = ProjectilePoolType.StaticEnemy;
-            staticEnemyProjectilePool.Enqueue(proj);
-        }
-    }
-
-    private void InitializeEnemyBasicSetupProjectilePool()
-    {
-        enemyBasicSetupProjectilePool = new Queue<ProjectileStateBased>(initialPoolSize); // Predefine the capacity
-        for (int i = 0; i < initialPoolSize; i++)
-        {
-            ProjectileStateBased proj = Instantiate(projectilePrefab, transform); // Parent set to ProjectileManager
-            proj.gameObject.SetActive(false);
-            proj.poolType = ProjectilePoolType.EnemyBasicSetup;
-            enemyBasicSetupProjectilePool.Enqueue(proj);
+            projectilePool.Enqueue(proj);
         }
     }
 
     private void InitializeDeathEffectPool()
     {
-        deathEffectPool = new Queue<ParticleSystem>(initialDeathEffectPoolSize); // Predefine the capacity
+        deathEffectPool = new Queue<ParticleSystem>(initialDeathEffectPoolSize);
         for (int i = 0; i < initialDeathEffectPoolSize; i++)
         {
             ParticleSystem effect = Instantiate(deathEffectPrefab, transform);
@@ -167,11 +163,22 @@ public class ProjectileManager : MonoBehaviour
         }
     }
 
+    private void InitializeLockedFXPool()
+    {
+        for (int i = 0; i < initialLockedFXPoolSize; i++)
+        {
+            VisualEffect effect = Instantiate(lockedFXPrefab, transform);
+            effect.gameObject.SetActive(false);
+            lockedFXPool.Enqueue(effect);
+        }
+    }
+
     private Queue<ProjectileRequest> projectileRequests = new Queue<ProjectileRequest>();
 
     private void Start()
     {
-        StartCoroutine(ProcessProjectileRequests());
+        StartCoroutine(ProcessEnemyShotQueue());
+        lastEnemyShotResetTime = Time.time;
     }
 
     public void ShootProjectile(Vector3 position, Quaternion rotation, float speed, float lifetime, float uniformScale, bool enableHoming = false, Material material = null)
@@ -179,30 +186,62 @@ public class ProjectileManager : MonoBehaviour
         projectileRequests.Enqueue(new ProjectileRequest(position, rotation, speed, lifetime, uniformScale, enableHoming, material));
     }
 
-    private IEnumerator ProcessProjectileRequests()
+    private void Update()
     {
-        while (true)
+        float globalTimeScale = timekeeper.Clock("Test").localTimeScale;
+        
+        for (int i = projectiles.Count - 1; i >= 0; i--)
         {
-            int processedCount = 0;
-            while (projectileRequests.Count > 0 && processedCount < staticShootingRequestsPerFrame)
+            var projectile = projectiles[i];
+            if (projectile != null && projectileLifetimes.TryGetValue(projectile, out float lifetime))
             {
-                var request = projectileRequests.Dequeue();
-                ProcessShootProjectile(request);
-                processedCount++;
+                projectile.CustomUpdate(globalTimeScale);
+                
+                lifetime -= Time.deltaTime * globalTimeScale;
+                if (lifetime <= 0)
+                {
+                    projectile.Death();
+                    projectiles.RemoveAt(i);
+                    projectileLifetimes.Remove(projectile);
+                }
+                else
+                {
+                    projectileLifetimes[projectile] = lifetime;
+                }
             }
-            yield return null; // Wait for the next frame
+            else
+            {
+                projectiles.RemoveAt(i);
+                if (projectile != null)
+                {
+                    projectileLifetimes.Remove(projectile);
+                }
+            }
+        }
+
+        ProcessProjectileRequests();
+    }
+
+    private void ProcessProjectileRequests()
+    {
+        int processedCount = 0;
+        while (projectileRequests.Count > 0 && processedCount < staticShootingRequestsPerFrame)
+        {
+            var request = projectileRequests.Dequeue();
+            ProcessShootProjectile(request);
+            processedCount++;
         }
     }
 
     private void ProcessShootProjectile(ProjectileRequest request)
     {
-        if (staticEnemyProjectilePool.Count == 0)
+        if (projectilePool.Count == 0)
         {
             ConditionalDebug.LogWarning("[ProjectileManager] No projectile available in pool, skipping shot.");
             return;
         }
 
-        ProjectileStateBased projectile = staticEnemyProjectilePool.Dequeue();
+        ProjectileStateBased projectile = projectilePool.Dequeue();
         projectile.transform.SetParent(transform); // Ensure the projectile is parented to ProjectileManager
         projectile.transform.position = request.Position;
         projectile.transform.rotation = request.Rotation;
@@ -221,7 +260,7 @@ public class ProjectileManager : MonoBehaviour
         if (request.Material != null && projectile.modelRenderer.material != request.Material)
         {
             projectile.modelRenderer.material = request.Material;
-            projectile.UpdateMaterial(request.Material.color); // Update the material reference in ProjectileStateBased
+            projectile.modelRenderer.material.color = request.Material.color;
         }
 
         RegisterProjectile(projectile);
@@ -249,62 +288,105 @@ public class ProjectileManager : MonoBehaviour
         }
     }
 
-  public void ShootProjectileFromEnemy(Vector3 position, Quaternion rotation, float speed, float lifetime, float uniformScale, bool enableHoming = false, Material material = null, string clockKey = "", float accuracy = -1f)
+  public bool RequestEnemyShot(Action shotAction)
     {
-        if (enemyBasicSetupProjectilePool.Count == 0)
+        if (Time.time - lastEnemyShotResetTime >= enemyShotIntervalSeconds)
         {
-            Debug.LogWarning("[ProjectileManager] No EnemyBasicSetup projectile available in pool, skipping shot.");
-            return;
+            currentEnemyShotCount = 0;
+            lastEnemyShotResetTime = Time.time;
         }
 
-        ProjectileStateBased projectile = enemyBasicSetupProjectilePool.Dequeue();
-        projectile.transform.SetParent(transform);
-        projectile.transform.position = position;
-        projectile.transform.rotation = rotation;
-        projectile.gameObject.SetActive(true);
-        projectile.transform.localScale = Vector3.one * uniformScale; // Set the scale of the projectile
-
-        // Check if the Enemy Shot FX prefab is assigned before instantiating
-        if (enemyShotFXPrefab != null)
+        if (currentEnemyShotCount < maxEnemyShotsPerInterval)
         {
-            GameObject enemyShotFX = Instantiate(enemyShotFXPrefab, projectile.transform);
-            enemyShotFX.transform.localPosition = Vector3.zero; // Center it on the projectile
-            enemyShotFX.transform.localScale = Vector3.one * uniformScale; // Set the scale of the FX to match the projectile
-            SetChildrenScale(enemyShotFX, Vector3.one * uniformScale); // Recursively set scale for all children
-            enemyShotFX.SetActive(true);
+            enemyShotQueue.Enqueue(shotAction);
+            currentEnemyShotCount++;
+            return true;
         }
 
-         if (radarSymbolPool.Count > 0)
+        return false;
+    }
+
+    private IEnumerator ProcessEnemyShotQueue()
+    {
+        while (true)
         {
-            GameObject radarSymbol = GetRadarSymbolFromPool();
-            radarSymbol.transform.SetParent(projectile.transform);
-            radarSymbol.transform.localPosition = Vector3.zero; // Center it on the projectile
-            radarSymbol.SetActive(true);
+            if (enemyShotQueue.Count > 0)
+            {
+                Action shotAction = enemyShotQueue.Dequeue();
+                shotAction.Invoke();
+            }
+            yield return null;
+        }
+    }
+
+    public ProjectileStateBased ShootProjectileFromEnemy(Vector3 position, Quaternion rotation, float speed, float lifetime, float uniformScale, bool enableHoming = false, Material material = null, string clockKey = "", float accuracy = 1f)
+    {
+        bool shotRequested = RequestEnemyShot(() =>
+        {
+            if (projectilePool.Count == 0)
+            {
+                Debug.LogWarning("[ProjectileManager] No projectile available in pool, skipping shot.");
+                return;
+            }
+
+            ProjectileStateBased projectile = projectilePool.Dequeue();
+            projectile.transform.SetParent(transform);
+            projectile.transform.position = position;
+            projectile.transform.rotation = rotation;
+            projectile.gameObject.SetActive(true);
+            projectile.transform.localScale = Vector3.one * uniformScale; // Set the scale of the projectile
+
+            // Check if the Enemy Shot FX prefab is assigned before instantiating
+            if (enemyShotFXPrefab != null)
+            {
+                GameObject enemyShotFX = Instantiate(enemyShotFXPrefab, projectile.transform);
+                enemyShotFX.transform.localPosition = Vector3.zero; // Center it on the projectile
+                enemyShotFX.transform.localScale = Vector3.one * uniformScale; // Set the scale of the FX to match the projectile
+                SetChildrenScale(enemyShotFX, Vector3.one * uniformScale); // Recursively set scale for all children
+                enemyShotFX.SetActive(true);
+            }
+
+             if (radarSymbolPool.Count > 0)
+            {
+                GameObject radarSymbol = GetRadarSymbolFromPool();
+                radarSymbol.transform.SetParent(projectile.transform);
+                radarSymbol.transform.localPosition = Vector3.zero; // Center it on the projectile
+                radarSymbol.SetActive(true);
+            }
+
+            projectile.rb.isKinematic = false;
+            projectile.rb.velocity = rotation * Vector3.forward * speed;
+            projectile.bulletSpeed = speed;
+            projectile.SetLifetime(lifetime);
+            projectile.EnableHoming(enableHoming);
+
+            if (material != null && projectile.modelRenderer.material != material)
+            {
+                projectile.modelRenderer.material = material;
+                projectile.modelRenderer.material.color = material.color;
+            }
+
+            if (!string.IsNullOrEmpty(clockKey))
+            {
+                projectile.SetClock(clockKey);
+            }
+
+            projectile.initialSpeed = speed;
+
+            // Set the accuracy for this specific projectile
+            projectile.SetAccuracy(accuracy);
+
+            RegisterProjectile(projectile);
+
+            lastCreatedProjectile = projectile; // Store the last created projectile
+        });
+
+        if (!shotRequested)
+        {
+            ConditionalDebug.Log("[ProjectileManager] Enemy shot request denied due to rate limiting.");
         }
 
-        projectile.rb.isKinematic = false;
-        projectile.rb.velocity = rotation * Vector3.forward * speed;
-        projectile.bulletSpeed = speed;
-        projectile.SetLifetime(lifetime);
-        projectile.EnableHoming(enableHoming);
-
-        if (material != null && projectile.modelRenderer.material != material)
-        {
-            projectile.modelRenderer.material = material;
-            projectile.UpdateMaterial(material.color);
-        }
-
-        if (!string.IsNullOrEmpty(clockKey))
-        {
-            projectile.SetClock(clockKey);
-        }
-
-        projectile.initialSpeed = speed;
-
-        // Set the accuracy for this specific projectile
-        projectile.accuracy = accuracy >= 0f ? accuracy : projectileAccuracy;
-
-        RegisterProjectile(projectile);
+        return lastCreatedProjectile;
     }
 
     private void SetChildrenScale(GameObject parent, Vector3 scale)
@@ -366,23 +448,9 @@ public class ProjectileManager : MonoBehaviour
         }
     }
 
-    switch (projectile.poolType)
+    if (!projectilePool.Contains(projectile))
     {
-        case ProjectilePoolType.StaticEnemy:
-            if (!staticEnemyProjectilePool.Contains(projectile))
-            {
-                staticEnemyProjectilePool.Enqueue(projectile);
-            }
-            break;
-        case ProjectilePoolType.EnemyBasicSetup:
-            if (!enemyBasicSetupProjectilePool.Contains(projectile))
-            {
-                enemyBasicSetupProjectilePool.Enqueue(projectile);
-            }
-            break;
-        default:
-            ConditionalDebug.LogError("Unhandled projectile pool type.");
-            break;
+        projectilePool.Enqueue(projectile);
     }
 
     UnregisterProjectile(projectile);
@@ -402,55 +470,6 @@ public class ProjectileManager : MonoBehaviour
 {
     projectiles.Remove(projectile);
     projectileLifetimes.Remove(projectile);
-}
-
- private void Update()
-{
-    // Example of using Chronos to adjust time scale for projectiles
-    float globalTimeScale = timekeeper.Clock("Test").localTimeScale;
-    
-    List<ProjectileStateBased> projectilesToRemove = new List<ProjectileStateBased>();
-
-    // Use ToArray() to create a copy of the list for safe iteration
-    foreach (var projectile in projectiles.ToArray())
-    {
-        if (projectile != null)
-        {
-            // Adjust projectile logic based on globalTimeScale
-            projectile.CustomUpdate(globalTimeScale);
-            if (projectile.homing)
-            {
-                PredictAndRotateProjectile(projectile);
-            }
-
-            // Update lifetime
-            if (projectileLifetimes.TryGetValue(projectile, out float lifetime))
-            {
-                lifetime -= Time.deltaTime * globalTimeScale;
-                projectileLifetimes[projectile] = lifetime;
-                if (lifetime <= 0)
-                {
-                    projectilesToRemove.Add(projectile);
-                }
-            }
-            else
-            {
-                ConditionalDebug.LogWarning($"Projectile {projectile.name} not found in projectileLifetimes dictionary.");
-                projectilesToRemove.Add(projectile);
-            }
-        }
-        else
-        {
-            projectilesToRemove.Add(projectile);
-        }
-    }
-
-    // Handle projectiles that need to be removed
-    foreach (var projectile in projectilesToRemove)
-    {
-        UnregisterProjectile(projectile);
-        projectile.Death();
-    }
 }
 
     public void UpdateProjectileTargets()
@@ -523,12 +542,10 @@ public void ReRegisterEnemiesAndProjectiles()
 {
     // Clear existing projectiles and reinitialize pools
     projectiles.Clear();
-    staticEnemyProjectilePool.Clear();
-    enemyBasicSetupProjectilePool.Clear();
+    projectilePool.Clear();
     deathEffectPool.Clear();
 
-    InitializeStaticEnemyProjectilePool();
-    InitializeEnemyBasicSetupProjectilePool();
+    InitializeProjectilePool();
     InitializeDeathEffectPool();
 
     // Re-register enemies
@@ -566,10 +583,33 @@ public void ClearAllProjectiles()
         // Clear the projectile requests queue
         projectileRequests.Clear();
 
-        ConditionalDebug.Log($"Cleared all projectiles. Pools: StaticEnemy={staticEnemyProjectilePool.Count}, EnemyBasicSetup={enemyBasicSetupProjectilePool.Count}");
+        ConditionalDebug.Log($"Cleared all projectiles. Pools: Projectile={projectilePool.Count}");
     }
 public void PlayOneShotSound(string soundEvent, Vector3 position)
 {
     FMODUnity.RuntimeManager.PlayOneShot(soundEvent, position);
 }
+
+    public ProjectileStateBased GetLastCreatedProjectile()
+    {
+        return lastCreatedProjectile;
+    }
+
+    public VisualEffect GetLockedFXFromPool()
+    {
+        if (lockedFXPool.Count == 0)
+        {
+            VisualEffect newEffect = Instantiate(lockedFXPrefab, transform);
+            return newEffect;
+        }
+        return lockedFXPool.Dequeue();
+    }
+
+    public void ReturnLockedFXToPool(VisualEffect effect)
+    {
+        effect.Stop();
+        effect.gameObject.SetActive(false);
+        effect.transform.SetParent(transform);
+        lockedFXPool.Enqueue(effect);
+    }
 }

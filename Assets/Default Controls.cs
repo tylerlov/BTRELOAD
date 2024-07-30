@@ -98,6 +98,15 @@ public partial class @DefaultControls: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""ReverseDirection"",
+                    ""type"": ""Button"",
+                    ""id"": ""de81e5d8-830f-419c-8da9-7fd9a6a479ab"",
+                    ""expectedControlType"": ""Button"",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
                 }
             ],
             ""bindings"": [
@@ -241,6 +250,17 @@ public partial class @DefaultControls: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""groups"": ""Keyboard"",
                     ""action"": ""Dodge"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""1fb0665d-b312-4435-86a3-2bc30ff4d5f7"",
+                    ""path"": ""<Gamepad>/buttonNorth"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Controller"",
+                    ""action"": ""ReverseDirection"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 }
@@ -809,6 +829,7 @@ public partial class @DefaultControls: IInputActionCollection2, IDisposable
         m_Player_RewindTime = m_Player.FindAction("Rewind Time", throwIfNotFound: true);
         m_Player_SlowTime = m_Player.FindAction("Slow Time", throwIfNotFound: true);
         m_Player_Dodge = m_Player.FindAction("Dodge", throwIfNotFound: true);
+        m_Player_ReverseDirection = m_Player.FindAction("ReverseDirection", throwIfNotFound: true);
         // UI
         m_UI = asset.FindActionMap("UI", throwIfNotFound: true);
         m_UI_Navigate = m_UI.FindAction("Navigate", throwIfNotFound: true);
@@ -890,6 +911,7 @@ public partial class @DefaultControls: IInputActionCollection2, IDisposable
     private readonly InputAction m_Player_RewindTime;
     private readonly InputAction m_Player_SlowTime;
     private readonly InputAction m_Player_Dodge;
+    private readonly InputAction m_Player_ReverseDirection;
     public struct PlayerActions
     {
         private @DefaultControls m_Wrapper;
@@ -902,6 +924,7 @@ public partial class @DefaultControls: IInputActionCollection2, IDisposable
         public InputAction @RewindTime => m_Wrapper.m_Player_RewindTime;
         public InputAction @SlowTime => m_Wrapper.m_Player_SlowTime;
         public InputAction @Dodge => m_Wrapper.m_Player_Dodge;
+        public InputAction @ReverseDirection => m_Wrapper.m_Player_ReverseDirection;
         public InputActionMap Get() { return m_Wrapper.m_Player; }
         public void Enable() { Get().Enable(); }
         public void Disable() { Get().Disable(); }
@@ -935,6 +958,9 @@ public partial class @DefaultControls: IInputActionCollection2, IDisposable
             @Dodge.started += instance.OnDodge;
             @Dodge.performed += instance.OnDodge;
             @Dodge.canceled += instance.OnDodge;
+            @ReverseDirection.started += instance.OnReverseDirection;
+            @ReverseDirection.performed += instance.OnReverseDirection;
+            @ReverseDirection.canceled += instance.OnReverseDirection;
         }
 
         private void UnregisterCallbacks(IPlayerActions instance)
@@ -963,6 +989,9 @@ public partial class @DefaultControls: IInputActionCollection2, IDisposable
             @Dodge.started -= instance.OnDodge;
             @Dodge.performed -= instance.OnDodge;
             @Dodge.canceled -= instance.OnDodge;
+            @ReverseDirection.started -= instance.OnReverseDirection;
+            @ReverseDirection.performed -= instance.OnReverseDirection;
+            @ReverseDirection.canceled -= instance.OnReverseDirection;
         }
 
         public void RemoveCallbacks(IPlayerActions instance)
@@ -1135,6 +1164,7 @@ public partial class @DefaultControls: IInputActionCollection2, IDisposable
         void OnRewindTime(InputAction.CallbackContext context);
         void OnSlowTime(InputAction.CallbackContext context);
         void OnDodge(InputAction.CallbackContext context);
+        void OnReverseDirection(InputAction.CallbackContext context);
     }
     public interface IUIActions
     {

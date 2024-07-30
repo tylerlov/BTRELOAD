@@ -68,6 +68,11 @@ public class Score : MonoBehaviour
     private Crosshair playerCrosshair;
     private StringBuilder stringBuilder = new StringBuilder();
 
+    public TMP_Text scoreAddedText;    // Reference to the score added UI element
+    public TMP_Text scoreSubtractedText; // Reference to the score subtracted UI element
+    private int previousScore = 0;
+    private int timerDecrementAccumulator = 0;
+
     private void Start()
     {
         // Find GameObjects by tag
@@ -98,6 +103,12 @@ public class Score : MonoBehaviour
                 enemyLockUI.Add(child);
             }
         }
+
+        previousScore = GameManager.instance.Score;
+        
+        // Ensure both text elements are initially inactive
+        scoreAddedText.gameObject.SetActive(false);
+        scoreSubtractedText.gameObject.SetActive(false);
     }
 
     void Update()
@@ -128,5 +139,55 @@ public class Score : MonoBehaviour
         {
             currEnemyLocks = Mathf.Min(enemyLocks, enemyLockUI.Count);
         }
+
+        int currentScore = GameManager.instance.Score;
+        if (currentScore != previousScore)
+        {
+            int scoreDifference = currentScore - previousScore;
+            
+            // Check if it's a timer decrement
+            if (scoreDifference == -1)
+            {
+                timerDecrementAccumulator++;
+            }
+            else
+            {
+                // If it's not a timer decrement, show the change and reset the accumulator
+                ShowScoreChange(scoreDifference - timerDecrementAccumulator);
+                timerDecrementAccumulator = 0;
+            }
+            
+            previousScore = currentScore;
+        }
+    }
+
+    private void ShowScoreChange(int change)
+    {
+        if (change == 0) return;
+
+        TMP_Text textToShow = change > 0 ? scoreAddedText : scoreSubtractedText;
+        textToShow.text = change > 0 ? $"+{change}" : $"{change}";
+
+        StopAllCoroutines();
+        StartCoroutine(FadeScoreChange(textToShow));
+    }
+
+    private IEnumerator FadeScoreChange(TMP_Text textElement)
+    {
+        textElement.gameObject.SetActive(true);
+        textElement.color = new Color(textElement.color.r, textElement.color.g, textElement.color.b, 1f);
+
+        float duration = 0.5f;
+        float elapsedTime = 0f;
+
+        while (elapsedTime < duration)
+        {
+            elapsedTime += Time.deltaTime;
+            float alpha = Mathf.Lerp(1f, 0f, elapsedTime / duration);
+            textElement.color = new Color(textElement.color.r, textElement.color.g, textElement.color.b, alpha);
+            yield return null;
+        }
+
+        textElement.gameObject.SetActive(false);
     }
 }

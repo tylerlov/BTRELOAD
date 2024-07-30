@@ -1,0 +1,20 @@
+{
+    "name": "com.thenakeddev.fsr.Runtime.URP",
+    "rootNamespace": "TND.FSR",
+    "references": [
+        "com.thenakeddev.fsr.Runtime",
+        "Unity.RenderPipelines.Core.Runtime",
+        "Unity.RenderPipelines.Universal.Runtime"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [
+        "UNITY_URP"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

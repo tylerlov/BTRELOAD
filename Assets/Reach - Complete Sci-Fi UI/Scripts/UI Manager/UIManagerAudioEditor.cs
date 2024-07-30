@@ -5,42 +5,61 @@ using FMODUnity; // Add FMODUnity namespace
 
 namespace Michsky.UI.Reach
 {
-    [CanEditMultipleObjects]
     [CustomEditor(typeof(UIManagerAudio))]
     public class UIManagerAudioEditor : Editor
     {
         private UIManagerAudio uimaTarget;
         private GUISkin customSkin;
 
+        private SerializedProperty UIManagerAsset;
+        private SerializedProperty fmodEventEmitter;
+        private SerializedProperty masterSlider;
+        private SerializedProperty musicSlider;
+        private SerializedProperty SFXSlider;
+        private SerializedProperty UISlider;
+
         private void OnEnable()
         {
             uimaTarget = (UIManagerAudio)target;
 
-            if (EditorGUIUtility.isProSkin == true) { customSkin = ReachUIEditorHandler.GetDarkEditor(customSkin); }
-            else { customSkin = ReachUIEditorHandler.GetLightEditor(customSkin); }
+            customSkin = EditorGUIUtility.isProSkin 
+                ? ReachUIEditorHandler.GetDarkEditor(customSkin) 
+                : ReachUIEditorHandler.GetLightEditor(customSkin);
+
+            // Initialize SerializedProperties
+            UIManagerAsset = serializedObject.FindProperty("UIManagerAsset");
+            fmodEventEmitter = serializedObject.FindProperty("fmodEventEmitter");
+            masterSlider = serializedObject.FindProperty("masterSlider");
+            musicSlider = serializedObject.FindProperty("musicSlider");
+            SFXSlider = serializedObject.FindProperty("SFXSlider");
+            UISlider = serializedObject.FindProperty("UISlider");
         }
 
         public override void OnInspectorGUI()
         {
-            var UIManagerAsset = serializedObject.FindProperty("UIManagerAsset");
-            var fmodEventEmitter = serializedObject.FindProperty("fmodEventEmitter"); // Changed from audioSource to fmodEventEmitter
-            var masterSlider = serializedObject.FindProperty("masterSlider");
-            var musicSlider = serializedObject.FindProperty("musicSlider");
-            var SFXSlider = serializedObject.FindProperty("SFXSlider");
-            var UISlider = serializedObject.FindProperty("UISlider");
+            serializedObject.Update();
 
             ReachUIEditorHandler.DrawHeader(customSkin, "Header_Resources", 6);
-            ReachUIEditorHandler.DrawProperty(UIManagerAsset, customSkin, "UI Manager");
-            ReachUIEditorHandler.DrawProperty(fmodEventEmitter, customSkin, "FMOD Event Emitter"); // Changed label to FMOD Event Emitter
-            ReachUIEditorHandler.DrawProperty(masterSlider, customSkin, "Master Slider");
-            ReachUIEditorHandler.DrawProperty(musicSlider, customSkin, "Music Slider");
-            ReachUIEditorHandler.DrawProperty(SFXSlider, customSkin, "SFX Slider");
-            ReachUIEditorHandler.DrawProperty(UISlider, customSkin, "UI Slider");
-
-            if (Application.isPlaying == true)
-                return;
+            DrawPropertySafely(UIManagerAsset, "UI Manager");
+            DrawPropertySafely(fmodEventEmitter, "FMOD Event Emitter");
+            DrawPropertySafely(masterSlider, "Master Slider");
+            DrawPropertySafely(musicSlider, "Music Slider");
+            DrawPropertySafely(SFXSlider, "SFX Slider");
+            DrawPropertySafely(UISlider, "UI Slider");
 
             serializedObject.ApplyModifiedProperties();
+        }
+
+        private void DrawPropertySafely(SerializedProperty property, string label)
+        {
+            if (property != null && property.propertyType != SerializedPropertyType.Generic)
+            {
+                ReachUIEditorHandler.DrawProperty(property, customSkin, label);
+            }
+            else
+            {
+                EditorGUILayout.HelpBox($"Property '{label}' is missing or invalid.", MessageType.Warning);
+            }
         }
     }
 }

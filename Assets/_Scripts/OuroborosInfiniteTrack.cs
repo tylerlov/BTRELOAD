@@ -96,12 +96,12 @@ namespace FluffyUnderware.Curvy.Controllers
                 }
                 else
                 {
-                    Debug.LogError("SplineController component not found on the PlayerPlane object.");
+                    ConditionalDebug.LogError("SplineController component not found on the PlayerPlane object.");
                 }
             }
             else
             {
-                Debug.LogError("GameObject with tag 'PlayerPlane' not found in the scene.");
+                ConditionalDebug.LogError("GameObject with tag 'PlayerPlane' not found in the scene.");
             }
         }
 
@@ -130,7 +130,7 @@ namespace FluffyUnderware.Curvy.Controllers
                 FindAndAssignController();
                 if (Controller == null)
                 {
-                    Debug.LogError("Failed to find and assign the SplineController. Setup cannot continue.");
+                    ConditionalDebug.LogError("Failed to find and assign the SplineController. Setup cannot continue.");
                     yield break;
                 }
             }
@@ -246,7 +246,7 @@ CurvyGenerator buildGenerator()
                 if (instanceComponent != null)
                 {
                     // Debug statement before despawning
-                    Debug.Log($"Despawning: {prefab.name}");
+                    ConditionalDebug.Log($"Despawning: {prefab.name}");
                     instanceComponent.Despawn();
 
                     // Add the prefab to the list of despawned prefabs
@@ -254,7 +254,7 @@ CurvyGenerator buildGenerator()
                 }
                 else
                 {
-                    Debug.LogWarning("Prefab does not have an Instance component, cannot despawn: " + prefab.name);
+                    ConditionalDebug.LogWarning("Prefab does not have an Instance component, cannot despawn: " + prefab.name);
                 }
             }
 
@@ -330,7 +330,7 @@ CurvyGenerator buildGenerator()
         {
             if (sectionIndex < 0 || sectionIndex >= prefabsBySection.Count)
             {
-                Debug.LogError($"Section index {sectionIndex} is out of range. Prefabs cannot be placed.");
+                ConditionalDebug.LogError($"Section index {sectionIndex} is out of range. Prefabs cannot be placed.");
                 return;
             }
 

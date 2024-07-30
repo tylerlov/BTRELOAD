@@ -1,67 +1,74 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using System.Collections;
 
 public class SceneSwitchCleanup : MonoBehaviour
 {
-    public List<GameObject> objectsToActivate; // List to hold the GameObjects
-    public float activationDelay = 0.1f; // Delay in seconds before activation
+    private const string ReticleName = "Reticle";
+    private const string JoostManName = "JoostMan 3";
+    
+    [SerializeField] private float searchDelay = 0.5f;
 
     void OnEnable()
     {
-        SceneManager.sceneLoaded += OnSceneLoaded; // Subscribe to the sceneLoaded event
+        SceneManager.sceneLoaded += OnSceneLoaded;
     }
 
     void OnDisable()
     {
-        SceneManager.sceneLoaded -= OnSceneLoaded; // Unsubscribe to prevent memory leaks
+        SceneManager.sceneLoaded -= OnSceneLoaded;
     }
-
-    private void Start()
-    {
-        // Directly activate objects if running in the editor, without waiting for scene load
-        if (Application.isEditor)
-        {
-            // Removed redundant activation logic when running in the editor
-        }
-    }
-   
 
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
-        // Check if the scene is loaded individually or as part of a sequence
-        if (SceneManager.sceneCount == 1 || Application.isEditor)
+        StartCoroutine(DelayedSearch());
+    }
+
+    private IEnumerator DelayedSearch()
+    {
+        yield return new WaitForSeconds(searchDelay);
+
+        ActivateGameObject(ReticleName);
+        ActivateGameObject(JoostManName);
+    }
+
+    private void ActivateGameObject(string objectName)
+    {
+        GameObject obj = FindGameObjectInAllScenesRecursively(objectName);
+        if (obj != null && !obj.activeSelf)
         {
-            StartCoroutine(DelayedActivateObjects()); // Activate objects with a delay when scene is loaded
-        }
-        else
-        {
-            DeactivateObjects(); // Optionally deactivate objects
+            obj.SetActive(true);
         }
     }
 
-    private IEnumerator DelayedActivateObjects()
+    private GameObject FindGameObjectInAllScenesRecursively(string objectName)
     {
-        yield return new WaitForSeconds(activationDelay); // Wait for the specified delay
-
-        foreach (GameObject obj in objectsToActivate)
+        for (int i = 0; i < SceneManager.sceneCount; i++)
         {
-            if (obj != null)
+            Scene scene = SceneManager.GetSceneAt(i);
+            GameObject[] rootObjects = scene.GetRootGameObjects();
+            foreach (GameObject rootObject in rootObjects)
             {
-                obj.SetActive(true); // Activate each GameObject in the list
+                GameObject found = FindRecursively(rootObject, objectName);
+                if (found != null)
+                {
+                    return found;
+                }
             }
         }
+        return null;
     }
 
-    private void DeactivateObjects()
+    private GameObject FindRecursively(GameObject obj, string name)
     {
-        foreach (GameObject obj in objectsToActivate)
+        if (obj.name == name) return obj;
+        
+        foreach (Transform child in obj.transform)
         {
-            if (obj != null)
-            {
-                obj.SetActive(false); // Deactivate each GameObject in the list
-            }
+            GameObject found = FindRecursively(child.gameObject, name);
+            if (found != null) return found;
         }
+        
+        return null;
     }
 }

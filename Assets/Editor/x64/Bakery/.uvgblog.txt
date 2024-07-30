@@ -2706,3 +2706,742 @@ Running halffloat2hdr "C:\Users\Tyler\AppData\Local\Temp\frender/Ouroboros - Sec
 Running rgba2tga "C:\Users\Tyler\AppData\Local\Temp\frender/Ouroboros - Section 1_LM0_final_Dir.lz4" "C:/Users/Tyler/Unity/BTR/Assets/_Scenes/Levels/2024-02-24 - Ouroboros 22 - Ouro Shapes/Ouroboros - Section 1_LM0_dir.tga" 
 Running halffloat2hdr "C:\Users\Tyler\AppData\Local\Temp\frender/Ouroboros - Section 1_LMA1_final_HDR.lz4" "C:/Users/Tyler/Unity/BTR/Assets/_Scenes/Levels/2024-02-24 - Ouroboros 22 - Ouro Shapes/Ouroboros - Section 1_LMA1_final.hdr" 1024
 Running rgba2tga "C:\Users\Tyler\AppData\Local\Temp\frender/Ouroboros - Section 1_LMA1_final_Dir.lz4" "C:/Users/Tyler/Unity/BTR/Assets/_Scenes/Levels/2024-02-24 - Ouroboros 22 - Ouro Shapes/Ouroboros - Section 1_LMA1_dir.tga" 
+2024-7-20
+Rendering UV GBuffer for Seraphim - Base_LM0 51
+RGBA32F...RGBA8...RGBA8_SRGB...RGBA16F...states...
+Rendering UV normal...
+Rendering faceted UV normal...
+Rendering UV pos...
+Rendering smooth UV pos...
+Done
+Done
+Running ftraceRTX fixpos12 "C:\Users\Tyler\AppData\Local\Temp\frender" "uvpos_Seraphim - Base_LM0.lz4" 2 0 0 0
+Running ftraceRTX skycubemapdir "C:\Users\Tyler\AppData\Local\Temp\frender" "light_1_0" 68 0 0 sky0.bin
+Running ftraceRTX sun "C:\Users\Tyler\AppData\Local\Temp\frender" "light_2_0" 12 0 0 direct0.bin
+Running ftraceRTX addmul "C:\Users\Tyler\AppData\Local\Temp\frender" "Seraphim - Base_LM0" 4 0 0 comp_0.bin
+Running ftraceRTX diradd "C:\Users\Tyler\AppData\Local\Temp\frender" "Seraphim - Base_LM0_lights_Dir.lz4" 64 0 0 dircomp_0.bin
+Running ftraceRTX texgi "C:\Users\Tyler\AppData\Local\Temp\frender" "Seraphim - Base_LM0_diffuse" 4 16 0 "gi_Seraphim - Base_LM00.bin" "Seraphim - Base_LM0_diffuse0_HDR.lz4" vbTraceTex.bin
+Running ftraceRTX texgi "C:\Users\Tyler\AppData\Local\Temp\frender" "Seraphim - Base_LM0_diffuse" 4 16 0 "gi_Seraphim - Base_LM01.bin" "Seraphim - Base_LM0_diffuse0_HDR.lz4" vbTraceTex.bin
+Running ftraceRTX texgi "C:\Users\Tyler\AppData\Local\Temp\frender" "Seraphim - Base_LM0_diffuse" 4 16 0 "gi_Seraphim - Base_LM02.bin" "Seraphim - Base_LM0_diffuse0_HDR.lz4" vbTraceTex.bin
+Running ftraceRTX texgi "C:\Users\Tyler\AppData\Local\Temp\frender" "Seraphim - Base_LM0_diffuse" 4 16 0 "gi_Seraphim - Base_LM03.bin" "Seraphim - Base_LM0_diffuse0_HDR.lz4" vbTraceTex.bin
+Running ftraceRTX texgidir "C:\Users\Tyler\AppData\Local\Temp\frender" "Seraphim - Base_LM0_final" 84 16 0 "gi_Seraphim - Base_LM04.bin" "Seraphim - Base_LM0_lights_HDR.lz4" vbTraceTex.bin
+Running ftraceRTX add "C:\Users\Tyler\AppData\Local\Temp\frender" "Seraphim - Base_LM0_final_HDR.lz4" 4 0 0 comp_indirect0.bin
+Running ftraceRTX diradd "C:\Users\Tyler\AppData\Local\Temp\frender" "Seraphim - Base_LM0_final_Dir.lz4" 64 0 0 dircomp_indirect0.bin
+Running denoiserOIDN D "C:\Users\Tyler\AppData\Local\Temp\frender/Seraphim - Base_LM0_final_Dir.lz4" "C:\Users\Tyler\AppData\Local\Temp\frender/Seraphim - Base_LM0_final_Dir.lz4" 64 0
+Running denoiserOIDN c "C:\Users\Tyler\AppData\Local\Temp\frender/Seraphim - Base_LM0_final_HDR.lz4" "C:\Users\Tyler\AppData\Local\Temp\frender/Seraphim - Base_LM0_final_HDR.lz4" 64 0
+Running seamfixer "C:\Users\Tyler\AppData\Local\Temp\frender" "0" "Seraphim - Base_LM0_final_HDR.lz4" "Seraphim - Base_LM0_final_Dir.lz4
+Running combineMasks "E:/BTRCHECK2/Assets/_Scenes/Levels/2024-02-24 - Ouroboros 22 - Ouro Shapes/Seraphim - Base_LM0_mask.tga" "C:\Users\Tyler\AppData\Local\Temp\frender/masks_0.bin" "C:\Users\Tyler\AppData\Local\Temp\frender/"
+Running halffloat2hdr "C:\Users\Tyler\AppData\Local\Temp\frender/Seraphim - Base_LM0_final_HDR.lz4" "E:/BTRCHECK2/Assets/_Scenes/Levels/2024-02-24 - Ouroboros 22 - Ouro Shapes/Seraphim - Base_LM0_final.hdr" 1024
+Running rgba2tga "C:\Users\Tyler\AppData\Local\Temp\frender/Seraphim - Base_LM0_final_Dir.lz4" "E:/BTRCHECK2/Assets/_Scenes/Levels/2024-02-24 - Ouroboros 22 - Ouro Shapes/Seraphim - Base_LM0_dir.tga" 
+abort_threads: Failed aborting id: 0000000000012C80, mono_thread_manage will ignore it
+
+2024-7-22
+Rendering UV GBuffer for Ouroboros - Base_LM0 51
+RGBA32F...RGBA8...RGBA8_SRGB...RGBA16F...states...
+Rendering UV normal...
+Rendering faceted UV normal...
+Rendering UV pos...
+Rendering smooth UV pos...
+Done
+Done
+Running ftraceRTX fixpos12 "C:\Users\Tyler\AppData\Local\Temp\frender" "uvpos_Ouroboros - Base_LM0.lz4" 2 0 0 0
+Running ftraceRTX addmul "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Base_LM0" 4 0 0 comp_0.bin
+Running ftraceRTX diradd "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Base_LM0_lights_Dir.lz4" 64 0 0 dircomp_0.bin
+Running ftraceRTX texgi "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Base_LM0_diffuse" 4 16 0 "gi_Ouroboros - Base_LM00.bin" "Ouroboros - Base_LM0_diffuse0_HDR.lz4" vbTraceTex.bin
+Running ftraceRTX texgi "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Base_LM0_diffuse" 4 16 0 "gi_Ouroboros - Base_LM01.bin" "Ouroboros - Base_LM0_diffuse0_HDR.lz4" vbTraceTex.bin
+Running ftraceRTX texgi "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Base_LM0_diffuse" 4 16 0 "gi_Ouroboros - Base_LM02.bin" "Ouroboros - Base_LM0_diffuse0_HDR.lz4" vbTraceTex.bin
+Running ftraceRTX texgi "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Base_LM0_diffuse" 4 16 0 "gi_Ouroboros - Base_LM03.bin" "Ouroboros - Base_LM0_diffuse0_HDR.lz4" vbTraceTex.bin
+Running ftraceRTX texgidir "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Base_LM0_final" 84 16 0 "gi_Ouroboros - Base_LM04.bin" "Ouroboros - Base_LM0_lights_HDR.lz4" vbTraceTex.bin
+Running ftraceRTX add "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Base_LM0_final_HDR.lz4" 4 0 0 comp_indirect0.bin
+Running ftraceRTX diradd "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Base_LM0_final_Dir.lz4" 64 0 0 dircomp_indirect0.bin
+Running denoiserOIDN D "C:\Users\Tyler\AppData\Local\Temp\frender/Ouroboros - Base_LM0_final_Dir.lz4" "C:\Users\Tyler\AppData\Local\Temp\frender/Ouroboros - Base_LM0_final_Dir.lz4" 64 0
+Running denoiserOIDN c "C:\Users\Tyler\AppData\Local\Temp\frender/Ouroboros - Base_LM0_final_HDR.lz4" "C:\Users\Tyler\AppData\Local\Temp\frender/Ouroboros - Base_LM0_final_HDR.lz4" 64 0
+Running seamfixer "C:\Users\Tyler\AppData\Local\Temp\frender" "0" "Ouroboros - Base_LM0_final_HDR.lz4" "Ouroboros - Base_LM0_final_Dir.lz4
+Running halffloat2hdr "C:\Users\Tyler\AppData\Local\Temp\frender/Ouroboros - Base_LM0_final_HDR.lz4" "E:/BTRCHECK2/Assets/_Scenes/Levels/2024-02-24 - Ouroboros 22 - Ouro Shapes/Ouroboros - Base_LM0_final.hdr" 1024
+Running rgba2tga "C:\Users\Tyler\AppData\Local\Temp\frender/Ouroboros - Base_LM0_final_Dir.lz4" "E:/BTRCHECK2/Assets/_Scenes/Levels/2024-02-24 - Ouroboros 22 - Ouro Shapes/Ouroboros - Base_LM0_dir.tga" 
+Loaded vertex shader: quad.vso
+Loaded pixel shader: skyOutput.pso
+Loaded pixel shader: cookieOutput.pso
+initShaders done
+initScene done
+Done
+Rendering UV GBuffer for Ouroboros - Base_LM0 51
+RGBA32F...RGBA8...RGBA8_SRGB...RGBA16F...states...
+Rendering UV normal...
+Rendering faceted UV normal...
+Rendering UV pos...
+Rendering smooth UV pos...
+Done
+Done
+Running ftraceRTX fixpos12 "C:\Users\Tyler\AppData\Local\Temp\frender" "uvpos_Ouroboros - Base_LM0.lz4" 2 0 0 0
+Running ftraceRTX addmul "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Base_LM0" 4 0 0 comp_0.bin
+Running ftraceRTX diradd "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Base_LM0_lights_Dir.lz4" 64 0 0 dircomp_0.bin
+Running ftraceRTX texgi "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Base_LM0_diffuse" 4 16 0 "gi_Ouroboros - Base_LM00.bin" "Ouroboros - Base_LM0_diffuse0_HDR.lz4" vbTraceTex.bin
+Running ftraceRTX texgi "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Base_LM0_diffuse" 4 16 0 "gi_Ouroboros - Base_LM01.bin" "Ouroboros - Base_LM0_diffuse0_HDR.lz4" vbTraceTex.bin
+Running ftraceRTX texgi "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Base_LM0_diffuse" 4 16 0 "gi_Ouroboros - Base_LM02.bin" "Ouroboros - Base_LM0_diffuse0_HDR.lz4" vbTraceTex.bin
+Running ftraceRTX texgi "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Base_LM0_diffuse" 4 16 0 "gi_Ouroboros - Base_LM03.bin" "Ouroboros - Base_LM0_diffuse0_HDR.lz4" vbTraceTex.bin
+Running ftraceRTX texgidir "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Base_LM0_final" 84 16 0 "gi_Ouroboros - Base_LM04.bin" "Ouroboros - Base_LM0_lights_HDR.lz4" vbTraceTex.bin
+Running ftraceRTX add "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Base_LM0_final_HDR.lz4" 4 0 0 comp_indirect0.bin
+Running ftraceRTX diradd "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Base_LM0_final_Dir.lz4" 64 0 0 dircomp_indirect0.bin
+Running denoiserOIDN D "C:\Users\Tyler\AppData\Local\Temp\frender/Ouroboros - Base_LM0_final_Dir.lz4" "C:\Users\Tyler\AppData\Local\Temp\frender/Ouroboros - Base_LM0_final_Dir.lz4" 64 0
+Running denoiserOIDN c "C:\Users\Tyler\AppData\Local\Temp\frender/Ouroboros - Base_LM0_final_HDR.lz4" "C:\Users\Tyler\AppData\Local\Temp\frender/Ouroboros - Base_LM0_final_HDR.lz4" 64 0
+Running seamfixer "C:\Users\Tyler\AppData\Local\Temp\frender" "0" "Ouroboros - Base_LM0_final_HDR.lz4" "Ouroboros - Base_LM0_final_Dir.lz4
+Running halffloat2hdr "C:\Users\Tyler\AppData\Local\Temp\frender/Ouroboros - Base_LM0_final_HDR.lz4" "E:/BTRCHECK2/Assets/_Scenes/Levels/2024-02-24 - Ouroboros 22 - Ouro Shapes/Ouroboros - Base_LM0_final.hdr" 1024
+Running rgba2tga "C:\Users\Tyler\AppData\Local\Temp\frender/Ouroboros - Base_LM0_final_Dir.lz4" "E:/BTRCHECK2/Assets/_Scenes/Levels/2024-02-24 - Ouroboros 22 - Ouro Shapes/Ouroboros - Base_LM0_dir.tga" 
+Loaded vertex shader: quad.vso
+Loaded pixel shader: skyOutput.pso
+Loaded pixel shader: cookieOutput.pso
+initShaders done
+initScene done
+Done
+Rendering UV GBuffer for Ouroboros - Base_LM0 51
+RGBA32F...RGBA8...RGBA8_SRGB...RGBA16F...states...
+Rendering UV normal...
+Rendering faceted UV normal...
+Rendering UV pos...
+Rendering smooth UV pos...
+Done
+Done
+Running ftraceRTX fixpos12 "C:\Users\Tyler\AppData\Local\Temp\frender" "uvpos_Ouroboros - Base_LM0.lz4" 2 0 0 0
+Running ftraceRTX addmul "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Base_LM0" 4 0 0 comp_0.bin
+Running ftraceRTX diradd "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Base_LM0_lights_Dir.lz4" 64 0 0 dircomp_0.bin
+Running ftraceRTX texgi "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Base_LM0_diffuse" 4 16 0 "gi_Ouroboros - Base_LM00.bin" "Ouroboros - Base_LM0_diffuse0_HDR.lz4" vbTraceTex.bin
+Running ftraceRTX texgi "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Base_LM0_diffuse" 4 16 0 "gi_Ouroboros - Base_LM01.bin" "Ouroboros - Base_LM0_diffuse0_HDR.lz4" vbTraceTex.bin
+Running ftraceRTX texgi "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Base_LM0_diffuse" 4 16 0 "gi_Ouroboros - Base_LM02.bin" "Ouroboros - Base_LM0_diffuse0_HDR.lz4" vbTraceTex.bin
+Running ftraceRTX texgi "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Base_LM0_diffuse" 4 16 0 "gi_Ouroboros - Base_LM03.bin" "Ouroboros - Base_LM0_diffuse0_HDR.lz4" vbTraceTex.bin
+Running ftraceRTX texgidir "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Base_LM0_final" 84 16 0 "gi_Ouroboros - Base_LM04.bin" "Ouroboros - Base_LM0_lights_HDR.lz4" vbTraceTex.bin
+Running ftraceRTX add "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Base_LM0_final_HDR.lz4" 4 0 0 comp_indirect0.bin
+Running ftraceRTX diradd "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Base_LM0_final_Dir.lz4" 64 0 0 dircomp_indirect0.bin
+Running denoiserOIDN D "C:\Users\Tyler\AppData\Local\Temp\frender/Ouroboros - Base_LM0_final_Dir.lz4" "C:\Users\Tyler\AppData\Local\Temp\frender/Ouroboros - Base_LM0_final_Dir.lz4" 64 0
+Running denoiserOIDN c "C:\Users\Tyler\AppData\Local\Temp\frender/Ouroboros - Base_LM0_final_HDR.lz4" "C:\Users\Tyler\AppData\Local\Temp\frender/Ouroboros - Base_LM0_final_HDR.lz4" 64 0
+Running seamfixer "C:\Users\Tyler\AppData\Local\Temp\frender" "0" "Ouroboros - Base_LM0_final_HDR.lz4" "Ouroboros - Base_LM0_final_Dir.lz4
+Running halffloat2hdr "C:\Users\Tyler\AppData\Local\Temp\frender/Ouroboros - Base_LM0_final_HDR.lz4" "E:/BTRCHECK2/Assets/_Scenes/Levels/2024-02-24 - Ouroboros 22 - Ouro Shapes/Ouroboros - Base_LM0_final.hdr" 1024
+Running rgba2tga "C:\Users\Tyler\AppData\Local\Temp\frender/Ouroboros - Base_LM0_final_Dir.lz4" "E:/BTRCHECK2/Assets/_Scenes/Levels/2024-02-24 - Ouroboros 22 - Ouro Shapes/Ouroboros - Base_LM0_dir.tga" 
+Loaded vertex shader: quad.vso
+Loaded pixel shader: skyOutput.pso
+Loaded pixel shader: cookieOutput.pso
+initShaders done
+initScene done
+Done
+Loaded vertex shader: quad.vso
+Loaded pixel shader: skyOutput.pso
+Loaded pixel shader: cookieOutput.pso
+initShaders done
+Rendering UV GBuffer for Ouroboros - Base_LM0 51
+RGBA32F...RGBA8...RGBA8_SRGB...RGBA16F...states...
+Rendering UV normal...
+Rendering faceted UV normal...
+Rendering UV pos...
+Rendering smooth UV pos...
+Rendering UV GBuffer for Ouroboros - Base_LMA1 51
+RGBA32F...RGBA8...RGBA8_SRGB...RGBA16F...states...
+Rendering UV normal...
+Rendering faceted UV normal...
+Rendering UV pos...
+Rendering smooth UV pos...
+Rendering UV GBuffer for Ouroboros - Section 1_LMA2 51
+RGBA32F...RGBA8...RGBA8_SRGB...RGBA16F...states...
+Rendering UV normal...
+Rendering faceted UV normal...
+Rendering UV pos...
+Rendering smooth UV pos...
+Rendering UV GBuffer for Ouroboros - Section 1_LMA3 51
+RGBA32F...RGBA8...RGBA8_SRGB...RGBA16F...states...
+Rendering UV normal...
+Rendering faceted UV normal...
+Rendering UV pos...
+Rendering smooth UV pos...
+Rendering UV GBuffer for Ouroboros - Section 1_LMA4 51
+RGBA32F...RGBA8...RGBA8_SRGB...RGBA16F...states...
+Rendering UV normal...
+Rendering faceted UV normal...
+Rendering UV pos...
+Rendering smooth UV pos...
+Rendering UV GBuffer for Ouroboros - Section 1_LMA5 51
+RGBA32F...RGBA8...RGBA8_SRGB...RGBA16F...states...
+Rendering UV normal...
+Rendering faceted UV normal...
+Rendering UV pos...
+Rendering smooth UV pos...
+Rendering UV GBuffer for Ouroboros - Section 1_LMA6 51
+RGBA32F...RGBA8...RGBA8_SRGB...RGBA16F...states...
+Rendering UV normal...
+Rendering faceted UV normal...
+Rendering UV pos...
+Rendering smooth UV pos...
+Rendering UV GBuffer for Ouroboros - Section 1_LMA7 51
+RGBA32F...RGBA8...RGBA8_SRGB...RGBA16F...states...
+Rendering UV normal...
+Rendering faceted UV normal...
+Rendering UV pos...
+Rendering smooth UV pos...
+Rendering UV GBuffer for Ouroboros - Section 1_LMA8 51
+RGBA32F...RGBA8...RGBA8_SRGB...RGBA16F...states...
+Rendering UV normal...
+Rendering faceted UV normal...
+Rendering UV pos...
+Rendering smooth UV pos...
+Rendering UV GBuffer for Ouroboros - Section 1_LMA9 51
+RGBA32F...RGBA8...RGBA8_SRGB...RGBA16F...states...
+Rendering UV normal...
+Rendering faceted UV normal...
+Rendering UV pos...
+Rendering smooth UV pos...
+Rendering UV GBuffer for Ouroboros - Section 1_LMA10 51
+RGBA32F...RGBA8...RGBA8_SRGB...RGBA16F...states...
+Rendering UV normal...
+Rendering faceted UV normal...
+Rendering UV pos...
+Rendering smooth UV pos...
+Rendering UV GBuffer for Ouroboros - Section 1_LMA11 51
+RGBA32F...RGBA8...RGBA8_SRGB...RGBA16F...states...
+Rendering UV normal...
+Rendering faceted UV normal...
+Rendering UV pos...
+Rendering smooth UV pos...
+Done
+Done
+Running ftraceRTX fixpos12 "C:\Users\Tyler\AppData\Local\Temp\frender" "uvpos_Ouroboros - Base_LMA1.lz4" 2 0 1 0
+Running ftraceRTX fixpos12 "C:\Users\Tyler\AppData\Local\Temp\frender" "uvpos_Ouroboros - Section 1_LMA7.lz4" 2 0 7 0
+Running ftraceRTX fixpos12 "C:\Users\Tyler\AppData\Local\Temp\frender" "uvpos_Ouroboros - Section 1_LMA11.lz4" 2 0 11 0
+Running ftraceRTX fixpos12 "C:\Users\Tyler\AppData\Local\Temp\frender" "uvpos_Ouroboros - Section 1_LMA9.lz4" 2 0 9 0
+Running ftraceRTX fixpos12 "C:\Users\Tyler\AppData\Local\Temp\frender" "uvpos_Ouroboros - Section 1_LMA10.lz4" 2 0 10 0
+Running ftraceRTX fixpos12 "C:\Users\Tyler\AppData\Local\Temp\frender" "uvpos_Ouroboros - Section 1_LMA8.lz4" 2 0 8 0
+Running ftraceRTX fixpos12 "C:\Users\Tyler\AppData\Local\Temp\frender" "uvpos_Ouroboros - Section 1_LMA4.lz4" 2 0 4 0
+Running ftraceRTX fixpos12 "C:\Users\Tyler\AppData\Local\Temp\frender" "uvpos_Ouroboros - Section 1_LMA6.lz4" 2 0 6 0
+Running ftraceRTX fixpos12 "C:\Users\Tyler\AppData\Local\Temp\frender" "uvpos_Ouroboros - Section 1_LMA5.lz4" 2 0 5 0
+Running ftraceRTX fixpos12 "C:\Users\Tyler\AppData\Local\Temp\frender" "uvpos_Ouroboros - Section 1_LMA3.lz4" 2 0 3 0
+Running ftraceRTX fixpos12 "C:\Users\Tyler\AppData\Local\Temp\frender" "uvpos_Ouroboros - Base_LM0.lz4" 2 0 0 0
+Running ftraceRTX fixpos12 "C:\Users\Tyler\AppData\Local\Temp\frender" "uvpos_Ouroboros - Section 1_LMA2.lz4" 2 0 2 0
+Running ftraceRTX skycubemapdir "C:\Users\Tyler\AppData\Local\Temp\frender" "light_1_1" 68 0 1 sky0.bin
+Running ftraceRTX sun "C:\Users\Tyler\AppData\Local\Temp\frender" "light_2_1" 12 0 1 direct0.bin
+Running ftraceRTX addmul "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Base_LMA1" 4 0 1 comp_1.bin
+Running ftraceRTX diradd "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Base_LMA1_lights_Dir.lz4" 64 0 1 dircomp_1.bin
+Running ftraceRTX skycubemapdir "C:\Users\Tyler\AppData\Local\Temp\frender" "light_1_7" 68 0 7 sky0.bin
+Running ftraceRTX sun "C:\Users\Tyler\AppData\Local\Temp\frender" "light_2_7" 12 0 7 direct0.bin
+Running ftraceRTX addmul "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Section 1_LMA7" 4 0 7 comp_7.bin
+Running ftraceRTX diradd "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Section 1_LMA7_lights_Dir.lz4" 64 0 7 dircomp_7.bin
+Running ftraceRTX skycubemapdir "C:\Users\Tyler\AppData\Local\Temp\frender" "light_1_11" 68 0 11 sky0.bin
+Running ftraceRTX sun "C:\Users\Tyler\AppData\Local\Temp\frender" "light_2_11" 12 0 11 direct0.bin
+Running ftraceRTX addmul "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Section 1_LMA11" 4 0 11 comp_11.bin
+Running ftraceRTX diradd "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Section 1_LMA11_lights_Dir.lz4" 64 0 11 dircomp_11.bin
+Running ftraceRTX skycubemapdir "C:\Users\Tyler\AppData\Local\Temp\frender" "light_1_9" 68 0 9 sky0.bin
+Running ftraceRTX sun "C:\Users\Tyler\AppData\Local\Temp\frender" "light_2_9" 12 0 9 direct0.bin
+Running ftraceRTX addmul "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Section 1_LMA9" 4 0 9 comp_9.bin
+Running ftraceRTX diradd "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Section 1_LMA9_lights_Dir.lz4" 64 0 9 dircomp_9.bin
+Running ftraceRTX skycubemapdir "C:\Users\Tyler\AppData\Local\Temp\frender" "light_1_10" 68 0 10 sky0.bin
+Running ftraceRTX sun "C:\Users\Tyler\AppData\Local\Temp\frender" "light_2_10" 12 0 10 direct0.bin
+Running ftraceRTX addmul "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Section 1_LMA10" 4 0 10 comp_10.bin
+Running ftraceRTX diradd "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Section 1_LMA10_lights_Dir.lz4" 64 0 10 dircomp_10.bin
+Running ftraceRTX skycubemapdir "C:\Users\Tyler\AppData\Local\Temp\frender" "light_1_8" 68 0 8 sky0.bin
+Running ftraceRTX sun "C:\Users\Tyler\AppData\Local\Temp\frender" "light_2_8" 12 0 8 direct0.bin
+Running ftraceRTX addmul "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Section 1_LMA8" 4 0 8 comp_8.bin
+Running ftraceRTX diradd "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Section 1_LMA8_lights_Dir.lz4" 64 0 8 dircomp_8.bin
+Running ftraceRTX skycubemapdir "C:\Users\Tyler\AppData\Local\Temp\frender" "light_1_4" 68 0 4 sky0.bin
+Running ftraceRTX sun "C:\Users\Tyler\AppData\Local\Temp\frender" "light_2_4" 12 0 4 direct0.bin
+Running ftraceRTX addmul "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Section 1_LMA4" 4 0 4 comp_4.bin
+Running ftraceRTX diradd "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Section 1_LMA4_lights_Dir.lz4" 64 0 4 dircomp_4.bin
+Running ftraceRTX skycubemapdir "C:\Users\Tyler\AppData\Local\Temp\frender" "light_1_6" 68 0 6 sky0.bin
+Running ftraceRTX sun "C:\Users\Tyler\AppData\Local\Temp\frender" "light_2_6" 12 0 6 direct0.bin
+Running ftraceRTX addmul "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Section 1_LMA6" 4 0 6 comp_6.bin
+Running ftraceRTX diradd "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Section 1_LMA6_lights_Dir.lz4" 64 0 6 dircomp_6.bin
+Running ftraceRTX skycubemapdir "C:\Users\Tyler\AppData\Local\Temp\frender" "light_1_5" 68 0 5 sky0.bin
+Running ftraceRTX sun "C:\Users\Tyler\AppData\Local\Temp\frender" "light_2_5" 12 0 5 direct0.bin
+Running ftraceRTX addmul "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Section 1_LMA5" 4 0 5 comp_5.bin
+Running ftraceRTX diradd "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Section 1_LMA5_lights_Dir.lz4" 64 0 5 dircomp_5.bin
+Running ftraceRTX skycubemapdir "C:\Users\Tyler\AppData\Local\Temp\frender" "light_1_3" 68 0 3 sky0.bin
+Running ftraceRTX sun "C:\Users\Tyler\AppData\Local\Temp\frender" "light_2_3" 12 0 3 direct0.bin
+Running ftraceRTX addmul "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Section 1_LMA3" 4 0 3 comp_3.bin
+Running ftraceRTX diradd "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Section 1_LMA3_lights_Dir.lz4" 64 0 3 dircomp_3.bin
+Running ftraceRTX skycubemapdir "C:\Users\Tyler\AppData\Local\Temp\frender" "light_1_0" 68 0 0 sky0.bin
+Running ftraceRTX sun "C:\Users\Tyler\AppData\Local\Temp\frender" "light_2_0" 12 0 0 direct0.bin
+Running ftraceRTX addmul "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Base_LM0" 4 0 0 comp_0.bin
+Running ftraceRTX diradd "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Base_LM0_lights_Dir.lz4" 64 0 0 dircomp_0.bin
+Running ftraceRTX skycubemapdir "C:\Users\Tyler\AppData\Local\Temp\frender" "light_1_2" 68 0 2 sky0.bin
+Running ftraceRTX sun "C:\Users\Tyler\AppData\Local\Temp\frender" "light_2_2" 12 0 2 direct0.bin
+Running ftraceRTX addmul "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Section 1_LMA2" 4 0 2 comp_2.bin
+Running ftraceRTX diradd "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Section 1_LMA2_lights_Dir.lz4" 64 0 2 dircomp_2.bin
+Running ftraceRTX texgi "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Base_LMA1_diffuse" 4 16 1 "gi_Ouroboros - Base_LMA10.bin" "Ouroboros - Base_LMA1_diffuse0_HDR.lz4" vbTraceTex.bin
+Running ftraceRTX texgi "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Section 1_LMA7_diffuse" 4 16 7 "gi_Ouroboros - Section 1_LMA70.bin" "Ouroboros - Section 1_LMA7_diffuse0_HDR.lz4" vbTraceTex.bin
+Running ftraceRTX texgi "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Section 1_LMA11_diffuse" 4 16 11 "gi_Ouroboros - Section 1_LMA110.bin" "Ouroboros - Section 1_LMA11_diffuse0_HDR.lz4" vbTraceTex.bin
+Running ftraceRTX texgi "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Section 1_LMA9_diffuse" 4 16 9 "gi_Ouroboros - Section 1_LMA90.bin" "Ouroboros - Section 1_LMA9_diffuse0_HDR.lz4" vbTraceTex.bin
+Running ftraceRTX texgi "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Section 1_LMA10_diffuse" 4 16 10 "gi_Ouroboros - Section 1_LMA100.bin" "Ouroboros - Section 1_LMA10_diffuse0_HDR.lz4" vbTraceTex.bin
+Running ftraceRTX texgi "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Section 1_LMA8_diffuse" 4 16 8 "gi_Ouroboros - Section 1_LMA80.bin" "Ouroboros - Section 1_LMA8_diffuse0_HDR.lz4" vbTraceTex.bin
+Running ftraceRTX texgi "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Section 1_LMA4_diffuse" 4 16 4 "gi_Ouroboros - Section 1_LMA40.bin" "Ouroboros - Section 1_LMA4_diffuse0_HDR.lz4" vbTraceTex.bin
+Running ftraceRTX texgi "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Section 1_LMA6_diffuse" 4 16 6 "gi_Ouroboros - Section 1_LMA60.bin" "Ouroboros - Section 1_LMA6_diffuse0_HDR.lz4" vbTraceTex.bin
+Running ftraceRTX texgi "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Section 1_LMA5_diffuse" 4 16 5 "gi_Ouroboros - Section 1_LMA50.bin" "Ouroboros - Section 1_LMA5_diffuse0_HDR.lz4" vbTraceTex.bin
+Running ftraceRTX texgi "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Section 1_LMA3_diffuse" 4 16 3 "gi_Ouroboros - Section 1_LMA30.bin" "Ouroboros - Section 1_LMA3_diffuse0_HDR.lz4" vbTraceTex.bin
+Running ftraceRTX texgi "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Base_LM0_diffuse" 4 16 0 "gi_Ouroboros - Base_LM00.bin" "Ouroboros - Base_LM0_diffuse0_HDR.lz4" vbTraceTex.bin
+Running ftraceRTX texgi "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Section 1_LMA2_diffuse" 4 16 2 "gi_Ouroboros - Section 1_LMA20.bin" "Ouroboros - Section 1_LMA2_diffuse0_HDR.lz4" vbTraceTex.bin
+Running ftraceRTX texgi "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Base_LMA1_diffuse" 4 16 1 "gi_Ouroboros - Base_LMA11.bin" "Ouroboros - Base_LMA1_diffuse0_HDR.lz4" vbTraceTex.bin
+Running ftraceRTX texgi "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Section 1_LMA7_diffuse" 4 16 7 "gi_Ouroboros - Section 1_LMA71.bin" "Ouroboros - Section 1_LMA7_diffuse0_HDR.lz4" vbTraceTex.bin
+Running ftraceRTX texgi "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Section 1_LMA11_diffuse" 4 16 11 "gi_Ouroboros - Section 1_LMA111.bin" "Ouroboros - Section 1_LMA11_diffuse0_HDR.lz4" vbTraceTex.bin
+Running ftraceRTX texgi "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Section 1_LMA9_diffuse" 4 16 9 "gi_Ouroboros - Section 1_LMA91.bin" "Ouroboros - Section 1_LMA9_diffuse0_HDR.lz4" vbTraceTex.bin
+Running ftraceRTX texgi "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Section 1_LMA10_diffuse" 4 16 10 "gi_Ouroboros - Section 1_LMA101.bin" "Ouroboros - Section 1_LMA10_diffuse0_HDR.lz4" vbTraceTex.bin
+Running ftraceRTX texgi "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Section 1_LMA8_diffuse" 4 16 8 "gi_Ouroboros - Section 1_LMA81.bin" "Ouroboros - Section 1_LMA8_diffuse0_HDR.lz4" vbTraceTex.bin
+Running ftraceRTX texgi "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Section 1_LMA4_diffuse" 4 16 4 "gi_Ouroboros - Section 1_LMA41.bin" "Ouroboros - Section 1_LMA4_diffuse0_HDR.lz4" vbTraceTex.bin
+Running ftraceRTX texgi "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Section 1_LMA6_diffuse" 4 16 6 "gi_Ouroboros - Section 1_LMA61.bin" "Ouroboros - Section 1_LMA6_diffuse0_HDR.lz4" vbTraceTex.bin
+Running ftraceRTX texgi "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Section 1_LMA5_diffuse" 4 16 5 "gi_Ouroboros - Section 1_LMA51.bin" "Ouroboros - Section 1_LMA5_diffuse0_HDR.lz4" vbTraceTex.bin
+Running ftraceRTX texgi "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Section 1_LMA3_diffuse" 4 16 3 "gi_Ouroboros - Section 1_LMA31.bin" "Ouroboros - Section 1_LMA3_diffuse0_HDR.lz4" vbTraceTex.bin
+Running ftraceRTX texgi "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Base_LM0_diffuse" 4 16 0 "gi_Ouroboros - Base_LM01.bin" "Ouroboros - Base_LM0_diffuse0_HDR.lz4" vbTraceTex.bin
+Running ftraceRTX texgi "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Section 1_LMA2_diffuse" 4 16 2 "gi_Ouroboros - Section 1_LMA21.bin" "Ouroboros - Section 1_LMA2_diffuse0_HDR.lz4" vbTraceTex.bin
+Running ftraceRTX texgi "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Base_LMA1_diffuse" 4 16 1 "gi_Ouroboros - Base_LMA12.bin" "Ouroboros - Base_LMA1_diffuse0_HDR.lz4" vbTraceTex.bin
+Running ftraceRTX texgi "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Section 1_LMA7_diffuse" 4 16 7 "gi_Ouroboros - Section 1_LMA72.bin" "Ouroboros - Section 1_LMA7_diffuse0_HDR.lz4" vbTraceTex.bin
+Running ftraceRTX texgi "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Section 1_LMA11_diffuse" 4 16 11 "gi_Ouroboros - Section 1_LMA112.bin" "Ouroboros - Section 1_LMA11_diffuse0_HDR.lz4" vbTraceTex.bin
+Running ftraceRTX texgi "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Section 1_LMA9_diffuse" 4 16 9 "gi_Ouroboros - Section 1_LMA92.bin" "Ouroboros - Section 1_LMA9_diffuse0_HDR.lz4" vbTraceTex.bin
+Running ftraceRTX texgi "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Section 1_LMA10_diffuse" 4 16 10 "gi_Ouroboros - Section 1_LMA102.bin" "Ouroboros - Section 1_LMA10_diffuse0_HDR.lz4" vbTraceTex.bin
+Running ftraceRTX texgi "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Section 1_LMA8_diffuse" 4 16 8 "gi_Ouroboros - Section 1_LMA82.bin" "Ouroboros - Section 1_LMA8_diffuse0_HDR.lz4" vbTraceTex.bin
+Running ftraceRTX texgi "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Section 1_LMA4_diffuse" 4 16 4 "gi_Ouroboros - Section 1_LMA42.bin" "Ouroboros - Section 1_LMA4_diffuse0_HDR.lz4" vbTraceTex.bin
+Running ftraceRTX texgi "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Section 1_LMA6_diffuse" 4 16 6 "gi_Ouroboros - Section 1_LMA62.bin" "Ouroboros - Section 1_LMA6_diffuse0_HDR.lz4" vbTraceTex.bin
+Running ftraceRTX texgi "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Section 1_LMA5_diffuse" 4 16 5 "gi_Ouroboros - Section 1_LMA52.bin" "Ouroboros - Section 1_LMA5_diffuse0_HDR.lz4" vbTraceTex.bin
+Running ftraceRTX texgi "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Section 1_LMA3_diffuse" 4 16 3 "gi_Ouroboros - Section 1_LMA32.bin" "Ouroboros - Section 1_LMA3_diffuse0_HDR.lz4" vbTraceTex.bin
+Running ftraceRTX texgi "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Base_LM0_diffuse" 4 16 0 "gi_Ouroboros - Base_LM02.bin" "Ouroboros - Base_LM0_diffuse0_HDR.lz4" vbTraceTex.bin
+Running ftraceRTX texgi "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Section 1_LMA2_diffuse" 4 16 2 "gi_Ouroboros - Section 1_LMA22.bin" "Ouroboros - Section 1_LMA2_diffuse0_HDR.lz4" vbTraceTex.bin
+Running ftraceRTX texgi "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Base_LMA1_diffuse" 4 16 1 "gi_Ouroboros - Base_LMA13.bin" "Ouroboros - Base_LMA1_diffuse0_HDR.lz4" vbTraceTex.bin
+Running ftraceRTX texgi "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Section 1_LMA7_diffuse" 4 16 7 "gi_Ouroboros - Section 1_LMA73.bin" "Ouroboros - Section 1_LMA7_diffuse0_HDR.lz4" vbTraceTex.bin
+Running ftraceRTX texgi "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Section 1_LMA11_diffuse" 4 16 11 "gi_Ouroboros - Section 1_LMA113.bin" "Ouroboros - Section 1_LMA11_diffuse0_HDR.lz4" vbTraceTex.bin
+Running ftraceRTX texgi "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Section 1_LMA9_diffuse" 4 16 9 "gi_Ouroboros - Section 1_LMA93.bin" "Ouroboros - Section 1_LMA9_diffuse0_HDR.lz4" vbTraceTex.bin
+Running ftraceRTX texgi "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Section 1_LMA10_diffuse" 4 16 10 "gi_Ouroboros - Section 1_LMA103.bin" "Ouroboros - Section 1_LMA10_diffuse0_HDR.lz4" vbTraceTex.bin
+Running ftraceRTX texgi "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Section 1_LMA8_diffuse" 4 16 8 "gi_Ouroboros - Section 1_LMA83.bin" "Ouroboros - Section 1_LMA8_diffuse0_HDR.lz4" vbTraceTex.bin
+Running ftraceRTX texgi "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Section 1_LMA4_diffuse" 4 16 4 "gi_Ouroboros - Section 1_LMA43.bin" "Ouroboros - Section 1_LMA4_diffuse0_HDR.lz4" vbTraceTex.bin
+Running ftraceRTX texgi "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Section 1_LMA6_diffuse" 4 16 6 "gi_Ouroboros - Section 1_LMA63.bin" "Ouroboros - Section 1_LMA6_diffuse0_HDR.lz4" vbTraceTex.bin
+Running ftraceRTX texgi "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Section 1_LMA5_diffuse" 4 16 5 "gi_Ouroboros - Section 1_LMA53.bin" "Ouroboros - Section 1_LMA5_diffuse0_HDR.lz4" vbTraceTex.bin
+Running ftraceRTX texgi "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Section 1_LMA3_diffuse" 4 16 3 "gi_Ouroboros - Section 1_LMA33.bin" "Ouroboros - Section 1_LMA3_diffuse0_HDR.lz4" vbTraceTex.bin
+Running ftraceRTX texgi "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Base_LM0_diffuse" 4 16 0 "gi_Ouroboros - Base_LM03.bin" "Ouroboros - Base_LM0_diffuse0_HDR.lz4" vbTraceTex.bin
+Running ftraceRTX texgi "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Section 1_LMA2_diffuse" 4 16 2 "gi_Ouroboros - Section 1_LMA23.bin" "Ouroboros - Section 1_LMA2_diffuse0_HDR.lz4" vbTraceTex.bin
+Running ftraceRTX texgidir "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Base_LMA1_final" 84 16 1 "gi_Ouroboros - Base_LMA14.bin" "Ouroboros - Base_LMA1_lights_HDR.lz4" vbTraceTex.bin
+Running ftraceRTX texgidir "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Section 1_LMA7_final" 84 16 7 "gi_Ouroboros - Section 1_LMA74.bin" "Ouroboros - Section 1_LMA7_lights_HDR.lz4" vbTraceTex.bin
+Running ftraceRTX texgidir "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Section 1_LMA11_final" 84 16 11 "gi_Ouroboros - Section 1_LMA114.bin" "Ouroboros - Section 1_LMA11_lights_HDR.lz4" vbTraceTex.bin
+Running ftraceRTX texgidir "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Section 1_LMA9_final" 84 16 9 "gi_Ouroboros - Section 1_LMA94.bin" "Ouroboros - Section 1_LMA9_lights_HDR.lz4" vbTraceTex.bin
+Running ftraceRTX texgidir "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Section 1_LMA10_final" 84 16 10 "gi_Ouroboros - Section 1_LMA104.bin" "Ouroboros - Section 1_LMA10_lights_HDR.lz4" vbTraceTex.bin
+Running ftraceRTX texgidir "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Section 1_LMA8_final" 84 16 8 "gi_Ouroboros - Section 1_LMA84.bin" "Ouroboros - Section 1_LMA8_lights_HDR.lz4" vbTraceTex.bin
+Running ftraceRTX texgidir "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Section 1_LMA4_final" 84 16 4 "gi_Ouroboros - Section 1_LMA44.bin" "Ouroboros - Section 1_LMA4_lights_HDR.lz4" vbTraceTex.bin
+Running ftraceRTX texgidir "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Section 1_LMA6_final" 84 16 6 "gi_Ouroboros - Section 1_LMA64.bin" "Ouroboros - Section 1_LMA6_lights_HDR.lz4" vbTraceTex.bin
+Running ftraceRTX texgidir "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Section 1_LMA5_final" 84 16 5 "gi_Ouroboros - Section 1_LMA54.bin" "Ouroboros - Section 1_LMA5_lights_HDR.lz4" vbTraceTex.bin
+Running ftraceRTX texgidir "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Section 1_LMA3_final" 84 16 3 "gi_Ouroboros - Section 1_LMA34.bin" "Ouroboros - Section 1_LMA3_lights_HDR.lz4" vbTraceTex.bin
+Running ftraceRTX texgidir "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Base_LM0_final" 84 16 0 "gi_Ouroboros - Base_LM04.bin" "Ouroboros - Base_LM0_lights_HDR.lz4" vbTraceTex.bin
+Running ftraceRTX texgidir "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Section 1_LMA2_final" 84 16 2 "gi_Ouroboros - Section 1_LMA24.bin" "Ouroboros - Section 1_LMA2_lights_HDR.lz4" vbTraceTex.bin
+Running ftraceRTX add "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Base_LMA1_final_HDR.lz4" 4 0 1 comp_indirect1.bin
+Running ftraceRTX diradd "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Base_LMA1_final_Dir.lz4" 64 0 1 dircomp_indirect1.bin
+Running ftraceRTX add "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Section 1_LMA7_final_HDR.lz4" 4 0 7 comp_indirect7.bin
+Running ftraceRTX diradd "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Section 1_LMA7_final_Dir.lz4" 64 0 7 dircomp_indirect7.bin
+Running ftraceRTX add "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Section 1_LMA11_final_HDR.lz4" 4 0 11 comp_indirect11.bin
+Running ftraceRTX diradd "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Section 1_LMA11_final_Dir.lz4" 64 0 11 dircomp_indirect11.bin
+Running ftraceRTX add "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Section 1_LMA9_final_HDR.lz4" 4 0 9 comp_indirect9.bin
+Running ftraceRTX diradd "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Section 1_LMA9_final_Dir.lz4" 64 0 9 dircomp_indirect9.bin
+Running ftraceRTX add "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Section 1_LMA10_final_HDR.lz4" 4 0 10 comp_indirect10.bin
+Running ftraceRTX diradd "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Section 1_LMA10_final_Dir.lz4" 64 0 10 dircomp_indirect10.bin
+Running ftraceRTX add "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Section 1_LMA8_final_HDR.lz4" 4 0 8 comp_indirect8.bin
+Running ftraceRTX diradd "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Section 1_LMA8_final_Dir.lz4" 64 0 8 dircomp_indirect8.bin
+Running ftraceRTX add "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Section 1_LMA4_final_HDR.lz4" 4 0 4 comp_indirect4.bin
+Running ftraceRTX diradd "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Section 1_LMA4_final_Dir.lz4" 64 0 4 dircomp_indirect4.bin
+Running ftraceRTX add "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Section 1_LMA6_final_HDR.lz4" 4 0 6 comp_indirect6.bin
+Running ftraceRTX diradd "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Section 1_LMA6_final_Dir.lz4" 64 0 6 dircomp_indirect6.bin
+Running ftraceRTX add "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Section 1_LMA5_final_HDR.lz4" 4 0 5 comp_indirect5.bin
+Running ftraceRTX diradd "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Section 1_LMA5_final_Dir.lz4" 64 0 5 dircomp_indirect5.bin
+Running ftraceRTX add "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Section 1_LMA3_final_HDR.lz4" 4 0 3 comp_indirect3.bin
+Running ftraceRTX diradd "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Section 1_LMA3_final_Dir.lz4" 64 0 3 dircomp_indirect3.bin
+Running ftraceRTX add "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Base_LM0_final_HDR.lz4" 4 0 0 comp_indirect0.bin
+Running ftraceRTX diradd "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Base_LM0_final_Dir.lz4" 64 0 0 dircomp_indirect0.bin
+Running ftraceRTX add "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Section 1_LMA2_final_HDR.lz4" 4 0 2 comp_indirect2.bin
+Running ftraceRTX diradd "C:\Users\Tyler\AppData\Local\Temp\frender" "Ouroboros - Section 1_LMA2_final_Dir.lz4" 64 0 2 dircomp_indirect2.bin
+Running denoiserOIDN D "C:\Users\Tyler\AppData\Local\Temp\frender/Ouroboros - Base_LMA1_final_Dir.lz4" "C:\Users\Tyler\AppData\Local\Temp\frender/Ouroboros - Base_LMA1_final_Dir.lz4" 1024 0
+Running denoiserOIDN c "C:\Users\Tyler\AppData\Local\Temp\frender/Ouroboros - Base_LMA1_final_HDR.lz4" "C:\Users\Tyler\AppData\Local\Temp\frender/Ouroboros - Base_LMA1_final_HDR.lz4" 1024 0
+Running seamfixer "C:\Users\Tyler\AppData\Local\Temp\frender" "1" "Ouroboros - Base_LMA1_final_HDR.lz4" "Ouroboros - Base_LMA1_final_Dir.lz4
+Running denoiserOIDN D "C:\Users\Tyler\AppData\Local\Temp\frender/Ouroboros - Section 1_LMA7_final_Dir.lz4" "C:\Users\Tyler\AppData\Local\Temp\frender/Ouroboros - Section 1_LMA7_final_Dir.lz4" 1024 0
+Running denoiserOIDN c "C:\Users\Tyler\AppData\Local\Temp\frender/Ouroboros - Section 1_LMA7_final_HDR.lz4" "C:\Users\Tyler\AppData\Local\Temp\frender/Ouroboros - Section 1_LMA7_final_HDR.lz4" 1024 0
+Running seamfixer "C:\Users\Tyler\AppData\Local\Temp\frender" "7" "Ouroboros - Section 1_LMA7_final_HDR.lz4" "Ouroboros - Section 1_LMA7_final_Dir.lz4
+Running denoiserOIDN D "C:\Users\Tyler\AppData\Local\Temp\frender/Ouroboros - Section 1_LMA11_final_Dir.lz4" "C:\Users\Tyler\AppData\Local\Temp\frender/Ouroboros - Section 1_LMA11_final_Dir.lz4" 256 0
+Running denoiserOIDN c "C:\Users\Tyler\AppData\Local\Temp\frender/Ouroboros - Section 1_LMA11_final_HDR.lz4" "C:\Users\Tyler\AppData\Local\Temp\frender/Ouroboros - Section 1_LMA11_final_HDR.lz4" 256 0
+Running seamfixer "C:\Users\Tyler\AppData\Local\Temp\frender" "11" "Ouroboros - Section 1_LMA11_final_HDR.lz4" "Ouroboros - Section 1_LMA11_final_Dir.lz4
+Running denoiserOIDN D "C:\Users\Tyler\AppData\Local\Temp\frender/Ouroboros - Section 1_LMA9_final_Dir.lz4" "C:\Users\Tyler\AppData\Local\Temp\frender/Ouroboros - Section 1_LMA9_final_Dir.lz4" 512 0
+Running denoiserOIDN c "C:\Users\Tyler\AppData\Local\Temp\frender/Ouroboros - Section 1_LMA9_final_HDR.lz4" "C:\Users\Tyler\AppData\Local\Temp\frender/Ouroboros - Section 1_LMA9_final_HDR.lz4" 512 0
+Running seamfixer "C:\Users\Tyler\AppData\Local\Temp\frender" "9" "Ouroboros - Section 1_LMA9_final_HDR.lz4" "Ouroboros - Section 1_LMA9_final_Dir.lz4
+Running denoiserOIDN D "C:\Users\Tyler\AppData\Local\Temp\frender/Ouroboros - Section 1_LMA10_final_Dir.lz4" "C:\Users\Tyler\AppData\Local\Temp\frender/Ouroboros - Section 1_LMA10_final_Dir.lz4" 512 0
+Running denoiserOIDN c "C:\Users\Tyler\AppData\Local\Temp\frender/Ouroboros - Section 1_LMA10_final_HDR.lz4" "C:\Users\Tyler\AppData\Local\Temp\frender/Ouroboros - Section 1_LMA10_final_HDR.lz4" 512 0
+Running seamfixer "C:\Users\Tyler\AppData\Local\Temp\frender" "10" "Ouroboros - Section 1_LMA10_final_HDR.lz4" "Ouroboros - Section 1_LMA10_final_Dir.lz4
+Running denoiserOIDN D "C:\Users\Tyler\AppData\Local\Temp\frender/Ouroboros - Section 1_LMA8_final_Dir.lz4" "C:\Users\Tyler\AppData\Local\Temp\frender/Ouroboros - Section 1_LMA8_final_Dir.lz4" 512 0
+Running denoiserOIDN c "C:\Users\Tyler\AppData\Local\Temp\frender/Ouroboros - Section 1_LMA8_final_HDR.lz4" "C:\Users\Tyler\AppData\Local\Temp\frender/Ouroboros - Section 1_LMA8_final_HDR.lz4" 512 0
+Running seamfixer "C:\Users\Tyler\AppData\Local\Temp\frender" "8" "Ouroboros - Section 1_LMA8_final_HDR.lz4" "Ouroboros - Section 1_LMA8_final_Dir.lz4
+Running denoiserOIDN D "C:\Users\Tyler\AppData\Local\Temp\frender/Ouroboros - Section 1_LMA4_final_Dir.lz4" "C:\Users\Tyler\AppData\Local\Temp\frender/Ouroboros - Section 1_LMA4_final_Dir.lz4" 2048 0
+Running denoiserOIDN c "C:\Users\Tyler\AppData\Local\Temp\frender/Ouroboros - Section 1_LMA4_final_HDR.lz4" "C:\Users\Tyler\AppData\Local\Temp\frender/Ouroboros - Section 1_LMA4_final_HDR.lz4" 2048 0
+Running seamfixer "C:\Users\Tyler\AppData\Local\Temp\frender" "4" "Ouroboros - Section 1_LMA4_final_HDR.lz4" "Ouroboros - Section 1_LMA4_final_Dir.lz4
+Running denoiserOIDN D "C:\Users\Tyler\AppData\Local\Temp\frender/Ouroboros - Section 1_LMA6_final_Dir.lz4" "C:\Users\Tyler\AppData\Local\Temp\frender/Ouroboros - Section 1_LMA6_final_Dir.lz4" 2048 0
+Running denoiserOIDN c "C:\Users\Tyler\AppData\Local\Temp\frender/Ouroboros - Section 1_LMA6_final_HDR.lz4" "C:\Users\Tyler\AppData\Local\Temp\frender/Ouroboros - Section 1_LMA6_final_HDR.lz4" 2048 0
+Running seamfixer "C:\Users\Tyler\AppData\Local\Temp\frender" "6" "Ouroboros - Section 1_LMA6_final_HDR.lz4" "Ouroboros - Section 1_LMA6_final_Dir.lz4
+Running denoiserOIDN D "C:\Users\Tyler\AppData\Local\Temp\frender/Ouroboros - Section 1_LMA5_final_Dir.lz4" "C:\Users\Tyler\AppData\Local\Temp\frender/Ouroboros - Section 1_LMA5_final_Dir.lz4" 2048 0
+Running denoiserOIDN c "C:\Users\Tyler\AppData\Local\Temp\frender/Ouroboros - Section 1_LMA5_final_HDR.lz4" "C:\Users\Tyler\AppData\Local\Temp\frender/Ouroboros - Section 1_LMA5_final_HDR.lz4" 2048 0
+Running seamfixer "C:\Users\Tyler\AppData\Local\Temp\frender" "5" "Ouroboros - Section 1_LMA5_final_HDR.lz4" "Ouroboros - Section 1_LMA5_final_Dir.lz4
+Running denoiserOIDN D "C:\Users\Tyler\AppData\Local\Temp\frender/Ouroboros - Section 1_LMA3_final_Dir.lz4" "C:\Users\Tyler\AppData\Local\Temp\frender/Ouroboros - Section 1_LMA3_final_Dir.lz4" 2048 0
+Running denoiserOIDN c "C:\Users\Tyler\AppData\Local\Temp\frender/Ouroboros - Section 1_LMA3_final_HDR.lz4" "C:\Users\Tyler\AppData\Local\Temp\frender/Ouroboros - Section 1_LMA3_final_HDR.lz4" 2048 0
+Running seamfixer "C:\Users\Tyler\AppData\Local\Temp\frender" "3" "Ouroboros - Section 1_LMA3_final_HDR.lz4" "Ouroboros - Section 1_LMA3_final_Dir.lz4
+Running denoiserOIDN D "C:\Users\Tyler\AppData\Local\Temp\frender/Ouroboros - Base_LM0_final_Dir.lz4" "C:\Users\Tyler\AppData\Local\Temp\frender/Ouroboros - Base_LM0_final_Dir.lz4" 2048 0
+Running denoiserOIDN c "C:\Users\Tyler\AppData\Local\Temp\frender/Ouroboros - Base_LM0_final_HDR.lz4" "C:\Users\Tyler\AppData\Local\Temp\frender/Ouroboros - Base_LM0_final_HDR.lz4" 2048 0
+Running seamfixer "C:\Users\Tyler\AppData\Local\Temp\frender" "0" "Ouroboros - Base_LM0_final_HDR.lz4" "Ouroboros - Base_LM0_final_Dir.lz4
+Running denoiserOIDN D "C:\Users\Tyler\AppData\Local\Temp\frender/Ouroboros - Section 1_LMA2_final_Dir.lz4" "C:\Users\Tyler\AppData\Local\Temp\frender/Ouroboros - Section 1_LMA2_final_Dir.lz4" 2048 0
+Running denoiserOIDN c "C:\Users\Tyler\AppData\Local\Temp\frender/Ouroboros - Section 1_LMA2_final_HDR.lz4" "C:\Users\Tyler\AppData\Local\Temp\frender/Ouroboros - Section 1_LMA2_final_HDR.lz4" 2048 0
+Running seamfixer "C:\Users\Tyler\AppData\Local\Temp\frender" "2" "Ouroboros - Section 1_LMA2_final_HDR.lz4" "Ouroboros - Section 1_LMA2_final_Dir.lz4
+Running combineMasks "E:/BTRCHECK2/Assets/_Scenes/Levels/2024-02-24 - Ouroboros 22 - Ouro Shapes/Ouroboros - Base_LMA1_mask.tga" "C:\Users\Tyler\AppData\Local\Temp\frender/masks_1.bin" "C:\Users\Tyler\AppData\Local\Temp\frender/"
+Running combineMasks "E:/BTRCHECK2/Assets/_Scenes/Levels/2024-02-24 - Ouroboros 22 - Ouro Shapes/Ouroboros - Section 1_LMA7_mask.tga" "C:\Users\Tyler\AppData\Local\Temp\frender/masks_7.bin" "C:\Users\Tyler\AppData\Local\Temp\frender/"
+Running combineMasks "E:/BTRCHECK2/Assets/_Scenes/Levels/2024-02-24 - Ouroboros 22 - Ouro Shapes/Ouroboros - Section 1_LMA11_mask.tga" "C:\Users\Tyler\AppData\Local\Temp\frender/masks_11.bin" "C:\Users\Tyler\AppData\Local\Temp\frender/"
+Running combineMasks "E:/BTRCHECK2/Assets/_Scenes/Levels/2024-02-24 - Ouroboros 22 - Ouro Shapes/Ouroboros - Section 1_LMA9_mask.tga" "C:\Users\Tyler\AppData\Local\Temp\frender/masks_9.bin" "C:\Users\Tyler\AppData\Local\Temp\frender/"
+Running combineMasks "E:/BTRCHECK2/Assets/_Scenes/Levels/2024-02-24 - Ouroboros 22 - Ouro Shapes/Ouroboros - Section 1_LMA10_mask.tga" "C:\Users\Tyler\AppData\Local\Temp\frender/masks_10.bin" "C:\Users\Tyler\AppData\Local\Temp\frender/"
+Running combineMasks "E:/BTRCHECK2/Assets/_Scenes/Levels/2024-02-24 - Ouroboros 22 - Ouro Shapes/Ouroboros - Section 1_LMA8_mask.tga" "C:\Users\Tyler\AppData\Local\Temp\frender/masks_8.bin" "C:\Users\Tyler\AppData\Local\Temp\frender/"
+Running combineMasks "E:/BTRCHECK2/Assets/_Scenes/Levels/2024-02-24 - Ouroboros 22 - Ouro Shapes/Ouroboros - Section 1_LMA4_mask.tga" "C:\Users\Tyler\AppData\Local\Temp\frender/masks_4.bin" "C:\Users\Tyler\AppData\Local\Temp\frender/"
+Running combineMasks "E:/BTRCHECK2/Assets/_Scenes/Levels/2024-02-24 - Ouroboros 22 - Ouro Shapes/Ouroboros - Section 1_LMA6_mask.tga" "C:\Users\Tyler\AppData\Local\Temp\frender/masks_6.bin" "C:\Users\Tyler\AppData\Local\Temp\frender/"
+Running combineMasks "E:/BTRCHECK2/Assets/_Scenes/Levels/2024-02-24 - Ouroboros 22 - Ouro Shapes/Ouroboros - Section 1_LMA5_mask.tga" "C:\Users\Tyler\AppData\Local\Temp\frender/masks_5.bin" "C:\Users\Tyler\AppData\Local\Temp\frender/"
+Running combineMasks "E:/BTRCHECK2/Assets/_Scenes/Levels/2024-02-24 - Ouroboros 22 - Ouro Shapes/Ouroboros - Section 1_LMA3_mask.tga" "C:\Users\Tyler\AppData\Local\Temp\frender/masks_3.bin" "C:\Users\Tyler\AppData\Local\Temp\frender/"
+Running combineMasks "E:/BTRCHECK2/Assets/_Scenes/Levels/2024-02-24 - Ouroboros 22 - Ouro Shapes/Ouroboros - Base_LM0_mask.tga" "C:\Users\Tyler\AppData\Local\Temp\frender/masks_0.bin" "C:\Users\Tyler\AppData\Local\Temp\frender/"
+Running combineMasks "E:/BTRCHECK2/Assets/_Scenes/Levels/2024-02-24 - Ouroboros 22 - Ouro Shapes/Ouroboros - Section 1_LMA2_mask.tga" "C:\Users\Tyler\AppData\Local\Temp\frender/masks_2.bin" "C:\Users\Tyler\AppData\Local\Temp\frender/"
+Running halffloat2hdr "C:\Users\Tyler\AppData\Local\Temp\frender/Ouroboros - Base_LMA1_final_HDR.lz4" "E:/BTRCHECK2/Assets/_Scenes/Levels/2024-02-24 - Ouroboros 22 - Ouro Shapes/Ouroboros - Base_LMA1_final.hdr" 1024
+Running rgba2tga "C:\Users\Tyler\AppData\Local\Temp\frender/Ouroboros - Base_LMA1_final_Dir.lz4" "E:/BTRCHECK2/Assets/_Scenes/Levels/2024-02-24 - Ouroboros 22 - Ouro Shapes/Ouroboros - Base_LMA1_dir.tga" 
+Running halffloat2hdr "C:\Users\Tyler\AppData\Local\Temp\frender/Ouroboros - Section 1_LMA7_final_HDR.lz4" "E:/BTRCHECK2/Assets/_Scenes/Levels/2024-02-24 - Ouroboros 22 - Ouro Shapes/Ouroboros - Section 1_LMA7_final.hdr" 1024
+Running rgba2tga "C:\Users\Tyler\AppData\Local\Temp\frender/Ouroboros - Section 1_LMA7_final_Dir.lz4" "E:/BTRCHECK2/Assets/_Scenes/Levels/2024-02-24 - Ouroboros 22 - Ouro Shapes/Ouroboros - Section 1_LMA7_dir.tga" 
+Running halffloat2hdr "C:\Users\Tyler\AppData\Local\Temp\frender/Ouroboros - Section 1_LMA11_final_HDR.lz4" "E:/BTRCHECK2/Assets/_Scenes/Levels/2024-02-24 - Ouroboros 22 - Ouro Shapes/Ouroboros - Section 1_LMA11_final.hdr" 1024
+Running rgba2tga "C:\Users\Tyler\AppData\Local\Temp\frender/Ouroboros - Section 1_LMA11_final_Dir.lz4" "E:/BTRCHECK2/Assets/_Scenes/Levels/2024-02-24 - Ouroboros 22 - Ouro Shapes/Ouroboros - Section 1_LMA11_dir.tga" 
+Running halffloat2hdr "C:\Users\Tyler\AppData\Local\Temp\frender/Ouroboros - Section 1_LMA9_final_HDR.lz4" "E:/BTRCHECK2/Assets/_Scenes/Levels/2024-02-24 - Ouroboros 22 - Ouro Shapes/Ouroboros - Section 1_LMA9_final.hdr" 1024
+Running rgba2tga "C:\Users\Tyler\AppData\Local\Temp\frender/Ouroboros - Section 1_LMA9_final_Dir.lz4" "E:/BTRCHECK2/Assets/_Scenes/Levels/2024-02-24 - Ouroboros 22 - Ouro Shapes/Ouroboros - Section 1_LMA9_dir.tga" 
+Running halffloat2hdr "C:\Users\Tyler\AppData\Local\Temp\frender/Ouroboros - Section 1_LMA10_final_HDR.lz4" "E:/BTRCHECK2/Assets/_Scenes/Levels/2024-02-24 - Ouroboros 22 - Ouro Shapes/Ouroboros - Section 1_LMA10_final.hdr" 1024
+Running rgba2tga "C:\Users\Tyler\AppData\Local\Temp\frender/Ouroboros - Section 1_LMA10_final_Dir.lz4" "E:/BTRCHECK2/Assets/_Scenes/Levels/2024-02-24 - Ouroboros 22 - Ouro Shapes/Ouroboros - Section 1_LMA10_dir.tga" 
+Running halffloat2hdr "C:\Users\Tyler\AppData\Local\Temp\frender/Ouroboros - Section 1_LMA8_final_HDR.lz4" "E:/BTRCHECK2/Assets/_Scenes/Levels/2024-02-24 - Ouroboros 22 - Ouro Shapes/Ouroboros - Section 1_LMA8_final.hdr" 1024
+Running rgba2tga "C:\Users\Tyler\AppData\Local\Temp\frender/Ouroboros - Section 1_LMA8_final_Dir.lz4" "E:/BTRCHECK2/Assets/_Scenes/Levels/2024-02-24 - Ouroboros 22 - Ouro Shapes/Ouroboros - Section 1_LMA8_dir.tga" 
+Running halffloat2hdr "C:\Users\Tyler\AppData\Local\Temp\frender/Ouroboros - Section 1_LMA4_final_HDR.lz4" "E:/BTRCHECK2/Assets/_Scenes/Levels/2024-02-24 - Ouroboros 22 - Ouro Shapes/Ouroboros - Section 1_LMA4_final.hdr" 1024
+Running rgba2tga "C:\Users\Tyler\AppData\Local\Temp\frender/Ouroboros - Section 1_LMA4_final_Dir.lz4" "E:/BTRCHECK2/Assets/_Scenes/Levels/2024-02-24 - Ouroboros 22 - Ouro Shapes/Ouroboros - Section 1_LMA4_dir.tga" 
+Running halffloat2hdr "C:\Users\Tyler\AppData\Local\Temp\frender/Ouroboros - Section 1_LMA6_final_HDR.lz4" "E:/BTRCHECK2/Assets/_Scenes/Levels/2024-02-24 - Ouroboros 22 - Ouro Shapes/Ouroboros - Section 1_LMA6_final.hdr" 1024
+Running rgba2tga "C:\Users\Tyler\AppData\Local\Temp\frender/Ouroboros - Section 1_LMA6_final_Dir.lz4" "E:/BTRCHECK2/Assets/_Scenes/Levels/2024-02-24 - Ouroboros 22 - Ouro Shapes/Ouroboros - Section 1_LMA6_dir.tga" 
+Running halffloat2hdr "C:\Users\Tyler\AppData\Local\Temp\frender/Ouroboros - Section 1_LMA5_final_HDR.lz4" "E:/BTRCHECK2/Assets/_Scenes/Levels/2024-02-24 - Ouroboros 22 - Ouro Shapes/Ouroboros - Section 1_LMA5_final.hdr" 1024
+Running rgba2tga "C:\Users\Tyler\AppData\Local\Temp\frender/Ouroboros - Section 1_LMA5_final_Dir.lz4" "E:/BTRCHECK2/Assets/_Scenes/Levels/2024-02-24 - Ouroboros 22 - Ouro Shapes/Ouroboros - Section 1_LMA5_dir.tga" 
+Running halffloat2hdr "C:\Users\Tyler\AppData\Local\Temp\frender/Ouroboros - Section 1_LMA3_final_HDR.lz4" "E:/BTRCHECK2/Assets/_Scenes/Levels/2024-02-24 - Ouroboros 22 - Ouro Shapes/Ouroboros - Section 1_LMA3_final.hdr" 1024
+Running rgba2tga "C:\Users\Tyler\AppData\Local\Temp\frender/Ouroboros - Section 1_LMA3_final_Dir.lz4" "E:/BTRCHECK2/Assets/_Scenes/Levels/2024-02-24 - Ouroboros 22 - Ouro Shapes/Ouroboros - Section 1_LMA3_dir.tga" 
+Running halffloat2hdr "C:\Users\Tyler\AppData\Local\Temp\frender/Ouroboros - Base_LM0_final_HDR.lz4" "E:/BTRCHECK2/Assets/_Scenes/Levels/2024-02-24 - Ouroboros 22 - Ouro Shapes/Ouroboros - Base_LM0_final.hdr" 1024
+Running rgba2tga "C:\Users\Tyler\AppData\Local\Temp\frender/Ouroboros - Base_LM0_final_Dir.lz4" "E:/BTRCHECK2/Assets/_Scenes/Levels/2024-02-24 - Ouroboros 22 - Ouro Shapes/Ouroboros - Base_LM0_dir.tga" 
+Running halffloat2hdr "C:\Users\Tyler\AppData\Local\Temp\frender/Ouroboros - Section 1_LMA2_final_HDR.lz4" "E:/BTRCHECK2/Assets/_Scenes/Levels/2024-02-24 - Ouroboros 22 - Ouro Shapes/Ouroboros - Section 1_LMA2_final.hdr" 1024
+Running rgba2tga "C:\Users\Tyler\AppData\Local\Temp\frender/Ouroboros - Section 1_LMA2_final_Dir.lz4" "E:/BTRCHECK2/Assets/_Scenes/Levels/2024-02-24 - Ouroboros 22 - Ouro Shapes/Ouroboros - Section 1_LMA2_dir.tga" 
+info: Microsoft.Hosting.Lifetime[14]
+      Now listening on: http://localhost:80
+info: Microsoft.Hosting.Lifetime[0]
+      Application started. Press Ctrl+C to shut down.
+info: Microsoft.Hosting.Lifetime[0]
+      Hosting environment: Production
+info: Microsoft.Hosting.Lifetime[0]
+      Content root path: E:\BTRCHECK2\
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/2 POST http://ilpp/UnityILPP.PostProcessing/Ping application/grpc -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'gRPC - /UnityILPP.PostProcessing/Ping'
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'gRPC - /UnityILPP.PostProcessing/Ping'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/2 POST http://ilpp/UnityILPP.PostProcessing/Ping application/grpc - - 200 - application/grpc 32.6831ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/2 POST http://ilpp/UnityILPP.PostProcessing/ConfigurePostProcessors application/grpc -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'gRPC - /UnityILPP.PostProcessing/ConfigurePostProcessors'
+warn: Unity.ILPP.Runner.PostProcessingAssemblyLoadContext[0]
+      Assembly system.runtime.interopservices.windowsruntime has duplicate hint path. Ignoring "C:\Program Files\Unity\Hub\Editor\2022.3.26f1\Editor\Data\UnityReferenceAssemblies\unity-4.8-api\Facades\System.Runtime.InteropServices.WindowsRuntime.dll" in favor of "C:\Program Files\Unity\Hub\Editor\2022.3.26f1\Editor\Data\NetStandard\Extensions\2.0.0\System.Runtime.InteropServices.WindowsRuntime.dll"
+warn: Unity.ILPP.Runner.PostProcessingAssemblyLoadContext[0]
+      Assembly system.componentmodel.composition has duplicate hint path. Ignoring "C:\Program Files\Unity\Hub\Editor\2022.3.26f1\Editor\Data\UnityReferenceAssemblies\unity-4.8-api\System.ComponentModel.Composition.dll" in favor of "C:\Program Files\Unity\Hub\Editor\2022.3.26f1\Editor\Data\NetStandard\compat\2.1.0\shims\netfx\System.ComponentModel.Composition.dll"
+info: Unity.ILPP.Runner.PostProcessingAssemblyLoadContext[0]
+      Resolved Unity.Burst.Cecil, Version=0.11.4.0, Culture=neutral, PublicKeyToken=50cebf1cceb9d05e with Library\PackageCache\com.unity.burst@1.8.13\Unity.Burst.CodeGen\Unity.Burst.Cecil.dll
+info: Unity.ILPP.Runner.PostProcessingAssemblyLoadContext[0]
+      Resolved Mono.Cecil, Version=0.11.4.0, Culture=neutral, PublicKeyToken=50cebf1cceb9d05e with Library\PackageCache\com.unity.nuget.mono-cecil@1.11.4\Mono.Cecil.dll
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'gRPC - /UnityILPP.PostProcessing/ConfigurePostProcessors'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/2 POST http://ilpp/UnityILPP.PostProcessing/ConfigurePostProcessors application/grpc - - 200 - application/grpc 1511.0979ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/2 POST http://ilpp/UnityILPP.PostProcessing/PostProcessAssembly application/grpc -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'gRPC - /UnityILPP.PostProcessing/PostProcessAssembly'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/2 POST http://ilpp/UnityILPP.PostProcessing/PostProcessAssembly application/grpc -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'gRPC - /UnityILPP.PostProcessing/PostProcessAssembly'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/2 POST http://ilpp/UnityILPP.PostProcessing/PostProcessAssembly application/grpc -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'gRPC - /UnityILPP.PostProcessing/PostProcessAssembly'
+info: Unity.ILPP.Runner.PostProcessingPipeline[0]
+      Processing assembly Library/Bee/artifacts/1900b0aE.dag/SpaceGraphicsToolkit.Nebula.dll, with 144 defines and 234 references
+info: Unity.ILPP.Runner.PostProcessingPipeline[0]
+      Processing assembly Library/Bee/artifacts/1900b0aE.dag/SpaceGraphicsToolkit.Galaxy.dll, with 144 defines and 234 references
+info: Unity.ILPP.Runner.PostProcessingPipeline[0]
+      Processing assembly Library/Bee/artifacts/1900b0aE.dag/com.alteregogames.aeg-fsr.Runtime.URP.dll, with 143 defines and 234 references
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/2 POST http://ilpp/UnityILPP.PostProcessing/PostProcessAssembly application/grpc -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'gRPC - /UnityILPP.PostProcessing/PostProcessAssembly'
+info: Unity.ILPP.Runner.PostProcessingPipeline[0]
+      Processing assembly Library/Bee/artifacts/1900b0aE.dag/Febucci.TextAnimator.TMP.Runtime.dll, with 144 defines and 233 references
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/2 POST http://ilpp/UnityILPP.PostProcessing/PostProcessAssembly application/grpc -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'gRPC - /UnityILPP.PostProcessing/PostProcessAssembly'
+info: Unity.ILPP.Runner.PostProcessingPipeline[0]
+      processors: Unity.Entities.CodeGen.EntitiesILPostProcessors, Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+info: Unity.ILPP.Runner.PostProcessingPipeline[0]
+      processors: Unity.Entities.CodeGen.EntitiesILPostProcessors, Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+info: Unity.ILPP.Runner.PostProcessingPipeline[0]
+      processors: Unity.Entities.CodeGen.EntitiesILPostProcessors, Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+info: Unity.ILPP.Runner.PostProcessingPipeline[0]
+      processors: Unity.Entities.CodeGen.EntitiesILPostProcessors, Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+info: Unity.ILPP.Runner.PostProcessingPipeline[0]
+      Processing assembly Library/Bee/artifacts/1900b0aE.dag/com.thenakeddev.fsr.Runtime.URP.dll, with 143 defines and 234 references
+info: Unity.ILPP.Runner.PostProcessingPipeline[0]
+      processors: Unity.Entities.CodeGen.EntitiesILPostProcessors, Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+info: Unity.ILPP.Runner.PostProcessingPipeline[0]
+      running Unity.Entities.CodeGen.EntitiesILPostProcessors
+info: Unity.ILPP.Runner.PostProcessingPipeline[0]
+      running Unity.Jobs.CodeGen.JobsILPostProcessor
+info: Unity.ILPP.Runner.PostProcessingPipeline[0]
+      running Unity.Entities.CodeGen.EntitiesILPostProcessors
+info: Unity.ILPP.Runner.PostProcessingPipeline[0]
+      running Unity.Entities.CodeGen.EntitiesILPostProcessors
+info: Unity.ILPP.Runner.PostProcessingPipeline[0]
+      running Unity.Jobs.CodeGen.JobsILPostProcessor
+info: Unity.ILPP.Runner.PostProcessingPipeline[0]
+      running Unity.Entities.CodeGen.EntitiesILPostProcessors
+info: Unity.ILPP.Runner.PostProcessingPipeline[0]
+      running Unity.Jobs.CodeGen.JobsILPostProcessor
+info: Unity.ILPP.Runner.PostProcessingPipeline[0]
+      running Unity.Jobs.CodeGen.JobsILPostProcessor
+info: Unity.ILPP.Runner.PostProcessingPipeline[0]
+      running Unity.Entities.CodeGen.EntitiesILPostProcessors
+info: Unity.ILPP.Runner.PostProcessingPipeline[0]
+      running Unity.Jobs.CodeGen.JobsILPostProcessor
+info: Unity.ILPP.Runner.PostProcessingAssemblyLoadContext[0]
+      Resolved Unity.Collections, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null with Library\Bee\artifacts\1900b0aE.dag\Unity.Collections.dll
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/2 POST http://ilpp/UnityILPP.PostProcessing/PostProcessAssembly application/grpc -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'gRPC - /UnityILPP.PostProcessing/PostProcessAssembly'
+info: Unity.ILPP.Runner.PostProcessingPipeline[0]
+      Processing assembly Library/Bee/artifacts/1900b0aE.dag/SpaceGraphicsToolkit.Terrain.dll, with 144 defines and 235 references
+info: Unity.ILPP.Runner.PostProcessingPipeline[0]
+      processors: Unity.Entities.CodeGen.EntitiesILPostProcessors, Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+info: Unity.ILPP.Runner.PostProcessingPipeline[0]
+      running Unity.Entities.CodeGen.EntitiesILPostProcessors
+info: Unity.ILPP.Runner.PostProcessingPipeline[0]
+      running Unity.Jobs.CodeGen.JobsILPostProcessor
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/2 POST http://ilpp/UnityILPP.PostProcessing/PostProcessAssembly application/grpc -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'gRPC - /UnityILPP.PostProcessing/PostProcessAssembly'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/2 POST http://ilpp/UnityILPP.PostProcessing/PostProcessAssembly application/grpc -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'gRPC - /UnityILPP.PostProcessing/PostProcessAssembly'
+info: Unity.ILPP.Runner.PostProcessingPipeline[0]
+      Processing assembly Library/Bee/artifacts/1900b0aE.dag/Drawing.dll, with 150 defines and 212 references
+info: Unity.ILPP.Runner.PostProcessingPipeline[0]
+      processors: Unity.Entities.CodeGen.EntitiesILPostProcessors, Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+info: Unity.ILPP.Runner.PostProcessingPipeline[0]
+      Processing assembly Library/Bee/artifacts/1900b0aE.dag/Unity.InputSystem.TestFramework.dll, with 144 defines and 211 references
+info: Unity.ILPP.Runner.PostProcessingPipeline[0]
+      processors: Unity.Entities.CodeGen.EntitiesILPostProcessors, Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+info: Unity.ILPP.Runner.PostProcessingPipeline[0]
+      running Unity.Entities.CodeGen.EntitiesILPostProcessors
+info: Unity.ILPP.Runner.PostProcessingPipeline[0]
+      running Unity.Entities.CodeGen.EntitiesILPostProcessors
+info: Unity.ILPP.Runner.PostProcessingPipeline[0]
+      running Unity.Jobs.CodeGen.JobsILPostProcessor
+info: Unity.ILPP.Runner.PostProcessingPipeline[0]
+      running Unity.Jobs.CodeGen.JobsILPostProcessor
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/2 POST http://ilpp/UnityILPP.PostProcessing/PostProcessAssembly application/grpc -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'gRPC - /UnityILPP.PostProcessing/PostProcessAssembly'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/2 POST http://ilpp/UnityILPP.PostProcessing/PostProcessAssembly application/grpc -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'gRPC - /UnityILPP.PostProcessing/PostProcessAssembly'
+info: Unity.ILPP.Runner.PostProcessingPipeline[0]
+      Processing assembly Library/Bee/artifacts/1900b0aE.dag/AstarPathfindingProject.dll, with 151 defines and 217 references
+info: Unity.ILPP.Runner.PostProcessingPipeline[0]
+      processors: Unity.Entities.CodeGen.EntitiesILPostProcessors, Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+info: Unity.ILPP.Runner.PostProcessingPipeline[0]
+      running Unity.Entities.CodeGen.EntitiesILPostProcessors
+info: Unity.ILPP.Runner.PostProcessingAssemblyLoadContext[0]
+      Resolved Mono.Cecil.Rocks, Version=0.11.4.0, Culture=neutral, PublicKeyToken=50cebf1cceb9d05e with Library\PackageCache\com.unity.nuget.mono-cecil@1.11.4\Mono.Cecil.Rocks.dll
+info: Unity.ILPP.Runner.PostProcessingAssemblyLoadContext[0]
+      Resolved UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null with C:\Program Files\Unity\Hub\Editor\2022.3.26f1\Editor\Data\Managed\UnityEngine\UnityEngine.CoreModule.dll
+info: Unity.ILPP.Runner.PostProcessingAssemblyLoadContext[0]
+      Resolved UnityEditor.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null with C:\Program Files\Unity\Hub\Editor\2022.3.26f1\Editor\Data\Managed\UnityEngine\UnityEditor.CoreModule.dll
+info: Unity.ILPP.Runner.PostProcessingAssemblyLoadContext[0]
+      Resolved Unity.Entities, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null with Library\Bee\artifacts\1900b0aE.dag\Unity.Entities.dll
+info: Unity.ILPP.Runner.PostProcessingPipeline[0]
+      running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+info: Unity.ILPP.Runner.PostProcessingPipeline[0]
+      running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+info: Unity.ILPP.Runner.PostProcessingPipeline[0]
+      running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+info: Unity.ILPP.Runner.PostProcessingPipeline[0]
+      running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+info: Unity.ILPP.Runner.PostProcessingPipeline[0]
+      running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+info: Unity.ILPP.Runner.PostProcessingPipeline[0]
+      running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+info: Unity.ILPP.Runner.PostProcessingPipeline[0]
+      Processing assembly Library/Bee/artifacts/1900b0aE.dag/AstarPathfindingProjectExamples.dll, with 149 defines and 215 references
+info: Unity.ILPP.Runner.PostProcessingPipeline[0]
+      processors: Unity.Entities.CodeGen.EntitiesILPostProcessors, Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+info: Unity.ILPP.Runner.PostProcessingPipeline[0]
+      running Unity.Entities.CodeGen.EntitiesILPostProcessors
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'gRPC - /UnityILPP.PostProcessing/PostProcessAssembly'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/2 POST http://ilpp/UnityILPP.PostProcessing/PostProcessAssembly application/grpc - - 200 - application/grpc 339.9343ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/2 POST http://ilpp/UnityILPP.PostProcessing/PostProcessAssembly application/grpc -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'gRPC - /UnityILPP.PostProcessing/PostProcessAssembly'
+info: Unity.ILPP.Runner.PostProcessingPipeline[0]
+      Processing assembly Library/Bee/artifacts/1900b0aE.dag/Unity.PerformanceTesting.dll, with 144 defines and 209 references
+info: Unity.ILPP.Runner.PostProcessingPipeline[0]
+      processors: Unity.Entities.CodeGen.EntitiesILPostProcessors, Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/2 POST http://ilpp/UnityILPP.PostProcessing/PostProcessAssembly application/grpc -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'gRPC - /UnityILPP.PostProcessing/PostProcessAssembly'
+info: Unity.ILPP.Runner.PostProcessingPipeline[0]
+      Processing assembly Library/Bee/artifacts/1900b0aE.dag/DrawingEditor.dll, with 144 defines and 220 references
+info: Unity.ILPP.Runner.PostProcessingPipeline[0]
+      processors: Unity.Entities.CodeGen.EntitiesILPostProcessors, Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'gRPC - /UnityILPP.PostProcessing/PostProcessAssembly'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/2 POST http://ilpp/UnityILPP.PostProcessing/PostProcessAssembly application/grpc - - 200 - application/grpc 361.7805ms
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'gRPC - /UnityILPP.PostProcessing/PostProcessAssembly'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/2 POST http://ilpp/UnityILPP.PostProcessing/PostProcessAssembly application/grpc - - 200 - application/grpc 370.3300ms
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'gRPC - /UnityILPP.PostProcessing/PostProcessAssembly'
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'gRPC - /UnityILPP.PostProcessing/PostProcessAssembly'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/2 POST http://ilpp/UnityILPP.PostProcessing/PostProcessAssembly application/grpc - - 200 - application/grpc 394.0834ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/2 POST http://ilpp/UnityILPP.PostProcessing/PostProcessAssembly application/grpc - - 200 - application/grpc 373.6864ms
+info: Unity.ILPP.Runner.PostProcessingPipeline[0]
+      running Unity.Entities.CodeGen.EntitiesILPostProcessors
+info: Unity.ILPP.Runner.PostProcessingPipeline[0]
+      running Unity.Jobs.CodeGen.JobsILPostProcessor
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'gRPC - /UnityILPP.PostProcessing/PostProcessAssembly'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/2 POST http://ilpp/UnityILPP.PostProcessing/PostProcessAssembly application/grpc - - 200 - application/grpc 265.1313ms
+info: Unity.ILPP.Runner.PostProcessingPipeline[0]
+      running Unity.Entities.CodeGen.EntitiesILPostProcessors
+info: Unity.ILPP.Runner.PostProcessingPipeline[0]
+      running Unity.Jobs.CodeGen.JobsILPostProcessor
+info: Unity.ILPP.Runner.PostProcessingPipeline[0]
+      running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'gRPC - /UnityILPP.PostProcessing/PostProcessAssembly'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/2 POST http://ilpp/UnityILPP.PostProcessing/PostProcessAssembly application/grpc - - 200 - application/grpc 49.2619ms
+info: Unity.ILPP.Runner.PostProcessingAssemblyLoadContext[0]
+      Resolved Unity.Burst, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null with Library\Bee\artifacts\1900b0aE.dag\Unity.Burst.dll
+info: Unity.ILPP.Runner.PostProcessingPipeline[0]
+      running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'gRPC - /UnityILPP.PostProcessing/PostProcessAssembly'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/2 POST http://ilpp/UnityILPP.PostProcessing/PostProcessAssembly application/grpc - - 200 - application/grpc 76.9397ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/2 POST http://ilpp/UnityILPP.PostProcessing/PostProcessAssembly application/grpc -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'gRPC - /UnityILPP.PostProcessing/PostProcessAssembly'
+info: Unity.ILPP.Runner.PostProcessingPipeline[0]
+      Processing assembly Library/Bee/artifacts/1900b0aE.dag/Unity.PerformanceTesting.Editor.dll, with 142 defines and 218 references
+info: Unity.ILPP.Runner.PostProcessingPipeline[0]
+      processors: Unity.Entities.CodeGen.EntitiesILPostProcessors, Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+info: Unity.ILPP.Runner.PostProcessingPipeline[0]
+      running Unity.Entities.CodeGen.EntitiesILPostProcessors
+info: Unity.ILPP.Runner.PostProcessingPipeline[0]
+      running Unity.Jobs.CodeGen.JobsILPostProcessor
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/2 POST http://ilpp/UnityILPP.PostProcessing/PostProcessAssembly application/grpc -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'gRPC - /UnityILPP.PostProcessing/PostProcessAssembly'
+info: Unity.ILPP.Runner.PostProcessingPipeline[0]
+      Processing assembly Library/Bee/artifacts/1900b0aE.dag/AstarPathfindingProjectEditor.dll, with 146 defines and 221 references
+info: Unity.ILPP.Runner.PostProcessingPipeline[0]
+      processors: Unity.Entities.CodeGen.EntitiesILPostProcessors, Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+info: Unity.ILPP.Runner.PostProcessingPipeline[0]
+      running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'gRPC - /UnityILPP.PostProcessing/PostProcessAssembly'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/2 POST http://ilpp/UnityILPP.PostProcessing/PostProcessAssembly application/grpc - - 200 - application/grpc 37.1881ms
+info: Unity.ILPP.Runner.PostProcessingPipeline[0]
+      running Unity.Entities.CodeGen.EntitiesILPostProcessors
+info: Unity.ILPP.Runner.PostProcessingPipeline[0]
+      running Unity.Jobs.CodeGen.JobsILPostProcessor
+info: Microsoft.AspNetCore.Hosting.Diagnostics[1]
+      Request starting HTTP/2 POST http://ilpp/UnityILPP.PostProcessing/PostProcessAssembly application/grpc -
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[0]
+      Executing endpoint 'gRPC - /UnityILPP.PostProcessing/PostProcessAssembly'
+info: Unity.ILPP.Runner.PostProcessingPipeline[0]
+      Processing assembly Library/Bee/artifacts/1900b0aE.dag/AstarPathfindingProjectExamplesEditor.dll, with 146 defines and 222 references
+info: Unity.ILPP.Runner.PostProcessingPipeline[0]
+      processors: Unity.Entities.CodeGen.EntitiesILPostProcessors, Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+info: Unity.ILPP.Runner.PostProcessingPipeline[0]
+      running Unity.Entities.CodeGen.EntitiesILPostProcessors
+info: Unity.ILPP.Runner.PostProcessingPipeline[0]
+      running Unity.Jobs.CodeGen.JobsILPostProcessor
+info: Unity.ILPP.Runner.PostProcessingPipeline[0]
+      running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'gRPC - /UnityILPP.PostProcessing/PostProcessAssembly'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/2 POST http://ilpp/UnityILPP.PostProcessing/PostProcessAssembly application/grpc - - 200 - application/grpc 7.0493ms
+info: Unity.ILPP.Runner.PostProcessingPipeline[0]
+      running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'gRPC - /UnityILPP.PostProcessing/PostProcessAssembly'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/2 POST http://ilpp/UnityILPP.PostProcessing/PostProcessAssembly application/grpc - - 200 - application/grpc 129.2116ms
+info: Unity.ILPP.Runner.PostProcessingPipeline[0]
+      running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+info: Unity.ILPP.Runner.PostProcessingPipeline[0]
+      running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+  - EILPP : AstarPathfindingProjectExamples : : 361ms (~164ms)
+    - EILPP : AstarPathfindingProjectExamples : GetAllComponentTypes: 5ms 
+    - EILPP : AstarPathfindingProjectExamples : ComponentDataPP: 29ms 
+    - EILPP : AstarPathfindingProjectExamples : WriteAssembly: 163ms 
+info: Unity.ILPP.Runner.PostProcessingPipeline[0]
+      running Unity.Jobs.CodeGen.JobsILPostProcessor
+info: Unity.ILPP.Runner.PostProcessingPipeline[0]
+      running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+  - EILPP : AstarPathfindingProject : : 638ms (~245ms)
+    - EILPP : AstarPathfindingProject : GetAllComponentTypes: 2ms 
+    - EILPP : AstarPathfindingProject : Cloner: 24ms 
+    - EILPP : AstarPathfindingProject : ComponentDataPP: 78ms 
+    - EILPP : AstarPathfindingProject : WriteAssembly: 289ms 
+info: Unity.ILPP.Runner.PostProcessingPipeline[0]
+      running Unity.Jobs.CodeGen.JobsILPostProcessor
+info: Unity.ILPP.Runner.PostProcessingAssemblyLoadContext[0]
+      Resolved Unity.Burst.Cecil.Rocks, Version=0.11.4.0, Culture=neutral, PublicKeyToken=50cebf1cceb9d05e with Library\PackageCache\com.unity.burst@1.8.13\Unity.Burst.CodeGen\Unity.Burst.Cecil.Rocks.dll
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'gRPC - /UnityILPP.PostProcessing/PostProcessAssembly'
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'gRPC - /UnityILPP.PostProcessing/PostProcessAssembly'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/2 POST http://ilpp/UnityILPP.PostProcessing/PostProcessAssembly application/grpc - - 200 - application/grpc 967.6772ms
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/2 POST http://ilpp/UnityILPP.PostProcessing/PostProcessAssembly application/grpc - - 200 - application/grpc 881.8777ms
+info: Unity.ILPP.Runner.PostProcessingPipeline[0]
+      running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'gRPC - /UnityILPP.PostProcessing/PostProcessAssembly'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/2 POST http://ilpp/UnityILPP.PostProcessing/PostProcessAssembly application/grpc - - 200 - application/grpc 1218.9611ms
+info: Microsoft.AspNetCore.Routing.EndpointMiddleware[1]
+      Executed endpoint 'gRPC - /UnityILPP.PostProcessing/PostProcessAssembly'
+info: Microsoft.AspNetCore.Hosting.Diagnostics[2]
+      Request finished HTTP/2 POST http://ilpp/UnityILPP.PostProcessing/PostProcessAssembly application/grpc - - 200 - application/grpc 1198.5045ms
+Total cache size 267586740
+Total cache size after purge 267586740
+Symbol file LoadedFromMemory is not a mono symbol file

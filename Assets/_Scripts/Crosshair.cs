@@ -141,6 +141,9 @@ public class Crosshair : MonoBehaviour
     [SerializeField] private float initialScale = 1f; // Initial scale for the prefab
     [SerializeField] private float initialTransparency = 0.5f; // Initial transparency for the prefab
 
+    public event Action<float> OnRewindStart;
+    public event Action OnRewindEnd;
+
     void Awake()
     {
         playerInputActions = new DefaultControls();
@@ -479,6 +482,9 @@ private void HandleMaxTargetsReached()
         FMODUnity.RuntimeManager.PlayOneShot("event:/Player/LockEnemy");
         uiLockOnEffect.LockOnTarget(enemyTarget);
         lastEnemyTime = Time.time; // Reset the timer
+
+        // Set the lock state in GameManager
+        GameManager.instance.SetEnemyLockState(enemyTarget, true);
     }
 
     private void UnlockOldestEnemy()
@@ -491,6 +497,9 @@ private void HandleMaxTargetsReached()
         if (callback != null) callback.SetLockedStatus(false); // Assuming this method exists
 
         enemyTargetList.RemoveAt(0);
+
+        // Update lock state in GameManager
+        GameManager.instance.SetEnemyLockState(oldestEnemy, false);
     }
 
     private void UpdateLastEnemyLockTime()
@@ -671,6 +680,9 @@ void OnMusicalLock(KoreographyEvent evt)
                 FMODUnity.RuntimeManager.PlayOneShot("event:/Level - 172 Flux/Firing Blasts");
 
                 GameManager.instance.AddScore(10 * (comboScore * tempLocks));
+
+                // Clear all locks after shooting
+                ClearLockedTargets();
             }
         }
         else
@@ -687,11 +699,16 @@ void OnMusicalLock(KoreographyEvent evt)
         {
             if (lockedState != null)
             {
-                lockedState.LaunchBack();
-                FMODUnity.RuntimeManager.PlayOneShot("event:/Level - 172 Flux/Firing Blasts");
-                StartCoroutine(ShootVibrate());
-                yield return new WaitForSeconds(delayBetweenShots);
-                Debug.Log("Inner Projectile Launch called.");
+                ProjectileStateBased projectile = lockedState.GetProjectile();
+                if (projectile != null)
+                {
+                    projectile.isLifetimePaused = false; // Resume lifetime countdown
+                    lockedState.LaunchBack();
+                    FMODUnity.RuntimeManager.PlayOneShot("event:/Level - 172 Flux/Firing Blasts");
+                    StartCoroutine(ShootVibrate());
+                    yield return new WaitForSeconds(delayBetweenShots);
+                    Debug.Log("Inner Projectile Launch called.");
+                }
             }
         }
     }
@@ -802,7 +819,10 @@ void OnMusicalLock(KoreographyEvent evt)
         ActivateRewindEffects(true);
         Clock clock = Timekeeper.instance.Clock("Test");
         float startPosition = SetClockAndGetPosition(clock, rewindTimeScale);
-        splineControl.Speed = tempSpeed * rewindTimeScale;;
+        splineControl.Speed = tempSpeed * rewindTimeScale;
+
+        OnRewindStart?.Invoke(rewindTimeScale); // Add this line
+
         yield return new WaitForSeconds(3f);
         splineControl.Speed = tempSpeed;
         DeactivateRewindEffects();
@@ -810,11 +830,11 @@ void OnMusicalLock(KoreographyEvent evt)
         pMove.UpdateAnimation();
         splineControl.MovementDirection = MovementDirection.Forward;
 
+        OnRewindEnd?.Invoke(); // Add this line
 
         delayLoop = false;
     }
 
-    //This one rewinds time shorter, switches attack modes
     private IEnumerator SlowToBeat()
     {
         if (delayLoop || !staminaController.canRewind) yield break;
@@ -825,6 +845,9 @@ void OnMusicalLock(KoreographyEvent evt)
         splineControl.Speed = tempSpeed * slowTimeScale;
         Clock clock = Timekeeper.instance.Clock("Test");
         float startPosition = SetClockAndGetPosition(clock, slowTimeScale);
+
+        OnRewindStart?.Invoke(slowTimeScale); // Add this line
+
         numOfRewinds++;
         //SwitchAttackModes();
         staminaController.StaminaRewind();
@@ -837,6 +860,9 @@ void OnMusicalLock(KoreographyEvent evt)
         splineControl.Speed = tempSpeed;
         SetClockAndGetPosition(clock, 1f, startPosition);
         pMove.UpdateAnimation();
+
+        OnRewindEnd?.Invoke(); // Add this line
+
         delayLoop = false;
     }
 
@@ -1007,10 +1033,30 @@ void OnMusicalLock(KoreographyEvent evt)
     // Method to clear all locked targets
     public void ClearLockedTargets()
     {
+        enemyTargetList.RemoveAll(enemy => enemy == null);
+
+        foreach (var enemy in enemyTargetList)
+        {
+            EnemyBasicSetup setup = enemy.GetComponent<EnemyBasicSetup>();
+            if (setup != null) setup.lockedStatus(false);
+        }
+
         enemyTargetList.Clear();
-        projectileTargetList.Clear();
-        LockedList.Clear();
+        projectileTargetList.RemoveAll(projectile => projectile == null);
+        LockedList.RemoveAll(locked => locked == null);
         enemyTarget = null;
         Debug.Log("Cleared all locked targets.");
+
+        // Clear all enemy locks in GameManager
+        GameManager.instance.ClearAllEnemyLocks();
     }
+
+    // New method to handle new wave or area transition
+    public void OnNewWaveOrAreaTransition()
+    {
+        ClearLockedTargets();
+        // Additional logic for wave or area transition if needed
+    }
+
+  
 }

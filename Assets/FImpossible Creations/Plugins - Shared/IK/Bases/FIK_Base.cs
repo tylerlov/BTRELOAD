@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 
 namespace FIMSpace.FTools
 {
@@ -22,7 +23,7 @@ namespace FIMSpace.FTools
         public FIK_IKBoneBase[] Bones { get; protected set; }
         public FIK_IKBoneBase StartBone { get { return Bones[0]; } }
         public FIK_IKBoneBase EndBone { get { return Bones[Bones.Length - 1]; } }
-        public Quaternion StartBoneRotationOffset { get; set; }
+        public Quaternion StartBoneRotationOffset { get; set; } = Quaternion.identity;
 
 
         public virtual void Init(Transform root) 
@@ -30,10 +31,13 @@ namespace FIMSpace.FTools
             StartBoneRotationOffset = Quaternion.identity;
         }
 
+        [NonSerialized] public bool CallPreCalibrate = true;
         public virtual void PreCalibrate()
         {
+            if (!CallPreCalibrate) return;
+
             FIK_IKBoneBase child = Bones[0];
-            while (child.Child != null)
+            while (child != null)
             {
                 child.transform.localRotation = child.InitialLocalRotation;
                 child = child.Child;

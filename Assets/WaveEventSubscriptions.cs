@@ -13,6 +13,7 @@ public class WaveEventSubscriptions : MonoBehaviour
     private CinemachineCameraSwitching cameraSwitching;
     private FmodOneshots fmodOneShots;
     private ShooterMovement shooterMovement;
+    private Crosshair crosshair;
 
     void Start()
     {
@@ -41,11 +42,19 @@ public class WaveEventSubscriptions : MonoBehaviour
         cameraSwitching = FindActiveInstance<CinemachineCameraSwitching>();
         fmodOneShots = FindActiveInstance<FmodOneshots>();
         shooterMovement = FindActiveInstance<ShooterMovement>();
+        crosshair = FindObjectOfType<Crosshair>();
+        if (crosshair == null)
+        {
+            Debug.LogError("Crosshair not found in the scene!");
+        }
 
         if (waveSpawnController != null)
         {
             waveSpawnController.OnWaveStarted.AddListener(OnWaveStarted);
             waveSpawnController.OnWaveEnded.AddListener(OnWaveEnded);
+            
+            // Subscribe to the new OnEnemySpawned event
+            waveSpawnController.OnEnemySpawned += OnEnemySpawned;
         }
         else
         {
@@ -72,6 +81,9 @@ public class WaveEventSubscriptions : MonoBehaviour
         {
             waveSpawnController.OnWaveStarted.RemoveListener(OnWaveStarted);
             waveSpawnController.OnWaveEnded.RemoveListener(OnWaveEnded);
+            
+            // Unsubscribe from the OnEnemySpawned event
+            waveSpawnController.OnEnemySpawned -= OnEnemySpawned;
         }
     }
 
@@ -98,6 +110,12 @@ public class WaveEventSubscriptions : MonoBehaviour
             shooterMovement.SetClamping(true);
         }
 
+        // Clear locks when a new wave starts
+        if (crosshair != null)
+        {
+            crosshair.OnNewWaveOrAreaTransition();
+        }
+
         // Invoke the UnityEvent
         onWaveStarted?.Invoke();
     }
@@ -118,5 +136,14 @@ public class WaveEventSubscriptions : MonoBehaviour
 
         // Invoke the UnityEvent
         onWaveEnded?.Invoke();
+    }
+
+    // New method to handle enemy spawning
+    private void OnEnemySpawned(Transform enemyTransform)
+    {
+        if (gameManager != null)
+        {
+            gameManager.RegisterEnemy(enemyTransform);
+        }
     }
 }
