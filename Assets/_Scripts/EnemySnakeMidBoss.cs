@@ -153,20 +153,22 @@ public class EnemySnakeMidBoss : BaseBehaviour, IDamageable, ILimbDamageReceiver
     {
         currentHealth = Mathf.Max(currentHealth - amount, 0);
 
+        // Check if the damage caused death
+        if (currentHealth == 0)
+        {
+            StartCoroutine(Death());
+            return; // Exit the method early to skip hit animation
+        }
+
         // Determine the health percentage
         float healthPercentage = (currentHealth / startHealth) * 100;
 
         // Check for specific health thresholds and trigger the animation
         if (healthPercentage <= 75 && healthPercentage > 50 ||
             healthPercentage <= 50 && healthPercentage > 25 ||
-            healthPercentage <= 25 && healthPercentage > 0)
+            healthPercentage <= 25)
         {
             animator.SetTrigger("GetHitFront");
-        }
-
-        if (currentHealth == 0)
-        {
-            StartCoroutine(Death());
         }
     }
 

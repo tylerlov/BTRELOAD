@@ -1,8 +1,5 @@
 // =====================================================================
-// Copyright 2013-2022 ToolBuddy
-// All rights reserved
-// 
-// http://www.toolbuddy.net
+// Modified from ToolBuddy
 // =====================================================================
 
 using UnityEngine;
@@ -66,7 +63,8 @@ namespace FluffyUnderware.Curvy.Controllers
         [SerializeField] private float maxRandomZRotation = 31f;
 
         [Header("Deformer Settings")]
-        [SerializeField] private Deformer deformerPrefab; // Reference to the Deformer component
+        [SerializeField] private GameObject deformerPrefab; // Changed to GameObject
+        private List<Deformer> cachedDeformers = new List<Deformer>(); // New list to cache Deformers
 
         private int mInitState = 0;
         private bool mUpdateSpline;
@@ -84,6 +82,7 @@ namespace FluffyUnderware.Curvy.Controllers
 
         void Start()
         {
+            CacheDeformers();
             FindAndAssignController();
         }
 
@@ -453,18 +452,40 @@ namespace FluffyUnderware.Curvy.Controllers
                             deformable.NormalsRecalculation = NormalsRecalculation.Auto;
                             deformable.BoundsRecalculation = BoundsRecalculation.Auto;
 
-                            // Add the referenced Deformer to the Deformable component
+                            // Add the cached Deformers to the Deformable component
                             if (deformerPrefab != null)
                             {
-                                deformable.AddDeformer(deformerPrefab);
+                                foreach (var deformer in cachedDeformers)
+                                {
+                                    deformable.AddDeformer(deformer);
+                                }
                             }
                             else
                             {
-                                Debug.LogWarning("Deformer is not assigned in the inspector.");
+                                Debug.LogWarning("Deformer prefab is not assigned in the inspector.");
                             }
                         }
                     }
                 }
+            }
+        }
+
+        // New method to cache Deformers from the prefab
+        private void CacheDeformers()
+        {
+            if (deformerPrefab != null)
+            {
+                cachedDeformers.Clear();
+                cachedDeformers.AddRange(deformerPrefab.GetComponents<Deformer>());
+                
+                if (cachedDeformers.Count == 0)
+                {
+                    Debug.LogWarning("No Deformer components found on the assigned prefab.");
+                }
+            }
+            else
+            {
+                Debug.LogWarning("Deformer prefab is not assigned in the inspector.");
             }
         }
     }

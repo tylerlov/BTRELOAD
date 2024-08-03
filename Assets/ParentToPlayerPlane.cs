@@ -2,6 +2,8 @@ using UnityEngine;
 
 public class ParentToPlayerPlane : MonoBehaviour
 {
+    [SerializeField] private Vector3 positionOffset = Vector3.zero;
+
     private void Start()
     {
         GameObject playerPlane = GameObject.FindGameObjectWithTag("PlayerPlane");
@@ -9,7 +11,7 @@ public class ParentToPlayerPlane : MonoBehaviour
         if (playerPlane != null)
         {
             transform.SetParent(playerPlane.transform, false);
-            transform.localPosition = Vector3.zero;
+            transform.localPosition = positionOffset;
             transform.forward = playerPlane.transform.forward;
         }
         else
