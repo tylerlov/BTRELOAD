@@ -6,6 +6,10 @@ using UnityEngine;
 using UnityEngine.SceneManagement; 
 using SickscoreGames.HUDNavigationSystem; 
 using UnityEngine.VFX;
+using Unity.Collections;
+using Unity.Mathematics;
+using Unity.Burst;
+using Unity.Jobs;
 
 public class ProjectileManager : MonoBehaviour
 {
@@ -18,8 +22,9 @@ public class ProjectileManager : MonoBehaviour
     [SerializeField] private int initialDeathEffectPoolSize = 10;
     [SerializeField] private int staticShootingRequestsPerFrame = 10; // Configurable batch size
 
-    private List<ProjectileStateBased> projectiles = new List<ProjectileStateBased>(100);
-    private Dictionary<ProjectileStateBased, float> projectileLifetimes = new Dictionary<ProjectileStateBased, float>(100);
+    private NativeList<int> projectileIds;
+    private NativeHashMap<int, float> projectileLifetimes;
+    private Dictionary<int, ProjectileStateBased> projectileLookup = new Dictionary<int, ProjectileStateBased>();
     private Queue<ProjectileStateBased> projectilePool = new Queue<ProjectileStateBased>(200);
     private Queue<ParticleSystem> deathEffectPool = new Queue<ParticleSystem>(50);
 
@@ -58,6 +63,11 @@ public class ProjectileManager : MonoBehaviour
 
         Instance = this;
 
+        // Initialize collections
+        projectileIds = new NativeList<int>(100, Allocator.Persistent);
+        projectileLifetimes = new NativeHashMap<int, float>(100, Allocator.Persistent);
+        projectileLookup = new Dictionary<int, ProjectileStateBased>();
+
         // Subscribe to the sceneLoaded event
         SceneManager.sceneLoaded += OnSceneLoaded;
 
@@ -66,7 +76,6 @@ public class ProjectileManager : MonoBehaviour
         InitializeDeathEffectPool();
         InitializeRadarSymbolPool();
         InitializeLockedFXPool();
-
 
         // Find and cache the player GameObject
         playerGameObject = GameObject.FindGameObjectWithTag("Player");
@@ -126,7 +135,9 @@ public class ProjectileManager : MonoBehaviour
         }
 
         // Clear existing pools and lists to reinitialize
-        projectiles.Clear();
+        projectileIds.Clear();
+        projectileLifetimes.Clear();
+        projectileLookup.Clear();
         projectilePool.Clear();
         deathEffectPool.Clear();
 
@@ -139,6 +150,9 @@ public class ProjectileManager : MonoBehaviour
     {
         // Unsubscribe from the sceneLoaded event to prevent memory leaks
         SceneManager.sceneLoaded -= OnSceneLoaded;
+
+        if (projectileIds.IsCreated) projectileIds.Dispose();
+        if (projectileLifetimes.IsCreated) projectileLifetimes.Dispose();
     }
 
     private void InitializeProjectilePool()
@@ -183,57 +197,145 @@ public class ProjectileManager : MonoBehaviour
 
     public void ShootProjectile(Vector3 position, Quaternion rotation, float speed, float lifetime, float uniformScale, bool enableHoming = false, Material material = null)
     {
-        projectileRequests.Enqueue(new ProjectileRequest(position, rotation, speed, lifetime, uniformScale, enableHoming, material));
+        int materialId = RegisterMaterial(material);
+        projectileRequests.Enqueue(new ProjectileRequest(position, rotation, speed, lifetime, uniformScale, enableHoming, materialId));
+    }
+
+    [BurstCompile]
+    private struct UpdateProjectilesJob : IJobParallelFor
+    {
+        [ReadOnly] public NativeArray<int> ProjectileIds;
+        [ReadOnly] public NativeHashMap<int, float> ProjectileLifetimes;
+        [WriteOnly] public NativeArray<float> UpdatedLifetimes;
+        public float DeltaTime;
+        public float GlobalTimeScale;
+
+        public void Execute(int index)
+        {
+            int projectileId = ProjectileIds[index];
+            if (ProjectileLifetimes.TryGetValue(projectileId, out float lifetime))
+            {
+                lifetime -= DeltaTime * GlobalTimeScale;
+                UpdatedLifetimes[index] = lifetime;
+            }
+            else
+            {
+                UpdatedLifetimes[index] = -1f; // Indicate that this projectile should be removed
+            }
+        }
     }
 
     private void Update()
     {
         float globalTimeScale = timekeeper.Clock("Test").localTimeScale;
-        
-        for (int i = projectiles.Count - 1; i >= 0; i--)
+        float deltaTime = Time.deltaTime;
+
+        var projectileIdsArray = new NativeArray<int>(projectileIds.AsArray(), Allocator.TempJob);
+        var updatedLifetimes = new NativeArray<float>(projectileIds.Length, Allocator.TempJob);
+        var updateJob = new UpdateProjectilesJob
         {
-            var projectile = projectiles[i];
-            if (projectile != null && projectileLifetimes.TryGetValue(projectile, out float lifetime))
+            ProjectileIds = projectileIdsArray,
+            ProjectileLifetimes = projectileLifetimes,
+            UpdatedLifetimes = updatedLifetimes,
+            DeltaTime = deltaTime,
+            GlobalTimeScale = globalTimeScale
+        };
+
+        JobHandle jobHandle = updateJob.Schedule(projectileIds.Length, 64);
+        jobHandle.Complete();
+
+        projectileIdsArray.Dispose();
+
+        // Process updated projectiles
+        for (int i = projectileIds.Length - 1; i >= 0; i--)
+        {
+            int projectileId = projectileIds[i];
+            if (projectileLookup.TryGetValue(projectileId, out ProjectileStateBased projectile))
             {
                 projectile.CustomUpdate(globalTimeScale);
-                
-                lifetime -= Time.deltaTime * globalTimeScale;
+
+                float lifetime = updatedLifetimes[i];
                 if (lifetime <= 0)
                 {
                     projectile.Death();
-                    projectiles.RemoveAt(i);
-                    projectileLifetimes.Remove(projectile);
+                    projectileIds.RemoveAt(i);
+                    projectileLifetimes.Remove(projectileId);
+                    projectileLookup.Remove(projectileId);
                 }
                 else
                 {
-                    projectileLifetimes[projectile] = lifetime;
+                    projectileLifetimes[projectileId] = lifetime;
                 }
             }
             else
             {
-                projectiles.RemoveAt(i);
-                if (projectile != null)
-                {
-                    projectileLifetimes.Remove(projectile);
-                }
+                projectileIds.RemoveAt(i);
+                projectileLifetimes.Remove(projectileId);
+                projectileLookup.Remove(projectileId);
             }
         }
+
+        updatedLifetimes.Dispose();
 
         ProcessProjectileRequests();
     }
 
-    private void ProcessProjectileRequests()
+    [BurstCompile]
+    private struct ProcessProjectileRequestsJob : IJobParallelFor
     {
-        int processedCount = 0;
-        while (projectileRequests.Count > 0 && processedCount < staticShootingRequestsPerFrame)
+        [ReadOnly] public NativeArray<ProjectileRequest> Requests;
+        [WriteOnly] public NativeArray<int> NewProjectileIds;
+        [WriteOnly] public NativeArray<float> NewProjectileLifetimes;
+
+        public void Execute(int index)
         {
-            var request = projectileRequests.Dequeue();
-            ProcessShootProjectile(request);
-            processedCount++;
+            var request = Requests[index];
+            int projectileId = index; // We'll use the index as a temporary ID
+            NewProjectileIds[index] = projectileId;
+            NewProjectileLifetimes[index] = request.Lifetime;
         }
     }
 
-    private void ProcessShootProjectile(ProjectileRequest request)
+    private void ProcessProjectileRequests()
+    {
+        int processCount = Math.Min(projectileRequests.Count, staticShootingRequestsPerFrame);
+        if (processCount == 0) return;
+
+        var requestsArray = new NativeArray<ProjectileRequest>(processCount, Allocator.TempJob);
+        var newProjectileIds = new NativeArray<int>(processCount, Allocator.TempJob);
+        var newProjectileLifetimes = new NativeArray<float>(processCount, Allocator.TempJob);
+
+        for (int i = 0; i < processCount; i++)
+        {
+            requestsArray[i] = projectileRequests.Dequeue();
+        }
+
+        var processJob = new ProcessProjectileRequestsJob
+        {
+            Requests = requestsArray,
+            NewProjectileIds = newProjectileIds,
+            NewProjectileLifetimes = newProjectileLifetimes
+        };
+
+        JobHandle jobHandle = processJob.Schedule(processCount, 64);
+        jobHandle.Complete();
+
+        // Process the results
+        for (int i = 0; i < processCount; i++)
+        {
+            int newProjectileId = newProjectileIds[i];
+            float newLifetime = newProjectileLifetimes[i];
+            projectileIds.Add(newProjectileId);
+            projectileLifetimes[newProjectileId] = newLifetime;
+            ProcessShootProjectile(requestsArray[i], newProjectileId);
+        }
+
+        requestsArray.Dispose();
+        newProjectileIds.Dispose();
+        newProjectileLifetimes.Dispose();
+    }
+
+    private void ProcessShootProjectile(ProjectileRequest request, int projectileId)
     {
         if (projectilePool.Count == 0)
         {
@@ -257,13 +359,19 @@ public class ProjectileManager : MonoBehaviour
         projectile.EnableHoming(request.EnableHoming); // Set homing based on the parameter
 
         // Swap the material if a new one is provided and it's not already on the projectile
-        if (request.Material != null && projectile.modelRenderer.material != request.Material)
+        Material material = GetMaterialById(request.MaterialId);
+        if (material != null && projectile.modelRenderer.material != material)
         {
-            projectile.modelRenderer.material = request.Material;
-            projectile.modelRenderer.material.color = request.Material.color;
+            projectile.modelRenderer.material = material;
+            projectile.modelRenderer.material.color = material.color;
         }
 
-        RegisterProjectile(projectile);
+        RegisterProjectile(projectile, projectileId);
+    }
+
+    private void RegisterProjectile(ProjectileStateBased projectile, int projectileId)
+    {
+        projectileLookup[projectileId] = projectile;
     }
 
     private struct ProjectileRequest
@@ -274,9 +382,9 @@ public class ProjectileManager : MonoBehaviour
         public float Lifetime;
         public float UniformScale;
         public bool EnableHoming;
-        public Material Material;
+        public int MaterialId;
 
-        public ProjectileRequest(Vector3 position, Quaternion rotation, float speed, float lifetime, float uniformScale, bool enableHoming, Material material)
+        public ProjectileRequest(Vector3 position, Quaternion rotation, float speed, float lifetime, float uniformScale, bool enableHoming, int materialId)
         {
             Position = position;
             Rotation = rotation;
@@ -284,7 +392,7 @@ public class ProjectileManager : MonoBehaviour
             Lifetime = lifetime;
             UniformScale = uniformScale;
             EnableHoming = enableHoming;
-            Material = material;
+            MaterialId = materialId;
         }
     }
 
@@ -458,25 +566,41 @@ public class ProjectileManager : MonoBehaviour
 
     public void RegisterProjectile(ProjectileStateBased projectile)
 {
-    if (!projectiles.Contains(projectile))
+    int projectileId = projectile.GetInstanceID();
+    if (!projectileLookup.ContainsKey(projectileId))
     {
-        projectiles.Add(projectile);
-        projectileLifetimes[projectile] = projectile.lifetime;
+        projectileIds.Add(projectileId);
+        projectileLifetimes[projectileId] = projectile.lifetime;
+        projectileLookup[projectileId] = projectile;
         ConditionalDebug.Log($"Registered projectile: {projectile.name}");
     }
 }
 
     public void UnregisterProjectile(ProjectileStateBased projectile)
-{
-    projectiles.Remove(projectile);
-    projectileLifetimes.Remove(projectile);
-}
+    {
+        if (projectile == null) return;
+
+        int projectileId = projectile.GetInstanceID();
+        if (projectileLookup.ContainsKey(projectileId))
+        {
+            for (int i = 0; i < projectileIds.Length; i++)
+            {
+                if (projectileIds[i] == projectileId)
+                {
+                    projectileIds.RemoveAt(i);
+                    break;
+                }
+            }
+            projectileLifetimes.Remove(projectileId);
+            projectileLookup.Remove(projectileId);
+        }
+    }
 
     public void UpdateProjectileTargets()
     {
-        foreach (var projectile in projectiles)
+        foreach (var projectileId in projectileIds)
         {
-            if (projectile != null && projectile.homing)
+            if (projectileLookup.TryGetValue(projectileId, out ProjectileStateBased projectile) && projectile.homing)
             {
                 // Example: Always target the player
                 Transform playerTransform = GameObject.FindWithTag("Player Aim Target").transform;
@@ -541,7 +665,9 @@ public class ProjectileManager : MonoBehaviour
 public void ReRegisterEnemiesAndProjectiles()
 {
     // Clear existing projectiles and reinitialize pools
-    projectiles.Clear();
+    projectileIds.Clear();
+    projectileLifetimes.Clear();
+    projectileLookup.Clear();
     projectilePool.Clear();
     deathEffectPool.Clear();
 
@@ -566,25 +692,26 @@ public void ReRegisterEnemiesAndProjectiles()
 }
 
 public void ClearAllProjectiles()
+{
+    for (int i = projectileIds.Length - 1; i >= 0; i--)
     {
-        List<ProjectileStateBased> projectilesToClear = new List<ProjectileStateBased>(projectiles);
-        foreach (var projectile in projectilesToClear)
+        int projectileId = projectileIds[i];
+        if (projectileLookup.TryGetValue(projectileId, out ProjectileStateBased projectile))
         {
-            if (projectile != null)
-            {
-                projectile.Death();
-            }
+            projectile.Death();
         }
-
-        // Clear any remaining projectiles in the list
-        projectiles.Clear();
-        projectileLifetimes.Clear();
-
-        // Clear the projectile requests queue
-        projectileRequests.Clear();
-
-        ConditionalDebug.Log($"Cleared all projectiles. Pools: Projectile={projectilePool.Count}");
     }
+
+    // Clear all collections
+    projectileIds.Clear();
+    projectileLifetimes.Clear();
+    projectileLookup.Clear();
+
+    // Clear the projectile requests queue
+    projectileRequests.Clear();
+
+    ConditionalDebug.Log($"Cleared all projectiles. Pools: Projectile={projectilePool.Count}");
+}
 public void PlayOneShotSound(string soundEvent, Vector3 position)
 {
     FMODUnity.RuntimeManager.PlayOneShot(soundEvent, position);
@@ -611,5 +738,23 @@ public void PlayOneShotSound(string soundEvent, Vector3 position)
         effect.gameObject.SetActive(false);
         effect.transform.SetParent(transform);
         lockedFXPool.Enqueue(effect);
+    }
+
+    private Dictionary<int, Material> materialLookup = new Dictionary<int, Material>();
+
+    private int RegisterMaterial(Material material)
+    {
+        if (material == null) return -1;
+        int id = material.GetInstanceID();
+        if (!materialLookup.ContainsKey(id))
+        {
+            materialLookup[id] = material;
+        }
+        return id;
+    }
+
+    private Material GetMaterialById(int materialId)
+    {
+        return materialId != -1 && materialLookup.TryGetValue(materialId, out Material material) ? material : null;
     }
 }

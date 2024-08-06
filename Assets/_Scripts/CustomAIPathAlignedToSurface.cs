@@ -22,6 +22,8 @@ namespace Pathfinding
         private int recoveryAttempts = 0;
         private float stuckTime = 0f;
         private Vector3 lastPosition;
+        private Vector3 lastUpdatePosition;
+        private const float updatePositionThreshold = 0.1f;
 
         protected override void Awake()
         {
@@ -29,33 +31,41 @@ namespace Pathfinding
             clock = GetComponent<Timeline>();
             lastKnownGoodPosition = transform.position;
             lastPosition = transform.position;
+            lastUpdatePosition = transform.position;
         }
 
         void Update()
         {
             float deltaTime = clock.deltaTime;
 
-            if (clock.time - lastPathUpdateTime >= pathUpdateInterval)
+            // Only update path and perform checks if the agent has moved significantly
+            if (Vector3.Distance(transform.position, lastUpdatePosition) > updatePositionThreshold)
             {
-                lastPathUpdateTime = clock.time;
-                SearchPath();
-            }
+                if (clock.time - lastPathUpdateTime >= pathUpdateInterval)
+                {
+                    lastPathUpdateTime = clock.time;
+                    SearchPath();
+                }
 
-            if (clock.time - lastRecoveryCheckTime >= recoveryCheckInterval)
-            {
-                lastRecoveryCheckTime = clock.time;
-                CheckAndRecover();
+                if (clock.time - lastRecoveryCheckTime >= recoveryCheckInterval)
+                {
+                    lastRecoveryCheckTime = clock.time;
+                    CheckAndRecover();
+                }
+
+                UpdateLastKnownGoodPosition();
+                lastUpdatePosition = transform.position;
             }
 
             base.OnUpdate(deltaTime);
 
-            UpdateLastKnownGoodPosition();
             DetectStuckState(deltaTime);
         }
 
         private void UpdateLastKnownGoodPosition()
         {
-            NNInfo nearestNode = AstarPath.active.GetNearest(transform.position);
+            // Use a non-allocating method to get the nearest node
+            var nearestNode = AstarPath.active.GetNearest(transform.position, NNConstraint.Default);
             if (nearestNode.node != null && nearestNode.node.Walkable)
             {
                 lastKnownGoodPosition = nearestNode.position;
@@ -120,8 +130,8 @@ namespace Pathfinding
 
         private Vector3 FindSafePosition()
         {
-            // Try to find a position on the navmesh near the current destination
-            NNInfo nearestToDestination = AstarPath.active.GetNearest(destination);
+            // Use a non-allocating method to get the nearest node
+            var nearestToDestination = AstarPath.active.GetNearest(destination, NNConstraint.Default);
             if (nearestToDestination.node != null && nearestToDestination.node.Walkable)
             {
                 return nearestToDestination.position;
@@ -130,12 +140,13 @@ namespace Pathfinding
             // If that fails, try to find any walkable position within a large radius
             float searchRadius = 50f;
             int maxIterations = 20;
+            var constraint = NNConstraint.Default;
 
             for (int i = 0; i < maxIterations; i++)
             {
                 Vector3 randomOffset = Random.insideUnitSphere * searchRadius;
                 Vector3 testPosition = resetPosition + randomOffset;
-                NNInfo nearestNode = AstarPath.active.GetNearest(testPosition);
+                var nearestNode = AstarPath.active.GetNearest(testPosition, constraint);
 
                 if (nearestNode.node != null && nearestNode.node.Walkable)
                 {

@@ -13,6 +13,7 @@ using BehaviorDesigner.Runtime.Tasks.Movement;
 using UnityEngine.VFX;
 using SickscoreGames;
 using SickscoreGames.HUDNavigationSystem;
+using Unity.Collections;
 
 public enum ProjectilePoolType
 {
@@ -472,7 +473,10 @@ public class ProjectileStateBased : MonoBehaviour
 
     private void OnDisable()
     {
-        ProjectileManager.Instance.UnregisterProjectile(this);
+        if (ProjectileManager.Instance != null)
+        {
+            ProjectileManager.Instance.UnregisterProjectile(this);
+        }
     }
 
     private void Start()
