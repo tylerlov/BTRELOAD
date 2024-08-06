@@ -30,7 +30,10 @@ public class EnemySnakeMidBoss : BaseBehaviour, IDamageable, ILimbDamageReceiver
     [SerializeField] private string projectileTimelineName;
     [SerializeField] private VisualEffect vfxPrefab; // Keep this line as is
     [SerializeField] private EventReference shootEventPath; // Updated to use EventReference
-
+    [SerializeField] private EventReference hitSoundEventPath;
+    [SerializeField] private EventReference deathSoundEventPath;
+    [SerializeField] private Renderer enemyRenderer; // New serialized field for the renderer
+    [SerializeField] private float flashIntensity = 2f; // Adjust in inspector
 
     private Timeline myTime;
     private Clock clock;
@@ -40,6 +43,9 @@ public class EnemySnakeMidBoss : BaseBehaviour, IDamageable, ILimbDamageReceiver
 
     private List<VisualEffect> vfxPool;
     private int poolSize = 12;
+
+    private Material enemyMaterial;
+    private float originalFinalPower;
 
     private void Awake()
     {
@@ -112,6 +118,10 @@ public class EnemySnakeMidBoss : BaseBehaviour, IDamageable, ILimbDamageReceiver
         {
             StartCoroutine(TimedShooting()); // Start the timed shooting coroutine only if shootInterval is greater than zero
         }
+        
+        // Initialize material and original power
+        enemyMaterial = enemyRenderer.material;
+        originalFinalPower = enemyMaterial.GetFloat("_FinalPower");
     }
 
     public void Damage(float amount)
@@ -153,6 +163,12 @@ public class EnemySnakeMidBoss : BaseBehaviour, IDamageable, ILimbDamageReceiver
     {
         currentHealth = Mathf.Max(currentHealth - amount, 0);
 
+        // Play hit sound
+        FMODUnity.RuntimeManager.PlayOneShot(hitSoundEventPath, transform.position);
+
+        // Start flashing effect
+        StartCoroutine(FlashEnemy());
+
         // Check if the damage caused death
         if (currentHealth == 0)
         {
@@ -169,6 +185,21 @@ public class EnemySnakeMidBoss : BaseBehaviour, IDamageable, ILimbDamageReceiver
             healthPercentage <= 25)
         {
             animator.SetTrigger("GetHitFront");
+        }
+    }
+
+    private IEnumerator FlashEnemy()
+    {
+        // Flash the enemy 3 times
+        for (int i = 0; i < 3; i++)
+        {
+            // Increase brightness
+            enemyMaterial.SetFloat("_FinalPower", originalFinalPower * flashIntensity);
+            yield return new WaitForSeconds(0.1f);
+
+            // Return to original brightness
+            enemyMaterial.SetFloat("_FinalPower", originalFinalPower);
+            yield return new WaitForSeconds(0.1f);
         }
     }
 
@@ -233,14 +264,15 @@ public class EnemySnakeMidBoss : BaseBehaviour, IDamageable, ILimbDamageReceiver
     {
         animator.SetTrigger("Die"); // Trigger the death animation
 
+        // Play death sound
+        FMODUnity.RuntimeManager.PlayOneShot(deathSoundEventPath, transform.position);
+
         // Wait for the death animation to start
         yield return new WaitUntil(() => animator.GetCurrentAnimatorStateInfo(0).IsName("Death"));
 
         // Now wait for the death animation to actually finish
         float animationLength = animator.GetCurrentAnimatorStateInfo(0).length;
         yield return new WaitForSeconds(animationLength);
-
-        FMODUnity.RuntimeManager.PlayOneShot("event:/Enemy/" + enemyType + "/Death", transform.position);
 
         // Additional cleanup or state management here, if necessary
 
