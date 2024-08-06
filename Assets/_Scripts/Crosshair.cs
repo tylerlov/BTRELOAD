@@ -5,7 +5,6 @@ using UnityEngine.Events;
 using SonicBloom.Koreo;
 using UnityEngine.SceneManagement; // Import the Scene Management namespace
 using MoreMountains.Feedbacks;
-//using XInputDotNetPure;
 using Cinemachine;
 using FluffyUnderware.Curvy;
 using Chronos;
@@ -821,16 +820,23 @@ void OnMusicalLock(KoreographyEvent evt)
         float startPosition = SetClockAndGetPosition(clock, rewindTimeScale);
         splineControl.Speed = tempSpeed * rewindTimeScale;
 
-        OnRewindStart?.Invoke(rewindTimeScale); // Add this line
+        // Trigger JPG effect
+        JPGEffectController.Instance.SetJPGIntensity(1f, 0.5f); // Quickly ramp up the effect
+
+        OnRewindStart?.Invoke(rewindTimeScale);
 
         yield return new WaitForSeconds(3f);
+
+        // Gradually reduce JPG effect
+        JPGEffectController.Instance.SetJPGIntensity(0f, 1f);
+
         splineControl.Speed = tempSpeed;
         DeactivateRewindEffects();
         SetClockAndGetPosition(clock, 1f, startPosition);
         pMove.UpdateAnimation();
         splineControl.MovementDirection = MovementDirection.Forward;
 
-        OnRewindEnd?.Invoke(); // Add this line
+        OnRewindEnd?.Invoke();
 
         delayLoop = false;
     }
@@ -846,7 +852,10 @@ void OnMusicalLock(KoreographyEvent evt)
         Clock clock = Timekeeper.instance.Clock("Test");
         float startPosition = SetClockAndGetPosition(clock, slowTimeScale);
 
-        OnRewindStart?.Invoke(slowTimeScale); // Add this line
+        // Trigger JPG effect
+        JPGEffectController.Instance.SetJPGIntensity(0.5f, 0.3f); // Slightly less intense, quicker ramp-up
+
+        OnRewindStart?.Invoke(slowTimeScale);
 
         numOfRewinds++;
         //SwitchAttackModes();
@@ -855,13 +864,17 @@ void OnMusicalLock(KoreographyEvent evt)
         musicPlayback.EventInstance.setParameterByName("Slow", 1);
         slowTime.SetFloat("Rate", 10f);
         yield return new WaitForSeconds(5f);
+
+        // Gradually reduce JPG effect
+        JPGEffectController.Instance.SetJPGIntensity(0f, 0.7f);
+
         slowTime.SetFloat("Rate", 0f);
         musicPlayback.EventInstance.setParameterByName("Slow", 0);
         splineControl.Speed = tempSpeed;
         SetClockAndGetPosition(clock, 1f, startPosition);
         pMove.UpdateAnimation();
 
-        OnRewindEnd?.Invoke(); // Add this line
+        OnRewindEnd?.Invoke();
 
         delayLoop = false;
     }
