@@ -21,11 +21,13 @@ public class StaticEnemyShooting : MonoBehaviour
     private bool isShooting = false;
     private Vector3 stretchedScale;
     private Vector3 directionToTarget;
+    private Transform cachedTransform; // New cached transform
 
     void Awake()
     {
         myTime = GetComponent<Timeline>();
-        originalScale = transform.localScale;
+        cachedTransform = transform; // Cache the transform
+        originalScale = cachedTransform.localScale;
         stretchedScale = originalScale * stretchFactor;
         UpdateDirectionToTarget();
     }
@@ -50,11 +52,12 @@ public class StaticEnemyShooting : MonoBehaviour
         isShooting = true;
         currentShrinkTween.Stop();
 
+        // Optimized shooting sequence
         Sequence.Create()
-            .Chain(Tween.LocalScale(transform, stretchedScale, growDuration, Ease.OutQuad))
+            .Chain(Tween.LocalScale(cachedTransform, stretchedScale, growDuration, Ease.OutQuad))
             .ChainDelay(0.05f)
             .ChainCallback(PerformShoot)
-            .Chain(Tween.LocalScale(transform, originalScale, shrinkDuration, Ease.InQuad))
+            .Chain(Tween.LocalScale(cachedTransform, originalScale, shrinkDuration, Ease.InQuad))
             .ChainCallback(() => isShooting = false);
     }
 
@@ -66,12 +69,12 @@ public class StaticEnemyShooting : MonoBehaviour
             return;
         }
 
-        ProjectileManager.Instance.ShootProjectile(transform.position, Quaternion.LookRotation(directionToTarget), shootSpeed, projectileLifetime, projectileScale, false, alternativeProjectileMaterial);
+        ProjectileManager.Instance.ShootProjectile(cachedTransform.position, Quaternion.LookRotation(directionToTarget), shootSpeed, projectileLifetime, projectileScale, false, alternativeProjectileMaterial);
         ConditionalDebug.Log($"[StaticEnemyShooting] Projectile fired from {gameObject.name} at {Time.time}");
     }
 
     public void UpdateDirectionToTarget()
     {
-        directionToTarget = target != null ? (target.position - transform.position).normalized : transform.forward;
+        directionToTarget = target != null ? (target.position - cachedTransform.position).normalized : cachedTransform.forward;
     }
 }

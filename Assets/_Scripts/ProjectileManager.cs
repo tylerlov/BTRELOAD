@@ -39,7 +39,7 @@ public class ProjectileManager : MonoBehaviour
 
     public GameObject projectileRadarSymbol;
     [SerializeField] private int radarSymbolPoolSize = 50;
-    [SerializeField] private List<GameObject> radarSymbolPool = new List<GameObject>(50);
+    private Queue<GameObject> radarSymbolPool = new Queue<GameObject>(50);
 
     [SerializeField] private int maxEnemyShotsPerInterval = 4;
     [SerializeField] private float enemyShotIntervalSeconds = 3f;
@@ -87,12 +87,12 @@ public class ProjectileManager : MonoBehaviour
 
     private void InitializeRadarSymbolPool()
     {
-        radarSymbolPool = new List<GameObject>(radarSymbolPoolSize);
+        radarSymbolPool = new Queue<GameObject>(radarSymbolPoolSize);
         for (int i = 0; i < radarSymbolPoolSize; i++)
         {
             GameObject radarSymbol = Instantiate(projectileRadarSymbol, transform);
             radarSymbol.SetActive(false);
-            radarSymbolPool.Add(radarSymbol);
+            radarSymbolPool.Enqueue(radarSymbol);
         }
     }
 
@@ -102,7 +102,7 @@ public class ProjectileManager : MonoBehaviour
         radarSymbol.transform.SetParent(transform); // Reset parent to ProjectileManager
         if (!radarSymbolPool.Contains(radarSymbol))
         {
-            radarSymbolPool.Add(radarSymbol);
+            radarSymbolPool.Enqueue(radarSymbol);
         }
     }
 
@@ -110,8 +110,7 @@ public class ProjectileManager : MonoBehaviour
     {
         if (radarSymbolPool.Count > 0)
         {
-            GameObject radarSymbol = radarSymbolPool[radarSymbolPool.Count - 1];
-            radarSymbolPool.RemoveAt(radarSymbolPool.Count - 1);
+            GameObject radarSymbol = radarSymbolPool.Dequeue();
             radarSymbol.SetActive(true);
             return radarSymbol;
         }

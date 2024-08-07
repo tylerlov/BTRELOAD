@@ -1,113 +1,125 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using DG.Tweening; // Import the DoTween namespace
+using DG.Tweening;
 
 [Serializable]
 public class ChildObjectMaterial
 {
     public GameObject ChildObject;
     public Material Material;
+    public float TeleportTimer;
+    public float DissolveTimer;
+    public Vector3 StartPosition;
+    public Vector3 TeleportLocation;
+    public bool IsDissolving;
 
-    public ChildObjectMaterial(GameObject obj, Material mat)
+    public ChildObjectMaterial(GameObject obj, Material mat, Vector3 startPos)
     {
         ChildObject = obj;
         Material = mat;
+        StartPosition = startPos;
+        TeleportLocation = startPos;
+        ResetTimers();
+    }
+
+    public void ResetTimers()
+    {
+        TeleportTimer = 0f;
+        DissolveTimer = 0f;
+        IsDissolving = false;
     }
 }
 
 public class ObjectTeleporter : MonoBehaviour
 {
-    public float teleportDelay = 2f; // Define the teleport delay
+    public float teleportDelay = 2f;
     public float minTime = 1f;
     public float maxTime = 5f;
-    public float dissolveDuration = 0.5f; // Duration of the dissolve effect
-    public float dissolveStartValue = 0f; // Starting value of DissolveOffset
-    public float dissolveEndValue = 1f; // Ending value of DissolveOffset
+    public float dissolveDuration = 0.5f;
+    public float dissolveStartValue = 0f;
+    public float dissolveEndValue = 1f;
 
-    public List<ChildObjectMaterial> childObjectsMaterials = new List<ChildObjectMaterial>();
+    private List<ChildObjectMaterial> childObjectsMaterials = new List<ChildObjectMaterial>();
+    private Dictionary<GameObject, ChildObjectMaterial> materialLookup = new Dictionary<GameObject, ChildObjectMaterial>();
 
-    private Dictionary<GameObject, Vector3> startPositions = new Dictionary<GameObject, Vector3>();
-
+    private static readonly Vector3 DissolveVectorStart = new Vector3(0, 0, 0);
+    private static readonly Vector3 DissolveVectorEnd = new Vector3(0, 1, 0);
 
     private void Start()
     {
         PopulateChildObjectsMaterialsList();
-        foreach (Transform child in transform)
-        {
-            SkinnedMeshRenderer renderer = child.GetChild(0).GetComponent<SkinnedMeshRenderer>();
-            if (renderer != null)
-            {
-                startPositions[child.gameObject] = child.position;
-                Vector3 teleportLocation = GetRandomTeleportLocation(child.position);
-                StartCoroutine(TeleportRoutine(child.gameObject, teleportLocation));
-            }
-        }
     }
 
-    private void OnValidate()
+    private void Update()
     {
-        PopulateChildObjectsMaterialsList();
+        float deltaTime = Time.deltaTime;
+
+        for (int i = 0; i < childObjectsMaterials.Count; i++)
+        {
+            var com = childObjectsMaterials[i];
+            com.TeleportTimer += deltaTime;
+
+            if (com.TeleportTimer >= teleportDelay)
+            {
+                if (!com.IsDissolving)
+                {
+                    com.IsDissolving = true;
+                    com.DissolveTimer = 0f;
+                }
+
+                com.DissolveTimer += deltaTime;
+                float dissolveProgress = Mathf.Clamp01(com.DissolveTimer / dissolveDuration);
+
+                if (dissolveProgress < 1f)
+                {
+                    UpdateDissolveEffect(com, dissolveProgress);
+                }
+                else if (dissolveProgress >= 1f && com.ChildObject.transform.position != com.TeleportLocation)
+                {
+                    com.ChildObject.transform.position = com.TeleportLocation;
+                    com.IsDissolving = false;
+                    com.DissolveTimer = 0f;
+                }
+                else if (dissolveProgress >= 2f)
+                {
+                    com.TeleportLocation = GetRandomTeleportLocation(com.StartPosition);
+                    com.TeleportTimer = UnityEngine.Random.Range(minTime, maxTime);
+                    com.IsDissolving = false;
+                }
+            }
+        }
     }
 
     private void PopulateChildObjectsMaterialsList()
     {
         childObjectsMaterials.Clear();
+        materialLookup.Clear();
+
         foreach (Transform child in transform)
         {
             SkinnedMeshRenderer renderer = child.GetChild(0).GetComponent<SkinnedMeshRenderer>();
             if (renderer != null)
             {
-                childObjectsMaterials.Add(new ChildObjectMaterial(child.gameObject, renderer.sharedMaterial));
+                var com = new ChildObjectMaterial(child.gameObject, renderer.sharedMaterial, child.position);
+                childObjectsMaterials.Add(com);
+                materialLookup[child.gameObject] = com;
             }
         }
     }
 
-    private IEnumerator TeleportRoutine(GameObject objectToTeleport, Vector3 teleportLocation)
+    private void UpdateDissolveEffect(ChildObjectMaterial com, float progress)
     {
-        while (true)
-        {
-            // Start the dissolve effect 0.5 seconds before the teleport
-            yield return new WaitForSeconds(teleportDelay - dissolveDuration);
-            StartDissolveEffect(objectToTeleport, dissolveStartValue, dissolveEndValue);
-
-            // Wait for the teleport delay
-            yield return new WaitForSeconds(dissolveDuration);
-
-            // Teleport the object
-            objectToTeleport.transform.position = teleportLocation;
-
-            // Reverse the dissolve effect after teleportation
-            StartDissolveEffect(objectToTeleport, dissolveEndValue, dissolveStartValue);
-
-            // Wait for a random time before teleporting again
-            float randomWaitTime = UnityEngine.Random.Range(minTime, maxTime);
-            yield return new WaitForSeconds(randomWaitTime);
-
-            // Update the teleport location for the next teleportation
-            teleportLocation = GetRandomTeleportLocation(startPositions[objectToTeleport]);
-        }
-    }
-
-    private void StartDissolveEffect(GameObject objectToDissolve, float fromValue, float toValue)
-    {
-        Material material = childObjectsMaterials.Find(x => x.ChildObject == objectToDissolve)?.Material;
-        if (material != null)
-        {
-            Vector3 startVector = new Vector3(0, fromValue, 0);
-            DOTween.To(() => startVector, x => {
-                Vector3 currentVector = new Vector3(0, x.y, 0);
-                material.SetVector("_DissolveOffest", currentVector);
-            }, new Vector3(0, toValue, 0), dissolveDuration);
-        }
+        Vector3 currentVector = Vector3.Lerp(DissolveVectorStart, DissolveVectorEnd, progress);
+        com.Material.SetVector("_DissolveOffest", currentVector);
     }
 
     private Vector3 GetRandomTeleportLocation(Vector3 startPosition)
     {
-        float offsetX = UnityEngine.Random.Range(-5f, 5f);
-        float offsetY = UnityEngine.Random.Range(-5f, 5f);
-        float offsetZ = UnityEngine.Random.Range(-5f, 5f);
-        return startPosition + new Vector3(offsetX, offsetY, offsetZ);
+        return new Vector3(
+            startPosition.x + UnityEngine.Random.Range(-5f, 5f),
+            startPosition.y + UnityEngine.Random.Range(-5f, 5f),
+            startPosition.z + UnityEngine.Random.Range(-5f, 5f)
+        );
     }
 }

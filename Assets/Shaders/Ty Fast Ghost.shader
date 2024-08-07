@@ -36,11 +36,13 @@ Shader "Custom/TY_Fast Ghost"
             #pragma vertex vert
             #pragma fragment frag
             #pragma multi_compile_fog
+            #pragma multi_compile_instancing
 
             struct Attributes
             {
                 float4 positionOS : POSITION;
                 float3 normalOS : NORMAL;
+                UNITY_VERTEX_INPUT_INSTANCE_ID
             };
 
             struct Varyings
@@ -49,10 +51,10 @@ Shader "Custom/TY_Fast Ghost"
                 float3 normalWS : TEXCOORD0;
                 float3 viewDirWS : TEXCOORD1;
                 float fogFactor : TEXCOORD2;
+                UNITY_VERTEX_INPUT_INSTANCE_ID
             };
 
             CBUFFER_START(UnityPerMaterial)
-                half4 _Color;
                 half4 _FresnelColor;
                 half _SelfIllumination;
                 half _FresnelIntensity;
@@ -62,12 +64,18 @@ Shader "Custom/TY_Fast Ghost"
                 half _MinValueAmplitude;
                 half _MaxValueAmplitude;
                 half _AmplitudeSpeed;
-                half _Opacity;
             CBUFFER_END
+
+            UNITY_INSTANCING_BUFFER_START(Props)
+                UNITY_DEFINE_INSTANCED_PROP(half4, _Color)
+                UNITY_DEFINE_INSTANCED_PROP(half, _Opacity)
+            UNITY_INSTANCING_BUFFER_END(Props)
 
             Varyings vert(Attributes input)
             {
                 Varyings output = (Varyings)0;
+                UNITY_SETUP_INSTANCE_ID(input);
+                UNITY_TRANSFER_INSTANCE_ID(input, output);
 
                 VertexPositionInputs vertexInput = GetVertexPositionInputs(input.positionOS.xyz);
                 output.positionCS = vertexInput.positionCS;
@@ -80,6 +88,8 @@ Shader "Custom/TY_Fast Ghost"
 
             half4 frag(Varyings input) : SV_Target
             {
+                UNITY_SETUP_INSTANCE_ID(input);
+
                 // Fresnel
                 half NdotV = dot(normalize(input.normalWS), normalize(input.viewDirWS));
                 half fresnelFactor = _Invert ? NdotV : (1.0 - NdotV);
@@ -90,12 +100,14 @@ Shader "Custom/TY_Fast Ghost"
                 half amplitude = lerp(_MinValueAmplitude, _MaxValueAmplitude, (sin(_Time.y * _AmplitudeSpeed) + 1) * 0.5);
                 
                 // Final color
-                half3 finalColor = fresnelColor * amplitude * _Color.rgb;
+                half4 instancedColor = UNITY_ACCESS_INSTANCED_PROP(Props, _Color);
+                half3 finalColor = fresnelColor * amplitude * instancedColor.rgb;
 
                 // Apply fog
                 finalColor = MixFog(finalColor, input.fogFactor);
 
-                return half4(finalColor, _Opacity * _Color.a);
+                half instancedOpacity = UNITY_ACCESS_INSTANCED_PROP(Props, _Opacity);
+                return half4(finalColor, instancedOpacity * instancedColor.a);
             }
             ENDHLSL
         }

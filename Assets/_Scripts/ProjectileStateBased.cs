@@ -411,6 +411,9 @@ public class ProjectileStateBased : MonoBehaviour
     private static readonly int DissolveCutoutProperty = Shader.PropertyToID("_AdvancedDissolveCutoutStandardClip");
     private MaterialPropertyBlock propBlock;
 
+    private Transform cachedTransform;
+    private Rigidbody cachedRigidbody;
+
     private void Awake()
     {
         cachedTransform = transform;
@@ -500,23 +503,23 @@ public class ProjectileStateBased : MonoBehaviour
 
         if (homing && currentTarget != null)
         {
-            Vector3 directionToTarget = (predictedPosition - transform.position).normalized;
-            float distance = Vector3.Distance(transform.position, predictedPosition);
+            Vector3 directionToTarget = (predictedPosition - cachedTransform.position).normalized;
+            float distance = Vector3.Distance(cachedTransform.position, predictedPosition);
             
             // Apply accuracy to rotation
             float accuracyAdjustedRotateSpeed = Mathf.Lerp(_rotateSpeed * 0.5f, maxRotateSpeed, accuracy);
             float dynamicRotateSpeed = Mathf.Lerp(accuracyAdjustedRotateSpeed, _rotateSpeed, distance / maxDistance);
             
             Quaternion targetRotation = Quaternion.LookRotation(directionToTarget);
-            transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, dynamicRotateSpeed * timeScale * Time.deltaTime);
+            cachedTransform.rotation = Quaternion.RotateTowards(cachedTransform.rotation, targetRotation, dynamicRotateSpeed * timeScale * Time.deltaTime);
 
             // Apply accuracy to velocity only if the Rigidbody is not kinematic
-            if (rb != null && !rb.isKinematic)
+            if (cachedRigidbody != null && !cachedRigidbody.isKinematic)
             {
-                Vector3 desiredVelocity = transform.forward * bulletSpeed;
-                Vector3 velocityAdjustment = (desiredVelocity - rb.velocity) * accuracy;
-                rb.velocity += velocityAdjustment * timeScale * Time.deltaTime;
-                rb.velocity = Vector3.ClampMagnitude(rb.velocity, bulletSpeed);
+                Vector3 desiredVelocity = cachedTransform.forward * bulletSpeed;
+                Vector3 velocityAdjustment = (desiredVelocity - cachedRigidbody.velocity) * accuracy;
+                cachedRigidbody.velocity += velocityAdjustment * timeScale * Time.deltaTime;
+                cachedRigidbody.velocity = Vector3.ClampMagnitude(cachedRigidbody.velocity, bulletSpeed);
             }
         }
 
@@ -542,26 +545,26 @@ public class ProjectileStateBased : MonoBehaviour
         ConditionalDebug.Log($"Death called on projectile. Lifetime remaining: {lifetime}. Hit Player: {projHitPlayer}");
 
         // Check if the Rigidbody is not null and not kinematic before trying to set velocities
-        if (rb != null && !rb.isKinematic)
+        if (cachedRigidbody != null && !cachedRigidbody.isKinematic)
         {
-            rb.velocity = Vector3.zero;
-            rb.angularVelocity = Vector3.zero;
+            cachedRigidbody.velocity = Vector3.zero;
+            cachedRigidbody.angularVelocity = Vector3.zero;
         }
 
         // Set the Rigidbody to kinematic to prevent further physics interactions
-        if (rb != null)
+        if (cachedRigidbody != null)
         {
-            rb.isKinematic = true;
+            cachedRigidbody.isKinematic = true;
         }
 
         // Stop any ongoing movement or rotation
-        transform.DOKill(); // This stops any DOTween animations on the transform
+        cachedTransform.DOKill(); // This stops any DOTween animations on the transform
 
         // Disable any scripts that might be moving the projectile
         this.enabled = false;
 
         // Stop the lifetime coroutine if it's running.
-        ProjectileManager.Instance.PlayDeathEffect(this.transform.position);
+        ProjectileManager.Instance.PlayDeathEffect(cachedTransform.position);
 
         if (playerProjPath != null)
         {
@@ -633,9 +636,6 @@ public class ProjectileStateBased : MonoBehaviour
     // Set the homing target and enable homing
     public float maxTurnRate = 360f; // Maximum turn rate in degrees per second
 
-    private Transform cachedTransform;
-    private Rigidbody cachedRigidbody;
-
     public bool isLifetimePaused = false;
 
     void FixedUpdate()
@@ -700,11 +700,11 @@ public class ProjectileStateBased : MonoBehaviour
         {
             // Draw a line from the projectile to the current target
             Gizmos.color = Color.red;
-            Gizmos.DrawLine(transform.position, currentTarget.position);
+            Gizmos.DrawLine(cachedTransform.position, currentTarget.position);
 
             // Draw a line from the projectile to the predicted position
             Gizmos.color = Color.blue;
-            Gizmos.DrawLine(transform.position, predictedPosition);
+            Gizmos.DrawLine(cachedTransform.position, predictedPosition);
 
             // Draw spheres at the current target and predicted positions
             Gizmos.color = Color.red;
@@ -726,10 +726,10 @@ public class ProjectileStateBased : MonoBehaviour
             homing = false;
 
             // Calculate the opposite direction from the current forward direction
-            Vector3 oppositeDirection = -transform.forward;
+            Vector3 oppositeDirection = -cachedTransform.forward;
 
             // Apply velocity in the opposite direction with the current speed
-            rb.velocity = oppositeDirection * bulletSpeed;
+            cachedRigidbody.velocity = oppositeDirection * bulletSpeed;
 
             // Optionally, you can log this action for debugging
             Debug.Log("Projectile is now moving in the opposite direction due to Ricochet Dodge.");
@@ -744,11 +744,11 @@ public class ProjectileStateBased : MonoBehaviour
 
     public void ResetForPool()
     {
-        if (rb != null)
+        if (cachedRigidbody != null)
         {
-            rb.isKinematic = false;
-            rb.velocity = Vector3.zero;
-            rb.angularVelocity = Vector3.zero;
+            cachedRigidbody.isKinematic = false;
+            cachedRigidbody.velocity = Vector3.zero;
+            cachedRigidbody.angularVelocity = Vector3.zero;
         }
 
         this.enabled = true;

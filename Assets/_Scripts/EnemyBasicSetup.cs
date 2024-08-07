@@ -55,65 +55,80 @@ public class EnemyBasicSetup : BaseBehaviour, IDamageable, IAttackAgent
     private RVOController controller;
 
     // Cached components
+    private Transform cachedTransform;
+    private Rigidbody cachedRigidbody;
+    private Collider cachedCollider;
     private StudioEventEmitter cachedMusicPlayback;
     private Crosshair cachedShootRewind;
     private Timeline cachedMyTime;
     private Clock cachedClock;
     private RVOController cachedController;
 
+    // Cache these values
+    private Vector3 cachedShootDirection;
+    private Quaternion cachedShootRotation;
+
     // Awake method
     private void Awake()
     {
         CacheComponents();
+        Initialize();
     }
 
     private void CacheComponents()
     {
-        FindMusicPlaybackEmitter();
+        cachedTransform = transform;
+        cachedRigidbody = GetComponent<Rigidbody>();
+        cachedCollider = GetComponent<Collider>();
+        cachedMusicPlayback = FindMusicPlaybackEmitter();
         cachedShootRewind = FindObjectOfType<Crosshair>();
         cachedMyTime = GetComponent<Timeline>();
         cachedClock = Timekeeper.instance.Clock("Test");
         cachedController = GetComponent<RVOController>();
     }
 
+    private void Initialize()
+    {
+        playerTarget = GameObject.FindGameObjectWithTag("Player");
+        InitializeDamagableParts();
+        AssignPool();
+        ResetHealth();
+    }
+
     // OnEnable method
     private void OnEnable()
     {
-        if (Koreographer.Instance != null)
-        {
-            InitializeEnemy();
-            Koreographer.Instance.RegisterForEvents(eventID, OnMusicalEnemyShoot);
-        }
-        else
-        {
-            StartCoroutine(WaitForKoreographer());
-        }
+        RegisterForEvents();
+        ActivateEnemy();
     }
 
-    private IEnumerator WaitForKoreographer()
+    private void ActivateEnemy()
     {
-        while (Koreographer.Instance == null)
-        {
-            yield return null;
-        }
-        InitializeEnemy();
-        Koreographer.Instance.RegisterForEvents(eventID, OnMusicalEnemyShoot);
+        enemyModel.SetActive(true);
+        lockedStatus(false);
+        FMODUnity.RuntimeManager.PlayOneShotAttached($"event:/Enemy/{enemyType}/Birth", gameObject);
+        birthParticles.GetFromPool(cachedTransform.position, Quaternion.identity);
     }
 
     private void OnDisable()
+    {
+        UnregisterForEvents();
+    }
+
+    private void RegisterForEvents()
+    {
+        if (Koreographer.Instance != null)
+        {
+            Koreographer.Instance.RegisterForEvents(eventID, OnMusicalEnemyShoot);
+        }
+    }
+
+    private void UnregisterForEvents()
     {
         if (Koreographer.Instance != null)
         {
             Koreographer.Instance.UnregisterForEvents(eventID, OnMusicalEnemyShoot);
         }
-    }
-
-
-    // Start method
-    private void Start()
-    {
-        SetupEnemy();
-        InitializeDamagableParts();
     }
 
     private void InitializeDamagableParts()
@@ -151,11 +166,11 @@ public class EnemyBasicSetup : BaseBehaviour, IDamageable, IAttackAgent
         lockedonAnim.SetActive(status);
         if (!status && lockOnDisabledParticles != null)
         {
-            lockOnDisabledParticles.GetFromPool(transform.position, Quaternion.identity);
+            lockOnDisabledParticles.GetFromPool(cachedTransform.position, Quaternion.identity);
         }
         
         // Inform GameManager of the lock state change
-        GameManager.instance.SetEnemyLockState(transform, status);
+        GameManager.instance.SetEnemyLockState(cachedTransform, status);
     }
 
     public bool IsAlive() => currentHealth > 0;
@@ -183,7 +198,7 @@ public class EnemyBasicSetup : BaseBehaviour, IDamageable, IAttackAgent
     public float AttackAngle() => attackAngle;
 
     // Private methods
-    private void FindMusicPlaybackEmitter()
+    private StudioEventEmitter FindMusicPlaybackEmitter()
     {
         StudioEventEmitter[] emitters = FindObjectsOfType<StudioEventEmitter>();
                 
@@ -191,36 +206,12 @@ public class EnemyBasicSetup : BaseBehaviour, IDamageable, IAttackAgent
         {
             if (emitter.gameObject.name == "FMOD Music")
             {
-                cachedMusicPlayback = emitter;
-                break;
+                return emitter;
             }
         }
         
-        if (cachedMusicPlayback == null)
-        {
-            ConditionalDebug.LogError($"FMOD Studio Event Emitter with name FMOD Music not found in the scene.");
-        }
-    }
-
-    private void InitializeEnemy()
-    {
-        playerTarget = GameObject.FindGameObjectWithTag("Player");
-        enemyModel.SetActive(true);
-        lockedStatus(false);
-        currentHealth = startHealth;
-        FMODUnity.RuntimeManager.PlayOneShotAttached("event:/Enemy/" + enemyType + "/Birth", gameObject);
-        cachedShootRewind = GameObject.FindGameObjectWithTag("Shooting").GetComponent<Crosshair>();
-        cachedClock = Timekeeper.instance.Clock("Test");
-        cachedController = gameObject.GetComponent<RVOController>();
-        birthParticles.GetFromPool(transform.position, Quaternion.identity);
-    }
-
-    private void SetupEnemy()
-    {
-        AssignPool();
-        locked = false;
-
-        cachedMyTime = GetComponent<Timeline>();
+        ConditionalDebug.LogError($"FMOD Studio Event Emitter with name FMOD Music not found in the scene.");
+        return null;
     }
 
     private void HandleDamage(float amount)
@@ -241,35 +232,33 @@ public class EnemyBasicSetup : BaseBehaviour, IDamageable, IAttackAgent
         lockedStatus(false);
         ConditionalDebug.Log("Enemy has died");
 
-        deathParticles.GetFromPool(transform.position, Quaternion.identity);
-        FMODUnity.RuntimeManager.PlayOneShot("event:/Enemy/" + enemyType + "/Death", transform.position);
+        deathParticles.GetFromPool(cachedTransform.position, Quaternion.identity);
+        FMODUnity.RuntimeManager.PlayOneShot("event:/Enemy/" + enemyType + "/Death", cachedTransform.position);
 
-        StartCoroutine(cachedShootRewind.RewindToBeatEnemyDeath());
+        yield return StartCoroutine(cachedShootRewind.RewindToBeatEnemyDeath());
 
         yield return new WaitForSeconds(0.5f);
         enemyModel.SetActive(false);
         yield return new WaitForSeconds(0.5f);
 
-        transform.position = Vector3.zero;
-        SpawnableItems.InformSpawnableDestroyed(transform);
-        //Despawn the object and remove SpawnableIdentity component to prevent any issues when respawning
-        PoolManager.Pools[associatedPool].Despawn(transform);
+        cachedTransform.position = Vector3.zero;
+        SpawnableItems.InformSpawnableDestroyed(cachedTransform);
+        PoolManager.Pools[associatedPool].Despawn(cachedTransform);
         Destroy(GetComponent<SpawnableIdentity>());
     }
 
-    void OnMusicalEnemyShoot(KoreographyEvent evt)
+    private void OnMusicalEnemyShoot(KoreographyEvent evt)
     {
-        if (Time.timeScale == 0f || !CanAttack() || playerTarget == null || !playerTarget.activeInHierarchy)
+        if (!CanShoot())
         {
             return;
         }
 
-        Vector3 targetPosition = playerTarget.transform.position;
-        Vector3 shootDirection = (targetPosition - transform.position).normalized;
+        UpdateShootDirection();
         
         ProjectileManager.Instance.ShootProjectileFromEnemy(
-            transform.position,
-            Quaternion.LookRotation(shootDirection),
+            cachedTransform.position,
+            cachedShootRotation,
             shootSpeed,
             projectileLifetime,
             projectileScale,
@@ -278,6 +267,21 @@ public class EnemyBasicSetup : BaseBehaviour, IDamageable, IAttackAgent
         );
 
         lastAttackTime = Time.time;
+    }
+
+    private bool CanShoot()
+    {
+        return Time.timeScale != 0f && 
+               CanAttack() && 
+               playerTarget != null && 
+               playerTarget.activeInHierarchy;
+    }
+
+    private void UpdateShootDirection()
+    {
+        cachedShootDirection = playerTarget.transform.position - cachedTransform.position;
+        cachedShootDirection.Normalize();
+        cachedShootRotation = Quaternion.LookRotation(cachedShootDirection);
     }
 
     public void RegisterProjectiles()

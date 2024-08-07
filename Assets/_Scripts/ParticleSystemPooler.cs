@@ -2,6 +2,7 @@ using UnityEngine;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Burst;
+using System.Collections.Generic;
 
 namespace OccaSoftware.BOP
 {
@@ -13,17 +14,20 @@ namespace OccaSoftware.BOP
 
         private NativeArray<ParticleSystemWrapper> pool;
         private JobHandle updateJobHandle;
+        private Dictionary<int, ParticleSystem> particleSystemMap;
+        private int nextId = 0;
 
         [System.Serializable]
         public struct ParticleSystemWrapper
         {
-            public ParticleSystem particleSystem;
+            public int id;
             public bool isPlaying;
         }
 
         private void Awake()
         {
             pool = new NativeArray<ParticleSystemWrapper>(initialCount, Allocator.Persistent);
+            particleSystemMap = new Dictionary<int, ParticleSystem>();
             for (int i = 0; i < initialCount; i++)
             {
                 CreateNewInstance(i);
@@ -35,7 +39,9 @@ namespace OccaSoftware.BOP
             ParticleSystem newInstance = Instantiate(particleSystemPrefab, storagePosition, Quaternion.identity, transform);
             newInstance.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
             newInstance.gameObject.SetActive(false);
-            pool[index] = new ParticleSystemWrapper { particleSystem = newInstance, isPlaying = false };
+            int id = nextId++;
+            particleSystemMap[id] = newInstance;
+            pool[index] = new ParticleSystemWrapper { id = id, isPlaying = false };
         }
 
         [BurstCompile]
@@ -46,11 +52,8 @@ namespace OccaSoftware.BOP
             public void Execute(int index)
             {
                 ParticleSystemWrapper wrapper = pool[index];
-                if (wrapper.particleSystem != null)
-                {
-                    wrapper.isPlaying = wrapper.particleSystem.isPlaying;
-                    pool[index] = wrapper;
-                }
+                // We can't check isPlaying here, so we'll update this in the main thread
+                pool[index] = wrapper;
             }
         }
 
@@ -64,6 +67,17 @@ namespace OccaSoftware.BOP
             };
 
             updateJobHandle = job.Schedule(pool.Length, 64);
+
+            // Update isPlaying status on the main thread
+            for (int i = 0; i < pool.Length; i++)
+            {
+                var wrapper = pool[i];
+                if (particleSystemMap.TryGetValue(wrapper.id, out var ps))
+                {
+                    wrapper.isPlaying = ps.isPlaying;
+                    pool[i] = wrapper;
+                }
+            }
         }
 
         [BurstCompile]
@@ -72,13 +86,13 @@ namespace OccaSoftware.BOP
             for (int i = 0; i < pool.Length; i++)
             {
                 var wrapper = pool[i];
-                if (!wrapper.isPlaying)
+                if (!wrapper.isPlaying && particleSystemMap.TryGetValue(wrapper.id, out var ps))
                 {
-                    wrapper.particleSystem.gameObject.SetActive(true);
-                    wrapper.particleSystem.transform.position = storagePosition;
+                    ps.gameObject.SetActive(true);
+                    ps.transform.position = storagePosition;
                     wrapper.isPlaying = true;
                     pool[i] = wrapper;
-                    return wrapper.particleSystem;
+                    return ps;
                 }
             }
 
@@ -93,10 +107,11 @@ namespace OccaSoftware.BOP
             int newIndex = pool.Length / 2; // Use the first new slot
             CreateNewInstance(newIndex);
             var newWrapper = pool[newIndex];
-            newWrapper.particleSystem.gameObject.SetActive(true);
+            var newPs = particleSystemMap[newWrapper.id];
+            newPs.gameObject.SetActive(true);
             newWrapper.isPlaying = true;
             pool[newIndex] = newWrapper;
-            return newWrapper.particleSystem;
+            return newPs;
         }
 
         [BurstCompile]
@@ -105,7 +120,7 @@ namespace OccaSoftware.BOP
             for (int i = 0; i < pool.Length; i++)
             {
                 var wrapper = pool[i];
-                if (wrapper.particleSystem == ps)
+                if (particleSystemMap.TryGetValue(wrapper.id, out var pooledPs) && pooledPs == ps)
                 {
                     ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
                     ps.transform.position = storagePosition;

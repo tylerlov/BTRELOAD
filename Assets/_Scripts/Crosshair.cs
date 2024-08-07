@@ -821,14 +821,14 @@ void OnMusicalLock(KoreographyEvent evt)
         splineControl.Speed = tempSpeed * rewindTimeScale;
 
         // Trigger JPG effect
-        JPGEffectController.Instance.SetJPGIntensity(1f, 0.5f); // Quickly ramp up the effect
+        JPGEffectController.Instance.SetJPGIntensity(0.7f, 0.5f); // Quickly ramp up the effect
 
         OnRewindStart?.Invoke(rewindTimeScale);
 
         yield return new WaitForSeconds(3f);
 
         // Gradually reduce JPG effect
-        JPGEffectController.Instance.SetJPGIntensity(0f, 1f);
+        JPGEffectController.Instance.SetJPGIntensity(0f, 0.5f);
 
         splineControl.Speed = tempSpeed;
         DeactivateRewindEffects();
@@ -866,7 +866,7 @@ void OnMusicalLock(KoreographyEvent evt)
         yield return new WaitForSeconds(5f);
 
         // Gradually reduce JPG effect
-        JPGEffectController.Instance.SetJPGIntensity(0f, 0.7f);
+        JPGEffectController.Instance.SetJPGIntensity(0f, 0.3f);
 
         slowTime.SetFloat("Rate", 0f);
         musicPlayback.EventInstance.setParameterByName("Slow", 0);
