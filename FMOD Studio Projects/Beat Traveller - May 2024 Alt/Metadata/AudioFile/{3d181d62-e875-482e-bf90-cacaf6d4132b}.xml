@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<objects serializationModel="Studio.02.02.00">
+<objects serializationModel="Studio.02.03.00">
 	<object class="AudioFile" id="{3d181d62-e875-482e-bf90-cacaf6d4132b}">
 		<property name="assetPath">
 			<value>GS_VCM_Snare_02.wav</value>

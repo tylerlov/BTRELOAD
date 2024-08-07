@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<objects serializationModel="Studio.02.02.00">
+<objects serializationModel="Studio.02.03.00">
 	<object class="AudioFile" id="{0362a010-9473-42dc-bf67-7a22273e6ee0}">
 		<property name="assetPath">
 			<value>APEOFS_One_Shot_15.wav</value>

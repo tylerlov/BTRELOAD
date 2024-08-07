@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<objects serializationModel="Studio.02.02.00">
+<objects serializationModel="Studio.02.03.00">
 	<object class="Event" id="{a7ecce6e-8a99-4664-a97a-338e44ea72ec}">
 		<property name="name">
 			<value>Impact</value>
@@ -117,11 +117,11 @@
 	</object>
 	<object class="Timeline" id="{3203a88c-f40c-4196-be8c-4c3feb377977}">
 		<relationship name="modules">
+			<destination>{bf2471d3-8dbb-4ee2-a0fd-87558b956cb4}</destination>
+			<destination>{74731072-b413-437a-a6a1-7daad2167063}</destination>
 			<destination>{cce88bb2-5580-4427-84b9-1cef3bcff06f}</destination>
 			<destination>{d8efacd9-3487-4453-abfe-7a203825f84b}</destination>
 			<destination>{27b1ed1a-0c08-4186-9f7d-f4eee84065fa}</destination>
-			<destination>{bf2471d3-8dbb-4ee2-a0fd-87558b956cb4}</destination>
-			<destination>{74731072-b413-437a-a6a1-7daad2167063}</destination>
 		</relationship>
 	</object>
 	<object class="EventMixerMaster" id="{a4a2b5c4-06d5-41b1-a1d7-b539d419dbe7}">

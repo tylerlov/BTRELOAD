@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<objects serializationModel="Studio.02.02.00">
+<objects serializationModel="Studio.02.03.00">
 	<object class="AudioFile" id="{2fb443e7-84fa-44b2-a8d5-85d9c9bee27d}">
 		<property name="assetPath">
 			<value>GS_WL_BASS_RISER.wav</value>

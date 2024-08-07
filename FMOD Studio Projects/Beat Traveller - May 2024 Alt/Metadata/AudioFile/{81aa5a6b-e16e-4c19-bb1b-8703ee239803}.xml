@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<objects serializationModel="Studio.02.02.00">
+<objects serializationModel="Studio.02.03.00">
 	<object class="AudioFile" id="{81aa5a6b-e16e-4c19-bb1b-8703ee239803}">
 		<property name="assetPath">
 			<value>Hihat06.wav</value>

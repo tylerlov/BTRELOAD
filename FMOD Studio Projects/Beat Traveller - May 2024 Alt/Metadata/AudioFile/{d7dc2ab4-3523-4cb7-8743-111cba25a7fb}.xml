@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<objects serializationModel="Studio.02.02.00">
+<objects serializationModel="Studio.02.03.00">
 	<object class="AudioFile" id="{d7dc2ab4-3523-4cb7-8743-111cba25a7fb}">
 		<property name="assetPath">
 			<value>GS_FLUX_172_Drum_Loop_01_V2 Reversed.wav</value>

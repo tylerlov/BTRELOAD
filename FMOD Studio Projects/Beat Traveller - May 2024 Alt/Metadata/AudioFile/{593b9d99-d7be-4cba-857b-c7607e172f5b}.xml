@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<objects serializationModel="Studio.02.02.00">
+<objects serializationModel="Studio.02.03.00">
 	<object class="AudioFile" id="{593b9d99-d7be-4cba-857b-c7607e172f5b}">
 		<property name="assetPath">
 			<value>GS_FLUX_Snare_05.wav</value>

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<objects serializationModel="Studio.02.02.00">
+<objects serializationModel="Studio.02.03.00">
 	<object class="AudioFile" id="{9166479c-a529-4f88-93c1-2fb1f29363c5}">
 		<property name="assetPath">
 			<value>GS_NDNB_A_Synth_Pluck.wav</value>

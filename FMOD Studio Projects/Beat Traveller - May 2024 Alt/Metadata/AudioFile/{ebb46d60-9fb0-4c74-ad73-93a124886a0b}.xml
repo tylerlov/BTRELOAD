@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<objects serializationModel="Studio.02.02.00">
+<objects serializationModel="Studio.02.03.00">
 	<object class="AudioFile" id="{ebb46d60-9fb0-4c74-ad73-93a124886a0b}">
 		<property name="assetPath">
 			<value>172 Flux - 2024 Revisions  - V3 Synth and glitch.wav</value>

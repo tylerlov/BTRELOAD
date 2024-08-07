@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<objects serializationModel="Studio.02.02.00">
+<objects serializationModel="Studio.02.03.00">
 	<object class="AudioFile" id="{d06f8f40-bbaa-4922-b151-f6c520106847}">
 		<property name="assetPath">
 			<value>Bluezone-DRK02-soundFX-025.wav</value>

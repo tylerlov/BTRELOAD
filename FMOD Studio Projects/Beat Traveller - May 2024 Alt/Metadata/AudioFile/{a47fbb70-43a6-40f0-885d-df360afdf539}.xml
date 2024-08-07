@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<objects serializationModel="Studio.02.02.00">
+<objects serializationModel="Studio.02.03.00">
 	<object class="AudioFile" id="{a47fbb70-43a6-40f0-885d-df360afdf539}">
 		<property name="assetPath">
 			<value>tonal perc.wav</value>

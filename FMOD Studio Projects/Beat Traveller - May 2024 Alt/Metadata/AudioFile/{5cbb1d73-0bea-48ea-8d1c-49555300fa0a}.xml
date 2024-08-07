@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<objects serializationModel="Studio.02.02.00">
+<objects serializationModel="Studio.02.03.00">
 	<object class="AudioFile" id="{5cbb1d73-0bea-48ea-8d1c-49555300fa0a}">
 		<property name="assetPath">
 			<value>GS_DUBNR_Perc_02.Wav</value>

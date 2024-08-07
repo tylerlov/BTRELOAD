@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<objects serializationModel="Studio.02.02.00">
+<objects serializationModel="Studio.02.03.00">
 	<object class="AudioFile" id="{4768d965-1e8b-4396-8f07-a5d9eaaf0653}">
 		<property name="assetPath">
 			<value>172 Flux - Drums - Section 5.wav</value>

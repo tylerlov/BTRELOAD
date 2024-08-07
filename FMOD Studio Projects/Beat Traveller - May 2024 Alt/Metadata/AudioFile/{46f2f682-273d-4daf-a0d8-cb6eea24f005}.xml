@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<objects serializationModel="Studio.02.02.00">
+<objects serializationModel="Studio.02.03.00">
 	<object class="AudioFile" id="{46f2f682-273d-4daf-a0d8-cb6eea24f005}">
 		<property name="assetPath">
 			<value>SOPHIE_sub_with_kick_07_E.wav</value>

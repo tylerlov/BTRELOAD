@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<objects serializationModel="Studio.02.02.00">
+<objects serializationModel="Studio.02.03.00">
 	<object class="Event" id="{3af17a9c-08f4-46be-a1b4-8f9e2fad2b12}">
 		<property name="name">
 			<value>Ricochet</value>
@@ -95,10 +95,10 @@
 	</object>
 	<object class="Timeline" id="{bc15054c-4ed2-41a9-a7e2-83cbae5279a6}">
 		<relationship name="modules">
-			<destination>{e85486d6-ab84-4ebe-baa2-a52b666ed993}</destination>
 			<destination>{4f8b77e3-044d-452f-875f-31ff3ac1aafb}</destination>
-			<destination>{c414ff39-e030-4fe4-b473-2f01d7bed9f6}</destination>
 			<destination>{fcd3b547-d872-4d31-8c8d-dc4fce0735cd}</destination>
+			<destination>{e85486d6-ab84-4ebe-baa2-a52b666ed993}</destination>
+			<destination>{c414ff39-e030-4fe4-b473-2f01d7bed9f6}</destination>
 		</relationship>
 	</object>
 	<object class="EventMixerMaster" id="{7d3395a3-9e06-4b69-9f00-2774180c1387}">

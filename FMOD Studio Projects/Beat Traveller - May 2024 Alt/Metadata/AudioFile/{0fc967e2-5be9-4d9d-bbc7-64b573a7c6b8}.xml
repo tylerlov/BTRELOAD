@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<objects serializationModel="Studio.02.02.00">
+<objects serializationModel="Studio.02.03.00">
 	<object class="AudioFile" id="{0fc967e2-5be9-4d9d-bbc7-64b573a7c6b8}">
 		<property name="assetPath">
 			<value>GS_FLUX_Cm_Synth_Pad_01.wav</value>

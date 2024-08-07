@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<objects serializationModel="Studio.02.02.00">
+<objects serializationModel="Studio.02.03.00">
 	<object class="AudioFile" id="{54a30f1f-c25f-49ef-8ff8-ff221022efd3}">
 		<property name="assetPath">
 			<value>mdnb_fx_zip.wav</value>

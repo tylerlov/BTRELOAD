@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<objects serializationModel="Studio.02.02.00">
+<objects serializationModel="Studio.02.03.00">
 	<object class="AudioFile" id="{61ea5266-93b8-42e5-8922-c7d91f8eeda9}">
 		<property name="assetPath">
 			<value>Drones/9 - Enemy Arp Drone 3 - Lee Gambley.wav</value>

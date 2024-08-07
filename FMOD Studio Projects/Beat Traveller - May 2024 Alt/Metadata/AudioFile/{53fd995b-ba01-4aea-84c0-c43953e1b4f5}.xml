@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<objects serializationModel="Studio.02.02.00">
+<objects serializationModel="Studio.02.03.00">
 	<object class="AudioFile" id="{53fd995b-ba01-4aea-84c0-c43953e1b4f5}">
 		<property name="assetPath">
 			<value>GS_GHOSTV2_D#_BASS_BRCHSHLTR_02.wav</value>

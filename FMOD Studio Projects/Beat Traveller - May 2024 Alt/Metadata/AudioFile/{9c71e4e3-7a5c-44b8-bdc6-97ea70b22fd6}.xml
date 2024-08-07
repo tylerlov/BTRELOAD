@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<objects serializationModel="Studio.02.02.00">
+<objects serializationModel="Studio.02.03.00">
 	<object class="AudioFile" id="{9c71e4e3-7a5c-44b8-bdc6-97ea70b22fd6}">
 		<property name="assetPath">
 			<value>KNLG_Heavy_Impact_Doomed_02.wav</value>

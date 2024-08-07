@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<objects serializationModel="Studio.02.02.00">
+<objects serializationModel="Studio.02.03.00">
 	<object class="AudioFile" id="{e74f38f1-80e5-4c94-ab7e-aa92282ca185}">
 		<property name="assetPath">
 			<value>kick 2.wav</value>

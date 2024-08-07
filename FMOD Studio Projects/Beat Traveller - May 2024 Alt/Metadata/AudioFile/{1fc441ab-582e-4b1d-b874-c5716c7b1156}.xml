@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<objects serializationModel="Studio.02.02.00">
+<objects serializationModel="Studio.02.03.00">
 	<object class="AudioFile" id="{1fc441ab-582e-4b1d-b874-c5716c7b1156}">
 		<property name="assetPath">
 			<value>GS_GHOSTV2_E_BASS_PNDMNM.wav</value>

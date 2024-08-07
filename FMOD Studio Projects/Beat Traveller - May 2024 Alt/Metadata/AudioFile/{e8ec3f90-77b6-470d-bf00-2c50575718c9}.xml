@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<objects serializationModel="Studio.02.02.00">
+<objects serializationModel="Studio.02.03.00">
 	<object class="AudioFile" id="{e8ec3f90-77b6-470d-bf00-2c50575718c9}">
 		<property name="assetPath">
 			<value>Impact Aeon 2.wav</value>

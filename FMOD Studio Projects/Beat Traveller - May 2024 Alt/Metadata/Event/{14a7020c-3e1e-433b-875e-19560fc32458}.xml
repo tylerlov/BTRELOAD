@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<objects serializationModel="Studio.02.02.00">
+<objects serializationModel="Studio.02.03.00">
 	<object class="Event" id="{14a7020c-3e1e-433b-875e-19560fc32458}">
 		<property name="name">
 			<value>Start Level</value>
@@ -86,9 +86,9 @@
 	</object>
 	<object class="Timeline" id="{197e6a2a-3a9d-4520-931e-e9b4d3aa1412}">
 		<relationship name="modules">
+			<destination>{b41f02a2-9e89-4494-955d-5e39aaf9ac90}</destination>
 			<destination>{c77d573d-67b6-430c-97a7-edf45e66fb0e}</destination>
 			<destination>{cb784be4-bb0a-4d79-838a-6a5beed36b45}</destination>
-			<destination>{b41f02a2-9e89-4494-955d-5e39aaf9ac90}</destination>
 		</relationship>
 	</object>
 	<object class="EventMixerMaster" id="{3aa1e573-829e-4428-8c8b-748fad707e55}">

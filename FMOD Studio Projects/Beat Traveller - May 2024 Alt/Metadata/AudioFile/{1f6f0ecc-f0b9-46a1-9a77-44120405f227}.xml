@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<objects serializationModel="Studio.02.02.00">
+<objects serializationModel="Studio.02.03.00">
 	<object class="AudioFile" id="{1f6f0ecc-f0b9-46a1-9a77-44120405f227}">
 		<property name="assetPath">
 			<value>GS_VCM_Fx_Low_Woosh.wav</value>

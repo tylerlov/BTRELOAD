@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<objects serializationModel="Studio.02.02.00">
+<objects serializationModel="Studio.02.03.00">
 	<object class="AudioFile" id="{43cacba2-0fa6-4d2a-ae2e-c63b863e2665}">
 		<property name="assetPath">
 			<value>GS_GHOSTV2_C_BASS_MNDCLL_01.wav</value>

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<objects serializationModel="Studio.02.02.00">
+<objects serializationModel="Studio.02.03.00">
 	<object class="Event" id="{9ce696fa-e699-4a23-9abd-27e985c4bdaa}">
 		<property name="name">
 			<value>Death</value>
@@ -81,8 +81,8 @@
 	</object>
 	<object class="Timeline" id="{a03282d8-f50b-424d-823c-f51f219c130d}">
 		<relationship name="modules">
-			<destination>{2fd609bc-b684-4097-840d-fc4cff4977e3}</destination>
 			<destination>{f4f87836-09ba-4ae1-94ce-809cfe4d921e}</destination>
+			<destination>{2fd609bc-b684-4097-840d-fc4cff4977e3}</destination>
 		</relationship>
 	</object>
 	<object class="EventMixerMaster" id="{955915fe-3cee-4d71-827e-c1e915b181ce}">

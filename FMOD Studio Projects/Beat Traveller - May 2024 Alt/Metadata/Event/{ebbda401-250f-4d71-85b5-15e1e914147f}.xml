@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<objects serializationModel="Studio.02.02.00">
+<objects serializationModel="Studio.02.03.00">
 	<object class="Event" id="{ebbda401-250f-4d71-85b5-15e1e914147f}">
 		<property name="name">
 			<value>Time Rewind Death</value>

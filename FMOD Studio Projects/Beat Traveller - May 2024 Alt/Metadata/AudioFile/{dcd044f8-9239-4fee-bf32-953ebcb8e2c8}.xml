@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<objects serializationModel="Studio.02.02.00">
+<objects serializationModel="Studio.02.03.00">
 	<object class="AudioFile" id="{dcd044f8-9239-4fee-bf32-953ebcb8e2c8}">
 		<property name="assetPath">
 			<value>GS_FLUX_Fx_Laser_09.wav</value>

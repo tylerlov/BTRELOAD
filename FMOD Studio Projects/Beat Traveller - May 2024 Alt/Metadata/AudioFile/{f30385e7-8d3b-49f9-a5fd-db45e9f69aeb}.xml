@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<objects serializationModel="Studio.02.02.00">
+<objects serializationModel="Studio.02.03.00">
 	<object class="AudioFile" id="{f30385e7-8d3b-49f9-a5fd-db45e9f69aeb}">
 		<property name="assetPath">
 			<value>mdnb_bass_robome_6_F.wav</value>

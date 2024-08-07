@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<objects serializationModel="Studio.02.02.00">
+<objects serializationModel="Studio.02.03.00">
 	<object class="AudioFile" id="{7724bf38-c686-4a32-9c97-4794b0db95f5}">
 		<property name="assetPath">
 			<value>GS_FLUX_172_Drum_Loop_01_V2.wav</value>

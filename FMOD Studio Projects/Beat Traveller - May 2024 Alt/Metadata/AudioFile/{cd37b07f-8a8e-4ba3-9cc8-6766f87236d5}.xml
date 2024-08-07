@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<objects serializationModel="Studio.02.02.00">
+<objects serializationModel="Studio.02.03.00">
 	<object class="AudioFile" id="{cd37b07f-8a8e-4ba3-9cc8-6766f87236d5}">
 		<property name="assetPath">
 			<value>172 Flux - Harmonic - Section 6.wav</value>

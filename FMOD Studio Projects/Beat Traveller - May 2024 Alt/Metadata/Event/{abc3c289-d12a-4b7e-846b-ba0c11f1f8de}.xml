@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<objects serializationModel="Studio.02.02.00">
+<objects serializationModel="Studio.02.03.00">
 	<object class="Event" id="{abc3c289-d12a-4b7e-846b-ba0c11f1f8de}">
 		<property name="name">
 			<value>Fire Projectile 2</value>

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<objects serializationModel="Studio.02.02.00">
+<objects serializationModel="Studio.02.03.00">
 	<object class="Event" id="{e5c70af9-5d81-440e-a2eb-b2023f61d086}">
 		<property name="name">
 			<value>Pulsewave</value>
@@ -113,12 +113,12 @@
 	</object>
 	<object class="Timeline" id="{07a8518a-644d-4190-9791-f6120c915a8c}">
 		<relationship name="modules">
-			<destination>{1a5a8f51-350c-4b94-b05b-b30894c31ffd}</destination>
-			<destination>{b7a90879-4184-4e88-ac4d-169cf55891bb}</destination>
-			<destination>{641342de-9285-4545-8d00-5767241fdffc}</destination>
-			<destination>{f5b7748a-6a1b-4135-a331-81029ad38782}</destination>
 			<destination>{4e935f24-f3a5-4578-8c92-f7b47bbce532}</destination>
+			<destination>{f5b7748a-6a1b-4135-a331-81029ad38782}</destination>
+			<destination>{1a5a8f51-350c-4b94-b05b-b30894c31ffd}</destination>
 			<destination>{2ee1a4dc-2929-4248-8943-e2df81d6839e}</destination>
+			<destination>{641342de-9285-4545-8d00-5767241fdffc}</destination>
+			<destination>{b7a90879-4184-4e88-ac4d-169cf55891bb}</destination>
 		</relationship>
 	</object>
 	<object class="EventMixerMaster" id="{9a4f2c76-5b2a-4deb-ad6c-0899ca7b73d4}">

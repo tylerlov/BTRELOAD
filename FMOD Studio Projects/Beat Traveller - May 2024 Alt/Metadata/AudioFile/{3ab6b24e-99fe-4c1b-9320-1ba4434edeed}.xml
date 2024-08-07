@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<objects serializationModel="Studio.02.02.00">
+<objects serializationModel="Studio.02.03.00">
 	<object class="AudioFile" id="{3ab6b24e-99fe-4c1b-9320-1ba4434edeed}">
 		<property name="assetPath">
 			<value>GS_LGN_KICK_ZAPAH.wav</value>

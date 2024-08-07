@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<objects serializationModel="Studio.02.02.00">
+<objects serializationModel="Studio.02.03.00">
 	<object class="AudioFile" id="{5803f95c-5ffd-420a-a54a-b86559ee5f0a}">
 		<property name="assetPath">
 			<value>GS_VCM_Clap_02.wav</value>
