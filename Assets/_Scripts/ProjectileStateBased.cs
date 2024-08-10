@@ -40,6 +40,11 @@ public abstract class ProjectileState
         ProjectileManager.Instance.PredictAndRotateProjectile(_projectile);
     }
     public virtual void CustomUpdate(float timeScale) { } // Added this line
+
+    public ProjectileStateBased GetProjectile()
+    {
+        return _projectile;
+    }
 }
 
 public class EnemyShotState : ProjectileState
@@ -83,34 +88,28 @@ public class PlayerLockedState : ProjectileState
 {
     public PlayerLockedState(ProjectileStateBased projectile) : base(projectile)
     {
-        if (_projectile.isParried) return; // Skip if parried
+        if (_projectile.isParried) return;
 
         _projectile.currentTarget = null;
-
         _projectile.homing = false;
         _projectile.tag = "LaunchableBulletLocked";
 
         _projectile.TLine.ResetRecording();
         _projectile.TLine.rewindable = false;
-
         _projectile.TLine.globalClockKey = "Test";
 
         if (ProjectileStateBased.shootingObject != null)
         {
-           // Set the projectile's parent to the Shooting GameObject
             _projectile.transform.SetParent(ProjectileStateBased.shootingObject.transform, true);
-
-            // Calculate the new position in front of the shootingObject by 2 units
             Vector3 newPosition = ProjectileStateBased.shootingObject.transform.position + ProjectileStateBased.shootingObject.transform.forward * 2f;
-
-            // Since the projectile is a child of the shootingObject, set its local position accordingly
             _projectile.transform.position = newPosition;
-            
-            // Optionally, if you want the projectile to inherit the parent's orientation but offset in position:
             _projectile.transform.rotation = ProjectileStateBased.shootingObject.transform.rotation;
 
-            // Freeze Rigidbody constraints
-            _projectile.rb.constraints = RigidbodyConstraints.FreezeAll;
+            // Instead of freezing constraints, set the Rigidbody to kinematic
+            if (_projectile.rb != null)
+            {
+                _projectile.rb.isKinematic = true;
+            }
         }
         else
         {
@@ -118,12 +117,7 @@ public class PlayerLockedState : ProjectileState
         }
 
         _projectile.playerProjPath.enabled = true;
-
-        // Add extra lifetime for player shots
-        _projectile.lifetime = 6f; 
-
-        //where is the projectile being locked?? in crosshair - should it be here???
-
+        _projectile.lifetime = 6f;
         _projectile.isLifetimePaused = true;
     }
 
@@ -192,8 +186,10 @@ public class PlayerLockedState : ProjectileState
     {
         if (ProjectileStateBased.shootingObject != null)
         {
-            _projectile.rb.constraints = RigidbodyConstraints.None;
-            // Assuming the shootingObject's forward is the opposite direction of launch
+            if (_projectile.rb != null)
+            {
+                _projectile.rb.isKinematic = false;
+            }
             Vector3 launchDirection = ProjectileStateBased.shootingObject.transform.forward;
 
             _projectile.transform.parent = null;
@@ -222,7 +218,10 @@ public class PlayerLockedState : ProjectileState
 
     public void LaunchAtEnemy(Transform target)
     {
-        _projectile.rb.constraints = RigidbodyConstraints.None;
+        if (_projectile.rb != null)
+        {
+            _projectile.rb.isKinematic = false;
+        }
         _projectile.transform.parent = null;
         _projectile.currentTarget = target;
         _projectile.transform.LookAt(target);
@@ -647,7 +646,7 @@ public class ProjectileStateBased : MonoBehaviour
         {
             currentState.FixedUpdate(timeScale);
 
-            if (homing && currentTarget != null)
+            if (homing && currentTarget != null && cachedRigidbody != null && !cachedRigidbody.isKinematic)
             {
                 Vector3 targetPosition = ApplyInaccuracy(currentTarget.position);
                 Vector3 directionToTarget = (targetPosition - cachedTransform.position).normalized;

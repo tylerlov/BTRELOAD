@@ -1,20 +1,21 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.InputSystem;
+using UnityEngine.SceneManagement;
 using SonicBloom.Koreo;
-using UnityEngine.SceneManagement; // Import the Scene Management namespace
 using MoreMountains.Feedbacks;
 using Cinemachine;
 using FluffyUnderware.Curvy;
+using FluffyUnderware.Curvy.Controllers;
 using Chronos;
 using FMODUnity;
 using UnityEngine.VFX;
 using DG.Tweening;
-using FluffyUnderware.Curvy.Controllers;
-using UnityEngine.InputSystem;
-using System;
 using Micosmo.SensorToolkit;
+
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -23,57 +24,66 @@ public class Crosshair : MonoBehaviour
 {
     public static Crosshair Instance { get; private set; }
 
+    #region Core Components and References
     public GameObject Player;
+    private StudioEventEmitter musicPlayback;
+    private StaminaController staminaController;
+    private SplineController splineControl;
+    private PlayerMovement pMove;
+    private Camera mainCamera;
+    private DefaultControls playerInputActions;
+    private FMOD.Studio.Bus masterBus;
+    #endregion
+
+    #region Koreography Events
     [EventID]
     public string eventIDShooting;
     [EventID]
     public string eventIDRewindTime;
-    
-    private StudioEventEmitter musicPlayback;
-    private StaminaController staminaController;
+    #endregion
 
-    [Space]
-
+    #region Locking and Targeting
     public int Locks;
     public bool locking;
     [SerializeField] private bool shootTag;
     public bool triggeredLockFire;
-    
-    [Header("Targets")]
-
-    public List<Transform> projectileTargetList = new List<Transform>();
-    public Transform enemyTarget;
     public int maxLockedEnemyTargets = 3;
-    public List<Transform> enemyTargetList = new List<Transform>();
-    private int enemyTargetListIndex;
-    public GameObject LineToTarget;
-    public List<Transform> LockedList = new List<Transform>();
-    //use this for firing off at end of rewind?
     public int maxTargets = 6;
-    
+    private int enemyTargetListIndex;
+    #endregion
 
-
-    [Space]
-
-    [Header("UI")]
-
-    private Transform canvas;
-    private UILockOnEffect uiLockOnEffect;
+    #region UI and Visual Elements
+    public GameObject LineToTarget;
     public GameObject RaySpawn;
     public GameObject RaySpawnEnemyLocking;
     public GameObject Reticle;
-
     private Renderer RectRend;
     public int range = 300;
+    private float lookHeight;
+    private Transform canvas;
+    private UILockOnEffect uiLockOnEffect;
+    #endregion
 
-    float lookHeight;
-
+    #region Raycast and Hit Detection
     private RaycastHit hit;
     private RaycastHit hitEnemy;
+    private RaycastHit[] lockHits = new RaycastHit[10];
+    private RaycastHit[] lockEnemyHits = new RaycastHit[10];
+    [SerializeField] private LayerMask groundMask;
+    #endregion
 
+    #region Time Control
     private int numOfRewinds;
     private bool rewindTriggedStillPressed;
+    private bool delayLoop;
+    private bool isRewinding = false;
+    private float rewindStartTime;
+    private const float maxRewindTime = 1f;
+    [SerializeField] private float rewindTimeScale = -1f;
+    [SerializeField] private float slowTimeScale = 0.1f;
+    #endregion
 
+    #region Feedback and Effects
     [Header("Feedbacks")]
     public MMF_Player lockFeedback;
     public MMF_Player shootFeedback;
@@ -86,62 +96,63 @@ public class Crosshair : MonoBehaviour
     public ParticleSystem RewindFXScan;
     public GameObject BonusDamage;
     public VisualEffect slowTime;
+    #endregion
 
+    #region Input and Controls
     private bool stereoVibrateSwitch;
-    
-    [Space]
+    private bool collectHealthMode;
+    #endregion
 
+    #region Events
     [SerializeField] private UnityEvent playerLockingOn;
     [SerializeField] private UnityEvent playerLockingOff;
-
-    private bool collectHealthMode;
-
-    [SerializeField] private LayerMask groundMask;
-
-
-    private RaycastHit[] lockHits = new RaycastHit[10];
-    private RaycastHit[] lockEnemyHits = new RaycastHit[10];
-
-    private Camera mainCamera;
-    FMOD.Studio.Bus masterBus;
-
-
-    // New variables to facilitate the rate-limited locking mechanic.
-    private float lastBulletTime;
-    public float bulletLockInterval = 0.1f;  // Time in seconds between each bullet lock
-    private float lastEnemyTime;
-    public float enemyLockInterval = 0.2f;   // Time in seconds between each enemy lock
-
-    private DefaultControls playerInputActions;
-
-    [Header("Raycast Settings")]
-    public Vector3 bulletLockBoxSize = new Vector3(1, 1, 1); // Adjustable in Inspector
-    public bool showRaycastGizmo = true; // Toggle to show/hide the Gizmo
-    
-    ////
-    // TIME CONTROL FEATURES
-    ////
-    
-    public GameObject gameplayPlane;
-    private SplineController splineControl;
-    private PlayerMovement pMove;
-    private bool delayLoop;
-
-    // Variables for quick tap detection
-    private bool isQuickTap = false;
-    private float tapStartTime;
-    private const float tapThreshold = 0.1f; // Adjusted for a shorter quick tap sensitivity
-    
-    [SerializeField] private float rewindTimeScale = -1f; // Default value set to -1f, adjustable in Inspector
-    [SerializeField] private float slowTimeScale = 0.1f; // Default value set to 0.1f, adjustable in Inspector
-
-    [Header("Lock-On Visuals")]
-    [SerializeField] private GameObject lockOnPrefab; // Prefab for visual effect on lock-on
-    [SerializeField] private float initialScale = 1f; // Initial scale for the prefab
-    [SerializeField] private float initialTransparency = 0.5f; // Initial transparency for the prefab
-
     public event Action<float> OnRewindStart;
     public event Action OnRewindEnd;
+    #endregion
+
+    #region Locking Mechanics
+    private float lastBulletTime;
+    public float bulletLockInterval = 0.1f;
+    private float lastEnemyTime;
+    public float enemyLockInterval = 0.2f;
+    #endregion
+
+    #region Raycast Settings
+    public Vector3 bulletLockBoxSize = new Vector3(1, 1, 1);
+    public bool showRaycastGizmo = true;
+    #endregion
+
+    #region Quick Tap Detection
+    private bool isQuickTap = false;
+    private float tapStartTime;
+    private const float tapThreshold = 0.1f;
+    #endregion
+
+    #region Lock-On Visuals
+    [Header("Lock-On Visuals")]
+    [SerializeField] private GameObject lockOnPrefab;
+    [SerializeField] private float initialScale = 1f;
+    [SerializeField] private float initialTransparency = 0.5f;
+    #endregion
+
+    #region FMOD Events
+    [Header("FMOD Events")]
+    [SerializeField] private EventReference firingBlastsEvent;
+    [SerializeField] private EventReference randomShootingEvent;
+    [SerializeField] private EventReference shootTagEvent;
+    #endregion
+
+    #region Projectile Launch
+    [SerializeField] private float launchDelay = 0.1f;
+    #endregion
+
+    #region Lists
+    [Header("Targets")]
+    public List<Transform> projectileTargetList = new List<Transform>();
+    public Transform enemyTarget;
+    public List<Transform> enemyTargetList = new List<Transform>();
+    public List<Transform> LockedList = new List<Transform>();
+    #endregion
 
     void Awake()
     {
@@ -552,164 +563,219 @@ void OnMusicalLock(KoreographyEvent evt)
             }
         }
     }
-    void OnMusicalShoot(KoreographyEvent evt)
+void OnMusicalShoot(KoreographyEvent evt)
+{
+    Debug.Log($"OnMusicalShoot triggered. CheckLockProjectiles: {CheckLockProjectiles()}, triggeredLockFire: {triggeredLockFire}, LockedList.Count: {LockedList.Count}, Time.timeScale: {Time.timeScale}");
+
+    // Check all conditions for shooting
+    if ((!CheckLockProjectiles() || triggeredLockFire == true) && LockedList.Count > 0 && Time.timeScale != 0f)
     {
-        // Check all conditions for shooting
-        if ((!CheckLockProjectiles() /*|| triggeredLockFire == true*/) && LockedList.Count > 0 && Time.timeScale != 0f)
+        List<PlayerLockedState> projectilesToLaunch = new List<PlayerLockedState>();
+        
+        Debug.Log($"Shooting conditions met. LockedList.Count before cleaning: {LockedList.Count}");
+
+        int comboScore = 0;
+        int tempLocks = Locks;
+
+        bool lockingEnding = true;
+
+        locking = false;
+
+        CleanLockedList();
+        Debug.Log($"LockedList.Count after cleaning: {LockedList.Count}");
+
+        for (int i = LockedList.Count - 1; i >= 0; i--)
         {
-            List<PlayerLockedState> projectilesToLaunch = new List<PlayerLockedState>();
-
-            int comboScore = 0;
-            int tempLocks = Locks;
-
-            bool lockingEnding = true;
-
-            // Ensure there are items in LockedList before proceeding
-            if ((!CheckLockProjectiles() /*|| triggeredLockFire == true*/) && LockedList.Count > 0 && Time.timeScale != 0f)
+            if (LockedList[i] == null)
             {
-                locking = false;
+                Debug.Log($"Skipping null Transform at index {i}");
+                continue;
+            }
 
-                CleanLockedList();
+            ProjectileStateBased projectileStateBased = LockedList[i].GetComponent<ProjectileStateBased>();
+            if (projectileStateBased == null)
+            {
+                Debug.LogError($"ProjectileStateBased component not found on LockedList[{i}]");
+                continue;
+            }
 
-                for (int i = LockedList.Count - 1; i >= 0; i--)
+            if (!(projectileStateBased.GetCurrentState() is PlayerLockedState))
+            {
+                Debug.Log($"Changing state to PlayerLockedState for projectile at index {i}");
+                projectileStateBased.ChangeState(new PlayerLockedState(projectileStateBased));
+            }
+
+            PlayerLockedState lockedState = projectileStateBased.GetCurrentState() as PlayerLockedState;
+            if (lockedState != null)
+            {
+                Debug.Log($"enemyTargetList.Count: {enemyTargetList.Count}");
+
+                // Check if there are enemies to lock onto
+                if (enemyTargetList.Count > 0)
                 {
-                    if (LockedList[i] == null) continue; // Skip if the Transform is null
-
-                    ProjectileStateBased projectileStateBased = LockedList[i].GetComponent<ProjectileStateBased>();
-                    if (!(projectileStateBased.GetCurrentState() is PlayerLockedState))
+                    // Ensure enemyTargetListIndex is within bounds
+                    if (enemyTargetListIndex <= 0 || enemyTargetListIndex > enemyTargetList.Count)
                     {
-                        projectileStateBased.ChangeState(new PlayerLockedState(projectileStateBased));
+                        enemyTargetListIndex = enemyTargetList.Count;
                     }
 
-                    PlayerLockedState lockedState = projectileStateBased.GetCurrentState() as PlayerLockedState;
-                    if (lockedState != null)
+                    Transform currEnemyTarg = enemyTargetList[enemyTargetListIndex - 1];
+
+                    if (currEnemyTarg != null && currEnemyTarg.gameObject.activeSelf)
                     {
-                        // Check if there are enemies to lock onto
-                        if (enemyTargetList.Count > 0)
-                        {
-                            // Ensure enemyTargetListIndex is within bounds
-                            if (enemyTargetListIndex <= 0 || enemyTargetListIndex > enemyTargetList.Count)
-                            {
-                                enemyTargetListIndex = enemyTargetList.Count; // Adjust index to be within bounds
-                            }
-
-                            Transform currEnemyTarg = enemyTargetList[enemyTargetListIndex - 1];
-
-                            if (currEnemyTarg != null && currEnemyTarg.gameObject.activeSelf)
-                            {
-                                lockedState.LaunchAtEnemy(currEnemyTarg);
-                            }
-                            else
-                            {
-                                enemyTargetList.Remove(currEnemyTarg);
-                                if (enemyTargetList.Count <= 0)
-                                {
-                                    projectilesToLaunch.Add(lockedState);
-                                }
-                            }
-
-                            enemyTargetListIndex--;
-                        }
-                        else
-                        {
-                            projectilesToLaunch.Add(lockedState);
-                            Debug.Log("Outer LaunchBack() called.");
-                        }
-
-                        staminaController.locking = false;
+                        lockedState.LaunchAtEnemy(currEnemyTarg);
+                        projectilesToLaunch.Add(lockedState);
+                        Debug.Log($"Adding projectile at index {i} to projectilesToLaunch (targeting enemy)");
                     }
                     else
                     {
-                        Debug.LogError("Failed to cast to PlayerLockedState or change state to PlayerLockedState.");
+                        enemyTargetList.Remove(currEnemyTarg);
+                        projectilesToLaunch.Add(lockedState);
+                        Debug.Log($"Adding projectile at index {i} to projectilesToLaunch (enemy inactive)");
                     }
 
-                    // Safely remove the current item from LockedList
-                    LockedList.RemoveAt(i);
-
-                    // Instantiate and animate the lock-on prefab for each projectile shot
-                    if (lockOnPrefab != null)
-                    {
-                        GameObject lockOnInstance = Instantiate(lockOnPrefab, Reticle.transform);
-                        lockOnInstance.SetActive(true);
-                        lockOnInstance.transform.localPosition = Vector3.zero; // Center it on the Reticle
-                        lockOnInstance.transform.localScale = Vector3.zero; // Set the initial scale to zero
-
-                        // Assuming the prefab has a SpriteRenderer component
-                        SpriteRenderer spriteRenderer = lockOnInstance.GetComponent<SpriteRenderer>();
-                        if (spriteRenderer != null)
-                        {
-                            Color initialColor = spriteRenderer.color;
-                            initialColor.a = 0f; // Set initial transparency to 0
-                            spriteRenderer.color = initialColor;
-
-                            // Animate transparency to fully visible and then back to not visible
-                            spriteRenderer.DOFade(1f, 0.25f).OnComplete(() => spriteRenderer.DOFade(0f, 0.25f));
-                        }
-
-                        // Scale up and destroy
-                        lockOnInstance.transform.DOScale(Vector3.one * initialScale, 0.5f).OnComplete(() => Destroy(lockOnInstance)); // Scale up
-                    }
-                }
-
-                StartCoroutine(LaunchProjectilesWithDelay(projectilesToLaunch));
-                StartCoroutine(ShootVibrate());
-                shootFeedback.PlayFeedbacks();
-
-                if (lockingEnding)
-                {
-                    playerLockingOff.Invoke();
-                    lockingEnding = false;
-                }
-                if (shootTag)
-                {
-                    PlayRandomShootTag();
+                    enemyTargetListIndex--;
                 }
                 else
                 {
-                    PlayRandomShooting();
+                    projectilesToLaunch.Add(lockedState);
+                    Debug.Log($"Adding projectile at index {i} to projectilesToLaunch (no enemies)");
                 }
 
-                locking = true;
-                GameManager.instance.AddShotTally(1);
-                comboScore++;
-                Locks = Locks - 1;
+                staminaController.locking = false;
+            }
+            else
+            {
+                Debug.LogError($"Failed to cast to PlayerLockedState or change state to PlayerLockedState for projectile at index {i}");
+            }
 
-                musicPlayback.EventInstance.setParameterByName("Lock State", 0);
-                lockFeedback.StopFeedbacks();
-                FMODUnity.RuntimeManager.PlayOneShot("event:/Level - 172 Flux/Firing Blasts");
+            // Safely remove the current item from LockedList
+            LockedList.RemoveAt(i);
+        }
 
-                GameManager.instance.AddScore(10 * (comboScore * tempLocks));
+        Debug.Log($"Projectiles to launch: {projectilesToLaunch.Count}");
+        
+        if (projectilesToLaunch.Count > 0)
+        {
+            StartCoroutine(LaunchProjectilesWithDelay(projectilesToLaunch));
+        }
+        else
+        {
+            ClearLockedTargets();
+        }
 
-                // Clear all locks after shooting
-                ClearLockedTargets();
+        // Move these operations outside of the coroutine to ensure they happen immediately
+        StartCoroutine(ShootVibrate());
+        shootFeedback.PlayFeedbacks();
+
+        if (lockingEnding)
+        {
+            playerLockingOff.Invoke();
+            lockingEnding = false;
+        }
+        if (shootTag)
+        {
+            PlayRandomShootTag();
+        }
+        else
+        {
+            PlayRandomShooting();
+        }
+
+        locking = true;
+        GameManager.instance.AddShotTally(1);
+        comboScore++;
+        Locks = Locks - 1;
+
+        musicPlayback.EventInstance.setParameterByName("Lock State", 0);
+        lockFeedback.StopFeedbacks();
+        FMODUnity.RuntimeManager.PlayOneShot("event:/Player/Firing Blasts");
+
+        GameManager.instance.AddScore(10 * (comboScore * tempLocks));
+    }
+    else
+    {
+        Debug.Log("Shooting conditions not met.");
+    }
+}
+
+private IEnumerator LaunchProjectilesWithDelay(List<PlayerLockedState> projectilesToLaunch)
+{
+    int totalProjectiles = projectilesToLaunch.Count;
+    Debug.Log($"Starting to launch {totalProjectiles} projectiles with {launchDelay}s delay between each.");
+
+    for (int i = 0; i < totalProjectiles; i++)
+    {
+        Debug.Log($"Launching projectile {i + 1} of {totalProjectiles}");
+        PlayerLockedState lockedState = projectilesToLaunch[i];
+
+        if (lockedState != null)
+        {
+            ProjectileStateBased projectile = lockedState.GetProjectile();
+            if (projectile != null)
+            {
+                // Launch the projectile using the LaunchAtEnemy method
+                if (projectile.currentTarget != null)
+                {
+                    lockedState.LaunchAtEnemy(projectile.currentTarget);
+                }
+                else
+                {
+                    lockedState.LaunchBack();
+                }
+
+                // Instantiate and animate the lock-on prefab for each projectile shot
+                if (lockOnPrefab != null)
+                {
+                    GameObject lockOnInstance = Instantiate(lockOnPrefab, Reticle.transform);
+                    lockOnInstance.SetActive(true);
+                    lockOnInstance.transform.localPosition = Vector3.zero; // Center it on the Reticle
+                    lockOnInstance.transform.localScale = Vector3.zero; // Set the initial scale to zero
+
+                    // Assuming the prefab has a SpriteRenderer component
+                    SpriteRenderer spriteRenderer = lockOnInstance.GetComponent<SpriteRenderer>();
+                    if (spriteRenderer != null)
+                    {
+                        Color initialColor = spriteRenderer.color;
+                        initialColor.a = 0f; // Set initial transparency to 0
+                        spriteRenderer.color = initialColor;
+
+                        // Animate transparency to fully visible and then back to not visible
+                        spriteRenderer.DOFade(1f, 0.25f).OnComplete(() => spriteRenderer.DOFade(0f, 0.25f));
+                    }
+
+                    // Scale up and destroy
+                    lockOnInstance.transform.DOScale(Vector3.one * initialScale, 0.5f).OnComplete(() => Destroy(lockOnInstance));
+                }
+
+                Debug.Log($"Projectile {i + 1} of {totalProjectiles} launched. Waiting for {launchDelay}s before next launch.");
+                yield return new WaitForSeconds(launchDelay);
+            }
+            else
+            {
+                Debug.LogError($"Projectile is null for lockedState at index {i}");
             }
         }
         else
         {
-            // Handle the case where the conditions are not met
+            Debug.LogError($"LockedState is null at index {i}");
         }
     }
 
-    private IEnumerator LaunchProjectilesWithDelay(List<PlayerLockedState> projectiles)
-    {
-        float delayBetweenShots = 0.1f; // Adjust this value to control the delay between each shot
+    Debug.Log("Finished launching all projectiles.");
+    
+    // Clear locked targets after all projectiles have been launched
+    ClearLockedTargets();
+}
 
-        foreach (var lockedState in projectiles)
-        {
-            if (lockedState != null)
-            {
-                ProjectileStateBased projectile = lockedState.GetProjectile();
-                if (projectile != null)
-                {
-                    projectile.isLifetimePaused = false; // Resume lifetime countdown
-                    lockedState.LaunchBack();
-                    FMODUnity.RuntimeManager.PlayOneShot("event:/Level - 172 Flux/Firing Blasts");
-                    StartCoroutine(ShootVibrate());
-                    yield return new WaitForSeconds(delayBetweenShots);
-                    Debug.Log("Inner Projectile Launch called.");
-                }
-            }
-        }
+    private IEnumerator ShowLaunchIndicator(Vector3 position)
+    {
+        GameObject indicator = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+        indicator.transform.position = position;
+        indicator.transform.localScale = Vector3.one * 0.5f;
+        indicator.GetComponent<Renderer>().material.color = Color.red;
+        yield return new WaitForSeconds(0.1f);
+        Destroy(indicator);
     }
 
     public int returnScore()
@@ -757,11 +823,11 @@ void OnMusicalLock(KoreographyEvent evt)
     }
     void PlayRandomShooting()
     {
-        FMODUnity.RuntimeManager.PlayOneShot("event:/Player/Shooting");
+        RuntimeManager.PlayOneShot(randomShootingEvent);
     }
     void PlayRandomShootTag()
     {
-        FMODUnity.RuntimeManager.PlayOneShot("event:/Player/Shoot Tag");
+        RuntimeManager.PlayOneShot(shootTagEvent);
     }
     void UpdateTime(KoreographyEvent evt)
     {
@@ -881,21 +947,34 @@ void OnMusicalLock(KoreographyEvent evt)
 
     public IEnumerator RewindToBeatEnemyDeath()
     { 
-        if (delayLoop) yield break;
-        float tempSpeed = splineControl.Speed;
+        if (isRewinding)
+        {
+            yield break;
+        }
 
-        delayLoop = true;
+        isRewinding = true;
+        rewindStartTime = Time.time;
+
+        float tempSpeed = splineControl.Speed;
         ActivateRewindEffects(true);
         Clock clock = Timekeeper.instance.Clock("Test");
         float startPosition = SetClockAndGetPosition(clock, -1f);
         splineControl.Speed = 0;
 
-        yield return new WaitForSeconds(1f);
+        while (Time.time - rewindStartTime < maxRewindTime)
+        {
+            if (delayLoop)
+            {
+                break;
+            }
+            yield return null;
+        }
+
         DeactivateRewindEffects();
         SetClockAndGetPosition(clock, 1f, startPosition);
         splineControl.Speed = tempSpeed;
 
-        delayLoop = false;
+        isRewinding = false;
     }
 
     public void ActivateRewindEffects(bool activate)
