@@ -15,7 +15,8 @@ public class EnemyBasicDamagablePart : MonoBehaviour
     {
         if (mainEnemyScript != null)
         {
-            mainEnemyScript.Damage(damage);
+            float partDamage = mainEnemyScript.GetPartDamageAmount();
+            mainEnemyScript.Damage(partDamage);
             hitsTaken++;
             CheckForDeath();
         }
@@ -36,6 +37,14 @@ public class EnemyBasicDamagablePart : MonoBehaviour
         {
             deathParticles.GetFromPool(transform.position, Quaternion.identity);
         }
+
+        // Apply damage one last time when the part is destroyed
+        if (mainEnemyScript != null)
+        {
+            float partDamage = mainEnemyScript.GetPartDamageAmount();
+            mainEnemyScript.Damage(partDamage);
+        }
+
         gameObject.SetActive(false); // Make the GameObject inactive
     }
 

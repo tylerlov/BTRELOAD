@@ -37,10 +37,12 @@ public class EnemyBasicSetup : BaseBehaviour, IDamageable, IAttackAgent
     [SerializeField] private Material alternativeProjectileMaterial; // New field to specify an alternative material
     [SerializeField] private EnemyBasicDamagablePart[] damageableParts; // Array of damageable parts
 
+    [SerializeField] private float partDamageAmount = 10f; // New field for part damage
+
     public int hitsToKillPart = 3; // Number of hits required to destroy a damageable part
 
     private bool enemyPooling = true;
-    private Crosshair shootRewind;
+    private CrosshairCore shootRewind;
     private StudioEventEmitter musicPlayback;
     private bool particleSwitch;
     private bool constantFire;
@@ -59,7 +61,7 @@ public class EnemyBasicSetup : BaseBehaviour, IDamageable, IAttackAgent
     private Rigidbody cachedRigidbody;
     private Collider cachedCollider;
     private StudioEventEmitter cachedMusicPlayback;
-    private Crosshair cachedShootRewind;
+    private CrosshairCore cachedShootRewind;
     private Timeline cachedMyTime;
     private Clock cachedClock;
     private RVOController cachedController;
@@ -81,7 +83,7 @@ public class EnemyBasicSetup : BaseBehaviour, IDamageable, IAttackAgent
         cachedRigidbody = GetComponent<Rigidbody>();
         cachedCollider = GetComponent<Collider>();
         cachedMusicPlayback = FindMusicPlaybackEmitter();
-        cachedShootRewind = FindObjectOfType<Crosshair>();
+        cachedShootRewind = FindObjectOfType<CrosshairCore>();
         cachedMyTime = GetComponent<Timeline>();
         cachedClock = Timekeeper.instance.Clock("Test");
         cachedController = GetComponent<RVOController>();
@@ -295,5 +297,11 @@ public class EnemyBasicSetup : BaseBehaviour, IDamageable, IAttackAgent
                 ProjectileManager.Instance.RegisterProjectile(projectile);
             }
         }
+    }
+
+    // New method to get the part damage amount
+    public float GetPartDamageAmount()
+    {
+        return partDamageAmount;
     }
 }
