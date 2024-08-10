@@ -42,7 +42,7 @@ public class EnemyBasicSetup : BaseBehaviour, IDamageable, IAttackAgent
     public int hitsToKillPart = 3; // Number of hits required to destroy a damageable part
 
     private bool enemyPooling = true;
-    private CrosshairCore shootRewind;
+    private Crosshair shootRewind;
     private StudioEventEmitter musicPlayback;
     private bool particleSwitch;
     private bool constantFire;
@@ -61,7 +61,7 @@ public class EnemyBasicSetup : BaseBehaviour, IDamageable, IAttackAgent
     private Rigidbody cachedRigidbody;
     private Collider cachedCollider;
     private StudioEventEmitter cachedMusicPlayback;
-    private CrosshairCore cachedShootRewind;
+    private Crosshair cachedShootRewind;
     private Timeline cachedMyTime;
     private Clock cachedClock;
     private RVOController cachedController;
@@ -83,7 +83,7 @@ public class EnemyBasicSetup : BaseBehaviour, IDamageable, IAttackAgent
         cachedRigidbody = GetComponent<Rigidbody>();
         cachedCollider = GetComponent<Collider>();
         cachedMusicPlayback = FindMusicPlaybackEmitter();
-        cachedShootRewind = FindObjectOfType<CrosshairCore>();
+        cachedShootRewind = FindObjectOfType<Crosshair>();
         cachedMyTime = GetComponent<Timeline>();
         cachedClock = Timekeeper.instance.Clock("Test");
         cachedController = GetComponent<RVOController>();
