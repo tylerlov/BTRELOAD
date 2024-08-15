@@ -237,7 +237,7 @@ public class EnemyBasicSetup : BaseBehaviour, IDamageable, IAttackAgent
         deathParticles.GetFromPool(cachedTransform.position, Quaternion.identity);
         FMODUnity.RuntimeManager.PlayOneShot("event:/Enemy/" + enemyType + "/Death", cachedTransform.position);
 
-        yield return StartCoroutine(cachedShootRewind.RewindToBeatEnemyDeath());
+        yield return StartCoroutine(GameManager.instance.RewindTime(-1f, 0.5f, 0f));
 
         yield return new WaitForSeconds(0.5f);
         enemyModel.SetActive(false);

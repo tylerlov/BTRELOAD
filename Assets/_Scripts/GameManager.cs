@@ -1,5 +1,4 @@
 
-
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.SceneManagement;
@@ -67,6 +66,11 @@ public class GameManager : MonoBehaviour
     [SerializeField] private int _totalWaveCount = 0;
     [SerializeField] private int _currentSceneWaveCount = 0;
 
+    [Header("Time Control")]
+    [SerializeField] private float defaultRewindTimeScale = -2f;
+    [SerializeField] private float defaultRewindDuration = 0.5f;
+    [SerializeField] private float defaultReturnToNormalDuration = 0.25f;
+    [SerializeField] private string globalClockName = "Test"; // Allow setting the clock name in the inspector
     #endregion
 
     #region Properties
@@ -127,6 +131,8 @@ public class GameManager : MonoBehaviour
     private float accumulatedScoreDecrease = 0f;
     private List<Transform> spawnedEnemies = new List<Transform>();
     private Dictionary<Transform, bool> lockedEnemies = new Dictionary<Transform, bool>();
+    private GlobalClock globalClock;
+    private FMOD.Studio.EventInstance musicEventInstance;
     #endregion
 
     #region Unity Lifecycle Methods
@@ -137,6 +143,18 @@ public class GameManager : MonoBehaviour
         PrimeTweenConfig.SetTweensCapacity(1600);
         InitializeTimeline();
         InitializePlayerHealth();
+
+        // Start a coroutine to initialize the global clock
+        StartCoroutine(InitializeGlobalClock());
+
+        if (musicPlayback != null)
+        {
+            musicEventInstance = musicPlayback.EventInstance;
+        }
+        else
+        {
+            Debug.LogError("MusicPlayback is null in GameManager.Awake");
+        }
     }
 
     private void InitializePlayerHealth()
@@ -788,6 +806,113 @@ private bool IsSceneInOuroborosGroup(string sceneName)
 {
     return currentGroup.scenes.Any(scene => scene.sceneName == sceneName);
 }
+
+public IEnumerator RewindTime(float rewindTimeScale = -2f, float rewindDuration = 0.5f, float returnToNormalDuration = 0.25f)
+{
+    if (globalClock == null)
+    {
+        Debug.LogError("Global clock is not yet initialized in GameManager.RewindTime");
+        yield break;
+    }
+
+    float startTime = globalClock.time;
+    globalClock.LerpTimeScale(rewindTimeScale, rewindDuration);
+
+    // Start rewinding the music
+    StartCoroutine(RewindMusic(true, rewindDuration));
+
+    Debug.Log($"Rewinding time... Start time: {startTime}, Rewind scale: {rewindTimeScale}, Duration: {rewindDuration}");
+
+    yield return new WaitForSeconds(Mathf.Abs(rewindDuration));
+
+    float rewoundTime = globalClock.time;
+    globalClock.LerpTimeScale(1f, returnToNormalDuration);
+
+    // Return music to normal
+    StartCoroutine(RewindMusic(false, returnToNormalDuration));
+
+    Debug.Log($"Returning to normal time... Rewound time: {rewoundTime}, Return duration: {returnToNormalDuration}");
+
+    yield return new WaitForSeconds(returnToNormalDuration);
+
+    Debug.Log("Rewind complete");
+}
+private IEnumerator RewindMusic(bool isRewinding, float duration)
+{
+    if (musicPlayback == null || !musicPlayback.EventInstance.isValid())
+    {
+        Debug.LogError("Music event instance is not valid");
+        yield break;
+    }
+
+    musicEventInstance = musicPlayback.EventInstance;
+
+    // Set the Rewind parameter
+    musicEventInstance.setParameterByName("Rewind", isRewinding ? 1f : 0f);
+
+    // Wait for the specified duration
+    yield return new WaitForSeconds(duration);
+
+    // If we were rewinding, turn off the rewind effect after the duration
+    if (isRewinding)
+    {
+        musicEventInstance.setParameterByName("Rewind", 0f);
+    }
+}
+
+
+
+public void StartRewindTime(float rewindTimeScale = -2f, float rewindDuration = 0.5f, float returnToNormalDuration = 0.25f)
+{
+    StartCoroutine(RewindTime(rewindTimeScale, rewindDuration, returnToNormalDuration));
+}
+
+// Modify the existing RewindTime metho
+
+private IEnumerator InitializeGlobalClock()
+{
+    // Wait until the end of the frame to ensure Timekeeper is initialized
+    yield return new WaitForEndOfFrame();
+
+    // Try to get the global clock
+    while (globalClock == null)
+    {
+        globalClock = TryGetGlobalClock();
+        if (globalClock == null)
+        {
+            Debug.LogWarning($"Global clock '{globalClockName}' not found. Waiting and trying again...");
+            yield return new WaitForSeconds(0.1f); // Wait a bit before trying again
+        }
+        else
+        {
+            Debug.Log($"Global clock '{globalClockName}' successfully initialized.");
+        }
+    }
+}
+
+private GlobalClock TryGetGlobalClock()
+{
+    try
+    {
+        return Timekeeper.instance.Clock(globalClockName);
+    }
+    catch (ChronosException)
+    {
+        return null;
+    }
+}
+
+    public void SetTimeScale(float timeScale)
+    {
+        if (globalClock != null)
+        {
+            globalClock.localTimeScale = timeScale;
+        }
+        else
+        {
+            Debug.LogError("Global clock is not yet initialized in GameManager.SetTimeScale");
+        }
+    }
 
     public void RegisterEnemy(Transform enemy)
     {

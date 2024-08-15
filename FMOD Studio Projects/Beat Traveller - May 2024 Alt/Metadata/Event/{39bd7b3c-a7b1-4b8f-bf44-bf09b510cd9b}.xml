@@ -406,8 +406,11 @@
 		</relationship>
 	</object>
 	<object class="EventSound" id="{915710a7-5348-4a50-b850-611da6b52522}">
+		<property name="isCutoff">
+			<value>true</value>
+		</property>
 		<property name="start">
-			<value>57.949352734051367</value>
+			<value>57.906976744186046</value>
 		</property>
 		<property name="length">
 			<value>0.69767441860465174</value>
@@ -485,8 +488,11 @@
 		</relationship>
 	</object>
 	<object class="EventSound" id="{4c4cdb31-8c1e-4799-8cd5-b5f6669dc99b}">
+		<property name="isCutoff">
+			<value>true</value>
+		</property>
 		<property name="start">
-			<value>58.298189943353691</value>
+			<value>58.255813953488371</value>
 		</property>
 		<property name="length">
 			<value>0.34883720930232376</value>
@@ -530,7 +536,7 @@
 	</object>
 	<object class="MultiSound" id="{2d782d11-550e-469b-be06-9b727708be00}">
 		<property name="start">
-			<value>58.298218947203296</value>
+			<value>58.255842957337975</value>
 		</property>
 		<property name="length">
 			<value>0.34886621315192745</value>
@@ -618,7 +624,7 @@
 	</object>
 	<object class="MultiSound" id="{7ac69b07-e029-4806-bece-22655d5613af}">
 		<property name="start">
-			<value>57.949352734051367</value>
+			<value>57.906976744186046</value>
 		</property>
 		<property name="length">
 			<value>0.34886621315192745</value>
@@ -1270,7 +1276,6 @@
 		<property name="length">
 			<value>0.34883720930232642</value>
 		</property>
-		<property name="name" />
 		<relationship name="event">
 			<destination>{d4eff79a-15dd-4b06-926c-d243a73661d7}</destination>
 		</relationship>

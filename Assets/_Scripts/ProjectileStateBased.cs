@@ -233,11 +233,6 @@ public class PlayerLockedState : ProjectileState
         PlayerShotState newState = new PlayerShotState(_projectile);
         _projectile.ChangeState(newState);
     }
-
-    public ProjectileStateBased GetProjectile()
-    {
-        return _projectile;
-    }
 }
 
 public class PlayerShotState : ProjectileState

@@ -2,7 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using DG.Tweening;
+using PrimeTween;
 using Cinemachine;
 using UnityEngine.Rendering.PostProcessing;
 using UnityEngine.InputSystem;
@@ -16,7 +16,7 @@ using FluffyUnderware.Curvy.Controllers;
 public class PlayerMovement : MonoBehaviour
 {
 
-        public Animator animator;
+    public Animator animator;
 
 
     [Header("Ground Detection")]
@@ -32,13 +32,12 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private float rotationCooldown = 0.2f; // New: Cooldown between rotations
     [SerializeField] private float rotationDuration = 0.5f; // Increased duration for smoother rotation
 
-    [Header("RicochetDodge Mechanic")]
-    [SerializeField] private float dodgeDistance = 5f;
+    [Header("Ricochet Dodge")]
     [SerializeField] private float dodgeDuration = 0.5f;
-    [SerializeField] private float dodgeStayDuration = 1f;
-    [SerializeField] private float returnDuration = 0.5f;
-    [SerializeField] private float dodgeResetTime = 0.6f;
-    [SerializeField] private GameObject ricochetBlast; // Reference to the GameObject containing the particle system
+    [SerializeField] private float dodgeCooldown = 1f;
+    [SerializeField] private float dodgeDistance = 5f;
+    [SerializeField] private GameObject ricochetBlast;
+    [SerializeField] private RangeSensor rangeSensor;
 
     [Header("Look At Settings")]
     [SerializeField] private GameObject lookAtTarget;
@@ -58,16 +57,15 @@ public class PlayerMovement : MonoBehaviour
 
     #region Private Fields
 
-    private Rigidbody rigidbody;
+    new private Rigidbody rigidbody;
     private DefaultControls playerInputActions;
     private PlayerHealth playerHealth;
     private float currentYRotation;
     private float shootingZOffset;
     private int playerFacingDirection;
     private bool isRotating;
-    private bool isDodging;
-    private int consecutiveDodges;
-    private float lastDodgeTime;
+    private bool isDodging = false;
+    private float lastDodgeTime = -Mathf.Infinity;
     private Vector3 startingPosition;
     private Timeline timeline;
 
@@ -91,6 +89,13 @@ public class PlayerMovement : MonoBehaviour
 
         rigidbody = GetComponent<Rigidbody>();
         rigidbody.constraints = RigidbodyConstraints.FreezeRotationY | rigidbody.constraints;
+
+        // Capture the RangeSensor component
+        rangeSensor = GetComponent<RangeSensor>();
+        if (rangeSensor == null)
+        {
+            Debug.LogError("RangeSensor component not found on the player!");
+        }
     }
 
     private void OnDestroy()
@@ -122,7 +127,9 @@ public class PlayerMovement : MonoBehaviour
         RestrictToSphere();
 
         if (CheckRicochetDodge())
-            RicochetDodge();
+        {
+            TryRicochetDodge();
+        }
 
         AdjustYRotation();
 
@@ -211,12 +218,11 @@ public class PlayerMovement : MonoBehaviour
 
         if (Mathf.Abs(currentYRotation - targetYRotation) > 1)
         {
-            string rotationTweenId = "rotationTween";
-            DOTween.Kill(rotationTweenId);
+            // Stop any existing rotation tween
+            Tween.StopAll(transform);
 
-            transform.DORotate(new Vector3(transform.eulerAngles.x, targetYRotation, transform.eulerAngles.z), 0.3f)
-                .SetEase(Ease.InOutQuad)
-                .SetId(rotationTweenId);
+            // Create a new rotation tween
+            Tween.Rotation(transform, Quaternion.Euler(transform.eulerAngles.x, targetYRotation, transform.eulerAngles.z), 0.3f, Ease.InOutQuad);
         }
     }
 
@@ -267,10 +273,9 @@ public class PlayerMovement : MonoBehaviour
 
         float zMultiplier = GetShootingZMultiplier(playerFacingDirection);
 
-        shooting.transform.DOLocalMoveZ(shootingZOffset * zMultiplier, 0.5f, false);
+        Tween.LocalPositionZ(shooting.transform, shootingZOffset * zMultiplier, 0.5f);
 
-        horizontalRotatePlatform.transform.DOLocalRotate(new Vector3(0, targetRotation, 0), 0.15f)
-            .SetEase(Ease.InOutQuad)
+        Tween.LocalRotation(horizontalRotatePlatform.transform, Quaternion.Euler(0, targetRotation, 0), 0.15f, Ease.InOutQuad)
             .OnComplete(() => {
                 isRotating = false;
             });
@@ -295,132 +300,89 @@ public class PlayerMovement : MonoBehaviour
         return playerInputActions.Player.Dodge.ReadValue<float>() > 0;
     }
 
-    private void RicochetDodge()
+    private void TryRicochetDodge()
     {
-        if (isDodging)
-            return;
-
-        Vector3 dodgeDirection = GetRicochetDodgeDirection();
-        
-        // Check if there's actually a projectile to dodge and it hasn't hit the player yet
-        if (IsProjectileNearby(out ProjectileStateBased nearbyProjectile) && !nearbyProjectile.projHitPlayer)
+        if (isDodging || Time.time - lastDodgeTime < dodgeCooldown)
         {
-            PlayRicochetEffects();
-            TriggerProjectileBehaviorChange();
+            Debug.Log("Dodge attempted, but either already dodging or on cooldown.");
+            return;
         }
 
+        StartCoroutine(PerformRicochetDodge());
+    }
+
+    private IEnumerator PerformRicochetDodge()
+    {
         isDodging = true;
-        playerHealth.DodgeInvincibility = true;
+        lastDodgeTime = Time.time;
 
-        UpdateConsecutiveDodges();
-
+        Vector3 dodgeDirection = GetDodgeDirection();
         Vector3 dodgePosition = transform.position + dodgeDirection * dodgeDistance;
 
-        string dodgeTweenId = "ricochetDodgeTween";
+        // Play dodge effects
+        PlayDodgeEffects();
 
-        transform.DOMove(dodgePosition, dodgeDuration)
-            .OnComplete(() => StartCoroutine(ResetRicochetDodge()))
-            .SetEase(Ease.OutQuad)
-            .SetId(dodgeTweenId)
-            .SetLink(gameObject);
-    }
+        // Ricochet nearby projectiles
+        RicochetNearbyProjectiles();
 
-    private bool IsProjectileNearby(out ProjectileStateBased nearbyProjectile)
-    {
-        nearbyProjectile = null;
-        var sensor = GetComponent<RangeSensor>();
-        foreach (var obj in sensor.DetectedObjects)
+        // Perform the dodge movement
+        float elapsedTime = 0f;
+        Vector3 startPosition = transform.position;
+        while (elapsedTime < dodgeDuration)
         {
-            var projectile = obj.GetComponent<ProjectileStateBased>();
-            if (projectile != null && !projectile.projHitPlayer)
-            {
-                nearbyProjectile = projectile;
-                return true;
-            }
+            transform.position = Vector3.Lerp(startPosition, dodgePosition, elapsedTime / dodgeDuration);
+            elapsedTime += Time.deltaTime;
+            yield return null;
         }
-        return false;
-    }
-
-    private void PlayRicochetEffects()
-    {
-        // Play the Ricochet Dodge sound event
-        FMODUnity.RuntimeManager.PlayOneShot("event:/Player/Ricochet");
-
-        HapticPatterns.PlayEmphasis(1.0f, 0.0f);
-
-        // Trigger all Particle Systems in the Ricochet Blast GameObject
-        PlayAllParticleSystems(ricochetBlast);
-
-        // Play the ricochet feedbacks
-        if (ricochetFeedbackObject != null)
-        {
-            var feedbacks = ricochetFeedbackObject.GetComponent<MMFeedbacks>();
-            if (feedbacks != null)
-            {
-                feedbacks.PlayFeedbacks();
-            }
-        }
-    }
-
-    private void PlayAllParticleSystems(GameObject root)
-    {
-        if (root == null) return;
-
-        foreach (var ps in root.GetComponentsInChildren<ParticleSystem>())
-        {
-            ps.Play();
-        }
-    }
-
-    private Vector3 GetRicochetDodgeDirection()
-    {
-        var sensor = GetComponent<RangeSensor>();
-        if (sensor.DetectedObjects.Count > 0)
-        {
-            var projectile = sensor.DetectedObjects.First().gameObject;
-            Vector3 projectileDirection = transform.position - projectile.transform.position;
-            return projectileDirection.normalized;
-        }
-        return new Vector3(UnityEngine.Random.Range(-1f, 1f), 0, UnityEngine.Random.Range(-1f, 1f)).normalized;
-    }
-
-    private void TriggerProjectileBehaviorChange()
-    {
-        var sensor = GetComponent<RangeSensor>();
-        foreach (var obj in sensor.DetectedObjects)
-        {
-            var projectile = obj.GetComponent<ProjectileStateBased>();
-            if (projectile != null && !projectile.projHitPlayer)
-            {
-                projectile.OnPlayerRicochetDodge();
-            }
-        }
-    }
-
-    private void UpdateConsecutiveDodges()
-    {
-        if (timeline.time - lastDodgeTime <= dodgeResetTime)
-            consecutiveDodges++;
-        else
-            consecutiveDodges = 1;
-
-        lastDodgeTime = timeline.time;
-    }
-
-    private System.Collections.IEnumerator ResetRicochetDodge()
-    {
-        yield return new WaitForSeconds(dodgeDuration + dodgeStayDuration);
+        transform.position = dodgePosition;
 
         isDodging = false;
-        playerHealth.DodgeInvincibility = false;
-
-        ResetConsecutiveDodges();
+        Debug.Log("Dodge completed. Next dodge available in " + dodgeCooldown + " seconds.");
     }
 
-    private void ResetConsecutiveDodges()
+    private Vector3 GetDodgeDirection()
     {
-        if (timeline.time - lastDodgeTime > dodgeResetTime)
-            consecutiveDodges = 0;
+        // Implement logic to determine dodge direction
+        // For example, use input direction or away from nearest projectile
+        return transform.forward; // Placeholder
+    }
+
+    private void PlayDodgeEffects()
+    {
+        // Play sound effect
+        FMODUnity.RuntimeManager.PlayOneShot("event:/Player/Ricochet");
+
+        // Play haptic feedback
+        HapticPatterns.PlayEmphasis(1.0f, 0.0f);
+
+        // Trigger particle effects
+        if (ricochetBlast != null)
+        {
+            ricochetBlast.SetActive(true);
+            StartCoroutine(DisableRicochetBlast());
+        }
+    }
+
+    private IEnumerator DisableRicochetBlast()
+    {
+        yield return new WaitForSeconds(dodgeDuration);
+        ricochetBlast.SetActive(false);
+    }
+
+    private void RicochetNearbyProjectiles()
+    {
+        if (rangeSensor != null && rangeSensor.DetectedObjects.Count > 0)
+        {
+            foreach (var detectedObject in rangeSensor.DetectedObjects)
+            {
+                var projectile = detectedObject.GetComponent<ProjectileStateBased>();
+                if (projectile != null)
+                {
+                    projectile.OnPlayerRicochetDodge();
+                    Debug.Log($"Ricochet applied to projectile: {projectile.gameObject.name}");
+                }
+            }
+        }
     }
 
     public void PlayerPositionReset()
@@ -518,8 +480,7 @@ public class PlayerMovement : MonoBehaviour
         if (lookAtReversed) lookAtReversed.enabled = false;
 
         // Rotate the horizontalRotatePlatform
-        horizontalRotatePlatform.transform.DOLocalRotate(new Vector3(0, targetRotation, 0), rotationDuration)
-            .SetEase(Ease.InOutQuad)
+        Tween.LocalRotation(horizontalRotatePlatform.transform, Quaternion.Euler(0, targetRotation, 0), rotationDuration, Ease.InOutQuad)
             .OnComplete(() => {
                 isRotating = false;
                 

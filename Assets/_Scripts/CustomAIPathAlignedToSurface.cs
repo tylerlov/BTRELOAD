@@ -65,7 +65,7 @@ namespace Pathfinding
         private void UpdateLastKnownGoodPosition()
         {
             // Use a non-allocating method to get the nearest node
-            var nearestNode = AstarPath.active.GetNearest(transform.position, NNConstraint.Default);
+            var nearestNode = AstarPath.active.GetNearest(transform.position, NNConstraint.Walkable);
             if (nearestNode.node != null && nearestNode.node.Walkable)
             {
                 lastKnownGoodPosition = nearestNode.position;
@@ -131,7 +131,7 @@ namespace Pathfinding
         private Vector3 FindSafePosition()
         {
             // Use a non-allocating method to get the nearest node
-            var nearestToDestination = AstarPath.active.GetNearest(destination, NNConstraint.Default);
+            var nearestToDestination = AstarPath.active.GetNearest(destination, NNConstraint.Walkable);
             if (nearestToDestination.node != null && nearestToDestination.node.Walkable)
             {
                 return nearestToDestination.position;
@@ -140,7 +140,7 @@ namespace Pathfinding
             // If that fails, try to find any walkable position within a large radius
             float searchRadius = 50f;
             int maxIterations = 20;
-            var constraint = NNConstraint.Default;
+            var constraint = NNConstraint.Walkable;
 
             for (int i = 0; i < maxIterations; i++)
             {

@@ -1,6 +1,6 @@
 using UnityEngine;
 using BehaviorDesigner.Runtime.Tactical;
-using DG.Tweening; // Required for DOTween animations
+using PrimeTween; // Changed from DOTween to PrimeTween
 
 public class ColliderHitCallback : BaseBehaviour, IDamageable
 {
@@ -37,8 +37,12 @@ public class ColliderHitCallback : BaseBehaviour, IDamageable
         // Conditional shake animation based on enableShakeOnDamage
         if (enableShakeOnDamage)
         {
-            transform.DOShakePosition(0.5f, 0.1f, 10, 90, false, true)
-                .SetEase(Ease.InOutQuad); // Adjust the duration, strength, vibrato, randomness, snapping, and ease type as needed
+            // Convert DOTween shake to PrimeTween shake
+            Tween.ShakeLocalPosition(transform, 
+                duration: 0.5f, 
+                strength: new Vector3(0.1f, 0.1f, 0.1f), 
+                frequency: 10, 
+                easeBetweenShakes: Ease.InOutQuad);
         }
     }
     public bool IsAlive()

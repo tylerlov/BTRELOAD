@@ -6,14 +6,17 @@ using System.Collections.Generic;
 
 namespace OccaSoftware.BOP
 {
+    [BurstCompile]
     public class ParticleSystemPooler : MonoBehaviour
     {
         [SerializeField] private ParticleSystem particleSystemPrefab = null;
         [SerializeField, Min(1)] private int initialCount = 10;
         [SerializeField] private Vector3 storagePosition = new Vector3(1000, 1000, 1000); // Offscreen or under the map
 
-        private NativeArray<ParticleSystemWrapper> pool;
+        private NativeArray<ParticleSystemWrapper> jobPool;
+        private NativeArray<ParticleSystemWrapper> mainThreadPool;
         private JobHandle updateJobHandle;
+        private bool isJobRunning = false;
         private Dictionary<int, ParticleSystem> particleSystemMap;
         private int nextId = 0;
 
@@ -26,7 +29,8 @@ namespace OccaSoftware.BOP
 
         private void Awake()
         {
-            pool = new NativeArray<ParticleSystemWrapper>(initialCount, Allocator.Persistent);
+            jobPool = new NativeArray<ParticleSystemWrapper>(initialCount, Allocator.Persistent);
+            mainThreadPool = new NativeArray<ParticleSystemWrapper>(initialCount, Allocator.Persistent);
             particleSystemMap = new Dictionary<int, ParticleSystem>();
             for (int i = 0; i < initialCount; i++)
             {
@@ -41,7 +45,7 @@ namespace OccaSoftware.BOP
             newInstance.gameObject.SetActive(false);
             int id = nextId++;
             particleSystemMap[id] = newInstance;
-            pool[index] = new ParticleSystemWrapper { id = id, isPlaying = false };
+            jobPool[index] = new ParticleSystemWrapper { id = id, isPlaying = false };
         }
 
         [BurstCompile]
@@ -59,74 +63,103 @@ namespace OccaSoftware.BOP
 
         private void Update()
         {
-            updateJobHandle.Complete();
-
-            var job = new UpdateParticleSystemsJob
+            if (isJobRunning)
             {
-                pool = pool
-            };
+                // Complete the previous job before accessing the data
+                updateJobHandle.Complete();
+                isJobRunning = false;
 
-            updateJobHandle = job.Schedule(pool.Length, 64);
+                // Copy data from job to main thread array
+                jobPool.CopyTo(mainThreadPool);
+            }
 
-            // Update isPlaying status on the main thread
-            for (int i = 0; i < pool.Length; i++)
+            // Update isPlaying status on the main thread using mainThreadPool
+            for (int i = 0; i < mainThreadPool.Length; i++)
             {
-                var wrapper = pool[i];
+                var wrapper = mainThreadPool[i];
                 if (particleSystemMap.TryGetValue(wrapper.id, out var ps))
                 {
                     wrapper.isPlaying = ps.isPlaying;
-                    pool[i] = wrapper;
+                    mainThreadPool[i] = wrapper;
                 }
             }
+
+            // Schedule the new job
+            var job = new UpdateParticleSystemsJob
+            {
+                pool = jobPool
+            };
+
+            updateJobHandle = job.Schedule(jobPool.Length, 64);
+            isJobRunning = true;
+
+            // Copy updated data to the job array
+            mainThreadPool.CopyTo(jobPool);
         }
 
         [BurstCompile]
         public ParticleSystem GetFromPool()
         {
-            for (int i = 0; i < pool.Length; i++)
+            if (isJobRunning)
             {
-                var wrapper = pool[i];
+                updateJobHandle.Complete();
+                isJobRunning = false;
+                jobPool.CopyTo(mainThreadPool);
+            }
+
+            for (int i = 0; i < mainThreadPool.Length; i++)
+            {
+                var wrapper = mainThreadPool[i];
                 if (!wrapper.isPlaying && particleSystemMap.TryGetValue(wrapper.id, out var ps))
                 {
                     ps.gameObject.SetActive(true);
                     ps.transform.position = storagePosition;
                     wrapper.isPlaying = true;
-                    pool[i] = wrapper;
+                    mainThreadPool[i] = wrapper;
                     return ps;
                 }
             }
 
             // If all instances are in use, create a new array with doubled capacity
-            int newCapacity = pool.Length * 2;
+            int newCapacity = mainThreadPool.Length * 2;
             var newPool = new NativeArray<ParticleSystemWrapper>(newCapacity, Allocator.Persistent);
-            pool.CopyTo(newPool);
-            pool.Dispose();
-            pool = newPool;
+            mainThreadPool.CopyTo(newPool);
+            mainThreadPool.Dispose();
+            jobPool.Dispose();
+            mainThreadPool = newPool;
+            jobPool = new NativeArray<ParticleSystemWrapper>(newCapacity, Allocator.Persistent);
 
             // Create and activate the new instance
-            int newIndex = pool.Length / 2; // Use the first new slot
+            int newIndex = mainThreadPool.Length / 2; // Use the first new slot
             CreateNewInstance(newIndex);
-            var newWrapper = pool[newIndex];
+            var newWrapper = mainThreadPool[newIndex];
             var newPs = particleSystemMap[newWrapper.id];
             newPs.gameObject.SetActive(true);
             newWrapper.isPlaying = true;
-            pool[newIndex] = newWrapper;
+            mainThreadPool[newIndex] = newWrapper;
             return newPs;
         }
 
         [BurstCompile]
         public void ReturnToPool(ParticleSystem ps)
         {
-            for (int i = 0; i < pool.Length; i++)
+            if (isJobRunning)
             {
-                var wrapper = pool[i];
+                updateJobHandle.Complete();
+                isJobRunning = false;
+                jobPool.CopyTo(mainThreadPool);
+            }
+
+            for (int i = 0; i < mainThreadPool.Length; i++)
+            {
+                var wrapper = mainThreadPool[i];
                 if (particleSystemMap.TryGetValue(wrapper.id, out var pooledPs) && pooledPs == ps)
                 {
                     ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
                     ps.transform.position = storagePosition;
                     ps.gameObject.SetActive(false);
                     wrapper.isPlaying = false;
-                    pool[i] = wrapper;
+                    mainThreadPool[i] = wrapper;
                     break;
                 }
             }
@@ -134,8 +167,12 @@ namespace OccaSoftware.BOP
 
         private void OnDestroy()
         {
-            updateJobHandle.Complete();
-            pool.Dispose();
+            if (isJobRunning)
+            {
+                updateJobHandle.Complete();
+            }
+            jobPool.Dispose();
+            mainThreadPool.Dispose();
         }
     }
 }

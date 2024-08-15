@@ -1,5 +1,5 @@
 using UnityEngine;
-using DG.Tweening;
+using PrimeTween;
 
 public class UILockOnEffect : MonoBehaviour
 {
@@ -11,6 +11,8 @@ public class UILockOnEffect : MonoBehaviour
     private Transform enemy;
     private Camera mainCamera;
     private float rotationAngle = 0f; // Rotation angle of the box
+
+    private Tween boxSizeTween;
 
     private void Start()
     {
@@ -56,7 +58,17 @@ public class UILockOnEffect : MonoBehaviour
         boxSize = initialBoxSize;
         rotationAngle = 0f;
 
-        // Animate the box size from initialBoxSize to 0 over 1 second
-        DOVirtual.Float(boxSize, 0, 0.6f, value => { boxSize = value; });
+        // Stop any existing tween
+        boxSizeTween.Stop();
+
+        // Animate the box size from initialBoxSize to 0 over 0.6 seconds
+        boxSizeTween = Tween.Custom(this, initialBoxSize, 0f, 0.6f, 
+            (target, value) => target.boxSize = value);
+    }
+
+    private void OnDisable()
+    {
+        // Ensure the tween is stopped when the object is disabled
+        boxSizeTween.Stop();
     }
 }

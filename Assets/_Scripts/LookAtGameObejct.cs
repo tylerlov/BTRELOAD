@@ -1,7 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using DG.Tweening; // Import DoTween namespace
+using PrimeTween; // Import PrimeTween namespace
 
 public class LookAtGameObject : MonoBehaviour
 {
@@ -9,6 +9,8 @@ public class LookAtGameObject : MonoBehaviour
     private GameObject player; // Reference to the player GameObject
     public float rotationSpeed = 1f; // Define rotationSpeed as a public float
     public Vector3 offset = Vector3.zero; // Define offset as a public Vector3, default to (0, 0, 0)
+
+    private Tween lookAtTween;
 
     void Start()
     {
@@ -25,9 +27,19 @@ public class LookAtGameObject : MonoBehaviour
     {
         if (player != null)
         {
-            // Rotate this GameObject to look at the player with an offset using DoTween
+            // Stop the previous tween if it's still running
+            lookAtTween.Stop();
+
+            // Rotate this GameObject to look at the player with an offset using PrimeTween
             Vector3 targetPosition = player.transform.position + offset;
-            transform.DOLookAt(targetPosition, rotationSpeed);
+            Quaternion targetRotation = Quaternion.LookRotation(targetPosition - transform.position);
+            lookAtTween = Tween.Rotation(transform, targetRotation, rotationSpeed);
         }
+    }
+
+    void OnDisable()
+    {
+        // Stop the tween when the object is disabled
+        lookAtTween.Stop();
     }
 }
