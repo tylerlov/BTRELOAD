@@ -9,6 +9,14 @@ namespace TND.FSR
         private bool hasFGEnabled = false;
 
         public override void OnInspectorGUI() {
+#if !TND_HDRP_EDITEDSOURCE && UNITY_HDRP
+            EditorGUILayout.LabelField("----- HDRP Upscaling requires Source File edits. Please read the 'Quick Start: HDRP' chapter in the documentation. ------", EditorStyles.boldLabel);
+            if (GUILayout.Button("I have edited the source files!"))
+            {
+                PipelineDefines.AddDefine("TND_HDRP_EDITEDSOURCE");
+                AssetDatabase.Refresh();
+            }
+#else
             FSR3_BASE fsrScript = target as FSR3_BASE;
 
             EditorGUI.BeginChangeCheck();
@@ -102,6 +110,8 @@ namespace TND.FSR
                     hasFGEnabled = true;
                 }
             }
+
+#endif
         }
 
         private static class Styles

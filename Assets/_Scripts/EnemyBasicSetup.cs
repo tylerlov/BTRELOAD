@@ -75,6 +75,10 @@ public class EnemyBasicSetup : BaseBehaviour, IDamageable, IAttackAgent
     {
         CacheComponents();
         Initialize();
+        if (currentHealth <= 0)
+        {
+            ResetHealth();
+        }
     }
 
     private void CacheComponents()
@@ -102,6 +106,7 @@ public class EnemyBasicSetup : BaseBehaviour, IDamageable, IAttackAgent
     {
         RegisterForEvents();
         ActivateEnemy();
+        ResetHealth(); // Add this line
     }
 
     private void ActivateEnemy()
@@ -223,7 +228,7 @@ public class EnemyBasicSetup : BaseBehaviour, IDamageable, IAttackAgent
 
         ConditionalDebug.Log($"{gameObject} is taking damage of {amount}");
 
-        if (currentHealth == 0)
+        if (currentHealth <= 0)
         {
             StartCoroutine(Death());
         }

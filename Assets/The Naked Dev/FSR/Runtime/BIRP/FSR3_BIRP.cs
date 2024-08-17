@@ -327,10 +327,10 @@ namespace TND.FSR
 
             if(m_mainCamera.allowHDR)
                 flags |= Fsr3.InitializationFlags.EnableHighDynamicRange;
-            if(enableF16)
-                flags |= Fsr3.InitializationFlags.EnableFP16Usage;
+            //if(enableF16)//Breaks FSR 3.1, so we disabled it for now!
+            //    flags |= Fsr3.InitializationFlags.EnableFP16Usage;
 
-            if(m_context != null) {
+            if (m_context != null) {
                 m_context.Destroy();
                 m_context = null;
             }

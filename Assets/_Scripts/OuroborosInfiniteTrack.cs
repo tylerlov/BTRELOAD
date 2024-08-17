@@ -437,7 +437,7 @@ namespace FluffyUnderware.Curvy.Controllers
 
         private void AddDeformableComponentsToGenerator(CurvyGenerator generator)
         {
-            List<CreateMesh> createMeshModules = generator.FindModules<CreateMesh>();
+            List<CreateMesh> createMeshModules = generator.FindModules<CreateMesh>(true);
 
             foreach (var createMeshModule in createMeshModules)
             {

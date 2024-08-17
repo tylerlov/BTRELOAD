@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 
 using UnityEditor;
+using UnityEngine;
 using UnityEngine.Rendering;
 
 namespace TND.FSR
@@ -22,6 +23,7 @@ namespace TND.FSR
                     PipelineDefines.RemoveDefine("UNITY_BIRP");
                     PipelineDefines.RemoveDefine("UNITY_HDRP");
                     PipelineDefines.RemoveDefine("UNITY_URP");
+                    PipelineDefines.RemoveDefine("TND_HDRP_EDITEDSOURCE");
                 }
             }
             catch { }
@@ -82,27 +84,33 @@ namespace TND.FSR
         static PipelineType GetPipeline()
         {
 #if UNITY_2019_1_OR_NEWER
+            var srpType = "BIRP";
+
             if (GraphicsSettings.renderPipelineAsset != null)
             {
-                var srpType = GraphicsSettings.renderPipelineAsset.GetType().ToString();
-                //HDRP
-                if (srpType.Contains("HDRenderPipelineAsset"))
-                {
-                    return PipelineType.HDRP;
-                }
-                //URP
-                else
-                {
-                    return PipelineType.URP;
-                }
+                srpType = GraphicsSettings.renderPipelineAsset.GetType().ToString();
+            }
+            else if (QualitySettings.renderPipeline != null)
+            {
+                srpType = QualitySettings.renderPipeline.GetType().ToString();
             }
 #endif
 
-            //BIRP
-            return PipelineType.BIRP;
+            if (srpType == "BIRP")//BIRP
+            {
+                return PipelineType.BIRP;
+            }
+            else if (srpType.Contains("HDRenderPipelineAsset"))  //HDRP 
+            {
+                return PipelineType.HDRP;
+            }
+            else //URP
+            {
+                return PipelineType.URP;
+            }
         }
 
-        static void AddDefine(string define)
+        public static void AddDefine(string define)
         {
             var definesList = GetDefines();
             if (!definesList.Contains(define))

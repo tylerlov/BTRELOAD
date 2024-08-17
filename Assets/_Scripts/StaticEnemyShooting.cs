@@ -54,10 +54,10 @@ public class StaticEnemyShooting : MonoBehaviour
 
         // Optimized shooting sequence
         Sequence.Create()
-            .Chain(Tween.LocalScale(cachedTransform, stretchedScale, growDuration, Ease.OutQuad))
+            .Chain(Tween.Scale(cachedTransform, stretchedScale, growDuration, Ease.OutQuad))
             .ChainDelay(0.05f)
             .ChainCallback(PerformShoot)
-            .Chain(Tween.LocalScale(cachedTransform, originalScale, shrinkDuration, Ease.InQuad))
+            .Chain(Tween.Scale(cachedTransform, originalScale, shrinkDuration, Ease.InQuad))
             .ChainCallback(() => isShooting = false);
     }
 

@@ -71,7 +71,7 @@ public class Score : MonoBehaviour
     public TMP_Text scoreAddedText;    // Reference to the score added UI element
     public TMP_Text scoreSubtractedText; // Reference to the score subtracted UI element
     private int previousScore = 0;
-    private int timerDecrementAccumulator = 0;
+    private int reportedDamage = 0; // New variable to track reported damage
 
     private void Start()
     {
@@ -145,17 +145,17 @@ public class Score : MonoBehaviour
         {
             int scoreDifference = currentScore - previousScore;
             
-            // Check if it's a timer decrement
-            if (scoreDifference == -1)
+            if (reportedDamage > 0)
             {
-                timerDecrementAccumulator++;
+                // Show the reported damage
+                ShowScoreChange(-reportedDamage);
+                reportedDamage = 0;
             }
-            else
+            else if (scoreDifference < -1) // For any other significant decrease
             {
-                // If it's not a timer decrement, show the change and reset the accumulator
-                ShowScoreChange(scoreDifference - timerDecrementAccumulator);
-                timerDecrementAccumulator = 0;
+                ShowScoreChange(scoreDifference);
             }
+            // We don't show anything for -1 (timer decrement) or positive changes
             
             previousScore = currentScore;
         }
@@ -189,5 +189,11 @@ public class Score : MonoBehaviour
         }
 
         textElement.gameObject.SetActive(false);
+    }
+
+    // New method to be called from GameManager
+    public void ReportDamage(int damage)
+    {
+        reportedDamage = damage;
     }
 }

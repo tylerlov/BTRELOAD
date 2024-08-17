@@ -1,5 +1,8 @@
 using FidelityFX;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
@@ -86,6 +89,39 @@ namespace TND.FSR
                     afterOpaquePass.m_hdrp = this;
                 }
             }
+
+            enabled = CheckHDRPSetup();
+        }
+
+        private bool CheckHDRPSetup()
+        {
+#if !TND_HDRP_EDITEDSOURCE
+            Debug.LogError("[FSR 3] HDRP Source edits are not confirmed, please make sure the edits are made correctly and press the 'Confirmation' button on the Upscaler Component");
+            return false;
+#elif UNITY_EDITOR
+            try
+            {
+                var _hdRenderPipeline = GraphicsSettings.GetSettingsForRenderPipeline<HDRenderPipeline>();
+                string _hdRenderPipelineName = "";
+                if (_hdRenderPipeline != null)
+                {
+                    _hdRenderPipelineName = _hdRenderPipeline.name;
+                }
+                string[] guids = AssetDatabase.FindAssets(_hdRenderPipelineName + " t:HDRenderPipelineGlobalSettings ", null);
+
+                if (guids.Length > 0)
+                {
+                    var path = AssetDatabase.GUIDToAssetPath(guids[0]);
+                    if (!File.ReadAllText(path).Contains("TND.FSR.FSR3RenderPass"))
+                    {
+                        Debug.LogError("[FSR 3] Upscaler has not been added to the 'Before Post Process' in the 'Custom Post Process Orders', please see the Quick Start: HDRP chapter of the documentation");
+                        return false;
+                    }
+                }
+            }
+            catch { }
+#endif
+            return true;
         }
 
         private void OnBeginContextRendering(ScriptableRenderContext renderContext, List<Camera> cameras)
@@ -179,8 +215,9 @@ namespace TND.FSR
             if (hdCamera != m_mainCamera)
             {
                 m_mainCamera = hdCamera;
+#if TND_HDRP_EDITEDSOURCE
                 m_mainCamera.tndUpscalerEnabled = true;
-
+#endif
                 //Make sure the camera allows Dynamic Resolution and VolumeMask includes the Layer of the camera.
                 HDAdditionalCameraData m_mainCameraAdditional = m_mainCamera.camera.GetComponent<HDAdditionalCameraData>();
                 m_mainCameraAdditional.allowDynamicResolution = true;
@@ -208,8 +245,8 @@ namespace TND.FSR
             Fsr3.InitializationFlags flags = Fsr3.InitializationFlags.EnableMotionVectorsJitterCancellation
                                            | Fsr3.InitializationFlags.EnableHighDynamicRange
                                            | Fsr3.InitializationFlags.EnableAutoExposure;
-            if (enableF16)
-                flags |= Fsr3.InitializationFlags.EnableFP16Usage;
+            //if (enableF16)//Breaks FSR 3.1, so we disabled it for now!
+            //    flags |= Fsr3.InitializationFlags.EnableFP16Usage;
 
             if (m_context != null)
             {
@@ -264,8 +301,9 @@ namespace TND.FSR
 
             if (m_mainCamera != null)
             {
+#if TND_HDRP_EDITEDSOURCE
                 m_mainCamera.tndUpscalerEnabled = false;
-
+#endif
                 //Set main camera to null to make sure it's setup again when fsr is initialized
                 m_mainCamera = null;
             }

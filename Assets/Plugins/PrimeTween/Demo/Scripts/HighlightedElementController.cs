@@ -19,15 +19,15 @@ namespace PrimeTweenDemo {
             if (cameraProjectionMatrixAnimation.IsAnimating) {
                 return;
             }
-            if (Input.touchSupported && !Input.GetMouseButton(0)) {
+            if (InputController.touchSupported && !InputController.Get()) {
                 SetCurrentHighlighted(null);
                 return;
             }
-            var ray = mainCamera.ScreenPointToRay(Input.mousePosition);
+            var ray = mainCamera.ScreenPointToRay(InputController.screenPosition);
             var highlightableElement = RaycastHighlightableElement(ray);
             SetCurrentHighlighted(highlightableElement);
 
-            if (current != null && Input.GetMouseButtonDown(0)) {
+            if (current != null && InputController.GetDown()) {
                 current.GetComponent<Animatable>().OnClick();
             }
         }

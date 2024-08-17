@@ -133,6 +133,7 @@ public class GameManager : MonoBehaviour
     private Dictionary<Transform, bool> lockedEnemies = new Dictionary<Transform, bool>();
     private GlobalClock globalClock;
     private FMOD.Studio.EventInstance musicEventInstance;
+    private Score scoreUI;
     #endregion
 
     #region Unity Lifecycle Methods
@@ -211,6 +212,8 @@ public class GameManager : MonoBehaviour
         {
             await LoadFirstAdditiveSceneAsync();
         }
+
+        scoreUI = FindObjectOfType<Score>();
     }
 
     private void Update()
@@ -278,34 +281,36 @@ public class GameManager : MonoBehaviour
         lastScoreUpdateTime = timeline.time;
     }
 
-     private void InitializeListenersAndComponents(Scene scene, LoadSceneMode mode)
+    private void InitializeListenersAndComponents(Scene scene, LoadSceneMode mode)
     {
-        transCamOn = new UnityEvent();
-        transCamOff = new UnityEvent();
-        StartingTransition = new UnityEvent();
+        // Use Unity's main thread dispatcher to ensure we're on the main thread
+        UnityMainThreadDispatcher.Instance().Enqueue(() => {
+            transCamOn = new UnityEvent();
+            transCamOff = new UnityEvent();
+            StartingTransition = new UnityEvent();
 
-        InitializeCameraSwitching();
-        InitializeCrosshair();
-        InitializeSplineManager();
-        InitializeShooterMovement();
+            InitializeCameraSwitching();
+            InitializeCrosshair();
+            InitializeSplineManager();
+            InitializeShooterMovement();
 
-        stateDrivenCamera = FindObjectOfType<CinemachineStateDrivenCamera>();
-        if (stateDrivenCamera == null)
-        {
-            ConditionalDebug.LogError("No Cinemachine State Driven Camera found in the scene.");
-        }
+            stateDrivenCamera = FindObjectOfType<CinemachineStateDrivenCamera>();
+            if (stateDrivenCamera == null)
+            {
+                ConditionalDebug.LogError("No Cinemachine State Driven Camera found in the scene.");
+            }
 
-        StartingTransition.Invoke();
+            StartingTransition.Invoke();
+        });
     }
 
     private void InitializeSplineManager()
     {
-        // Remove the specific GameObject.Find for "PlayerPlane"
         var splineManager = FindObjectOfType<SplineManager>();
         if (splineManager != null)
         {
-            transCamOn.AddListener(splineManager.IncrementSpline);
-            transCamOff.AddListener(splineManager.IncrementSpline);
+            if (transCamOn != null) transCamOn.AddListener(splineManager.IncrementSpline);
+            if (transCamOff != null) transCamOff.AddListener(splineManager.IncrementSpline);
         }
         else
         {
@@ -768,39 +773,49 @@ public class GameManager : MonoBehaviour
         }
     }
 
-     private async Task<bool> TryUseOpenOuroborosSceneAsync()
+    private async Task<bool> TryUseOpenOuroborosSceneAsync()
+{
+    for (int i = 0; i < SceneManager.sceneCount; i++)
     {
-        for (int i = 0; i < SceneManager.sceneCount; i++)
+        Scene openScene = SceneManager.GetSceneAt(i);
+        if (openScene.isLoaded && IsSceneInOuroborosGroup(openScene.name))
         {
-            Scene openScene = SceneManager.GetSceneAt(i);
-            if (openScene.isLoaded && IsSceneInOuroborosGroup(openScene.name))
-            {
-                currentAdditiveScene = openScene;
-                SceneManager.SetActiveScene(currentAdditiveScene);
-                
-                for (int j = 0; j < currentGroup.scenes.Length; j++)
-                {
-                    if (currentGroup.scenes[j].sceneName == openScene.name)
-                    {
-                        currentScene = j;
-                        nextSceneIndex = j; // Set nextSceneIndex to match the current scene
-                        currentSongSection = currentGroup.scenes[j].songSections[0].section;
-                        nextSongSection = currentSongSection; // Set nextSongSection to match the current section
-                        break;
-                    }
-                }
+            currentAdditiveScene = openScene;
+            bool setActiveSuccess = SceneManager.SetActiveScene(currentAdditiveScene);
             
-                // Update scene attributes and apply music changes
-                UpdateSceneAttributes();
-                ApplyMusicChanges();
-                
-                // Call OnSceneLoaded to properly initialize the scene
-                OnSceneLoaded(currentAdditiveScene, LoadSceneMode.Additive);
-                return true;
+            if (!setActiveSuccess)
+            {
+                ConditionalDebug.LogWarning($"Failed to set {currentAdditiveScene.name} as active scene.");
+                continue;
             }
+
+            for (int j = 0; j < currentGroup.scenes.Length; j++)
+            {
+                if (currentGroup.scenes[j].sceneName == openScene.name)
+                {
+                    currentScene = j;
+                    nextSceneIndex = j;
+                    currentSongSection = currentGroup.scenes[j].songSections[0].section;
+                    nextSongSection = currentSongSection;
+                    break;
+                }
+            }
+        
+            // Update scene attributes and apply music changes
+            UpdateSceneAttributes();
+            ApplyMusicChanges();
+            
+            // Call OnSceneLoaded on the main thread
+            await UnityMainThreadDispatcher.Instance().EnqueueAsync(() => 
+            {
+                OnSceneLoaded(currentAdditiveScene, LoadSceneMode.Additive);
+            });
+
+            return true;
         }
-        return false;
     }
+    return false;
+}
 
 private bool IsSceneInOuroborosGroup(string sceneName)
 {
@@ -985,6 +1000,13 @@ private GlobalClock TryGetGlobalClock()
         foreach (var enemy in destroyedEnemies)
         {
             lockedEnemies.Remove(enemy);
+        }
+    }
+    public void ReportDamage(int damage)
+    {
+        if (scoreUI != null)
+        {
+            scoreUI.ReportDamage(damage);
         }
     }
 }

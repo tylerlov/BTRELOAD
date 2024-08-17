@@ -27,7 +27,9 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     {
         if (DodgeInvincibility || isInvincible) return;
 
-        GameManager.instance.AddScore(-(int)amount);
+        int damageAmount = (int)amount;
+        GameManager.instance.AddScore(-damageAmount);
+        GameManager.instance.ReportDamage(damageAmount); // New method to report damage
         SpawnHitEffect();
         PlayHitFeedback();
 

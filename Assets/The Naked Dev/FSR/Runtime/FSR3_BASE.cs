@@ -4,9 +4,9 @@ using System.Runtime.CompilerServices;
 using UnityEngine;
 using FidelityFX;
 
-[assembly: InternalsVisibleTo("com.alteregogames.aeg-fsr.Runtime.BIRP")]
-[assembly: InternalsVisibleTo("com.alteregogames.aeg-fsr.Runtime.URP")]
-[assembly: InternalsVisibleTo("com.alteregogames.aeg-fsr.Runtime.HDRP")]
+//[assembly: InternalsVisibleTo("com.thenakeddev.fsr.Runtime.BIRP")]
+//[assembly: InternalsVisibleTo("com.thenakeddev.fsr.Runtime.URP")]
+//[assembly: InternalsVisibleTo("com.thenakeddev.fsr.Runtime.HDRP")]
 
 namespace TND.FSR 
 {

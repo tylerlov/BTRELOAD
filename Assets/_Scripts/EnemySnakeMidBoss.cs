@@ -276,8 +276,11 @@ public class EnemySnakeMidBoss : BaseBehaviour, IDamageable, ILimbDamageReceiver
 
         // Additional cleanup or state management here, if necessary
 
-        // Call to GameManager to transition to the next scene
-        GameManager.instance.ChangeSceneWithTransitionToNext();
+        // Option 1: Await the scene change (recommended)
+        yield return GameManager.instance.ChangeSceneWithTransitionToNext();
+
+        // Option 2: Explicitly ignore the returned Task
+        // _ = GameManager.instance.ChangeSceneWithTransitionToNext();
     }
 
     private void Update()

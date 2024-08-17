@@ -23,6 +23,7 @@ namespace TND.FSR
 
         private List<FSRScriptableRenderFeature> fsrScriptableRenderFeature;
         private bool containsRenderFeature = false;
+        private bool m_usePhysicalProperties;
 
         //UniversalRenderPipelineAsset 
         private UniversalRenderPipelineAsset UniversalRenderPipelineAsset;
@@ -36,6 +37,7 @@ namespace TND.FSR
 
         public Fsr3UpscalerContext[] m_context;
         private Fsr3UpscalerAssets m_assets;
+
 
 
         public bool m_cameraStacking = false;
@@ -311,7 +313,10 @@ namespace TND.FSR
             {
                 return;
             }
-            m_mainCamera.ResetProjectionMatrix();
+
+            m_mainCamera.usePhysicalProperties = m_usePhysicalProperties;
+            if (!m_mainCamera.usePhysicalProperties)
+                m_mainCamera.ResetProjectionMatrix();
         }
 
         /// <summary>
@@ -339,6 +344,8 @@ namespace TND.FSR
             jitterX += UnityEngine.Random.Range(-0.0001f * antiGhosting, 0.0001f * antiGhosting);
             jitterY += UnityEngine.Random.Range(-0.0001f * antiGhosting, 0.0001f * antiGhosting);
 
+            m_usePhysicalProperties = m_mainCamera.usePhysicalProperties;
+             
             if (m_mainCamera.stereoEnabled)
             {
                 // We only need to configure all of this once for stereo, during OnPreCull
@@ -471,8 +478,8 @@ namespace TND.FSR
                                            | Fsr3.InitializationFlags.EnableHighDynamicRange
                                            | Fsr3.InitializationFlags.EnableAutoExposure;
 
-            if (enableF16)
-                flags |= Fsr3.InitializationFlags.EnableFP16Usage;
+            //if (enableF16)//Breaks FSR 3.1, so we disabled it for now!
+            //    flags |= Fsr3.InitializationFlags.EnableFP16Usage;
 
             DestroyContext();
 
