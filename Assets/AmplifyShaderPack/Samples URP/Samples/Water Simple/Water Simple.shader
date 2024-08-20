@@ -1,4 +1,4 @@
-// Made with Amplify Shader Editor v1.9.3.3
+// Made with Amplify Shader Editor v1.9.6.3
 // Available at the Unity Asset Store - http://u3d.as/y3X 
 Shader "AmplifyShaderPack/Water Simple"
 {
@@ -36,8 +36,8 @@ Shader "AmplifyShaderPack/Water Simple"
 		//_TessEdgeLength ( "Tess Edge length", Range( 2, 50 ) ) = 16
 		//_TessMaxDisp( "Tess Max Displacement", Float ) = 25
 
-		[HideInInspector][ToggleOff] _SpecularHighlights("Specular Highlights", Float) = 1.0
-		[HideInInspector][ToggleOff] _EnvironmentReflections("Environment Reflections", Float) = 1.0
+		[HideInInspector][ToggleOff] _SpecularHighlights("Specular Highlights", Float) = 1
+		[HideInInspector][ToggleOff] _EnvironmentReflections("Environment Reflections", Float) = 1
 		[HideInInspector][ToggleOff] _ReceiveShadows("Receive Shadows", Float) = 1.0
 
 		[HideInInspector] _QueueOffset("_QueueOffset", Float) = 0
@@ -192,24 +192,27 @@ Shader "AmplifyShaderPack/Water Simple"
 
 			HLSLPROGRAM
 
+			
+
 			#define _SPECULAR_SETUP 1
-			#pragma shader_feature_local_fragment _SPECULAR_SETUP
+			#pragma shader_feature_local_fragment _SPECULARHIGHLIGHTS_OFF
+			#pragma shader_feature_local_fragment _ENVIRONMENTREFLECTIONS_OFF
 			#define _SURFACE_TYPE_TRANSPARENT 1
 			#define _NORMAL_DROPOFF_TS 1
+			#pragma shader_feature_local _RECEIVE_SHADOWS_OFF
+			#pragma multi_compile_fragment _ _SCREEN_SPACE_OCCLUSION
 			#pragma multi_compile_instancing
 			#pragma instancing_options renderinglayer
 			#pragma multi_compile _ LOD_FADE_CROSSFADE
 			#pragma multi_compile_fog
 			#define ASE_FOG 1
 			#define _NORMALMAP 1
-			#define ASE_SRP_VERSION 140010
+			#define ASE_SRP_VERSION 140011
 			#define REQUIRE_DEPTH_TEXTURE 1
 			#define REQUIRE_OPAQUE_TEXTURE 1
 
 
-			#pragma shader_feature_local _RECEIVE_SHADOWS_OFF
-			#pragma shader_feature_local_fragment _SPECULARHIGHLIGHTS_OFF
-			#pragma shader_feature_local_fragment _ENVIRONMENTREFLECTIONS_OFF
+			
 
 			#pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _MAIN_LIGHT_SHADOWS_SCREEN
 			#pragma multi_compile _ _ADDITIONAL_LIGHTS_VERTEX _ADDITIONAL_LIGHTS
@@ -228,13 +231,10 @@ Shader "AmplifyShaderPack/Water Simple"
 			#pragma multi_compile_fragment _ _SHADOWS_SOFT _SHADOWS_SOFT_LOW _SHADOWS_SOFT_MEDIUM _SHADOWS_SOFT_HIGH
            
 
-			#pragma multi_compile_fragment _ _SCREEN_SPACE_OCCLUSION
 			#pragma multi_compile_fragment _ _DBUFFER_MRT1 _DBUFFER_MRT2 _DBUFFER_MRT3
 			#pragma multi_compile _ _LIGHT_LAYERS
 			#pragma multi_compile_fragment _ _LIGHT_COOKIES
 			#pragma multi_compile _ _FORWARD_PLUS
-		
-			
 
 			
 
@@ -247,6 +247,10 @@ Shader "AmplifyShaderPack/Water Simple"
 
 			#pragma vertex vert
 			#pragma fragment frag
+
+			#if defined(_SPECULAR_SETUP) && defined(_ASE_LIGHTING_SIMPLE)
+				#define _SPECULAR_COLOR 1
+			#endif
 
 			#define SHADERPASS SHADERPASS_FORWARD
 
@@ -270,14 +274,14 @@ Shader "AmplifyShaderPack/Water Simple"
 			#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/TextureStack.hlsl"
 
 			
+            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
+           
+
+			
             #if ASE_SRP_VERSION >=140009
 			#include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
 			#endif
 		
-
-			
-            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
-           
 
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Shadows.hlsl"
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/ShaderGraphFunctions.hlsl"
@@ -745,7 +749,11 @@ Shader "AmplifyShaderPack/Water Simple"
 					ApplyDecalToSurfaceData(IN.positionCS, surfaceData, inputData);
 				#endif
 
-				half4 color = UniversalFragmentPBR( inputData, surfaceData);
+				#ifdef _ASE_LIGHTING_SIMPLE
+					half4 color = UniversalFragmentBlinnPhong( inputData, surfaceData);
+				#else
+					half4 color = UniversalFragmentPBR( inputData, surfaceData);
+				#endif
 
 				#ifdef ASE_TRANSMISSION
 				{
@@ -888,6 +896,8 @@ Shader "AmplifyShaderPack/Water Simple"
 
 			HLSLPROGRAM
 
+			
+
 			#define _SPECULAR_SETUP 1
 			#define _SURFACE_TYPE_TRANSPARENT 1
 			#define _NORMAL_DROPOFF_TS 1
@@ -895,15 +905,19 @@ Shader "AmplifyShaderPack/Water Simple"
 			#pragma multi_compile _ LOD_FADE_CROSSFADE
 			#define ASE_FOG 1
 			#define _NORMALMAP 1
-			#define ASE_SRP_VERSION 140010
+			#define ASE_SRP_VERSION 140011
 
-
-			#pragma multi_compile_vertex _ _CASTING_PUNCTUAL_LIGHT_SHADOW
 
 			
 
+			#pragma multi_compile_vertex _ _CASTING_PUNCTUAL_LIGHT_SHADOW
+
 			#pragma vertex vert
 			#pragma fragment frag
+
+			#if defined(_SPECULAR_SETUP) && defined(_ASE_LIGHTING_SIMPLE)
+				#define _SPECULAR_COLOR 1
+			#endif
 
 			#define SHADERPASS SHADERPASS_SHADOWCASTER
 
@@ -921,14 +935,14 @@ Shader "AmplifyShaderPack/Water Simple"
 			#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/TextureStack.hlsl"
 
 			
+            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
+           
+
+			
             #if ASE_SRP_VERSION >=140009
 			#include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
 			#endif
 		
-
-			
-            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
-           
 
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/ShaderGraphFunctions.hlsl"
 			#include "Packages/com.unity.render-pipelines.universal/Editor/ShaderGraph/Includes/ShaderPass.hlsl"
@@ -1236,13 +1250,17 @@ Shader "AmplifyShaderPack/Water Simple"
 			#pragma multi_compile _ LOD_FADE_CROSSFADE
 			#define ASE_FOG 1
 			#define _NORMALMAP 1
-			#define ASE_SRP_VERSION 140010
+			#define ASE_SRP_VERSION 140011
 
 
 			
 
 			#pragma vertex vert
 			#pragma fragment frag
+
+			#if defined(_SPECULAR_SETUP) && defined(_ASE_LIGHTING_SIMPLE)
+				#define _SPECULAR_COLOR 1
+			#endif
 
 			#define SHADERPASS SHADERPASS_DEPTHONLY
 
@@ -1260,14 +1278,14 @@ Shader "AmplifyShaderPack/Water Simple"
 			#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/TextureStack.hlsl"
 
 			
+            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
+           
+
+			
             #if ASE_SRP_VERSION >=140009
 			#include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
 			#endif
 		
-
-			
-            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
-           
 
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/ShaderGraphFunctions.hlsl"
 			#include "Packages/com.unity.render-pipelines.universal/Editor/ShaderGraph/Includes/ShaderPass.hlsl"
@@ -1537,22 +1555,23 @@ Shader "AmplifyShaderPack/Water Simple"
 			Cull Off
 
 			HLSLPROGRAM
-
 			#define _SPECULAR_SETUP 1
-			#pragma shader_feature_local_fragment _SPECULAR_SETUP
 			#define _SURFACE_TYPE_TRANSPARENT 1
 			#define _NORMAL_DROPOFF_TS 1
 			#define ASE_FOG 1
 			#define _NORMALMAP 1
-			#define ASE_SRP_VERSION 140010
+			#define ASE_SRP_VERSION 140011
 			#define REQUIRE_DEPTH_TEXTURE 1
 			#define REQUIRE_OPAQUE_TEXTURE 1
 
+			#pragma shader_feature EDITOR_VISUALIZATION
 
 			#pragma vertex vert
 			#pragma fragment frag
 
-			#pragma shader_feature EDITOR_VISUALIZATION
+			#if defined(_SPECULAR_SETUP) && defined(_ASE_LIGHTING_SIMPLE)
+				#define _SPECULAR_COLOR 1
+			#endif
 
 			#define SHADERPASS SHADERPASS_META
 
@@ -1564,14 +1583,14 @@ Shader "AmplifyShaderPack/Water Simple"
 			#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/TextureStack.hlsl"
 
 			
+            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
+           
+
+			
             #if ASE_SRP_VERSION >=140009
 			#include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
 			#endif
 		
-
-			
-            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
-           
 
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/ShaderGraphFunctions.hlsl"
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/MetaInput.hlsl"
@@ -1906,13 +1925,17 @@ Shader "AmplifyShaderPack/Water Simple"
 			#define _NORMAL_DROPOFF_TS 1
 			#define ASE_FOG 1
 			#define _NORMALMAP 1
-			#define ASE_SRP_VERSION 140010
+			#define ASE_SRP_VERSION 140011
 			#define REQUIRE_DEPTH_TEXTURE 1
 			#define REQUIRE_OPAQUE_TEXTURE 1
 
 
 			#pragma vertex vert
 			#pragma fragment frag
+
+			#if defined(_SPECULAR_SETUP) && defined(_ASE_LIGHTING_SIMPLE)
+				#define _SPECULAR_COLOR 1
+			#endif
 
 			#define SHADERPASS SHADERPASS_2D
 
@@ -1924,14 +1947,14 @@ Shader "AmplifyShaderPack/Water Simple"
 			#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/TextureStack.hlsl"
 
 			
+            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
+           
+
+			
             #if ASE_SRP_VERSION >=140009
 			#include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
 			#endif
 		
-
-			
-            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
-           
 
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/ShaderGraphFunctions.hlsl"
 			#include "Packages/com.unity.render-pipelines.universal/Editor/ShaderGraph/Includes/ShaderPass.hlsl"
@@ -2226,6 +2249,10 @@ Shader "AmplifyShaderPack/Water Simple"
 
 			HLSLPROGRAM
 
+			
+
+			
+
 			#define _SPECULAR_SETUP 1
 			#define _SURFACE_TYPE_TRANSPARENT 1
 			#define _NORMAL_DROPOFF_TS 1
@@ -2233,15 +2260,19 @@ Shader "AmplifyShaderPack/Water Simple"
 			#pragma multi_compile _ LOD_FADE_CROSSFADE
 			#define ASE_FOG 1
 			#define _NORMALMAP 1
-			#define ASE_SRP_VERSION 140010
+			#define ASE_SRP_VERSION 140011
 
+
+			
+
+			
 
 			#pragma vertex vert
 			#pragma fragment frag
 
-			
-
-			
+			#if defined(_SPECULAR_SETUP) && defined(_ASE_LIGHTING_SIMPLE)
+				#define _SPECULAR_COLOR 1
+			#endif
 
 			#define SHADERPASS SHADERPASS_DEPTHNORMALSONLY
 			//#define SHADERPASS SHADERPASS_DEPTHNORMALS
@@ -2266,14 +2297,14 @@ Shader "AmplifyShaderPack/Water Simple"
 			#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/TextureStack.hlsl"
 
 			
+            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
+           
+
+			
             #if ASE_SRP_VERSION >=140009
 			#include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
 			#endif
 		
-
-			
-            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
-           
 
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/ShaderGraphFunctions.hlsl"
 			#include "Packages/com.unity.render-pipelines.universal/Editor/ShaderGraph/Includes/ShaderPass.hlsl"
@@ -2607,24 +2638,26 @@ Shader "AmplifyShaderPack/Water Simple"
 
 			HLSLPROGRAM
 
+			
+
 			#define _SPECULAR_SETUP 1
-			#pragma shader_feature_local_fragment _SPECULAR_SETUP
+			#pragma shader_feature_local_fragment _SPECULARHIGHLIGHTS_OFF
+			#pragma shader_feature_local_fragment _ENVIRONMENTREFLECTIONS_OFF
 			#define _SURFACE_TYPE_TRANSPARENT 1
 			#define _NORMAL_DROPOFF_TS 1
+			#pragma shader_feature_local _RECEIVE_SHADOWS_OFF
 			#pragma multi_compile_instancing
 			#pragma instancing_options renderinglayer
 			#pragma multi_compile _ LOD_FADE_CROSSFADE
 			#pragma multi_compile_fog
 			#define ASE_FOG 1
 			#define _NORMALMAP 1
-			#define ASE_SRP_VERSION 140010
+			#define ASE_SRP_VERSION 140011
 			#define REQUIRE_DEPTH_TEXTURE 1
 			#define REQUIRE_OPAQUE_TEXTURE 1
 
 
-			#pragma shader_feature_local _RECEIVE_SHADOWS_OFF
-			#pragma shader_feature_local_fragment _SPECULARHIGHLIGHTS_OFF
-			#pragma shader_feature_local_fragment _ENVIRONMENTREFLECTIONS_OFF
+			
 
 			#pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _MAIN_LIGHT_SHADOWS_SCREEN
 			#pragma multi_compile_fragment _ _REFLECTION_PROBE_BLENDING
@@ -2650,10 +2683,12 @@ Shader "AmplifyShaderPack/Water Simple"
 			#pragma multi_compile _ DYNAMICLIGHTMAP_ON
 			#pragma multi_compile_fragment _ DEBUG_DISPLAY
 
-			
-
 			#pragma vertex vert
 			#pragma fragment frag
+
+			#if defined(_SPECULAR_SETUP) && defined(_ASE_LIGHTING_SIMPLE)
+				#define _SPECULAR_COLOR 1
+			#endif
 
 			#define SHADERPASS SHADERPASS_GBUFFER
 
@@ -2677,14 +2712,14 @@ Shader "AmplifyShaderPack/Water Simple"
 			#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/TextureStack.hlsl"
 
 			
+            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
+           
+
+			
             #if ASE_SRP_VERSION >=140009
 			#include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
 			#endif
 		
-
-			
-            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
-           
 
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Shadows.hlsl"
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/ShaderGraphFunctions.hlsl"
@@ -3166,13 +3201,17 @@ Shader "AmplifyShaderPack/Water Simple"
 			#define _NORMAL_DROPOFF_TS 1
 			#define ASE_FOG 1
 			#define _NORMALMAP 1
-			#define ASE_SRP_VERSION 140010
+			#define ASE_SRP_VERSION 140011
 
 
 			
 
 			#pragma vertex vert
 			#pragma fragment frag
+
+			#if defined(_SPECULAR_SETUP) && defined(_ASE_LIGHTING_SIMPLE)
+				#define _SPECULAR_COLOR 1
+			#endif
 
 			#define SCENESELECTIONPASS 1
 
@@ -3188,14 +3227,14 @@ Shader "AmplifyShaderPack/Water Simple"
 			#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/TextureStack.hlsl"
 
 			
+            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
+           
+
+			
             #if ASE_SRP_VERSION >=140009
 			#include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
 			#endif
 		
-
-			
-            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
-           
 
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/ShaderGraphFunctions.hlsl"
 
@@ -3441,13 +3480,17 @@ Shader "AmplifyShaderPack/Water Simple"
 			#define _NORMAL_DROPOFF_TS 1
 			#define ASE_FOG 1
 			#define _NORMALMAP 1
-			#define ASE_SRP_VERSION 140010
+			#define ASE_SRP_VERSION 140011
 
 
 			
 
 			#pragma vertex vert
 			#pragma fragment frag
+
+			#if defined(_SPECULAR_SETUP) && defined(_ASE_LIGHTING_SIMPLE)
+				#define _SPECULAR_COLOR 1
+			#endif
 
 		    #define SCENEPICKINGPASS 1
 
@@ -3463,14 +3506,14 @@ Shader "AmplifyShaderPack/Water Simple"
 			#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/TextureStack.hlsl"
 
 			
+            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
+           
+
+			
             #if ASE_SRP_VERSION >=140009
 			#include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
 			#endif
 		
-
-			
-            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
-           
 
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/ShaderGraphFunctions.hlsl"
 
@@ -3705,7 +3748,7 @@ Shader "AmplifyShaderPack/Water Simple"
 	Fallback "Hidden/InternalErrorShader"
 }
 /*ASEBEGIN
-Version=19303
+Version=19603
 Node;AmplifyShaderEditor.CommentaryNode;152;-2053.601,-256.6997;Inherit;False;843.903;553.8391;Screen depth difference to get intersection and fading effect with terrain and objects;5;89;3;1;2;166;;1,1,1,1;0;0
 Node;AmplifyShaderEditor.CommentaryNode;150;467.1957,-1501.783;Inherit;False;985.6011;418.6005;Get screen color for refraction and disturbe it with normals;7;96;97;98;65;149;164;165;;1,1,1,1;0;0
 Node;AmplifyShaderEditor.CommentaryNode;151;-935.9057,-1082.484;Inherit;False;1281.603;457.1994;Blend panning normals to fake noving ripples;7;19;23;24;21;22;17;48;;1,1,1,1;0;0
@@ -3714,13 +3757,13 @@ Node;AmplifyShaderEditor.CommentaryNode;153;-843.9032,402.718;Inherit;False;1083
 Node;AmplifyShaderEditor.WireNode;156;-151.0076,-354.5834;Inherit;False;1;0;COLOR;0,0,0,0;False;1;COLOR;0
 Node;AmplifyShaderEditor.WireNode;157;-149.1077,-261.9834;Inherit;False;1;0;COLOR;0,0,0,0;False;1;COLOR;0
 Node;AmplifyShaderEditor.GrabScreenPosition;164;511.3026,-1442.425;Inherit;False;0;0;5;FLOAT4;0;FLOAT;1;FLOAT;2;FLOAT;3;FLOAT;4
-Node;AmplifyShaderEditor.SamplerNode;105;-304.4021,674.9185;Inherit;True;Property;_Foam;Foam;9;0;Create;True;0;0;0;False;0;False;-1;None;57458fa642d243c5ab86f0367e0b01c9;True;0;False;white;Auto;False;Object;-1;Auto;Texture2D;8;0;SAMPLER2D;0,0;False;1;FLOAT2;0,0;False;2;FLOAT;1;False;3;FLOAT2;0,0;False;4;FLOAT2;0,0;False;5;FLOAT;1;False;6;FLOAT;0;False;7;SAMPLERSTATE;;False;5;COLOR;0;FLOAT;1;FLOAT;2;FLOAT;3;FLOAT;4
+Node;AmplifyShaderEditor.SamplerNode;105;-304.4021,674.9185;Inherit;True;Property;_Foam;Foam;9;0;Create;True;0;0;0;False;0;False;-1;None;57458fa642d243c5ab86f0367e0b01c9;True;0;False;white;Auto;False;Object;-1;Auto;Texture2D;8;0;SAMPLER2D;0,0;False;1;FLOAT2;0,0;False;2;FLOAT;1;False;3;FLOAT2;0,0;False;4;FLOAT2;0,0;False;5;FLOAT;1;False;6;FLOAT;0;False;7;SAMPLERSTATE;;False;6;COLOR;0;FLOAT;1;FLOAT;2;FLOAT;3;FLOAT;4;FLOAT3;5
 Node;AmplifyShaderEditor.SaturateNode;94;-249.5044,-96.98394;Inherit;False;1;0;FLOAT;0;False;1;FLOAT;0
 Node;AmplifyShaderEditor.RangedFloatNode;97;710.096,-1203.183;Float;False;Property;_Distortion;Distortion;8;0;Create;True;0;0;0;False;0;False;0.5;0.2;0;0;0;1;FLOAT;0
 Node;AmplifyShaderEditor.SimpleMultiplyOpNode;114;80.19891,604.0181;Inherit;False;2;2;0;FLOAT;0;False;1;FLOAT;0;False;1;FLOAT;0
 Node;AmplifyShaderEditor.ComponentMaskNode;165;814.6503,-1385.291;Inherit;False;True;True;False;False;1;0;FLOAT4;0,0,0,0;False;1;FLOAT2;0
 Node;AmplifyShaderEditor.LerpOp;13;60.50008,-220.6998;Inherit;False;3;0;COLOR;0,0,0,0;False;1;COLOR;0,0,0,0;False;2;FLOAT;0;False;1;COLOR;0
-Node;AmplifyShaderEditor.ColorNode;108;58.99682,146.0182;Float;False;Constant;_Color0;Color 0;-1;0;Create;True;0;0;0;False;0;False;1,1,1,0;0,0,0,0;False;0;5;COLOR;0;FLOAT;1;FLOAT;2;FLOAT;3;FLOAT;4
+Node;AmplifyShaderEditor.ColorNode;108;58.99682,146.0182;Float;False;Constant;_Color0;Color 0;-1;0;Create;True;0;0;0;False;0;False;1,1,1,0;0,0,0,0;False;True;0;6;COLOR;0;FLOAT;1;FLOAT;2;FLOAT;3;FLOAT;4;FLOAT3;5
 Node;AmplifyShaderEditor.SimpleMultiplyOpNode;98;888.1974,-1279.783;Inherit;False;2;2;0;FLOAT3;0,0,0;False;1;FLOAT;0;False;1;FLOAT3;0
 Node;AmplifyShaderEditor.SimpleAddOpNode;96;1041.296,-1346.683;Inherit;False;2;2;0;FLOAT2;0,0;False;1;FLOAT3;0,0,0;False;1;FLOAT3;0
 Node;AmplifyShaderEditor.SaturateNode;113;-136.0011,509.618;Inherit;False;1;0;FLOAT;0;False;1;FLOAT;0
@@ -3748,7 +3791,7 @@ Node;AmplifyShaderEditor.TextureCoordinatesNode;21;-885.9058,-1005.185;Inherit;F
 Node;AmplifyShaderEditor.WireNode;155;-1106.507,7.515848;Inherit;False;1;0;FLOAT;0;False;1;FLOAT;0
 Node;AmplifyShaderEditor.PannerNode;19;-610.9061,-919.9849;Inherit;False;3;0;FLOAT2;0,0;False;2;FLOAT2;0.04,0.04;False;1;FLOAT;1;False;1;FLOAT2;0
 Node;AmplifyShaderEditor.WireNode;154;-922.7065,390.316;Inherit;False;1;0;FLOAT;0;False;1;FLOAT;0
-Node;AmplifyShaderEditor.ColorNode;12;-697.5002,-417.5007;Float;False;Property;_DeepColor;Deep Color;2;0;Create;True;0;0;0;False;0;False;0,0,0,0;0,0.04310159,0.2499981,0;False;0;5;COLOR;0;FLOAT;1;FLOAT;2;FLOAT;3;FLOAT;4
+Node;AmplifyShaderEditor.ColorNode;12;-697.5002,-417.5007;Float;False;Property;_DeepColor;Deep Color;2;0;Create;True;0;0;0;False;0;False;0,0,0,0;0,0.04310159,0.2499981,0;False;True;0;6;COLOR;0;FLOAT;1;FLOAT;2;FLOAT;3;FLOAT;4;FLOAT3;5
 Node;AmplifyShaderEditor.RangedFloatNode;48;-557.3063,-795.3858;Float;False;Property;_NormalScale;Normal Scale;1;0;Create;True;0;0;0;False;0;False;0;-0.12;0;0;0;1;FLOAT;0
 Node;AmplifyShaderEditor.RangedFloatNode;111;-722.2024,526.6185;Float;False;Property;_FoamDepth;Foam Depth;10;0;Create;True;0;0;0;False;0;False;0;0.94;0;0;0;1;FLOAT;0
 Node;AmplifyShaderEditor.WireNode;158;-1075.608,-163.0834;Inherit;False;1;0;FLOAT;0;False;1;FLOAT;0
@@ -3756,15 +3799,15 @@ Node;AmplifyShaderEditor.SimpleAddOpNode;115;-542.0016,452.718;Inherit;False;2;2
 Node;AmplifyShaderEditor.TextureCoordinatesNode;106;-793.9032,700.119;Inherit;False;0;105;2;3;2;SAMPLER2D;;False;0;FLOAT2;1,1;False;1;FLOAT2;0,0;False;5;FLOAT2;0;FLOAT;1;FLOAT;2;FLOAT;3;FLOAT;4
 Node;AmplifyShaderEditor.RangedFloatNode;112;-531.4025,588.5187;Float;False;Property;_FoamFalloff;Foam Falloff;11;0;Create;True;0;0;0;False;0;False;0;-60;0;0;0;1;FLOAT;0
 Node;AmplifyShaderEditor.RangedFloatNode;10;-636.2005,-79.20019;Float;False;Property;_WaterFalloff;Water Falloff;5;0;Create;True;0;0;0;False;0;False;0;-6.02;0;0;0;1;FLOAT;0
-Node;AmplifyShaderEditor.SamplerNode;17;-256.3054,-814.2847;Inherit;True;Property;_WaterNormal;Water Normal;0;0;Create;True;0;0;0;False;0;False;-1;None;e901190044a54e7186ca567492f42131;True;0;True;bump;Auto;True;Object;-1;Auto;Texture2D;8;0;SAMPLER2D;0,0;False;1;FLOAT2;0,0;False;2;FLOAT;1;False;3;FLOAT2;0,0;False;4;FLOAT2;0,0;False;5;FLOAT;1;False;6;FLOAT;0;False;7;SAMPLERSTATE;;False;5;FLOAT3;0;FLOAT;1;FLOAT;2;FLOAT;3;FLOAT;4
+Node;AmplifyShaderEditor.SamplerNode;17;-256.3054,-814.2847;Inherit;True;Property;_WaterNormal;Water Normal;0;0;Create;True;0;0;0;False;0;False;-1;None;e901190044a54e7186ca567492f42131;True;0;True;bump;Auto;True;Object;-1;Auto;Texture2D;8;0;SAMPLER2D;0,0;False;1;FLOAT2;0,0;False;2;FLOAT;1;False;3;FLOAT2;0,0;False;4;FLOAT2;0,0;False;5;FLOAT;1;False;6;FLOAT;0;False;7;SAMPLERSTATE;;False;6;FLOAT3;0;FLOAT;1;FLOAT;2;FLOAT;3;FLOAT;4;FLOAT3;5
 Node;AmplifyShaderEditor.SimpleAddOpNode;88;-632.0056,-204.5827;Inherit;False;2;2;0;FLOAT;0;False;1;FLOAT;0;False;1;FLOAT;0
-Node;AmplifyShaderEditor.SamplerNode;23;-269.2061,-1024.185;Inherit;True;Property;_Normal2;Normal2;0;0;Create;True;0;0;0;False;0;False;-1;None;None;True;0;True;bump;Auto;True;Instance;17;Auto;Texture2D;8;0;SAMPLER2D;0,0;False;1;FLOAT2;0,0;False;2;FLOAT;1;False;3;FLOAT2;0,0;False;4;FLOAT2;0,0;False;5;FLOAT;1;False;6;FLOAT;0;False;7;SAMPLERSTATE;;False;5;FLOAT3;0;FLOAT;1;FLOAT;2;FLOAT;3;FLOAT;4
+Node;AmplifyShaderEditor.SamplerNode;23;-269.2061,-1024.185;Inherit;True;Property;_Normal2;Normal2;0;0;Create;True;0;0;0;False;0;False;-1;None;None;True;0;True;bump;Auto;True;Instance;17;Auto;Texture2D;8;0;SAMPLER2D;0,0;False;1;FLOAT2;0,0;False;2;FLOAT;1;False;3;FLOAT2;0,0;False;4;FLOAT2;0,0;False;5;FLOAT;1;False;6;FLOAT;0;False;7;SAMPLERSTATE;;False;6;FLOAT3;0;FLOAT;1;FLOAT;2;FLOAT;3;FLOAT;4;FLOAT3;5
 Node;AmplifyShaderEditor.PannerNode;116;-573.2014,720.3181;Inherit;False;3;0;FLOAT2;0,0;False;2;FLOAT2;-0.01,0.01;False;1;FLOAT;1;False;1;FLOAT2;0
-Node;AmplifyShaderEditor.ColorNode;11;-455.0999,-328.3;Float;False;Property;_ShalowColor;Shalow Color;3;0;Create;True;0;0;0;False;0;False;1,1,1,0;0,0.8088232,0.8088235,0;False;0;5;COLOR;0;FLOAT;1;FLOAT;2;FLOAT;3;FLOAT;4
+Node;AmplifyShaderEditor.ColorNode;11;-455.0999,-328.3;Float;False;Property;_ShalowColor;Shalow Color;3;0;Create;True;0;0;0;False;0;False;1,1,1,0;0,0.8088232,0.8088235,0;False;True;0;6;COLOR;0;FLOAT;1;FLOAT;2;FLOAT;3;FLOAT;4;FLOAT3;5
 Node;AmplifyShaderEditor.PannerNode;22;-613.2062,-1032.484;Inherit;False;3;0;FLOAT2;0,0;False;2;FLOAT2;-0.03,0;False;1;FLOAT;1;False;1;FLOAT2;0
 Node;AmplifyShaderEditor.PowerNode;87;-455.8059,-118.1832;Inherit;False;True;2;0;FLOAT;0;False;1;FLOAT;0;False;1;FLOAT;0
 Node;AmplifyShaderEditor.PowerNode;110;-356.1793,461.6185;Inherit;False;True;2;0;FLOAT;0;False;1;FLOAT;0;False;1;FLOAT;0
-Node;AmplifyShaderEditor.TemplateMultiPassMasterNode;168;1838.601,-748.1998;Float;False;True;-1;2;UnityEditor.ShaderGraphLitGUI;0;12;AmplifyShaderPack/Water Simple;94348b07e5e8bab40bd6c8a1e3df54cd;True;Forward;0;1;Forward;21;False;False;False;False;False;False;False;False;False;False;False;False;True;0;False;;False;True;0;False;;False;False;False;False;False;False;False;False;False;True;False;255;False;;255;False;;255;False;;7;False;;1;False;;1;False;;1;False;;7;False;;1;False;;1;False;;1;False;;False;True;1;False;;True;3;False;;True;True;0;False;;0;False;;True;4;RenderPipeline=UniversalPipeline;RenderType=Transparent=RenderType;Queue=Transparent=Queue=0;UniversalMaterialType=Lit;True;5;True;12;all;0;True;True;0;5;False;;10;False;;0;0;False;;0;False;;False;False;False;False;False;False;False;False;False;False;False;False;False;False;True;True;True;True;True;0;False;;False;False;False;False;False;False;False;True;False;255;False;;255;False;;255;False;;7;False;;1;False;;1;False;;1;False;;7;False;;1;False;;1;False;;1;False;;False;True;2;False;;True;3;False;;True;True;0;False;;0;False;;True;1;LightMode=UniversalForward;False;False;0;Hidden/InternalErrorShader;0;0;Standard;39;Workflow;0;0;Surface;1;0;  Refraction Model;0;0;  Blend;0;0;Two Sided;1;0;Fragment Normal Space,InvertActionOnDeselection;0;0;Forward Only;0;0;Transmission;0;0;  Transmission Shadow;0.5,False,;0;Translucency;0;0;  Translucency Strength;1,False,;0;  Normal Distortion;0.5,False,;0;  Scattering;2,False,;0;  Direct;0.9,False,;0;  Ambient;0.1,False,;0;  Shadow;0.5,False,;0;Cast Shadows;1;0;  Use Shadow Threshold;0;0;GPU Instancing;1;0;LOD CrossFade;1;0;Built-in Fog;1;0;_FinalColorxAlpha;0;0;Meta Pass;1;0;Override Baked GI;0;0;Extra Pre Pass;0;0;Tessellation;0;0;  Phong;0;0;  Strength;0.5,False,;0;  Type;0;0;  Tess;16,False,;0;  Min;10,False,;0;  Max;25,False,;0;  Edge Length;16,False,;0;  Max Displacement;25,False,;0;Write Depth;0;0;  Early Z;0;0;Vertex Position,InvertActionOnDeselection;1;0;Debug Display;0;0;Clear Coat;0;0;0;10;False;True;True;True;True;True;True;True;True;True;False;;False;0
+Node;AmplifyShaderEditor.TemplateMultiPassMasterNode;168;1838.601,-748.1998;Float;False;True;-1;2;UnityEditor.ShaderGraphLitGUI;0;12;AmplifyShaderPack/Water Simple;94348b07e5e8bab40bd6c8a1e3df54cd;True;Forward;0;1;Forward;21;False;False;False;False;False;False;False;False;False;False;False;False;True;0;False;;False;True;0;False;;False;False;False;False;False;False;False;False;False;True;False;255;False;;255;False;;255;False;;7;False;;1;False;;1;False;;1;False;;7;False;;1;False;;1;False;;1;False;;False;True;1;False;;True;3;False;;True;True;0;False;;0;False;;True;4;RenderPipeline=UniversalPipeline;RenderType=Transparent=RenderType;Queue=Transparent=Queue=0;UniversalMaterialType=Lit;True;5;True;12;all;0;True;True;0;5;False;;10;False;;0;0;False;;0;False;;False;False;False;False;False;False;False;False;False;False;False;False;False;False;True;True;True;True;True;0;False;;False;False;False;False;False;False;False;True;False;255;False;;255;False;;255;False;;7;False;;1;False;;1;False;;1;False;;7;False;;1;False;;1;False;;1;False;;False;True;2;False;;True;3;False;;True;True;0;False;;0;False;;True;1;LightMode=UniversalForward;False;False;0;Hidden/InternalErrorShader;0;0;Standard;42;Lighting Model;0;0;Workflow;0;0;Surface;1;0;  Refraction Model;0;0;  Blend;0;0;Two Sided;1;0;Fragment Normal Space,InvertActionOnDeselection;0;0;Forward Only;0;0;Transmission;0;0;  Transmission Shadow;0.5,False,;0;Translucency;0;0;  Translucency Strength;1,False,;0;  Normal Distortion;0.5,False,;0;  Scattering;2,False,;0;  Direct;0.9,False,;0;  Ambient;0.1,False,;0;  Shadow;0.5,False,;0;Cast Shadows;1;0;  Use Shadow Threshold;0;0;Receive Shadows;1;0;Receive SSAO;1;0;GPU Instancing;1;0;LOD CrossFade;1;0;Built-in Fog;1;0;_FinalColorxAlpha;0;0;Meta Pass;1;0;Override Baked GI;0;0;Extra Pre Pass;0;0;Tessellation;0;0;  Phong;0;0;  Strength;0.5,False,;0;  Type;0;0;  Tess;16,False,;0;  Min;10,False,;0;  Max;25,False,;0;  Edge Length;16,False,;0;  Max Displacement;25,False,;0;Write Depth;0;0;  Early Z;0;0;Vertex Position,InvertActionOnDeselection;1;0;Debug Display;0;0;Clear Coat;0;0;0;10;False;True;True;True;True;True;True;True;True;True;False;;False;0
 Node;AmplifyShaderEditor.TemplateMultiPassMasterNode;171;1838.601,-748.1998;Float;False;False;-1;2;UnityEditor.ShaderGraphLitGUI;0;1;New Amplify Shader;94348b07e5e8bab40bd6c8a1e3df54cd;True;Meta;0;4;Meta;0;False;False;False;False;False;False;False;False;False;False;False;False;True;0;False;;False;True;0;False;;False;False;False;False;False;False;False;False;False;True;False;255;False;;255;False;;255;False;;7;False;;1;False;;1;False;;1;False;;7;False;;1;False;;1;False;;1;False;;False;True;1;False;;True;3;False;;True;True;0;False;;0;False;;True;4;RenderPipeline=UniversalPipeline;RenderType=Opaque=RenderType;Queue=Geometry=Queue=0;UniversalMaterialType=Lit;True;5;True;12;all;0;False;False;False;False;False;False;False;False;False;False;False;False;False;False;True;2;False;;False;False;False;False;False;False;False;False;False;False;False;False;False;False;True;1;LightMode=Meta;False;False;0;Hidden/InternalErrorShader;0;0;Standard;0;False;0
 Node;AmplifyShaderEditor.TemplateMultiPassMasterNode;170;1838.601,-748.1998;Float;False;False;-1;2;UnityEditor.ShaderGraphLitGUI;0;1;New Amplify Shader;94348b07e5e8bab40bd6c8a1e3df54cd;True;DepthOnly;0;3;DepthOnly;0;False;False;False;False;False;False;False;False;False;False;False;False;True;0;False;;False;True;0;False;;False;False;False;False;False;False;False;False;False;True;False;255;False;;255;False;;255;False;;7;False;;1;False;;1;False;;1;False;;7;False;;1;False;;1;False;;1;False;;False;True;1;False;;True;3;False;;True;True;0;False;;0;False;;True;4;RenderPipeline=UniversalPipeline;RenderType=Opaque=RenderType;Queue=Geometry=Queue=0;UniversalMaterialType=Lit;True;5;True;12;all;0;False;False;False;False;False;False;False;False;False;False;False;False;True;0;False;;False;False;False;True;False;False;False;False;0;False;;False;False;False;False;False;False;False;False;False;True;1;False;;False;False;True;1;LightMode=DepthOnly;False;False;0;Hidden/InternalErrorShader;0;0;Standard;0;False;0
 Node;AmplifyShaderEditor.TemplateMultiPassMasterNode;173;1838.601,-688.1998;Float;False;False;-1;2;UnityEditor.ShaderGraphLitGUI;0;1;New Amplify Shader;94348b07e5e8bab40bd6c8a1e3df54cd;True;DepthNormals;0;6;DepthNormals;0;False;False;False;False;False;False;False;False;False;False;False;False;True;0;False;;False;True;0;False;;False;False;False;False;False;False;False;False;False;True;False;255;False;;255;False;;255;False;;7;False;;1;False;;1;False;;1;False;;7;False;;1;False;;1;False;;1;False;;False;True;1;False;;True;3;False;;True;True;0;False;;0;False;;True;4;RenderPipeline=UniversalPipeline;RenderType=Opaque=RenderType;Queue=Geometry=Queue=0;UniversalMaterialType=Lit;True;5;True;12;all;0;False;True;1;1;False;;0;False;;0;1;False;;0;False;;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;True;1;False;;True;3;False;;False;True;1;LightMode=DepthNormals;False;False;0;Hidden/InternalErrorShader;0;0;Standard;0;False;0
@@ -3835,4 +3878,4 @@ WireConnection;168;1;24;0
 WireConnection;168;9;130;0
 WireConnection;168;4;133;0
 ASEEND*/
-//CHKSM=E86A59601ABC45AE5965D8046767C0941ECAD0CF
+//CHKSM=B1F6834742D48B1D5E441CEC4FDB2B4F182681B4

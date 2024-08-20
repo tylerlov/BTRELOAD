@@ -1,4 +1,4 @@
-// Made with Amplify Shader Editor v1.9.3.3
+// Made with Amplify Shader Editor v1.9.6.3
 // Available at the Unity Asset Store - http://u3d.as/y3X 
 Shader "AmplifyShaderPack/Parallax Occlusion Mapping"
 {
@@ -35,8 +35,8 @@ Shader "AmplifyShaderPack/Parallax Occlusion Mapping"
 		//_TessEdgeLength ( "Tess Edge length", Range( 2, 50 ) ) = 16
 		//_TessMaxDisp( "Tess Max Displacement", Float ) = 25
 
-		[HideInInspector][ToggleOff] _SpecularHighlights("Specular Highlights", Float) = 1.0
-		[HideInInspector][ToggleOff] _EnvironmentReflections("Environment Reflections", Float) = 1.0
+		[HideInInspector][ToggleOff] _SpecularHighlights("Specular Highlights", Float) = 1
+		[HideInInspector][ToggleOff] _EnvironmentReflections("Environment Reflections", Float) = 1
 		[HideInInspector][ToggleOff] _ReceiveShadows("Receive Shadows", Float) = 1.0
 
 		[HideInInspector] _QueueOffset("_QueueOffset", Float) = 0
@@ -191,19 +191,21 @@ Shader "AmplifyShaderPack/Parallax Occlusion Mapping"
 
 			HLSLPROGRAM
 
+			
+
 			#define _NORMAL_DROPOFF_TS 1
+			#pragma shader_feature_local _RECEIVE_SHADOWS_OFF
+			#pragma multi_compile_fragment _ _SCREEN_SPACE_OCCLUSION
 			#pragma multi_compile_instancing
 			#pragma instancing_options renderinglayer
 			#pragma multi_compile _ LOD_FADE_CROSSFADE
 			#pragma multi_compile_fog
 			#define ASE_FOG 1
 			#define _NORMALMAP 1
-			#define ASE_SRP_VERSION 140010
+			#define ASE_SRP_VERSION 140011
 
 
-			#pragma shader_feature_local _RECEIVE_SHADOWS_OFF
-			#pragma shader_feature_local_fragment _SPECULARHIGHLIGHTS_OFF
-			#pragma shader_feature_local_fragment _ENVIRONMENTREFLECTIONS_OFF
+			
 
 			#pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _MAIN_LIGHT_SHADOWS_SCREEN
 			#pragma multi_compile _ _ADDITIONAL_LIGHTS_VERTEX _ADDITIONAL_LIGHTS
@@ -222,13 +224,10 @@ Shader "AmplifyShaderPack/Parallax Occlusion Mapping"
 			#pragma multi_compile_fragment _ _SHADOWS_SOFT _SHADOWS_SOFT_LOW _SHADOWS_SOFT_MEDIUM _SHADOWS_SOFT_HIGH
            
 
-			#pragma multi_compile_fragment _ _SCREEN_SPACE_OCCLUSION
 			#pragma multi_compile_fragment _ _DBUFFER_MRT1 _DBUFFER_MRT2 _DBUFFER_MRT3
 			#pragma multi_compile _ _LIGHT_LAYERS
 			#pragma multi_compile_fragment _ _LIGHT_COOKIES
 			#pragma multi_compile _ _FORWARD_PLUS
-		
-			
 
 			
 
@@ -241,6 +240,10 @@ Shader "AmplifyShaderPack/Parallax Occlusion Mapping"
 
 			#pragma vertex vert
 			#pragma fragment frag
+
+			#if defined(_SPECULAR_SETUP) && defined(_ASE_LIGHTING_SIMPLE)
+				#define _SPECULAR_COLOR 1
+			#endif
 
 			#define SHADERPASS SHADERPASS_FORWARD
 
@@ -264,14 +267,14 @@ Shader "AmplifyShaderPack/Parallax Occlusion Mapping"
 			#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/TextureStack.hlsl"
 
 			
+            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
+           
+
+			
             #if ASE_SRP_VERSION >=140009
 			#include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
 			#endif
 		
-
-			
-            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
-           
 
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Shadows.hlsl"
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/ShaderGraphFunctions.hlsl"
@@ -787,7 +790,11 @@ Shader "AmplifyShaderPack/Parallax Occlusion Mapping"
 					ApplyDecalToSurfaceData(IN.positionCS, surfaceData, inputData);
 				#endif
 
-				half4 color = UniversalFragmentPBR( inputData, surfaceData);
+				#ifdef _ASE_LIGHTING_SIMPLE
+					half4 color = UniversalFragmentBlinnPhong( inputData, surfaceData);
+				#else
+					half4 color = UniversalFragmentPBR( inputData, surfaceData);
+				#endif
 
 				#ifdef ASE_TRANSMISSION
 				{
@@ -930,20 +937,26 @@ Shader "AmplifyShaderPack/Parallax Occlusion Mapping"
 
 			HLSLPROGRAM
 
+			
+
 			#define _NORMAL_DROPOFF_TS 1
 			#pragma multi_compile_instancing
 			#pragma multi_compile _ LOD_FADE_CROSSFADE
 			#define ASE_FOG 1
 			#define _NORMALMAP 1
-			#define ASE_SRP_VERSION 140010
+			#define ASE_SRP_VERSION 140011
 
-
-			#pragma multi_compile_vertex _ _CASTING_PUNCTUAL_LIGHT_SHADOW
 
 			
 
+			#pragma multi_compile_vertex _ _CASTING_PUNCTUAL_LIGHT_SHADOW
+
 			#pragma vertex vert
 			#pragma fragment frag
+
+			#if defined(_SPECULAR_SETUP) && defined(_ASE_LIGHTING_SIMPLE)
+				#define _SPECULAR_COLOR 1
+			#endif
 
 			#define SHADERPASS SHADERPASS_SHADOWCASTER
 
@@ -961,14 +974,14 @@ Shader "AmplifyShaderPack/Parallax Occlusion Mapping"
 			#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/TextureStack.hlsl"
 
 			
+            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
+           
+
+			
             #if ASE_SRP_VERSION >=140009
 			#include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
 			#endif
 		
-
-			
-            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
-           
 
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/ShaderGraphFunctions.hlsl"
 			#include "Packages/com.unity.render-pipelines.universal/Editor/ShaderGraph/Includes/ShaderPass.hlsl"
@@ -1267,13 +1280,17 @@ Shader "AmplifyShaderPack/Parallax Occlusion Mapping"
 			#pragma multi_compile _ LOD_FADE_CROSSFADE
 			#define ASE_FOG 1
 			#define _NORMALMAP 1
-			#define ASE_SRP_VERSION 140010
+			#define ASE_SRP_VERSION 140011
 
 
 			
 
 			#pragma vertex vert
 			#pragma fragment frag
+
+			#if defined(_SPECULAR_SETUP) && defined(_ASE_LIGHTING_SIMPLE)
+				#define _SPECULAR_COLOR 1
+			#endif
 
 			#define SHADERPASS SHADERPASS_DEPTHONLY
 
@@ -1291,14 +1308,14 @@ Shader "AmplifyShaderPack/Parallax Occlusion Mapping"
 			#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/TextureStack.hlsl"
 
 			
+            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
+           
+
+			
             #if ASE_SRP_VERSION >=140009
 			#include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
 			#endif
 		
-
-			
-            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
-           
 
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/ShaderGraphFunctions.hlsl"
 			#include "Packages/com.unity.render-pipelines.universal/Editor/ShaderGraph/Includes/ShaderPass.hlsl"
@@ -1561,17 +1578,19 @@ Shader "AmplifyShaderPack/Parallax Occlusion Mapping"
 			Cull Off
 
 			HLSLPROGRAM
-
 			#define _NORMAL_DROPOFF_TS 1
 			#define ASE_FOG 1
 			#define _NORMALMAP 1
-			#define ASE_SRP_VERSION 140010
+			#define ASE_SRP_VERSION 140011
 
+			#pragma shader_feature EDITOR_VISUALIZATION
 
 			#pragma vertex vert
 			#pragma fragment frag
 
-			#pragma shader_feature EDITOR_VISUALIZATION
+			#if defined(_SPECULAR_SETUP) && defined(_ASE_LIGHTING_SIMPLE)
+				#define _SPECULAR_COLOR 1
+			#endif
 
 			#define SHADERPASS SHADERPASS_META
 
@@ -1583,14 +1602,14 @@ Shader "AmplifyShaderPack/Parallax Occlusion Mapping"
 			#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/TextureStack.hlsl"
 
 			
+            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
+           
+
+			
             #if ASE_SRP_VERSION >=140009
 			#include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
 			#endif
 		
-
-			
-            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
-           
 
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/ShaderGraphFunctions.hlsl"
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/MetaInput.hlsl"
@@ -1982,11 +2001,15 @@ Shader "AmplifyShaderPack/Parallax Occlusion Mapping"
 			#define _NORMAL_DROPOFF_TS 1
 			#define ASE_FOG 1
 			#define _NORMALMAP 1
-			#define ASE_SRP_VERSION 140010
+			#define ASE_SRP_VERSION 140011
 
 
 			#pragma vertex vert
 			#pragma fragment frag
+
+			#if defined(_SPECULAR_SETUP) && defined(_ASE_LIGHTING_SIMPLE)
+				#define _SPECULAR_COLOR 1
+			#endif
 
 			#define SHADERPASS SHADERPASS_2D
 
@@ -1998,14 +2021,14 @@ Shader "AmplifyShaderPack/Parallax Occlusion Mapping"
 			#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/TextureStack.hlsl"
 
 			
+            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
+           
+
+			
             #if ASE_SRP_VERSION >=140009
 			#include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
 			#endif
 		
-
-			
-            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
-           
 
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/ShaderGraphFunctions.hlsl"
 			#include "Packages/com.unity.render-pipelines.universal/Editor/ShaderGraph/Includes/ShaderPass.hlsl"
@@ -2362,20 +2385,28 @@ Shader "AmplifyShaderPack/Parallax Occlusion Mapping"
 
 			HLSLPROGRAM
 
+			
+
+			
+
 			#define _NORMAL_DROPOFF_TS 1
 			#pragma multi_compile_instancing
 			#pragma multi_compile _ LOD_FADE_CROSSFADE
 			#define ASE_FOG 1
 			#define _NORMALMAP 1
-			#define ASE_SRP_VERSION 140010
+			#define ASE_SRP_VERSION 140011
 
+
+			
+
+			
 
 			#pragma vertex vert
 			#pragma fragment frag
 
-			
-
-			
+			#if defined(_SPECULAR_SETUP) && defined(_ASE_LIGHTING_SIMPLE)
+				#define _SPECULAR_COLOR 1
+			#endif
 
 			#define SHADERPASS SHADERPASS_DEPTHNORMALSONLY
 			//#define SHADERPASS SHADERPASS_DEPTHNORMALS
@@ -2400,14 +2431,14 @@ Shader "AmplifyShaderPack/Parallax Occlusion Mapping"
 			#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/TextureStack.hlsl"
 
 			
+            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
+           
+
+			
             #if ASE_SRP_VERSION >=140009
 			#include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
 			#endif
 		
-
-			
-            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
-           
 
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/ShaderGraphFunctions.hlsl"
 			#include "Packages/com.unity.render-pipelines.universal/Editor/ShaderGraph/Includes/ShaderPass.hlsl"
@@ -2833,19 +2864,20 @@ Shader "AmplifyShaderPack/Parallax Occlusion Mapping"
 
 			HLSLPROGRAM
 
+			
+
 			#define _NORMAL_DROPOFF_TS 1
+			#pragma shader_feature_local _RECEIVE_SHADOWS_OFF
 			#pragma multi_compile_instancing
 			#pragma instancing_options renderinglayer
 			#pragma multi_compile _ LOD_FADE_CROSSFADE
 			#pragma multi_compile_fog
 			#define ASE_FOG 1
 			#define _NORMALMAP 1
-			#define ASE_SRP_VERSION 140010
+			#define ASE_SRP_VERSION 140011
 
 
-			#pragma shader_feature_local _RECEIVE_SHADOWS_OFF
-			#pragma shader_feature_local_fragment _SPECULARHIGHLIGHTS_OFF
-			#pragma shader_feature_local_fragment _ENVIRONMENTREFLECTIONS_OFF
+			
 
 			#pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _MAIN_LIGHT_SHADOWS_SCREEN
 			#pragma multi_compile_fragment _ _REFLECTION_PROBE_BLENDING
@@ -2871,10 +2903,12 @@ Shader "AmplifyShaderPack/Parallax Occlusion Mapping"
 			#pragma multi_compile _ DYNAMICLIGHTMAP_ON
 			#pragma multi_compile_fragment _ DEBUG_DISPLAY
 
-			
-
 			#pragma vertex vert
 			#pragma fragment frag
+
+			#if defined(_SPECULAR_SETUP) && defined(_ASE_LIGHTING_SIMPLE)
+				#define _SPECULAR_COLOR 1
+			#endif
 
 			#define SHADERPASS SHADERPASS_GBUFFER
 
@@ -2898,14 +2932,14 @@ Shader "AmplifyShaderPack/Parallax Occlusion Mapping"
 			#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/TextureStack.hlsl"
 
 			
+            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
+           
+
+			
             #if ASE_SRP_VERSION >=140009
 			#include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
 			#endif
 		
-
-			
-            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
-           
 
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Shadows.hlsl"
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/ShaderGraphFunctions.hlsl"
@@ -3433,13 +3467,17 @@ Shader "AmplifyShaderPack/Parallax Occlusion Mapping"
 			#define _NORMAL_DROPOFF_TS 1
 			#define ASE_FOG 1
 			#define _NORMALMAP 1
-			#define ASE_SRP_VERSION 140010
+			#define ASE_SRP_VERSION 140011
 
 
 			
 
 			#pragma vertex vert
 			#pragma fragment frag
+
+			#if defined(_SPECULAR_SETUP) && defined(_ASE_LIGHTING_SIMPLE)
+				#define _SPECULAR_COLOR 1
+			#endif
 
 			#define SCENESELECTIONPASS 1
 
@@ -3455,14 +3493,14 @@ Shader "AmplifyShaderPack/Parallax Occlusion Mapping"
 			#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/TextureStack.hlsl"
 
 			
+            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
+           
+
+			
             #if ASE_SRP_VERSION >=140009
 			#include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
 			#endif
 		
-
-			
-            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
-           
 
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/ShaderGraphFunctions.hlsl"
 
@@ -3699,13 +3737,17 @@ Shader "AmplifyShaderPack/Parallax Occlusion Mapping"
 			#define _NORMAL_DROPOFF_TS 1
 			#define ASE_FOG 1
 			#define _NORMALMAP 1
-			#define ASE_SRP_VERSION 140010
+			#define ASE_SRP_VERSION 140011
 
 
 			
 
 			#pragma vertex vert
 			#pragma fragment frag
+
+			#if defined(_SPECULAR_SETUP) && defined(_ASE_LIGHTING_SIMPLE)
+				#define _SPECULAR_COLOR 1
+			#endif
 
 		    #define SCENEPICKINGPASS 1
 
@@ -3721,14 +3763,14 @@ Shader "AmplifyShaderPack/Parallax Occlusion Mapping"
 			#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/TextureStack.hlsl"
 
 			
+            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
+           
+
+			
             #if ASE_SRP_VERSION >=140009
 			#include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
 			#endif
 		
-
-			
-            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
-           
 
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/ShaderGraphFunctions.hlsl"
 
@@ -3956,7 +3998,7 @@ Shader "AmplifyShaderPack/Parallax Occlusion Mapping"
 	Fallback Off
 }
 /*ASEBEGIN
-Version=19303
+Version=19603
 Node;AmplifyShaderEditor.RangedFloatNode;43;-1504,384;Float;False;Property;_CurvatureU;Curvature U;9;0;Create;True;0;0;0;False;0;False;0;0;0;100;0;1;FLOAT;0
 Node;AmplifyShaderEditor.RangedFloatNode;45;-1504,464;Float;False;Property;_CurvatureV;Curvature V;10;0;Create;True;0;0;0;False;0;False;0;0;0;30;0;1;FLOAT;0
 Node;AmplifyShaderEditor.ViewDirInputsCoordNode;15;-1296,192;Float;False;Tangent;False;0;4;FLOAT3;0;FLOAT;1;FLOAT;2;FLOAT;3
@@ -3969,16 +4011,16 @@ Node;AmplifyShaderEditor.DdyOpNode;41;-656,-96;Inherit;False;1;0;FLOAT2;0,0;Fals
 Node;AmplifyShaderEditor.RegisterLocalVarNode;39;-752,-240;Float;False;customUVs;1;False;1;0;FLOAT2;0,0;False;1;FLOAT2;0
 Node;AmplifyShaderEditor.DdxOpNode;40;-656,-160;Inherit;False;1;0;FLOAT2;0,0;False;1;FLOAT2;0
 Node;AmplifyShaderEditor.RangedFloatNode;25;192,256;Float;False;Property;_RoughScale;Rough Scale;5;0;Create;True;0;0;0;False;0;False;0.5;0.5;0;0;0;1;FLOAT;0
-Node;AmplifyShaderEditor.SamplerNode;20;64,336;Inherit;True;Property;_Roughness;Roughness;4;0;Create;True;0;0;0;False;0;False;-1;None;b6a6c7bc322040c5b1fed27b535af25f;True;0;False;white;Auto;False;Object;-1;Derivative;Texture2D;8;0;SAMPLER2D;;False;1;FLOAT2;0,0;False;2;FLOAT;1;False;3;FLOAT2;0,0;False;4;FLOAT2;0,0;False;5;FLOAT;1;False;6;FLOAT;0;False;7;SAMPLERSTATE;;False;5;COLOR;0;FLOAT;1;FLOAT;2;FLOAT;3;FLOAT;4
-Node;AmplifyShaderEditor.SamplerNode;21;64,528;Inherit;True;Property;_Occlusion;Occlusion;6;0;Create;True;0;0;0;False;0;False;-1;None;d6dd85c78644495f98c427634c7d81e7;True;0;False;white;Auto;False;Object;-1;Derivative;Texture2D;8;0;SAMPLER2D;;False;1;FLOAT2;0,0;False;2;FLOAT;1;False;3;FLOAT2;0,0;False;4;FLOAT2;0,0;False;5;FLOAT;1;False;6;FLOAT;0;False;7;SAMPLERSTATE;;False;5;COLOR;0;FLOAT;1;FLOAT;2;FLOAT;3;FLOAT;4
+Node;AmplifyShaderEditor.SamplerNode;20;64,336;Inherit;True;Property;_Roughness;Roughness;4;0;Create;True;0;0;0;False;0;False;-1;None;b6a6c7bc322040c5b1fed27b535af25f;True;0;False;white;Auto;False;Object;-1;Derivative;Texture2D;8;0;SAMPLER2D;;False;1;FLOAT2;0,0;False;2;FLOAT;1;False;3;FLOAT2;0,0;False;4;FLOAT2;0,0;False;5;FLOAT;1;False;6;FLOAT;0;False;7;SAMPLERSTATE;;False;6;COLOR;0;FLOAT;1;FLOAT;2;FLOAT;3;FLOAT;4;FLOAT3;5
+Node;AmplifyShaderEditor.SamplerNode;21;64,528;Inherit;True;Property;_Occlusion;Occlusion;6;0;Create;True;0;0;0;False;0;False;-1;None;d6dd85c78644495f98c427634c7d81e7;True;0;False;white;Auto;False;Object;-1;Derivative;Texture2D;8;0;SAMPLER2D;;False;1;FLOAT2;0,0;False;2;FLOAT;1;False;3;FLOAT2;0,0;False;4;FLOAT2;0,0;False;5;FLOAT;1;False;6;FLOAT;0;False;7;SAMPLERSTATE;;False;6;COLOR;0;FLOAT;1;FLOAT;2;FLOAT;3;FLOAT;4;FLOAT3;5
 Node;AmplifyShaderEditor.RangedFloatNode;24;-292.5285,-343.4738;Float;False;Property;_NormalScale;Normal Scale;2;0;Create;True;0;0;0;False;0;False;0.5;1;0;0;0;1;FLOAT;0
-Node;AmplifyShaderEditor.SamplerNode;11;64,-320;Inherit;True;Property;_Albedo;Albedo;0;0;Create;True;0;0;0;False;0;False;-1;None;4998839cc7304cff87a29e2535dd1bbb;True;0;False;white;Auto;False;Object;-1;Derivative;Texture2D;8;0;SAMPLER2D;;False;1;FLOAT2;0,0;False;2;FLOAT;1;False;3;FLOAT2;0,0;False;4;FLOAT2;0,0;False;5;FLOAT;1;False;6;FLOAT;0;False;7;SAMPLERSTATE;;False;5;COLOR;0;FLOAT;1;FLOAT;2;FLOAT;3;FLOAT;4
-Node;AmplifyShaderEditor.SamplerNode;23;64,64;Inherit;True;Property;_Metallic;Metallic;3;0;Create;True;0;0;0;False;0;False;-1;None;0f1be42ec7d6427fbeb99bb7a4480d54;True;0;False;white;Auto;False;Object;-1;Derivative;Texture2D;8;0;SAMPLER2D;;False;1;FLOAT2;0,0;False;2;FLOAT;1;False;3;FLOAT2;0,0;False;4;FLOAT2;0,0;False;5;FLOAT;1;False;6;FLOAT;0;False;7;SAMPLERSTATE;;False;5;COLOR;0;FLOAT;1;FLOAT;2;FLOAT;3;FLOAT;4
-Node;AmplifyShaderEditor.SamplerNode;14;64,-128;Inherit;True;Property;_Normal;Normal;1;0;Create;True;0;0;0;False;0;False;-1;None;0e5318892134427a92eb01a797250708;True;0;True;bump;Auto;True;Object;-1;Derivative;Texture2D;8;0;SAMPLER2D;;False;1;FLOAT2;0,0;False;2;FLOAT;1;False;3;FLOAT2;0,0;False;4;FLOAT2;0,0;False;5;FLOAT;1;False;6;FLOAT;0;False;7;SAMPLERSTATE;;False;5;FLOAT3;0;FLOAT;1;FLOAT;2;FLOAT;3;FLOAT;4
+Node;AmplifyShaderEditor.SamplerNode;11;64,-320;Inherit;True;Property;_Albedo;Albedo;0;0;Create;True;0;0;0;False;0;False;-1;None;4998839cc7304cff87a29e2535dd1bbb;True;0;False;white;Auto;False;Object;-1;Derivative;Texture2D;8;0;SAMPLER2D;;False;1;FLOAT2;0,0;False;2;FLOAT;1;False;3;FLOAT2;0,0;False;4;FLOAT2;0,0;False;5;FLOAT;1;False;6;FLOAT;0;False;7;SAMPLERSTATE;;False;6;COLOR;0;FLOAT;1;FLOAT;2;FLOAT;3;FLOAT;4;FLOAT3;5
+Node;AmplifyShaderEditor.SamplerNode;23;64,64;Inherit;True;Property;_Metallic;Metallic;3;0;Create;True;0;0;0;False;0;False;-1;None;0f1be42ec7d6427fbeb99bb7a4480d54;True;0;False;white;Auto;False;Object;-1;Derivative;Texture2D;8;0;SAMPLER2D;;False;1;FLOAT2;0,0;False;2;FLOAT;1;False;3;FLOAT2;0,0;False;4;FLOAT2;0,0;False;5;FLOAT;1;False;6;FLOAT;0;False;7;SAMPLERSTATE;;False;6;COLOR;0;FLOAT;1;FLOAT;2;FLOAT;3;FLOAT;4;FLOAT3;5
+Node;AmplifyShaderEditor.SamplerNode;14;64,-128;Inherit;True;Property;_Normal;Normal;1;0;Create;True;0;0;0;False;0;False;-1;None;0e5318892134427a92eb01a797250708;True;0;True;bump;Auto;True;Object;-1;Derivative;Texture2D;8;0;SAMPLER2D;;False;1;FLOAT2;0,0;False;2;FLOAT;1;False;3;FLOAT2;0,0;False;4;FLOAT2;0,0;False;5;FLOAT;1;False;6;FLOAT;0;False;7;SAMPLERSTATE;;False;6;FLOAT3;0;FLOAT;1;FLOAT;2;FLOAT;3;FLOAT;4;FLOAT3;5
 Node;AmplifyShaderEditor.SimpleMultiplyOpNode;26;377.1725,251.9035;Inherit;False;2;2;0;FLOAT;0;False;1;FLOAT;0;False;1;FLOAT;0
 Node;AmplifyShaderEditor.OneMinusNode;42;506.9241,247.9579;Inherit;False;1;0;FLOAT;0;False;1;FLOAT;0
 Node;AmplifyShaderEditor.TemplateMultiPassMasterNode;48;780.7046,-269.0693;Float;False;False;-1;2;UnityEditor.ShaderGraphLitGUI;0;1;New Amplify Shader;94348b07e5e8bab40bd6c8a1e3df54cd;True;ExtraPrePass;0;0;ExtraPrePass;5;False;False;False;False;False;False;False;False;False;False;False;False;True;0;False;;False;True;0;False;;False;False;False;False;False;False;False;False;False;True;False;0;False;;255;False;;255;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;False;True;1;False;;True;3;False;;True;True;0;False;;0;False;;True;4;RenderPipeline=UniversalPipeline;RenderType=Opaque=RenderType;Queue=Geometry=Queue=0;UniversalMaterialType=Lit;True;5;True;12;all;0;False;True;1;1;False;;0;False;;0;1;False;;0;False;;False;False;False;False;False;False;False;False;False;False;False;False;True;0;False;;False;True;True;True;True;True;0;False;;False;False;False;False;False;False;False;True;False;0;False;;255;False;;255;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;False;True;1;False;;True;3;False;;True;True;0;False;;0;False;;True;0;False;False;0;;0;0;Standard;0;False;0
-Node;AmplifyShaderEditor.TemplateMultiPassMasterNode;49;780.7046,-269.0693;Float;False;True;-1;2;UnityEditor.ShaderGraphLitGUI;0;12;AmplifyShaderPack/Parallax Occlusion Mapping;94348b07e5e8bab40bd6c8a1e3df54cd;True;Forward;0;1;Forward;21;False;False;False;False;False;False;False;False;False;False;False;False;True;0;False;;False;True;0;False;;False;False;False;False;False;False;False;False;False;True;False;0;False;;255;False;;255;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;False;True;1;False;;True;3;False;;True;True;0;False;;0;False;;True;4;RenderPipeline=UniversalPipeline;RenderType=Opaque=RenderType;Queue=Geometry=Queue=0;UniversalMaterialType=Lit;True;5;True;12;all;0;False;True;1;1;False;;0;False;;1;1;False;;0;False;;False;False;False;False;False;False;False;False;False;False;False;False;False;False;True;True;True;True;True;0;False;;False;False;False;False;False;False;False;True;False;0;False;;255;False;;255;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;False;True;1;False;;True;3;False;;True;True;0;False;;0;False;;True;1;LightMode=UniversalForward;False;False;0;;0;0;Standard;39;Workflow;1;0;Surface;0;0;  Refraction Model;0;0;  Blend;0;0;Two Sided;1;0;Fragment Normal Space,InvertActionOnDeselection;0;0;Forward Only;0;0;Transmission;0;0;  Transmission Shadow;0.5,False,;0;Translucency;0;0;  Translucency Strength;1,False,;0;  Normal Distortion;0.5,False,;0;  Scattering;2,False,;0;  Direct;0.9,False,;0;  Ambient;0.1,False,;0;  Shadow;0.5,False,;0;Cast Shadows;1;0;  Use Shadow Threshold;0;0;GPU Instancing;1;0;LOD CrossFade;1;0;Built-in Fog;1;0;_FinalColorxAlpha;0;0;Meta Pass;1;0;Override Baked GI;0;0;Extra Pre Pass;0;0;Tessellation;0;0;  Phong;0;0;  Strength;0.5,False,;0;  Type;0;0;  Tess;16,False,;0;  Min;10,False,;0;  Max;25,False,;0;  Edge Length;16,False,;0;  Max Displacement;25,False,;0;Write Depth;0;0;  Early Z;0;0;Vertex Position,InvertActionOnDeselection;1;0;Debug Display;0;0;Clear Coat;0;0;0;10;False;True;True;True;True;True;True;True;True;True;False;;False;0
+Node;AmplifyShaderEditor.TemplateMultiPassMasterNode;49;780.7046,-269.0693;Float;False;True;-1;2;UnityEditor.ShaderGraphLitGUI;0;12;AmplifyShaderPack/Parallax Occlusion Mapping;94348b07e5e8bab40bd6c8a1e3df54cd;True;Forward;0;1;Forward;21;False;False;False;False;False;False;False;False;False;False;False;False;True;0;False;;False;True;0;False;;False;False;False;False;False;False;False;False;False;True;False;0;False;;255;False;;255;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;False;True;1;False;;True;3;False;;True;True;0;False;;0;False;;True;4;RenderPipeline=UniversalPipeline;RenderType=Opaque=RenderType;Queue=Geometry=Queue=0;UniversalMaterialType=Lit;True;5;True;12;all;0;False;True;1;1;False;;0;False;;1;1;False;;0;False;;False;False;False;False;False;False;False;False;False;False;False;False;False;False;True;True;True;True;True;0;False;;False;False;False;False;False;False;False;True;False;0;False;;255;False;;255;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;False;True;1;False;;True;3;False;;True;True;0;False;;0;False;;True;1;LightMode=UniversalForward;False;False;0;;0;0;Standard;42;Lighting Model;0;0;Workflow;1;0;Surface;0;0;  Refraction Model;0;0;  Blend;0;0;Two Sided;1;0;Fragment Normal Space,InvertActionOnDeselection;0;0;Forward Only;0;0;Transmission;0;0;  Transmission Shadow;0.5,False,;0;Translucency;0;0;  Translucency Strength;1,False,;0;  Normal Distortion;0.5,False,;0;  Scattering;2,False,;0;  Direct;0.9,False,;0;  Ambient;0.1,False,;0;  Shadow;0.5,False,;0;Cast Shadows;1;0;  Use Shadow Threshold;0;0;Receive Shadows;1;0;Receive SSAO;1;0;GPU Instancing;1;0;LOD CrossFade;1;0;Built-in Fog;1;0;_FinalColorxAlpha;0;0;Meta Pass;1;0;Override Baked GI;0;0;Extra Pre Pass;0;0;Tessellation;0;0;  Phong;0;0;  Strength;0.5,False,;0;  Type;0;0;  Tess;16,False,;0;  Min;10,False,;0;  Max;25,False,;0;  Edge Length;16,False,;0;  Max Displacement;25,False,;0;Write Depth;0;0;  Early Z;0;0;Vertex Position,InvertActionOnDeselection;1;0;Debug Display;0;0;Clear Coat;0;0;0;10;False;True;True;True;True;True;True;True;True;True;False;;False;0
 Node;AmplifyShaderEditor.TemplateMultiPassMasterNode;50;780.7046,-269.0693;Float;False;False;-1;2;UnityEditor.ShaderGraphLitGUI;0;1;New Amplify Shader;94348b07e5e8bab40bd6c8a1e3df54cd;True;ShadowCaster;0;2;ShadowCaster;0;False;False;False;False;False;False;False;False;False;False;False;False;True;0;False;;False;True;0;False;;False;False;False;False;False;False;False;False;False;True;False;0;False;;255;False;;255;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;False;True;1;False;;True;3;False;;True;True;0;False;;0;False;;True;4;RenderPipeline=UniversalPipeline;RenderType=Opaque=RenderType;Queue=Geometry=Queue=0;UniversalMaterialType=Lit;True;5;True;12;all;0;False;False;False;False;False;False;False;False;False;False;False;False;True;0;False;;False;False;False;True;False;False;False;False;0;False;;False;False;False;False;False;False;False;False;False;True;1;False;;True;3;False;;False;True;1;LightMode=ShadowCaster;False;False;0;;0;0;Standard;0;False;0
 Node;AmplifyShaderEditor.TemplateMultiPassMasterNode;51;780.7046,-269.0693;Float;False;False;-1;2;UnityEditor.ShaderGraphLitGUI;0;1;New Amplify Shader;94348b07e5e8bab40bd6c8a1e3df54cd;True;DepthOnly;0;3;DepthOnly;0;False;False;False;False;False;False;False;False;False;False;False;False;True;0;False;;False;True;0;False;;False;False;False;False;False;False;False;False;False;True;False;0;False;;255;False;;255;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;False;True;1;False;;True;3;False;;True;True;0;False;;0;False;;True;4;RenderPipeline=UniversalPipeline;RenderType=Opaque=RenderType;Queue=Geometry=Queue=0;UniversalMaterialType=Lit;True;5;True;12;all;0;False;False;False;False;False;False;False;False;False;False;False;False;True;0;False;;False;False;False;True;False;False;False;False;0;False;;False;False;False;False;False;False;False;False;False;True;1;False;;False;False;True;1;LightMode=DepthOnly;False;False;0;;0;0;Standard;0;False;0
 Node;AmplifyShaderEditor.TemplateMultiPassMasterNode;52;780.7046,-269.0693;Float;False;False;-1;2;UnityEditor.ShaderGraphLitGUI;0;1;New Amplify Shader;94348b07e5e8bab40bd6c8a1e3df54cd;True;Meta;0;4;Meta;0;False;False;False;False;False;False;False;False;False;False;False;False;True;0;False;;False;True;0;False;;False;False;False;False;False;False;False;False;False;True;False;0;False;;255;False;;255;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;False;True;1;False;;True;3;False;;True;True;0;False;;0;False;;True;4;RenderPipeline=UniversalPipeline;RenderType=Opaque=RenderType;Queue=Geometry=Queue=0;UniversalMaterialType=Lit;True;5;True;12;all;0;False;False;False;False;False;False;False;False;False;False;False;False;False;False;True;2;False;;False;False;False;False;False;False;False;False;False;False;False;False;False;False;True;1;LightMode=Meta;False;False;0;;0;0;Standard;0;False;0
@@ -4022,4 +4064,4 @@ WireConnection;49;3;23;1
 WireConnection;49;4;42;0
 WireConnection;49;5;21;0
 ASEEND*/
-//CHKSM=E7B48AE3A510A39FAAB52B81ADA3D07AACD558A6
+//CHKSM=738F7AB26D373305FF327BE7382B8650F5D7D86F

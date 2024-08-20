@@ -1,4 +1,4 @@
-// Made with Amplify Shader Editor v1.9.3.3
+// Made with Amplify Shader Editor v1.9.6.3
 // Available at the Unity Asset Store - http://u3d.as/y3X 
 Shader "AmplifyShaderPack/Simple Potion Liquid"
 {
@@ -30,8 +30,8 @@ Shader "AmplifyShaderPack/Simple Potion Liquid"
 		//_TessEdgeLength ( "Tess Edge length", Range( 2, 50 ) ) = 16
 		//_TessMaxDisp( "Tess Max Displacement", Float ) = 25
 
-		[HideInInspector][ToggleOff] _SpecularHighlights("Specular Highlights", Float) = 1.0
-		[HideInInspector][ToggleOff] _EnvironmentReflections("Environment Reflections", Float) = 1.0
+		[HideInInspector][ToggleOff] _SpecularHighlights("Specular Highlights", Float) = 1
+		[HideInInspector][ToggleOff] _EnvironmentReflections("Environment Reflections", Float) = 1
 		[HideInInspector][ToggleOff] _ReceiveShadows("Receive Shadows", Float) = 1.0
 
 		[HideInInspector] _QueueOffset("_QueueOffset", Float) = 0
@@ -186,7 +186,11 @@ Shader "AmplifyShaderPack/Simple Potion Liquid"
 
 			HLSLPROGRAM
 
+			
+
 			#define _NORMAL_DROPOFF_TS 1
+			#pragma shader_feature_local _RECEIVE_SHADOWS_OFF
+			#pragma multi_compile_fragment _ _SCREEN_SPACE_OCCLUSION
 			#pragma multi_compile_instancing
 			#pragma instancing_options renderinglayer
 			#pragma multi_compile _ LOD_FADE_CROSSFADE
@@ -196,12 +200,10 @@ Shader "AmplifyShaderPack/Simple Potion Liquid"
 			#define ASE_FINAL_COLOR_ALPHA_MULTIPLY 1
 			#define _EMISSION
 			#define _ALPHATEST_ON 1
-			#define ASE_SRP_VERSION 140010
+			#define ASE_SRP_VERSION 140011
 
 
-			#pragma shader_feature_local _RECEIVE_SHADOWS_OFF
-			#pragma shader_feature_local_fragment _SPECULARHIGHLIGHTS_OFF
-			#pragma shader_feature_local_fragment _ENVIRONMENTREFLECTIONS_OFF
+			
 
 			#pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _MAIN_LIGHT_SHADOWS_SCREEN
 			#pragma multi_compile _ _ADDITIONAL_LIGHTS_VERTEX _ADDITIONAL_LIGHTS
@@ -220,13 +222,10 @@ Shader "AmplifyShaderPack/Simple Potion Liquid"
 			#pragma multi_compile_fragment _ _SHADOWS_SOFT _SHADOWS_SOFT_LOW _SHADOWS_SOFT_MEDIUM _SHADOWS_SOFT_HIGH
            
 
-			#pragma multi_compile_fragment _ _SCREEN_SPACE_OCCLUSION
 			#pragma multi_compile_fragment _ _DBUFFER_MRT1 _DBUFFER_MRT2 _DBUFFER_MRT3
 			#pragma multi_compile _ _LIGHT_LAYERS
 			#pragma multi_compile_fragment _ _LIGHT_COOKIES
 			#pragma multi_compile _ _FORWARD_PLUS
-		
-			
 
 			
 
@@ -239,6 +238,10 @@ Shader "AmplifyShaderPack/Simple Potion Liquid"
 
 			#pragma vertex vert
 			#pragma fragment frag
+
+			#if defined(_SPECULAR_SETUP) && defined(_ASE_LIGHTING_SIMPLE)
+				#define _SPECULAR_COLOR 1
+			#endif
 
 			#define SHADERPASS SHADERPASS_FORWARD
 
@@ -262,14 +265,14 @@ Shader "AmplifyShaderPack/Simple Potion Liquid"
 			#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/TextureStack.hlsl"
 
 			
+            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
+           
+
+			
             #if ASE_SRP_VERSION >=140009
 			#include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
 			#endif
 		
-
-			
-            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
-           
 
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Shadows.hlsl"
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/ShaderGraphFunctions.hlsl"
@@ -691,7 +694,11 @@ Shader "AmplifyShaderPack/Simple Potion Liquid"
 					ApplyDecalToSurfaceData(IN.positionCS, surfaceData, inputData);
 				#endif
 
-				half4 color = UniversalFragmentPBR( inputData, surfaceData);
+				#ifdef _ASE_LIGHTING_SIMPLE
+					half4 color = UniversalFragmentBlinnPhong( inputData, surfaceData);
+				#else
+					half4 color = UniversalFragmentPBR( inputData, surfaceData);
+				#endif
 
 				#ifdef ASE_TRANSMISSION
 				{
@@ -834,6 +841,8 @@ Shader "AmplifyShaderPack/Simple Potion Liquid"
 
 			HLSLPROGRAM
 
+			
+
 			#define _NORMAL_DROPOFF_TS 1
 			#pragma multi_compile_instancing
 			#pragma multi_compile _ LOD_FADE_CROSSFADE
@@ -842,15 +851,19 @@ Shader "AmplifyShaderPack/Simple Potion Liquid"
 			#define ASE_FINAL_COLOR_ALPHA_MULTIPLY 1
 			#define _EMISSION
 			#define _ALPHATEST_ON 1
-			#define ASE_SRP_VERSION 140010
+			#define ASE_SRP_VERSION 140011
 
-
-			#pragma multi_compile_vertex _ _CASTING_PUNCTUAL_LIGHT_SHADOW
 
 			
 
+			#pragma multi_compile_vertex _ _CASTING_PUNCTUAL_LIGHT_SHADOW
+
 			#pragma vertex vert
 			#pragma fragment frag
+
+			#if defined(_SPECULAR_SETUP) && defined(_ASE_LIGHTING_SIMPLE)
+				#define _SPECULAR_COLOR 1
+			#endif
 
 			#define SHADERPASS SHADERPASS_SHADOWCASTER
 
@@ -868,14 +881,14 @@ Shader "AmplifyShaderPack/Simple Potion Liquid"
 			#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/TextureStack.hlsl"
 
 			
+            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
+           
+
+			
             #if ASE_SRP_VERSION >=140009
 			#include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
 			#endif
 		
-
-			
-            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
-           
 
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/ShaderGraphFunctions.hlsl"
 			#include "Packages/com.unity.render-pipelines.universal/Editor/ShaderGraph/Includes/ShaderPass.hlsl"
@@ -1184,13 +1197,17 @@ Shader "AmplifyShaderPack/Simple Potion Liquid"
 			#define ASE_FINAL_COLOR_ALPHA_MULTIPLY 1
 			#define _EMISSION
 			#define _ALPHATEST_ON 1
-			#define ASE_SRP_VERSION 140010
+			#define ASE_SRP_VERSION 140011
 
 
 			
 
 			#pragma vertex vert
 			#pragma fragment frag
+
+			#if defined(_SPECULAR_SETUP) && defined(_ASE_LIGHTING_SIMPLE)
+				#define _SPECULAR_COLOR 1
+			#endif
 
 			#define SHADERPASS SHADERPASS_DEPTHONLY
 
@@ -1208,14 +1225,14 @@ Shader "AmplifyShaderPack/Simple Potion Liquid"
 			#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/TextureStack.hlsl"
 
 			
+            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
+           
+
+			
             #if ASE_SRP_VERSION >=140009
 			#include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
 			#endif
 		
-
-			
-            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
-           
 
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/ShaderGraphFunctions.hlsl"
 			#include "Packages/com.unity.render-pipelines.universal/Editor/ShaderGraph/Includes/ShaderPass.hlsl"
@@ -1485,20 +1502,22 @@ Shader "AmplifyShaderPack/Simple Potion Liquid"
 			Cull Off
 
 			HLSLPROGRAM
-
 			#define _NORMAL_DROPOFF_TS 1
 			#define ASE_FOG 1
 			#define _SURFACE_TYPE_TRANSPARENT 1
 			#define ASE_FINAL_COLOR_ALPHA_MULTIPLY 1
 			#define _EMISSION
 			#define _ALPHATEST_ON 1
-			#define ASE_SRP_VERSION 140010
+			#define ASE_SRP_VERSION 140011
 
+			#pragma shader_feature EDITOR_VISUALIZATION
 
 			#pragma vertex vert
 			#pragma fragment frag
 
-			#pragma shader_feature EDITOR_VISUALIZATION
+			#if defined(_SPECULAR_SETUP) && defined(_ASE_LIGHTING_SIMPLE)
+				#define _SPECULAR_COLOR 1
+			#endif
 
 			#define SHADERPASS SHADERPASS_META
 
@@ -1510,14 +1529,14 @@ Shader "AmplifyShaderPack/Simple Potion Liquid"
 			#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/TextureStack.hlsl"
 
 			
+            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
+           
+
+			
             #if ASE_SRP_VERSION >=140009
 			#include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
 			#endif
 		
-
-			
-            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
-           
 
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/ShaderGraphFunctions.hlsl"
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/MetaInput.hlsl"
@@ -1807,11 +1826,15 @@ Shader "AmplifyShaderPack/Simple Potion Liquid"
 			#define ASE_FINAL_COLOR_ALPHA_MULTIPLY 1
 			#define _EMISSION
 			#define _ALPHATEST_ON 1
-			#define ASE_SRP_VERSION 140010
+			#define ASE_SRP_VERSION 140011
 
 
 			#pragma vertex vert
 			#pragma fragment frag
+
+			#if defined(_SPECULAR_SETUP) && defined(_ASE_LIGHTING_SIMPLE)
+				#define _SPECULAR_COLOR 1
+			#endif
 
 			#define SHADERPASS SHADERPASS_2D
 
@@ -1823,14 +1846,14 @@ Shader "AmplifyShaderPack/Simple Potion Liquid"
 			#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/TextureStack.hlsl"
 
 			
+            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
+           
+
+			
             #if ASE_SRP_VERSION >=140009
 			#include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
 			#endif
 		
-
-			
-            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
-           
 
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/ShaderGraphFunctions.hlsl"
 			#include "Packages/com.unity.render-pipelines.universal/Editor/ShaderGraph/Includes/ShaderPass.hlsl"
@@ -2078,6 +2101,10 @@ Shader "AmplifyShaderPack/Simple Potion Liquid"
 
 			HLSLPROGRAM
 
+			
+
+			
+
 			#define _NORMAL_DROPOFF_TS 1
 			#pragma multi_compile_instancing
 			#pragma multi_compile _ LOD_FADE_CROSSFADE
@@ -2086,15 +2113,19 @@ Shader "AmplifyShaderPack/Simple Potion Liquid"
 			#define ASE_FINAL_COLOR_ALPHA_MULTIPLY 1
 			#define _EMISSION
 			#define _ALPHATEST_ON 1
-			#define ASE_SRP_VERSION 140010
+			#define ASE_SRP_VERSION 140011
 
+
+			
+
+			
 
 			#pragma vertex vert
 			#pragma fragment frag
 
-			
-
-			
+			#if defined(_SPECULAR_SETUP) && defined(_ASE_LIGHTING_SIMPLE)
+				#define _SPECULAR_COLOR 1
+			#endif
 
 			#define SHADERPASS SHADERPASS_DEPTHNORMALSONLY
 			//#define SHADERPASS SHADERPASS_DEPTHNORMALS
@@ -2119,14 +2150,14 @@ Shader "AmplifyShaderPack/Simple Potion Liquid"
 			#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/TextureStack.hlsl"
 
 			
+            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
+           
+
+			
             #if ASE_SRP_VERSION >=140009
 			#include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
 			#endif
 		
-
-			
-            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
-           
 
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/ShaderGraphFunctions.hlsl"
 			#include "Packages/com.unity.render-pipelines.universal/Editor/ShaderGraph/Includes/ShaderPass.hlsl"
@@ -2447,7 +2478,10 @@ Shader "AmplifyShaderPack/Simple Potion Liquid"
 
 			HLSLPROGRAM
 
+			
+
 			#define _NORMAL_DROPOFF_TS 1
+			#pragma shader_feature_local _RECEIVE_SHADOWS_OFF
 			#pragma multi_compile_instancing
 			#pragma instancing_options renderinglayer
 			#pragma multi_compile _ LOD_FADE_CROSSFADE
@@ -2457,12 +2491,10 @@ Shader "AmplifyShaderPack/Simple Potion Liquid"
 			#define ASE_FINAL_COLOR_ALPHA_MULTIPLY 1
 			#define _EMISSION
 			#define _ALPHATEST_ON 1
-			#define ASE_SRP_VERSION 140010
+			#define ASE_SRP_VERSION 140011
 
 
-			#pragma shader_feature_local _RECEIVE_SHADOWS_OFF
-			#pragma shader_feature_local_fragment _SPECULARHIGHLIGHTS_OFF
-			#pragma shader_feature_local_fragment _ENVIRONMENTREFLECTIONS_OFF
+			
 
 			#pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _MAIN_LIGHT_SHADOWS_SCREEN
 			#pragma multi_compile_fragment _ _REFLECTION_PROBE_BLENDING
@@ -2488,10 +2520,12 @@ Shader "AmplifyShaderPack/Simple Potion Liquid"
 			#pragma multi_compile _ DYNAMICLIGHTMAP_ON
 			#pragma multi_compile_fragment _ DEBUG_DISPLAY
 
-			
-
 			#pragma vertex vert
 			#pragma fragment frag
+
+			#if defined(_SPECULAR_SETUP) && defined(_ASE_LIGHTING_SIMPLE)
+				#define _SPECULAR_COLOR 1
+			#endif
 
 			#define SHADERPASS SHADERPASS_GBUFFER
 
@@ -2515,14 +2549,14 @@ Shader "AmplifyShaderPack/Simple Potion Liquid"
 			#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/TextureStack.hlsl"
 
 			
+            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
+           
+
+			
             #if ASE_SRP_VERSION >=140009
 			#include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
 			#endif
 		
-
-			
-            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
-           
 
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Shadows.hlsl"
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/ShaderGraphFunctions.hlsl"
@@ -2959,13 +2993,17 @@ Shader "AmplifyShaderPack/Simple Potion Liquid"
 			#define ASE_FINAL_COLOR_ALPHA_MULTIPLY 1
 			#define _EMISSION
 			#define _ALPHATEST_ON 1
-			#define ASE_SRP_VERSION 140010
+			#define ASE_SRP_VERSION 140011
 
 
 			
 
 			#pragma vertex vert
 			#pragma fragment frag
+
+			#if defined(_SPECULAR_SETUP) && defined(_ASE_LIGHTING_SIMPLE)
+				#define _SPECULAR_COLOR 1
+			#endif
 
 			#define SCENESELECTIONPASS 1
 
@@ -2981,14 +3019,14 @@ Shader "AmplifyShaderPack/Simple Potion Liquid"
 			#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/TextureStack.hlsl"
 
 			
+            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
+           
+
+			
             #if ASE_SRP_VERSION >=140009
 			#include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
 			#endif
 		
-
-			
-            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
-           
 
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/ShaderGraphFunctions.hlsl"
 
@@ -3240,13 +3278,17 @@ Shader "AmplifyShaderPack/Simple Potion Liquid"
 			#define ASE_FINAL_COLOR_ALPHA_MULTIPLY 1
 			#define _EMISSION
 			#define _ALPHATEST_ON 1
-			#define ASE_SRP_VERSION 140010
+			#define ASE_SRP_VERSION 140011
 
 
 			
 
 			#pragma vertex vert
 			#pragma fragment frag
+
+			#if defined(_SPECULAR_SETUP) && defined(_ASE_LIGHTING_SIMPLE)
+				#define _SPECULAR_COLOR 1
+			#endif
 
 		    #define SCENEPICKINGPASS 1
 
@@ -3262,14 +3304,14 @@ Shader "AmplifyShaderPack/Simple Potion Liquid"
 			#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/TextureStack.hlsl"
 
 			
+            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
+           
+
+			
             #if ASE_SRP_VERSION >=140009
 			#include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
 			#endif
 		
-
-			
-            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
-           
 
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/ShaderGraphFunctions.hlsl"
 
@@ -3509,7 +3551,7 @@ Shader "AmplifyShaderPack/Simple Potion Liquid"
 	Fallback Off
 }
 /*ASEBEGIN
-Version=19303
+Version=19603
 Node;AmplifyShaderEditor.RangedFloatNode;1;-415.0217,-49.58836;Float;False;Property;_Speed;Speed;2;0;Create;True;0;0;0;False;0;False;0;7.88;0;0;0;1;FLOAT;0
 Node;AmplifyShaderEditor.SimpleTimeNode;2;-273.7999,-46;Inherit;False;1;0;FLOAT;1;False;1;FLOAT;0
 Node;AmplifyShaderEditor.ObjectToWorldTransfNode;7;-364.1816,114.2666;Inherit;False;1;0;FLOAT4;0,0,0,1;False;5;FLOAT4;0;FLOAT;1;FLOAT;2;FLOAT;3;FLOAT;4
@@ -3529,7 +3571,7 @@ Node;AmplifyShaderEditor.ClampOpNode;18;1159.477,-30.25885;Inherit;False;3;0;FLO
 Node;AmplifyShaderEditor.RangedFloatNode;20;1155.606,86.7493;Float;False;Property;_Opacity;Opacity;6;0;Create;True;0;0;0;False;0;False;0.76;0.95;0;0;0;1;FLOAT;0
 Node;AmplifyShaderEditor.SimpleMultiplyOpNode;21;1361.402,-29.4934;Inherit;False;2;2;0;FLOAT4;0,0,0,0;False;1;FLOAT;0;False;1;FLOAT4;0
 Node;AmplifyShaderEditor.IntNode;23;1587.154,-248.0372;Inherit;False;Property;_Cull;Render Face;0;1;[Enum];Create;False;1;;0;1;Front,2,Back,1,Both,0;True;0;False;2;2;False;0;1;INT;0
-Node;AmplifyShaderEditor.ColorNode;22;1182.298,-219.2962;Float;False;Property;_Color;Color;7;0;Create;True;0;0;0;False;0;False;1,0,0,0;1,0,0,0;False;0;5;COLOR;0;FLOAT;1;FLOAT;2;FLOAT;3;FLOAT;4
+Node;AmplifyShaderEditor.ColorNode;22;1182.298,-219.2962;Float;False;Property;_Color;Color;7;0;Create;True;0;0;0;False;0;False;1,0,0,0;1,0,0,0;False;True;0;6;COLOR;0;FLOAT;1;FLOAT;2;FLOAT;3;FLOAT;4;FLOAT3;5
 Node;AmplifyShaderEditor.RangedFloatNode;24;1378.412,67.87316;Inherit;False;Property;_MaskClipValue;Mask Clip Value;1;0;Create;True;0;0;0;False;0;False;0;0.5;0;0;0;1;FLOAT;0
 Node;AmplifyShaderEditor.SwizzleNode;33;1417.404,-176.7265;Inherit;False;FLOAT3;0;1;2;3;1;0;COLOR;0,0,0,0;False;1;FLOAT3;0
 Node;AmplifyShaderEditor.TemplateMultiPassMasterNode;25;1659.585,-170.2672;Float;False;False;-1;2;UnityEditor.ShaderGraphLitGUI;0;1;New Amplify Shader;94348b07e5e8bab40bd6c8a1e3df54cd;True;ExtraPrePass;0;0;ExtraPrePass;5;False;False;False;False;False;False;False;False;False;False;False;False;True;0;False;;False;True;0;False;;False;False;False;False;False;False;False;False;False;True;False;0;False;;255;False;;255;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;False;True;1;False;;True;3;False;;True;True;0;False;;0;False;;True;4;RenderPipeline=UniversalPipeline;RenderType=Opaque=RenderType;Queue=Geometry=Queue=0;UniversalMaterialType=Lit;True;5;True;12;all;0;False;True;1;1;False;;0;False;;0;1;False;;0;False;;False;False;False;False;False;False;False;False;False;False;False;False;True;0;False;;False;True;True;True;True;True;0;False;;False;False;False;False;False;False;False;True;False;0;False;;255;False;;255;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;False;True;1;False;;True;3;False;;True;True;0;False;;0;False;;True;0;False;False;0;;0;0;Standard;0;False;0
@@ -3539,7 +3581,7 @@ Node;AmplifyShaderEditor.TemplateMultiPassMasterNode;29;1784.594,-164.4324;Float
 Node;AmplifyShaderEditor.TemplateMultiPassMasterNode;30;1784.594,-164.4324;Float;False;False;-1;2;UnityEditor.ShaderGraphLitGUI;0;1;New Amplify Shader;94348b07e5e8bab40bd6c8a1e3df54cd;True;Universal2D;0;5;Universal2D;0;False;False;False;False;False;False;False;False;False;False;False;False;True;0;False;;False;True;0;False;;False;False;False;False;False;False;False;False;False;True;False;0;False;;255;False;;255;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;False;True;1;False;;True;3;False;;True;True;0;False;;0;False;;True;4;RenderPipeline=UniversalPipeline;RenderType=Opaque=RenderType;Queue=Geometry=Queue=0;UniversalMaterialType=Lit;True;5;True;12;all;0;False;True;1;5;False;;10;False;;1;1;False;;10;False;;False;False;False;False;False;False;False;False;False;False;False;False;False;False;True;True;True;True;True;0;False;;False;False;False;False;False;False;False;False;False;True;0;False;;True;3;False;;True;True;0;False;;0;False;;True;1;LightMode=Universal2D;False;False;0;;0;0;Standard;0;False;0
 Node;AmplifyShaderEditor.TemplateMultiPassMasterNode;31;1784.594,-164.4324;Float;False;False;-1;2;UnityEditor.ShaderGraphLitGUI;0;1;New Amplify Shader;94348b07e5e8bab40bd6c8a1e3df54cd;True;DepthNormals;0;6;DepthNormals;0;False;False;False;False;False;False;False;False;False;False;False;False;True;0;False;;False;True;0;False;;False;False;False;False;False;False;False;False;False;True;False;0;False;;255;False;;255;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;False;True;1;False;;True;3;False;;True;True;0;False;;0;False;;True;4;RenderPipeline=UniversalPipeline;RenderType=Opaque=RenderType;Queue=Geometry=Queue=0;UniversalMaterialType=Lit;True;5;True;12;all;0;False;True;1;1;False;;0;False;;0;1;False;;0;False;;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;True;1;False;;True;3;False;;False;True;1;LightMode=DepthNormals;False;False;0;;0;0;Standard;0;False;0
 Node;AmplifyShaderEditor.TemplateMultiPassMasterNode;32;1784.594,-164.4324;Float;False;False;-1;2;UnityEditor.ShaderGraphLitGUI;0;1;New Amplify Shader;94348b07e5e8bab40bd6c8a1e3df54cd;True;GBuffer;0;7;GBuffer;0;False;False;False;False;False;False;False;False;False;False;False;False;True;0;False;;False;True;0;False;;False;False;False;False;False;False;False;False;False;True;False;0;False;;255;False;;255;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;False;True;1;False;;True;3;False;;True;True;0;False;;0;False;;True;4;RenderPipeline=UniversalPipeline;RenderType=Opaque=RenderType;Queue=Geometry=Queue=0;UniversalMaterialType=Lit;True;5;True;12;all;0;False;True;1;5;False;;10;False;;1;1;False;;10;False;;False;False;False;False;False;False;False;False;False;False;False;False;False;False;True;True;True;True;True;0;False;;False;False;False;False;False;False;False;True;False;0;False;;255;False;;255;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;False;True;0;False;;True;3;False;;True;True;0;False;;0;False;;True;1;LightMode=UniversalGBuffer;False;False;0;;0;0;Standard;0;False;0
-Node;AmplifyShaderEditor.TemplateMultiPassMasterNode;26;1582.585,-170.2672;Float;False;True;-1;2;UnityEditor.ShaderGraphLitGUI;0;12;AmplifyShaderPack/Simple Potion Liquid;94348b07e5e8bab40bd6c8a1e3df54cd;True;Forward;0;1;Forward;21;False;False;False;False;False;False;False;False;False;False;False;False;True;1;False;;True;True;0;True;_Cull;False;False;False;False;False;False;False;False;False;True;False;0;False;;255;False;;255;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;True;True;0;False;;True;3;False;;True;True;0;False;;0;False;;True;4;RenderPipeline=UniversalPipeline;RenderType=Transparent=RenderType;Queue=Transparent=Queue=0;UniversalMaterialType=Lit;True;5;True;12;all;0;False;True;1;5;False;;10;False;;1;1;False;;10;False;;False;False;False;False;False;False;False;False;False;False;False;False;False;True;True;True;True;True;True;0;False;;False;False;False;False;False;False;False;True;False;0;False;;255;False;;255;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;True;True;0;False;;True;3;False;;True;True;0;False;;0;False;;True;1;LightMode=UniversalForward;False;False;0;;0;0;Standard;39;Workflow;1;0;Surface;1;638162335111469109;  Refraction Model;0;0;  Blend;0;0;Two Sided;1;0;Fragment Normal Space,InvertActionOnDeselection;0;0;Forward Only;0;638274704151717856;Transmission;0;0;  Transmission Shadow;0.5,False,;0;Translucency;0;0;  Translucency Strength;1,False,;0;  Normal Distortion;0.5,False,;0;  Scattering;2,False,;0;  Direct;0.9,False,;0;  Ambient;0.1,False,;0;  Shadow;0.5,False,;0;Cast Shadows;1;0;  Use Shadow Threshold;0;0;GPU Instancing;1;0;LOD CrossFade;1;0;Built-in Fog;1;0;_FinalColorxAlpha;1;638188566033174486;Meta Pass;1;0;Override Baked GI;0;0;Extra Pre Pass;0;0;Tessellation;0;0;  Phong;0;0;  Strength;0.5,False,;0;  Type;0;0;  Tess;16,False,;0;  Min;10,False,;0;  Max;25,False,;0;  Edge Length;16,False,;0;  Max Displacement;25,False,;0;Write Depth;0;0;  Early Z;0;0;Vertex Position,InvertActionOnDeselection;1;0;Debug Display;0;0;Clear Coat;0;0;0;10;False;True;True;True;True;True;True;True;True;True;False;;False;0
+Node;AmplifyShaderEditor.TemplateMultiPassMasterNode;26;1582.585,-170.2672;Float;False;True;-1;2;UnityEditor.ShaderGraphLitGUI;0;12;AmplifyShaderPack/Simple Potion Liquid;94348b07e5e8bab40bd6c8a1e3df54cd;True;Forward;0;1;Forward;21;False;False;False;False;False;False;False;False;False;False;False;False;True;1;False;;True;True;0;True;_Cull;False;False;False;False;False;False;False;False;False;True;False;0;False;;255;False;;255;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;True;True;0;False;;True;3;False;;True;True;0;False;;0;False;;True;4;RenderPipeline=UniversalPipeline;RenderType=Transparent=RenderType;Queue=Transparent=Queue=0;UniversalMaterialType=Lit;True;5;True;12;all;0;False;True;1;5;False;;10;False;;1;1;False;;10;False;;False;False;False;False;False;False;False;False;False;False;False;False;False;True;True;True;True;True;True;0;False;;False;False;False;False;False;False;False;True;False;0;False;;255;False;;255;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;True;True;0;False;;True;3;False;;True;True;0;False;;0;False;;True;1;LightMode=UniversalForward;False;False;0;;0;0;Standard;42;Lighting Model;0;0;Workflow;1;0;Surface;1;638162335111469109;  Refraction Model;0;0;  Blend;0;0;Two Sided;1;0;Fragment Normal Space,InvertActionOnDeselection;0;0;Forward Only;0;638274704151717856;Transmission;0;0;  Transmission Shadow;0.5,False,;0;Translucency;0;0;  Translucency Strength;1,False,;0;  Normal Distortion;0.5,False,;0;  Scattering;2,False,;0;  Direct;0.9,False,;0;  Ambient;0.1,False,;0;  Shadow;0.5,False,;0;Cast Shadows;1;0;  Use Shadow Threshold;0;0;Receive Shadows;1;0;Receive SSAO;1;0;GPU Instancing;1;0;LOD CrossFade;1;0;Built-in Fog;1;0;_FinalColorxAlpha;1;638188566033174486;Meta Pass;1;0;Override Baked GI;0;0;Extra Pre Pass;0;0;Tessellation;0;0;  Phong;0;0;  Strength;0.5,False,;0;  Type;0;0;  Tess;16,False,;0;  Min;10,False,;0;  Max;25,False,;0;  Edge Length;16,False,;0;  Max Displacement;25,False,;0;Write Depth;0;0;  Early Z;0;0;Vertex Position,InvertActionOnDeselection;1;0;Debug Display;0;0;Clear Coat;0;0;0;10;False;True;True;True;True;True;True;True;True;True;False;;False;0
 Node;AmplifyShaderEditor.TemplateMultiPassMasterNode;34;1582.585,-90.2672;Float;False;False;-1;2;UnityEditor.ShaderGraphLitGUI;0;1;New Amplify Shader;94348b07e5e8bab40bd6c8a1e3df54cd;True;SceneSelectionPass;0;8;SceneSelectionPass;0;False;False;False;False;False;False;False;False;False;False;False;False;True;0;False;;False;True;0;False;;False;False;False;False;False;False;False;False;False;True;False;0;False;;255;False;;255;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;False;True;1;False;;True;3;False;;True;True;0;False;;0;False;;True;4;RenderPipeline=UniversalPipeline;RenderType=Opaque=RenderType;Queue=Geometry=Queue=0;UniversalMaterialType=Lit;True;5;True;12;all;0;False;False;False;False;False;False;False;False;False;False;False;False;True;0;False;;False;True;2;False;;False;False;False;False;False;False;False;False;False;False;False;False;False;False;True;1;LightMode=SceneSelectionPass;False;False;0;;0;0;Standard;0;False;0
 Node;AmplifyShaderEditor.TemplateMultiPassMasterNode;35;1582.585,-90.2672;Float;False;False;-1;2;UnityEditor.ShaderGraphLitGUI;0;1;New Amplify Shader;94348b07e5e8bab40bd6c8a1e3df54cd;True;ScenePickingPass;0;9;ScenePickingPass;0;False;False;False;False;False;False;False;False;False;False;False;False;True;0;False;;False;True;0;False;;False;False;False;False;False;False;False;False;False;True;False;0;False;;255;False;;255;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;False;True;1;False;;True;3;False;;True;True;0;False;;0;False;;True;4;RenderPipeline=UniversalPipeline;RenderType=Opaque=RenderType;Queue=Geometry=Queue=0;UniversalMaterialType=Lit;True;5;True;12;all;0;False;False;False;False;False;False;False;False;False;False;False;False;True;0;False;;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;True;1;LightMode=Picking;False;False;0;;0;0;Standard;0;False;0
 WireConnection;2;0;1;0
@@ -3566,4 +3608,4 @@ WireConnection;26;2;33;0
 WireConnection;26;6;21;0
 WireConnection;26;7;24;0
 ASEEND*/
-//CHKSM=38F99C9361FF91E33E5295A313DFB93ADFC9CCEC
+//CHKSM=88954E587F2B3EEDB426FB1BB92E970D7559B93D

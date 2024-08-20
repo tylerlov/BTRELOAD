@@ -1,4 +1,4 @@
-// Made with Amplify Shader Editor v1.9.3.3
+// Made with Amplify Shader Editor v1.9.6.3
 // Available at the Unity Asset Store - http://u3d.as/y3X 
 Shader "AmplifyShaderPack/Baked GI Specular"
 {
@@ -21,15 +21,6 @@ Shader "AmplifyShaderPack/Baked GI Specular"
 		[SingleLineTexture]_SmoothnessMap("Smoothness Map", 2D) = "white" {}
 		_SmoothnessStrength("Smoothness Strength", Range( 0 , 1)) = 0
 		[Header(BAKED GI)][ToggleUI]_BakedGIEnable("ENABLE BAKED GI", Float) = 1
-		[Header(INDIRECT SPECULAR)][Space(5)]_IndirectSpecularColor("Indirect Specular Color", Color) = (1,0.9568627,0.8392157,0)
-		_IndirectSpecularSmoothness("Indirect Specular Smoothness", Range( 0 , 1)) = 0.25
-		[Header(INDIRECT DIFFUSE)][Space(5)]_IndirectDiffuse("Indirect Diffuse", Range( 0 , 1)) = 0.85
-		[Header(SHADOWS)]_ShadowStrength("Shadow Strength", Range( 0 , 1)) = 0.85
-		[Enum(Near,0,Exact,1)]_ShadowApproxmation("Shadow Approxmation", Float) = 1
-		_ShadowSharpness("Shadow Sharpness", Range( 0.01 , 1)) = 0.7
-		_ShadowOffset("Shadow Offset", Range( 0 , 1)) = 0.5
-		[ToggleUI]_ShadowColorEnable("Enable Shadow Color", Float) = 0
-		[HDR]_ShadowColor("Shadow Color", Color) = (0.3113208,0.3113208,0.3113208,0)
 
 
 		//_TransmissionShadow( "Transmission Shadow", Range( 0, 1 ) ) = 0.5
@@ -46,8 +37,8 @@ Shader "AmplifyShaderPack/Baked GI Specular"
 		//_TessEdgeLength ( "Tess Edge length", Range( 2, 50 ) ) = 16
 		//_TessMaxDisp( "Tess Max Displacement", Float ) = 25
 
-		[HideInInspector][ToggleOff] _SpecularHighlights("Specular Highlights", Float) = 1.0
-		[HideInInspector][ToggleOff] _EnvironmentReflections("Environment Reflections", Float) = 1.0
+		[HideInInspector][ToggleOff] _SpecularHighlights("Specular Highlights", Float) = 1
+		[HideInInspector][ToggleOff] _EnvironmentReflections("Environment Reflections", Float) = 1
 		[HideInInspector][ToggleOff] _ReceiveShadows("Receive Shadows", Float) = 1.0
 
 		[HideInInspector] _QueueOffset("_QueueOffset", Float) = 0
@@ -202,23 +193,26 @@ Shader "AmplifyShaderPack/Baked GI Specular"
 
 			HLSLPROGRAM
 
+			
+
 			#define _NORMAL_DROPOFF_TS 1
+			#pragma shader_feature_local _RECEIVE_SHADOWS_OFF
+			#pragma multi_compile_fragment _ _SCREEN_SPACE_OCCLUSION
 			#pragma multi_compile_instancing
 			#pragma instancing_options renderinglayer
 			#pragma multi_compile _ LOD_FADE_CROSSFADE
 			#pragma multi_compile_fog
 			#define ASE_FOG 1
 			#define _SPECULAR_SETUP 1
-			#pragma shader_feature_local_fragment _SPECULAR_SETUP
+			#pragma shader_feature_local_fragment _SPECULARHIGHLIGHTS_OFF
+			#pragma shader_feature_local_fragment _ENVIRONMENTREFLECTIONS_OFF
 			#define ASE_BAKEDGI 1
 			#define _NORMALMAP 1
-			#define ASE_SRP_VERSION 140010
+			#define ASE_SRP_VERSION 140011
 			#define ASE_USING_SAMPLING_MACROS 1
 
 
-			#pragma shader_feature_local _RECEIVE_SHADOWS_OFF
-			#pragma shader_feature_local_fragment _SPECULARHIGHLIGHTS_OFF
-			#pragma shader_feature_local_fragment _ENVIRONMENTREFLECTIONS_OFF
+			
 
 			#pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _MAIN_LIGHT_SHADOWS_SCREEN
 			#pragma multi_compile _ _ADDITIONAL_LIGHTS_VERTEX _ADDITIONAL_LIGHTS
@@ -237,13 +231,10 @@ Shader "AmplifyShaderPack/Baked GI Specular"
 			#pragma multi_compile_fragment _ _SHADOWS_SOFT _SHADOWS_SOFT_LOW _SHADOWS_SOFT_MEDIUM _SHADOWS_SOFT_HIGH
            
 
-			#pragma multi_compile_fragment _ _SCREEN_SPACE_OCCLUSION
 			#pragma multi_compile_fragment _ _DBUFFER_MRT1 _DBUFFER_MRT2 _DBUFFER_MRT3
 			#pragma multi_compile _ _LIGHT_LAYERS
 			#pragma multi_compile_fragment _ _LIGHT_COOKIES
 			#pragma multi_compile _ _FORWARD_PLUS
-		
-			
 
 			
 
@@ -256,6 +247,10 @@ Shader "AmplifyShaderPack/Baked GI Specular"
 
 			#pragma vertex vert
 			#pragma fragment frag
+
+			#if defined(_SPECULAR_SETUP) && defined(_ASE_LIGHTING_SIMPLE)
+				#define _SPECULAR_COLOR 1
+			#endif
 
 			#define SHADERPASS SHADERPASS_FORWARD
 
@@ -279,14 +274,14 @@ Shader "AmplifyShaderPack/Baked GI Specular"
 			#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/TextureStack.hlsl"
 
 			
+            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
+           
+
+			
             #if ASE_SRP_VERSION >=140009
 			#include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
 			#endif
 		
-
-			
-            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
-           
 
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Shadows.hlsl"
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/ShaderGraphFunctions.hlsl"
@@ -301,12 +296,9 @@ Shader "AmplifyShaderPack/Baked GI Specular"
 				#define ENABLE_TERRAIN_PERPIXEL_NORMAL
 			#endif
 
-			#define ASE_NEEDS_FRAG_WORLD_POSITION
-			#define ASE_NEEDS_FRAG_SCREEN_POSITION
 			#define ASE_NEEDS_FRAG_WORLD_TANGENT
 			#define ASE_NEEDS_FRAG_WORLD_NORMAL
 			#define ASE_NEEDS_FRAG_WORLD_BITANGENT
-			#define ASE_NEEDS_FRAG_WORLD_VIEW_DIR
 
 
 			#if defined(ASE_EARLY_Z_DEPTH_OPTIMIZE) && (SHADER_TARGET >= 45)
@@ -351,23 +343,14 @@ Shader "AmplifyShaderPack/Baked GI Specular"
 			};
 
 			CBUFFER_START(UnityPerMaterial)
+			half4 _BaseColor;
 			float4 _MainUVs;
 			float4 _SpecularColor;
-			float4 _IndirectSpecularColor;
-			float4 _ShadowColor;
-			half4 _BaseColor;
 			int _Cull;
-			half _SmoothnessStrength;
-			half _SpecularStrength;
-			half _IndirectSpecularSmoothness;
 			half _Brightness;
-			float _ShadowColorEnable;
-			half _ShadowSharpness;
-			half _ShadowOffset;
-			half _ShadowApproxmation;
-			half _ShadowStrength;
-			float _IndirectDiffuse;
 			half _NormalStrength;
+			half _SpecularStrength;
+			half _SmoothnessStrength;
 			half _OcclusionStrengthAO;
 			float _BakedGIEnable;
 			#ifdef ASE_TRANSMISSION
@@ -400,122 +383,16 @@ Shader "AmplifyShaderPack/Baked GI Specular"
 				int _PassValue;
 			#endif
 
-			TEXTURE2D(_BumpMap);
-			SAMPLER(sampler_BumpMap);
 			TEXTURE2D(_MainTex);
 			SAMPLER(sampler_MainTex);
+			TEXTURE2D(_BumpMap);
+			SAMPLER(sampler_BumpMap);
 			TEXTURE2D(_SpecularMap);
 			TEXTURE2D(_SmoothnessMap);
 			TEXTURE2D(_OcclusionMap);
 
 
-			half4 CalculateShadowMask1_g23( half2 LightmapUV )
-			{
-				#if defined(SHADOWS_SHADOWMASK) && defined(LIGHTMAP_ON)
-				return SAMPLE_SHADOWMASK( LightmapUV.xy );
-				#elif !defined (LIGHTMAP_ON)
-				return unity_ProbesOcclusion;
-				#else
-				return half4( 1, 1, 1, 1 );
-				#endif
-			}
-			
-			float3 AdditionalLightsHalfLambertMask14x( float3 WorldPosition, float2 ScreenUV, float3 WorldNormal, float4 ShadowMask )
-			{
-				float3 Color = 0;
-				#if defined(_ADDITIONAL_LIGHTS)
-					#define SUM_LIGHTHALFLAMBERT(Light)\
-						half3 AttLightColor = Light.color * ( Light.distanceAttenuation * Light.shadowAttenuation );\
-						Color += ( dot( Light.direction, WorldNormal ) * 0.5 + 0.5 )* AttLightColor;
-					InputData inputData = (InputData)0;
-					inputData.normalizedScreenSpaceUV = ScreenUV;
-					inputData.positionWS = WorldPosition;
-					uint meshRenderingLayers = GetMeshRenderingLayer();
-					uint pixelLightCount = GetAdditionalLightsCount();	
-					#if USE_FORWARD_PLUS
-					for (uint lightIndex = 0; lightIndex < min(URP_FP_DIRECTIONAL_LIGHTS_COUNT, MAX_VISIBLE_LIGHTS); lightIndex++)
-					{
-						FORWARD_PLUS_SUBTRACTIVE_LIGHT_CHECK
-						Light light = GetAdditionalLight(lightIndex, WorldPosition, ShadowMask);
-						#ifdef _LIGHT_LAYERS
-						if (IsMatchingLightLayer(light.layerMask, meshRenderingLayers))
-						#endif
-						{
-							SUM_LIGHTHALFLAMBERT( light );
-						}
-					}
-					#endif
-					LIGHT_LOOP_BEGIN( pixelLightCount )
-						Light light = GetAdditionalLight(lightIndex, WorldPosition, ShadowMask);
-						#ifdef _LIGHT_LAYERS
-						if (IsMatchingLightLayer(light.layerMask, meshRenderingLayers))
-						#endif
-						{
-							SUM_LIGHTHALFLAMBERT( light );
-						}
-					LIGHT_LOOP_END
-				#endif
-				return Color;
-			}
-			
-			float3 ASEBakedGI( float3 normalWS, float2 uvStaticLightmap, bool applyScaling )
-			{
-			#ifdef LIGHTMAP_ON
-				if( applyScaling )
-					uvStaticLightmap = uvStaticLightmap * unity_LightmapST.xy + unity_LightmapST.zw;
-				return SampleLightmap( uvStaticLightmap, normalWS );
-			#else
-				return SampleSH(normalWS);
-			#endif
-			}
-			
-			float3 ASESafeNormalize(float3 inVec)
-			{
-				float dp3 = max(1.175494351e-38, dot(inVec, inVec));
-				return inVec* rsqrt(dp3);
-			}
-			
-			float3 AdditionalLightsSpecular14x( float3 WorldPosition, float2 ScreenUV, float3 WorldNormal, float3 WorldView, float3 SpecColor, float Smoothness )
-			{
-				float3 Color = 0;
-				#if defined(_ADDITIONAL_LIGHTS)
-					Smoothness = exp2(10 * Smoothness + 1);
-					
-					#define SUM_LIGHTSPECULAR(Light)\
-						half3 AttLightColor = light.color * ( light.distanceAttenuation * light.shadowAttenuation );\
-						Color += LightingSpecular( AttLightColor, light.direction, WorldNormal, WorldView, half4( SpecColor, 0 ), Smoothness );	
-					InputData inputData = (InputData)0;
-					inputData.normalizedScreenSpaceUV = ScreenUV;
-					inputData.positionWS = WorldPosition;
-					uint meshRenderingLayers = GetMeshRenderingLayer();		
-					uint pixelLightCount = GetAdditionalLightsCount();	
-					#if USE_FORWARD_PLUS
-					for (uint lightIndex = 0; lightIndex < min(URP_FP_DIRECTIONAL_LIGHTS_COUNT, MAX_VISIBLE_LIGHTS); lightIndex++)
-					{
-						FORWARD_PLUS_SUBTRACTIVE_LIGHT_CHECK
-						Light light = GetAdditionalLight(lightIndex, WorldPosition);
-						#ifdef _LIGHT_LAYERS
-						if (IsMatchingLightLayer(light.layerMask, meshRenderingLayers))
-						#endif
-						{
-							SUM_LIGHTSPECULAR( light );
-						}
-					}
-					#endif
-					LIGHT_LOOP_BEGIN( pixelLightCount )
-						Light light = GetAdditionalLight(lightIndex, WorldPosition);
-						#ifdef _LIGHT_LAYERS
-						if (IsMatchingLightLayer(light.layerMask, meshRenderingLayers))
-						#endif
-						{
-							SUM_LIGHTSPECULAR( light );
-						}
-					LIGHT_LOOP_END
-				#endif
-				return Color;
-			}
-			
-			float4 URPDecodeInstruction984_g28(  )
+			float4 URPDecodeInstruction984_g32(  )
 			{
 				return float4(LIGHTMAP_HDR_MULTIPLIER, LIGHTMAP_HDR_EXPONENT, 0, 0);
 			}
@@ -586,8 +463,8 @@ Shader "AmplifyShaderPack/Baked GI Specular"
 				UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
 
 				o.ase_texcoord8.xy = v.texcoord.xy;
-				o.ase_texcoord8.zw = v.texcoord2.xy;
-				o.ase_texcoord9.xy = v.texcoord1.xy;
+				o.ase_texcoord8.zw = v.texcoord1.xy;
+				o.ase_texcoord9.xy = v.texcoord2.xy;
 				
 				//setting value to unused interpolator channels and avoid initialization warnings
 				o.ase_texcoord9.zw = 0;
@@ -749,7 +626,7 @@ Shader "AmplifyShaderPack/Baked GI Specular"
 						#ifdef _WRITE_RENDERING_LAYERS
 						, out float4 outRenderingLayers : SV_Target1
 						#endif
-						, bool ase_vface : SV_IsFrontFace ) : SV_Target
+						 ) : SV_Target
 			{
 				UNITY_SETUP_INSTANCE_ID(IN);
 				UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(IN);
@@ -786,119 +663,41 @@ Shader "AmplifyShaderPack/Baked GI Specular"
 
 				WorldViewDirection = SafeNormalize( WorldViewDirection );
 
-				float3 worldPosValue184_g25 = WorldPosition;
-				float3 WorldPosition152_g25 = worldPosValue184_g25;
-				float4 ase_screenPosNorm = ScreenPos / ScreenPos.w;
-				ase_screenPosNorm.z = ( UNITY_NEAR_CLIP_VALUE >= 0 ) ? ase_screenPosNorm.z : ase_screenPosNorm.z * 0.5 + 0.5;
-				float2 ScreenUV183_g25 = (ase_screenPosNorm).xy;
-				float2 ScreenUV152_g25 = ScreenUV183_g25;
-				float2 temp_output_133_0_g7 = ( ( IN.ase_texcoord8.xy * (_MainUVs).xy ) + (_MainUVs).zw );
-				float3 unpack98_g7 = UnpackNormalScale( SAMPLE_TEXTURE2D( _BumpMap, sampler_BumpMap, temp_output_133_0_g7 ), _NormalStrength );
-				unpack98_g7.z = lerp( 1, unpack98_g7.z, saturate(_NormalStrength) );
-				float3 temp_output_33_6 = unpack98_g7;
-				float3 temp_output_975_0_g8 = temp_output_33_6;
-				float3 Normal1069_g8 = temp_output_975_0_g8;
+				float2 temp_output_133_0_g37 = ( ( IN.ase_texcoord8.xy * (_MainUVs).xy ) + (_MainUVs).zw );
+				float4 tex2DNode21_g37 = SAMPLE_TEXTURE2D( _MainTex, sampler_MainTex, temp_output_133_0_g37 );
+				float3 temp_output_89_0_g37 = ( (_BaseColor).rgb * (tex2DNode21_g37).rgb * _Brightness );
+				
+				float3 unpack98_g37 = UnpackNormalScale( SAMPLE_TEXTURE2D( _BumpMap, sampler_BumpMap, temp_output_133_0_g37 ), _NormalStrength );
+				unpack98_g37.z = lerp( 1, unpack98_g37.z, saturate(_NormalStrength) );
+				float3 temp_output_33_6 = unpack98_g37;
+				
+				float3 temp_output_202_0_g37 = (_SpecularColor).rgb;
+				
+				float localSampleLightmapBicubic965_g32 = ( 0.0 );
 				float3 tanToWorld0 = float3( WorldTangent.x, WorldBiTangent.x, WorldNormal.x );
 				float3 tanToWorld1 = float3( WorldTangent.y, WorldBiTangent.y, WorldNormal.y );
 				float3 tanToWorld2 = float3( WorldTangent.z, WorldBiTangent.z, WorldNormal.z );
-				float3 tanNormal12_g25 = Normal1069_g8;
-				float3 worldNormal12_g25 = normalize( float3(dot(tanToWorld0,tanNormal12_g25), dot(tanToWorld1,tanNormal12_g25), dot(tanToWorld2,tanNormal12_g25)) );
-				float3 worldNormalValue185_g25 = worldNormal12_g25;
-				float3 WorldNormal152_g25 = worldNormalValue185_g25;
-				float2 temp_output_1255_0_g8 = (IN.ase_texcoord8.zw*(unity_DynamicLightmapST).xy + (unity_DynamicLightmapST).zw);
-				float2 UV2Dynamic1251_g8 = temp_output_1255_0_g8;
-				half2 LightmapUV1_g23 = UV2Dynamic1251_g8;
-				half4 localCalculateShadowMask1_g23 = CalculateShadowMask1_g23( LightmapUV1_g23 );
-				float4 shadowMaskValue182_g25 = localCalculateShadowMask1_g23;
-				float4 ShadowMask152_g25 = shadowMaskValue182_g25;
-				float3 localAdditionalLightsHalfLambertMask14x152_g25 = AdditionalLightsHalfLambertMask14x( WorldPosition152_g25 , ScreenUV152_g25 , WorldNormal152_g25 , ShadowMask152_g25 );
-				float3 SRP_Lambert_Half1362_g8 = localAdditionalLightsHalfLambertMask14x152_g25;
-				float3 tanNormal1158_g8 = Normal1069_g8;
-				float3 worldNormal1158_g8 = normalize( float3(dot(tanToWorld0,tanNormal1158_g8), dot(tanToWorld1,tanNormal1158_g8), dot(tanToWorld2,tanNormal1158_g8)) );
-				float2 temp_output_1219_0_g8 = (IN.ase_texcoord9.xy*(unity_LightmapST).xy + (unity_LightmapST).zw);
-				float2 UV1Static1247_g8 = temp_output_1219_0_g8;
-				float3 bakedGI1252_g8 = ASEBakedGI( worldNormal1158_g8, UV1Static1247_g8, true);
-				float3 lerpResult1169_g8 = lerp( float3( 1,1,1 ) , ( SRP_Lambert_Half1362_g8 + bakedGI1252_g8 ) , _IndirectDiffuse);
-				float3 temp_output_1173_0_g8 = ( lerpResult1169_g8 + step( float3( 1,1,1 ) , ( 1.0 - lerpResult1169_g8 ) ) );
-				float3 tanNormal1072_g8 = temp_output_975_0_g8;
-				float3 worldNormal1072_g8 = normalize( float3(dot(tanToWorld0,tanNormal1072_g8), dot(tanToWorld1,tanNormal1072_g8), dot(tanToWorld2,tanNormal1072_g8)) );
-				float3 normalizeResult1044_g8 = ASESafeNormalize( ( WorldViewDirection + SafeNormalize(_MainLightPosition.xyz) ) );
-				float dotResult1046_g8 = dot( worldNormal1072_g8 , normalizeResult1044_g8 );
-				float Dot_NdotH1098_g8 = dotResult1046_g8;
-				float temp_output_1108_0_g8 = ( 1.0 - ( ( 1.0 - Dot_NdotH1098_g8 ) * _MainLightPosition.w ) );
-				float ase_lightIntensity = max( max( _MainLightColor.r, _MainLightColor.g ), _MainLightColor.b );
-				float4 ase_lightColor = float4( _MainLightColor.rgb / ase_lightIntensity, ase_lightIntensity );
-				float LightColorIntensity1349_g8 = max( ase_lightColor.a , 0.0 );
-				float3 temp_output_1112_0_g8 = ( temp_output_1173_0_g8 * temp_output_1108_0_g8 * LightColorIntensity1349_g8 );
-				float dotResult1055_g8 = dot( worldNormal1072_g8 , SafeNormalize(_MainLightPosition.xyz) );
-				float Dot_NdotL1100_g8 = dotResult1055_g8;
-				float Shadow_Strength1138_g8 = _ShadowStrength;
-				float lerpResult1130_g8 = lerp( ( Shadow_Strength1138_g8 * Shadow_Strength1138_g8 * 0.7978846 ) , ( Shadow_Strength1138_g8 * Shadow_Strength1138_g8 * sqrt( ( 2.0 / ( 2.0 * PI ) ) ) ) , _ShadowApproxmation);
-				float temp_output_1312_0_g8 = ( ( max( Dot_NdotL1100_g8 , 0.0 ) * lerpResult1130_g8 ) + ( 1.0 - lerpResult1130_g8 ) );
-				float temp_output_1117_0_g8 = saturate( ( ( ( max( Dot_NdotH1098_g8 , 0.0 ) * temp_output_1312_0_g8 * temp_output_1312_0_g8 ) + _ShadowOffset ) / _ShadowSharpness ) );
-				float3 temp_cast_1 = (temp_output_1117_0_g8).xxx;
-				float3 temp_cast_2 = (temp_output_1117_0_g8).xxx;
-				float3 lerpResult1379_g8 = lerp( (_ShadowColor).rgb , temp_cast_2 , temp_output_1117_0_g8);
-				float3 lerpResult1377_g8 = lerp( temp_cast_1 , lerpResult1379_g8 , _ShadowColorEnable);
-				float3 temp_cast_3 = (temp_output_1108_0_g8).xxx;
-				float3 lerpResult1109_g8 = lerp( ( lerpResult1377_g8 * Dot_NdotH1098_g8 ) , temp_cast_3 , _ShadowStrength);
-				float4 tex2DNode21_g7 = SAMPLE_TEXTURE2D( _MainTex, sampler_MainTex, temp_output_133_0_g7 );
-				float3 temp_output_89_0_g7 = ( (_BaseColor).rgb * (tex2DNode21_g7).rgb * _Brightness );
-				float3 temp_output_898_0_g8 = temp_output_89_0_g7;
-				float3 temp_output_1210_0_g8 = saturate( ( ( temp_output_1112_0_g8 + lerpResult1109_g8 ) * temp_output_898_0_g8 ) );
-				float3 worldPosValue184_g12 = WorldPosition;
-				float3 WorldPosition158_g12 = worldPosValue184_g12;
-				float2 ScreenUV183_g12 = (ase_screenPosNorm).xy;
-				float2 ScreenUV158_g12 = ScreenUV183_g12;
-				float3 tanNormal1260_g8 = Normal1069_g8;
-				float3 worldNormal1260_g8 = normalize( float3(dot(tanToWorld0,tanNormal1260_g8), dot(tanToWorld1,tanNormal1260_g8), dot(tanToWorld2,tanNormal1260_g8)) );
-				float3 worldNormalValue185_g12 = worldNormal1260_g8;
-				float3 WorldNormal158_g12 = worldNormalValue185_g12;
-				float3 temp_output_15_0_g12 = WorldViewDirection;
-				float3 WorldView158_g12 = temp_output_15_0_g12;
-				float3 temp_output_1196_0_g8 = (_IndirectSpecularColor).rgb;
-				float3 temp_output_14_0_g12 = temp_output_1196_0_g8;
-				float3 SpecColor158_g12 = temp_output_14_0_g12;
-				float temp_output_18_0_g12 = _IndirectSpecularSmoothness;
-				float Smoothness158_g12 = temp_output_18_0_g12;
-				float3 localAdditionalLightsSpecular14x158_g12 = AdditionalLightsSpecular14x( WorldPosition158_g12 , ScreenUV158_g12 , WorldNormal158_g12 , WorldView158_g12 , SpecColor158_g12 , Smoothness158_g12 );
-				float3 LightColorAtten1105_g8 = ( Dot_NdotH1098_g8 * ase_lightColor.rgb );
-				float3 normalizeResult1197_g8 = normalize( ( WorldViewDirection + SafeNormalize(_MainLightPosition.xyz) ) );
-				float dotResult1187_g8 = dot( normalizeResult1197_g8 , worldNormal1260_g8 );
-				float3 temp_output_1192_0_g8 = ( temp_output_1196_0_g8 * LightColorAtten1105_g8 * pow( max( dotResult1187_g8 , 0.0 ) , exp2( (_IndirectSpecularSmoothness*10.0 + 1.0) ) ) );
-				float3 temp_output_1202_0_g8 = ( localAdditionalLightsSpecular14x158_g12 + temp_output_1192_0_g8 );
-				float3 BaseColor1240_g8 = temp_output_898_0_g8;
-				float3 switchResult1238_g8 = (((ase_vface>0)?(( temp_output_1202_0_g8 + 0.0 )):(BaseColor1240_g8)));
-				float fresnelNdotV1262_g8 = dot( worldNormal1260_g8, WorldViewDirection );
-				float fresnelNode1262_g8 = ( 0.04 + _IndirectSpecularSmoothness * pow( 1.0 - fresnelNdotV1262_g8, 5.0 ) );
-				float3 lerpResult1236_g8 = lerp( temp_output_1210_0_g8 , switchResult1238_g8 , saturate( fresnelNode1262_g8 ));
-				
-				float3 temp_output_202_0_g7 = (_SpecularColor).rgb;
-				
-				float localSampleLightmapBicubic965_g28 = ( 0.0 );
-				float3 temp_output_975_0_g28 = temp_output_33_6;
-				float3 tanNormal1070_g28 = temp_output_975_0_g28;
-				float3 worldNormal1070_g28 = float3(dot(tanToWorld0,tanNormal1070_g28), dot(tanToWorld1,tanNormal1070_g28), dot(tanToWorld2,tanNormal1070_g28));
-				float3 NormalWS1073_g28 = worldNormal1070_g28;
-				float3 normalWS965_g28 = NormalWS1073_g28;
-				float3 temp_output_1063_0_g28 = ( worldNormal1070_g28 * float3( -1,-1,-1 ) );
-				float3 BackNormalWS1101_g28 = temp_output_1063_0_g28;
-				float3 backNormalWS965_g28 = BackNormalWS1101_g28;
-				float2 temp_output_1219_0_g28 = (IN.ase_texcoord9.xy*(unity_LightmapST).xy + (unity_LightmapST).zw);
-				float2 UV1Static1247_g28 = temp_output_1219_0_g28;
-				float2 staticUV965_g28 = UV1Static1247_g28;
-				float2 temp_output_1255_0_g28 = (IN.ase_texcoord8.zw*(unity_DynamicLightmapST).xy + (unity_DynamicLightmapST).zw);
-				float2 UV2Dynamic1251_g28 = temp_output_1255_0_g28;
-				float2 dynamicUV965_g28 = UV2Dynamic1251_g28;
-				float3 bakeDiffuseLighting965_g28 = float3( 0,0,0 );
-				float3 backBakeDiffuseLighting965_g28 = float3( 0,0,0 );
-				float4 localURPDecodeInstruction984_g28 = URPDecodeInstruction984_g28();
-				float4 decodeInstructions965_g28 = localURPDecodeInstruction984_g28;
-				float localSampleDirectionBicubic961_g28 = ( 0.0 );
-				float2 staticUV961_g28 = UV1Static1247_g28;
-				float2 dynamicUV961_g28 = UV2Dynamic1251_g28;
-				float4 staticDir961_g28 = float4( 0,0,0,0 );
-				float4 dynamicDir961_g28 = float4( 0,0,0,0 );
+				float3 tanNormal1070_g32 = temp_output_33_6;
+				float3 worldNormal1070_g32 = float3(dot(tanToWorld0,tanNormal1070_g32), dot(tanToWorld1,tanNormal1070_g32), dot(tanToWorld2,tanNormal1070_g32));
+				float3 NormalWS1073_g32 = worldNormal1070_g32;
+				float3 normalWS965_g32 = NormalWS1073_g32;
+				float3 BackNormalWS1101_g32 = ( worldNormal1070_g32 * float3( -1,-1,-1 ) );
+				float3 backNormalWS965_g32 = BackNormalWS1101_g32;
+				float2 temp_output_1219_0_g32 = (IN.ase_texcoord8.zw*(unity_LightmapST).xy + (unity_LightmapST).zw);
+				float2 UV1Static1247_g32 = temp_output_1219_0_g32;
+				float2 staticUV965_g32 = UV1Static1247_g32;
+				float2 temp_output_1255_0_g32 = (IN.ase_texcoord9.xy*(unity_DynamicLightmapST).xy + (unity_DynamicLightmapST).zw);
+				float2 UV2Dynamic1251_g32 = temp_output_1255_0_g32;
+				float2 dynamicUV965_g32 = UV2Dynamic1251_g32;
+				float3 bakeDiffuseLighting965_g32 = float3( 0,0,0 );
+				float3 backBakeDiffuseLighting965_g32 = float3( 0,0,0 );
+				float4 localURPDecodeInstruction984_g32 = URPDecodeInstruction984_g32();
+				float4 decodeInstructions965_g32 = localURPDecodeInstruction984_g32;
+				float localSampleDirectionBicubic961_g32 = ( 0.0 );
+				float2 staticUV961_g32 = UV1Static1247_g32;
+				float2 dynamicUV961_g32 = UV2Dynamic1251_g32;
+				float4 staticDir961_g32 = float4( 0,0,0,0 );
+				float4 dynamicDir961_g32 = float4( 0,0,0,0 );
 				{
 				#if defined( DIRLIGHTMAP_COMBINED ) && ( defined( SHADER_STAGE_FRAGMENT ) || defined( SHADER_STAGE_RAY_TRACING ) )
 				    int width, height;
@@ -915,32 +714,34 @@ Shader "AmplifyShaderPack/Baked GI Specular"
 				        #endif
 				        LM_IND_NAME.GetDimensions( width, height );
 				        texSize = float4( width, height, 1.0 / float2( width, height ) );
-				        staticDir961_g28 = SampleTexture2DBicubic( LM_IND_NAME, LM_SAMPLER, staticUV961_g28, texSize, float2( 1, 1 ), LM_SLICE );
+				        staticDir961_g32 = SampleTexture2DBicubic( LM_IND_NAME, LM_SAMPLER, staticUV961_g32, texSize, float2( 1, 1 ), LM_SLICE );
 				    #endif
 				    #if defined( DYNAMICLIGHTMAP_ON )
 				        unity_DynamicDirectionality.GetDimensions( width, height );
 				        texSize = float4( width, height, 1.0 / float2( width, height ) );
-				        dynamicDir961_g28 = SampleTexture2DBicubic( unity_DynamicDirectionality, samplerunity_DynamicLightmap, dynamicUV961_g28, texSize, float2( 1, 1 ), 0 );
+				        dynamicDir961_g32 = SampleTexture2DBicubic( unity_DynamicDirectionality, samplerunity_DynamicLightmap, dynamicUV961_g32, texSize, float2( 1, 1 ), 0 );
 				    #endif
 				#endif
 				}
-				float4 staticDir965_g28 = staticDir961_g28;
-				float4 dynamicDir965_g28 = dynamicDir961_g28;
-				SampleLightmapBicubic( normalWS965_g28 , backNormalWS965_g28 , staticUV965_g28 , dynamicUV965_g28 , bakeDiffuseLighting965_g28 , backBakeDiffuseLighting965_g28 , decodeInstructions965_g28 , staticDir965_g28 , dynamicDir965_g28 );
-				float3 lerpResult941_g28 = lerp( float3( 0,0,0 ) , bakeDiffuseLighting965_g28 , _BakedGIEnable);
+				float4 staticDir965_g32 = staticDir961_g32;
+				float4 dynamicDir965_g32 = dynamicDir961_g32;
+				SampleLightmapBicubic( normalWS965_g32 , backNormalWS965_g32 , staticUV965_g32 , dynamicUV965_g32 , bakeDiffuseLighting965_g32 , backBakeDiffuseLighting965_g32 , decodeInstructions965_g32 , staticDir965_g32 , dynamicDir965_g32 );
+				float temp_output_1343_0_g32 = ( 1.0 );
+				float3 temp_output_1344_0_g32 = ( bakeDiffuseLighting965_g32 * temp_output_1343_0_g32 );
+				float3 lerpResult941_g32 = lerp( float3( 0,0,0 ) , temp_output_1344_0_g32 , _BakedGIEnable);
 				
 
-				float3 BaseColor = lerpResult1236_g8;
+				float3 BaseColor = temp_output_89_0_g37;
 				float3 Normal = temp_output_33_6;
 				float3 Emission = 0;
-				float3 Specular = ( temp_output_202_0_g7 * (SAMPLE_TEXTURE2D( _SpecularMap, sampler_MainTex, temp_output_133_0_g7 )).rgb * _SpecularStrength );
+				float3 Specular = ( temp_output_202_0_g37 * (SAMPLE_TEXTURE2D( _SpecularMap, sampler_MainTex, temp_output_133_0_g37 )).rgb * _SpecularStrength );
 				float Metallic = 0;
-				float Smoothness = ( _SmoothnessStrength * (SAMPLE_TEXTURE2D( _SmoothnessMap, sampler_MainTex, temp_output_133_0_g7 )).rgb ).x;
-				float Occlusion = saturate( ( ( 1.0 - _OcclusionStrengthAO ) * (SAMPLE_TEXTURE2D( _OcclusionMap, sampler_MainTex, temp_output_133_0_g7 )).rgb ) ).x;
+				float Smoothness = ( _SmoothnessStrength * (SAMPLE_TEXTURE2D( _SmoothnessMap, sampler_MainTex, temp_output_133_0_g37 )).rgb ).x;
+				float Occlusion = saturate( ( ( 1.0 - _OcclusionStrengthAO ) * (SAMPLE_TEXTURE2D( _OcclusionMap, sampler_MainTex, temp_output_133_0_g37 )).rgb ) ).x;
 				float Alpha = 1;
 				float AlphaClipThreshold = 0.5;
 				float AlphaClipThresholdShadow = 0.5;
-				float3 BakedGI = lerpResult941_g28;
+				float3 BakedGI = lerpResult941_g32;
 				float3 RefractionColor = 1;
 				float RefractionIndex = 1;
 				float3 Transmission = 1;
@@ -1040,7 +841,11 @@ Shader "AmplifyShaderPack/Baked GI Specular"
 					ApplyDecalToSurfaceData(IN.positionCS, surfaceData, inputData);
 				#endif
 
-				half4 color = UniversalFragmentPBR( inputData, surfaceData);
+				#ifdef _ASE_LIGHTING_SIMPLE
+					half4 color = UniversalFragmentBlinnPhong( inputData, surfaceData);
+				#else
+					half4 color = UniversalFragmentPBR( inputData, surfaceData);
+				#endif
 
 				#ifdef ASE_TRANSMISSION
 				{
@@ -1183,6 +988,8 @@ Shader "AmplifyShaderPack/Baked GI Specular"
 
 			HLSLPROGRAM
 
+			
+
 			#define _NORMAL_DROPOFF_TS 1
 			#pragma multi_compile_instancing
 			#pragma multi_compile _ LOD_FADE_CROSSFADE
@@ -1190,16 +997,20 @@ Shader "AmplifyShaderPack/Baked GI Specular"
 			#define _SPECULAR_SETUP 1
 			#define ASE_BAKEDGI 1
 			#define _NORMALMAP 1
-			#define ASE_SRP_VERSION 140010
+			#define ASE_SRP_VERSION 140011
 			#define ASE_USING_SAMPLING_MACROS 1
 
 
-			#pragma multi_compile_vertex _ _CASTING_PUNCTUAL_LIGHT_SHADOW
-
 			
+
+			#pragma multi_compile_vertex _ _CASTING_PUNCTUAL_LIGHT_SHADOW
 
 			#pragma vertex vert
 			#pragma fragment frag
+
+			#if defined(_SPECULAR_SETUP) && defined(_ASE_LIGHTING_SIMPLE)
+				#define _SPECULAR_COLOR 1
+			#endif
 
 			#define SHADERPASS SHADERPASS_SHADOWCASTER
 
@@ -1217,14 +1028,14 @@ Shader "AmplifyShaderPack/Baked GI Specular"
 			#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/TextureStack.hlsl"
 
 			
+            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
+           
+
+			
             #if ASE_SRP_VERSION >=140009
 			#include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
 			#endif
 		
-
-			
-            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
-           
 
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/ShaderGraphFunctions.hlsl"
 			#include "Packages/com.unity.render-pipelines.universal/Editor/ShaderGraph/Includes/ShaderPass.hlsl"
@@ -1267,23 +1078,14 @@ Shader "AmplifyShaderPack/Baked GI Specular"
 			};
 
 			CBUFFER_START(UnityPerMaterial)
+			half4 _BaseColor;
 			float4 _MainUVs;
 			float4 _SpecularColor;
-			float4 _IndirectSpecularColor;
-			float4 _ShadowColor;
-			half4 _BaseColor;
 			int _Cull;
-			half _SmoothnessStrength;
-			half _SpecularStrength;
-			half _IndirectSpecularSmoothness;
 			half _Brightness;
-			float _ShadowColorEnable;
-			half _ShadowSharpness;
-			half _ShadowOffset;
-			half _ShadowApproxmation;
-			half _ShadowStrength;
-			float _IndirectDiffuse;
 			half _NormalStrength;
+			half _SpecularStrength;
+			half _SmoothnessStrength;
 			half _OcclusionStrengthAO;
 			float _BakedGIEnable;
 			#ifdef ASE_TRANSMISSION
@@ -1537,7 +1339,7 @@ Shader "AmplifyShaderPack/Baked GI Specular"
 			#define _SPECULAR_SETUP 1
 			#define ASE_BAKEDGI 1
 			#define _NORMALMAP 1
-			#define ASE_SRP_VERSION 140010
+			#define ASE_SRP_VERSION 140011
 			#define ASE_USING_SAMPLING_MACROS 1
 
 
@@ -1545,6 +1347,10 @@ Shader "AmplifyShaderPack/Baked GI Specular"
 
 			#pragma vertex vert
 			#pragma fragment frag
+
+			#if defined(_SPECULAR_SETUP) && defined(_ASE_LIGHTING_SIMPLE)
+				#define _SPECULAR_COLOR 1
+			#endif
 
 			#define SHADERPASS SHADERPASS_DEPTHONLY
 
@@ -1562,14 +1368,14 @@ Shader "AmplifyShaderPack/Baked GI Specular"
 			#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/TextureStack.hlsl"
 
 			
+            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
+           
+
+			
             #if ASE_SRP_VERSION >=140009
 			#include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
 			#endif
 		
-
-			
-            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
-           
 
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/ShaderGraphFunctions.hlsl"
 			#include "Packages/com.unity.render-pipelines.universal/Editor/ShaderGraph/Includes/ShaderPass.hlsl"
@@ -1612,23 +1418,14 @@ Shader "AmplifyShaderPack/Baked GI Specular"
 			};
 
 			CBUFFER_START(UnityPerMaterial)
+			half4 _BaseColor;
 			float4 _MainUVs;
 			float4 _SpecularColor;
-			float4 _IndirectSpecularColor;
-			float4 _ShadowColor;
-			half4 _BaseColor;
 			int _Cull;
-			half _SmoothnessStrength;
-			half _SpecularStrength;
-			half _IndirectSpecularSmoothness;
 			half _Brightness;
-			float _ShadowColorEnable;
-			half _ShadowSharpness;
-			half _ShadowOffset;
-			half _ShadowApproxmation;
-			half _ShadowStrength;
-			float _IndirectDiffuse;
 			half _NormalStrength;
+			half _SpecularStrength;
+			half _SmoothnessStrength;
 			half _OcclusionStrengthAO;
 			float _BakedGIEnable;
 			#ifdef ASE_TRANSMISSION
@@ -1844,21 +1641,22 @@ Shader "AmplifyShaderPack/Baked GI Specular"
 			Cull Off
 
 			HLSLPROGRAM
-
 			#define _NORMAL_DROPOFF_TS 1
 			#define ASE_FOG 1
 			#define _SPECULAR_SETUP 1
-			#pragma shader_feature_local_fragment _SPECULAR_SETUP
 			#define ASE_BAKEDGI 1
 			#define _NORMALMAP 1
-			#define ASE_SRP_VERSION 140010
+			#define ASE_SRP_VERSION 140011
 			#define ASE_USING_SAMPLING_MACROS 1
 
+			#pragma shader_feature EDITOR_VISUALIZATION
 
 			#pragma vertex vert
 			#pragma fragment frag
 
-			#pragma shader_feature EDITOR_VISUALIZATION
+			#if defined(_SPECULAR_SETUP) && defined(_ASE_LIGHTING_SIMPLE)
+				#define _SPECULAR_COLOR 1
+			#endif
 
 			#define SHADERPASS SHADERPASS_META
 
@@ -1870,22 +1668,20 @@ Shader "AmplifyShaderPack/Baked GI Specular"
 			#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/TextureStack.hlsl"
 
 			
+            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
+           
+
+			
             #if ASE_SRP_VERSION >=140009
 			#include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
 			#endif
 		
 
-			
-            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
-           
-
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/ShaderGraphFunctions.hlsl"
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/MetaInput.hlsl"
 			#include "Packages/com.unity.render-pipelines.universal/Editor/ShaderGraph/Includes/ShaderPass.hlsl"
 
-			#define ASE_NEEDS_FRAG_WORLD_POSITION
-			#define ASE_NEEDS_VERT_NORMAL
-
+			
 
 			struct VertexInput
 			{
@@ -1894,7 +1690,7 @@ Shader "AmplifyShaderPack/Baked GI Specular"
 				float4 texcoord0 : TEXCOORD0;
 				float4 texcoord1 : TEXCOORD1;
 				float4 texcoord2 : TEXCOORD2;
-				float4 ase_tangent : TANGENT;
+				
 				UNITY_VERTEX_INPUT_INSTANCE_ID
 			};
 
@@ -1912,33 +1708,19 @@ Shader "AmplifyShaderPack/Baked GI Specular"
 					float4 LightCoord : TEXCOORD3;
 				#endif
 				float4 ase_texcoord4 : TEXCOORD4;
-				float4 ase_texcoord5 : TEXCOORD5;
-				float4 ase_texcoord6 : TEXCOORD6;
-				float4 ase_texcoord7 : TEXCOORD7;
-				float4 ase_texcoord8 : TEXCOORD8;
-				float4 ase_texcoord9 : TEXCOORD9;
 				UNITY_VERTEX_INPUT_INSTANCE_ID
 				UNITY_VERTEX_OUTPUT_STEREO
 			};
 
 			CBUFFER_START(UnityPerMaterial)
+			half4 _BaseColor;
 			float4 _MainUVs;
 			float4 _SpecularColor;
-			float4 _IndirectSpecularColor;
-			float4 _ShadowColor;
-			half4 _BaseColor;
 			int _Cull;
-			half _SmoothnessStrength;
-			half _SpecularStrength;
-			half _IndirectSpecularSmoothness;
 			half _Brightness;
-			float _ShadowColorEnable;
-			half _ShadowSharpness;
-			half _ShadowOffset;
-			half _ShadowApproxmation;
-			half _ShadowStrength;
-			float _IndirectDiffuse;
 			half _NormalStrength;
+			half _SpecularStrength;
+			half _SmoothnessStrength;
 			half _OcclusionStrengthAO;
 			float _BakedGIEnable;
 			#ifdef ASE_TRANSMISSION
@@ -1971,119 +1753,11 @@ Shader "AmplifyShaderPack/Baked GI Specular"
 				int _PassValue;
 			#endif
 
-			TEXTURE2D(_BumpMap);
-			SAMPLER(sampler_BumpMap);
 			TEXTURE2D(_MainTex);
 			SAMPLER(sampler_MainTex);
 
 
-			half4 CalculateShadowMask1_g23( half2 LightmapUV )
-			{
-				#if defined(SHADOWS_SHADOWMASK) && defined(LIGHTMAP_ON)
-				return SAMPLE_SHADOWMASK( LightmapUV.xy );
-				#elif !defined (LIGHTMAP_ON)
-				return unity_ProbesOcclusion;
-				#else
-				return half4( 1, 1, 1, 1 );
-				#endif
-			}
 			
-			float3 AdditionalLightsHalfLambertMask14x( float3 WorldPosition, float2 ScreenUV, float3 WorldNormal, float4 ShadowMask )
-			{
-				float3 Color = 0;
-				#if defined(_ADDITIONAL_LIGHTS)
-					#define SUM_LIGHTHALFLAMBERT(Light)\
-						half3 AttLightColor = Light.color * ( Light.distanceAttenuation * Light.shadowAttenuation );\
-						Color += ( dot( Light.direction, WorldNormal ) * 0.5 + 0.5 )* AttLightColor;
-					InputData inputData = (InputData)0;
-					inputData.normalizedScreenSpaceUV = ScreenUV;
-					inputData.positionWS = WorldPosition;
-					uint meshRenderingLayers = GetMeshRenderingLayer();
-					uint pixelLightCount = GetAdditionalLightsCount();	
-					#if USE_FORWARD_PLUS
-					for (uint lightIndex = 0; lightIndex < min(URP_FP_DIRECTIONAL_LIGHTS_COUNT, MAX_VISIBLE_LIGHTS); lightIndex++)
-					{
-						FORWARD_PLUS_SUBTRACTIVE_LIGHT_CHECK
-						Light light = GetAdditionalLight(lightIndex, WorldPosition, ShadowMask);
-						#ifdef _LIGHT_LAYERS
-						if (IsMatchingLightLayer(light.layerMask, meshRenderingLayers))
-						#endif
-						{
-							SUM_LIGHTHALFLAMBERT( light );
-						}
-					}
-					#endif
-					LIGHT_LOOP_BEGIN( pixelLightCount )
-						Light light = GetAdditionalLight(lightIndex, WorldPosition, ShadowMask);
-						#ifdef _LIGHT_LAYERS
-						if (IsMatchingLightLayer(light.layerMask, meshRenderingLayers))
-						#endif
-						{
-							SUM_LIGHTHALFLAMBERT( light );
-						}
-					LIGHT_LOOP_END
-				#endif
-				return Color;
-			}
-			
-			float3 ASEBakedGI( float3 normalWS, float2 uvStaticLightmap, bool applyScaling )
-			{
-			#ifdef LIGHTMAP_ON
-				if( applyScaling )
-					uvStaticLightmap = uvStaticLightmap * unity_LightmapST.xy + unity_LightmapST.zw;
-				return SampleLightmap( uvStaticLightmap, normalWS );
-			#else
-				return SampleSH(normalWS);
-			#endif
-			}
-			
-			float3 ASESafeNormalize(float3 inVec)
-			{
-				float dp3 = max(1.175494351e-38, dot(inVec, inVec));
-				return inVec* rsqrt(dp3);
-			}
-			
-			float3 AdditionalLightsSpecular14x( float3 WorldPosition, float2 ScreenUV, float3 WorldNormal, float3 WorldView, float3 SpecColor, float Smoothness )
-			{
-				float3 Color = 0;
-				#if defined(_ADDITIONAL_LIGHTS)
-					Smoothness = exp2(10 * Smoothness + 1);
-					
-					#define SUM_LIGHTSPECULAR(Light)\
-						half3 AttLightColor = light.color * ( light.distanceAttenuation * light.shadowAttenuation );\
-						Color += LightingSpecular( AttLightColor, light.direction, WorldNormal, WorldView, half4( SpecColor, 0 ), Smoothness );	
-					InputData inputData = (InputData)0;
-					inputData.normalizedScreenSpaceUV = ScreenUV;
-					inputData.positionWS = WorldPosition;
-					uint meshRenderingLayers = GetMeshRenderingLayer();		
-					uint pixelLightCount = GetAdditionalLightsCount();	
-					#if USE_FORWARD_PLUS
-					for (uint lightIndex = 0; lightIndex < min(URP_FP_DIRECTIONAL_LIGHTS_COUNT, MAX_VISIBLE_LIGHTS); lightIndex++)
-					{
-						FORWARD_PLUS_SUBTRACTIVE_LIGHT_CHECK
-						Light light = GetAdditionalLight(lightIndex, WorldPosition);
-						#ifdef _LIGHT_LAYERS
-						if (IsMatchingLightLayer(light.layerMask, meshRenderingLayers))
-						#endif
-						{
-							SUM_LIGHTSPECULAR( light );
-						}
-					}
-					#endif
-					LIGHT_LOOP_BEGIN( pixelLightCount )
-						Light light = GetAdditionalLight(lightIndex, WorldPosition);
-						#ifdef _LIGHT_LAYERS
-						if (IsMatchingLightLayer(light.layerMask, meshRenderingLayers))
-						#endif
-						{
-							SUM_LIGHTSPECULAR( light );
-						}
-					LIGHT_LOOP_END
-				#endif
-				return Color;
-			}
-			
-
 			VertexOutput VertexFunction( VertexInput v  )
 			{
 				VertexOutput o = (VertexOutput)0;
@@ -2091,26 +1765,10 @@ Shader "AmplifyShaderPack/Baked GI Specular"
 				UNITY_TRANSFER_INSTANCE_ID(v, o);
 				UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
 
-				float4 ase_clipPos = TransformObjectToHClip((v.positionOS).xyz);
-				float4 screenPos = ComputeScreenPos(ase_clipPos);
-				o.ase_texcoord4 = screenPos;
-				float3 ase_worldTangent = TransformObjectToWorldDir(v.ase_tangent.xyz);
-				o.ase_texcoord6.xyz = ase_worldTangent;
-				float3 ase_worldNormal = TransformObjectToWorldNormal(v.normalOS);
-				o.ase_texcoord7.xyz = ase_worldNormal;
-				float ase_vertexTangentSign = v.ase_tangent.w * ( unity_WorldTransformParams.w >= 0.0 ? 1.0 : -1.0 );
-				float3 ase_worldBitangent = cross( ase_worldNormal, ase_worldTangent ) * ase_vertexTangentSign;
-				o.ase_texcoord8.xyz = ase_worldBitangent;
-				
-				o.ase_texcoord5.xy = v.texcoord0.xy;
-				o.ase_texcoord5.zw = v.texcoord2.xy;
-				o.ase_texcoord9.xy = v.texcoord1.xy;
+				o.ase_texcoord4.xy = v.texcoord0.xy;
 				
 				//setting value to unused interpolator channels and avoid initialization warnings
-				o.ase_texcoord6.w = 0;
-				o.ase_texcoord7.w = 0;
-				o.ase_texcoord8.w = 0;
-				o.ase_texcoord9.zw = 0;
+				o.ase_texcoord4.zw = 0;
 
 				#ifdef ASE_ABSOLUTE_VERTEX_POS
 					float3 defaultVertexValue = v.positionOS.xyz;
@@ -2162,8 +1820,7 @@ Shader "AmplifyShaderPack/Baked GI Specular"
 				float4 texcoord0 : TEXCOORD0;
 				float4 texcoord1 : TEXCOORD1;
 				float4 texcoord2 : TEXCOORD2;
-				float4 ase_tangent : TANGENT;
-
+				
 				UNITY_VERTEX_INPUT_INSTANCE_ID
 			};
 
@@ -2183,7 +1840,7 @@ Shader "AmplifyShaderPack/Baked GI Specular"
 				o.texcoord0 = v.texcoord0;
 				o.texcoord1 = v.texcoord1;
 				o.texcoord2 = v.texcoord2;
-				o.ase_tangent = v.ase_tangent;
+				
 				return o;
 			}
 
@@ -2225,7 +1882,7 @@ Shader "AmplifyShaderPack/Baked GI Specular"
 				o.texcoord0 = patch[0].texcoord0 * bary.x + patch[1].texcoord0 * bary.y + patch[2].texcoord0 * bary.z;
 				o.texcoord1 = patch[0].texcoord1 * bary.x + patch[1].texcoord1 * bary.y + patch[2].texcoord1 * bary.z;
 				o.texcoord2 = patch[0].texcoord2 * bary.x + patch[1].texcoord2 * bary.y + patch[2].texcoord2 * bary.z;
-				o.ase_tangent = patch[0].ase_tangent * bary.x + patch[1].ase_tangent * bary.y + patch[2].ase_tangent * bary.z;
+				
 				#if defined(ASE_PHONG_TESSELLATION)
 				float3 pp[3];
 				for (int i = 0; i < 3; ++i)
@@ -2243,7 +1900,7 @@ Shader "AmplifyShaderPack/Baked GI Specular"
 			}
 			#endif
 
-			half4 frag(VertexOutput IN , bool ase_vface : SV_IsFrontFace ) : SV_TARGET
+			half4 frag(VertexOutput IN  ) : SV_TARGET
 			{
 				UNITY_SETUP_INSTANCE_ID(IN);
 				UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX( IN );
@@ -2262,102 +1919,12 @@ Shader "AmplifyShaderPack/Baked GI Specular"
 					#endif
 				#endif
 
-				float3 worldPosValue184_g25 = WorldPosition;
-				float3 WorldPosition152_g25 = worldPosValue184_g25;
-				float4 screenPos = IN.ase_texcoord4;
-				float4 ase_screenPosNorm = screenPos / screenPos.w;
-				ase_screenPosNorm.z = ( UNITY_NEAR_CLIP_VALUE >= 0 ) ? ase_screenPosNorm.z : ase_screenPosNorm.z * 0.5 + 0.5;
-				float2 ScreenUV183_g25 = (ase_screenPosNorm).xy;
-				float2 ScreenUV152_g25 = ScreenUV183_g25;
-				float2 temp_output_133_0_g7 = ( ( IN.ase_texcoord5.xy * (_MainUVs).xy ) + (_MainUVs).zw );
-				float3 unpack98_g7 = UnpackNormalScale( SAMPLE_TEXTURE2D( _BumpMap, sampler_BumpMap, temp_output_133_0_g7 ), _NormalStrength );
-				unpack98_g7.z = lerp( 1, unpack98_g7.z, saturate(_NormalStrength) );
-				float3 temp_output_33_6 = unpack98_g7;
-				float3 temp_output_975_0_g8 = temp_output_33_6;
-				float3 Normal1069_g8 = temp_output_975_0_g8;
-				float3 ase_worldTangent = IN.ase_texcoord6.xyz;
-				float3 ase_worldNormal = IN.ase_texcoord7.xyz;
-				float3 ase_worldBitangent = IN.ase_texcoord8.xyz;
-				float3 tanToWorld0 = float3( ase_worldTangent.x, ase_worldBitangent.x, ase_worldNormal.x );
-				float3 tanToWorld1 = float3( ase_worldTangent.y, ase_worldBitangent.y, ase_worldNormal.y );
-				float3 tanToWorld2 = float3( ase_worldTangent.z, ase_worldBitangent.z, ase_worldNormal.z );
-				float3 tanNormal12_g25 = Normal1069_g8;
-				float3 worldNormal12_g25 = normalize( float3(dot(tanToWorld0,tanNormal12_g25), dot(tanToWorld1,tanNormal12_g25), dot(tanToWorld2,tanNormal12_g25)) );
-				float3 worldNormalValue185_g25 = worldNormal12_g25;
-				float3 WorldNormal152_g25 = worldNormalValue185_g25;
-				float2 temp_output_1255_0_g8 = (IN.ase_texcoord5.zw*(unity_DynamicLightmapST).xy + (unity_DynamicLightmapST).zw);
-				float2 UV2Dynamic1251_g8 = temp_output_1255_0_g8;
-				half2 LightmapUV1_g23 = UV2Dynamic1251_g8;
-				half4 localCalculateShadowMask1_g23 = CalculateShadowMask1_g23( LightmapUV1_g23 );
-				float4 shadowMaskValue182_g25 = localCalculateShadowMask1_g23;
-				float4 ShadowMask152_g25 = shadowMaskValue182_g25;
-				float3 localAdditionalLightsHalfLambertMask14x152_g25 = AdditionalLightsHalfLambertMask14x( WorldPosition152_g25 , ScreenUV152_g25 , WorldNormal152_g25 , ShadowMask152_g25 );
-				float3 SRP_Lambert_Half1362_g8 = localAdditionalLightsHalfLambertMask14x152_g25;
-				float3 tanNormal1158_g8 = Normal1069_g8;
-				float3 worldNormal1158_g8 = normalize( float3(dot(tanToWorld0,tanNormal1158_g8), dot(tanToWorld1,tanNormal1158_g8), dot(tanToWorld2,tanNormal1158_g8)) );
-				float2 temp_output_1219_0_g8 = (IN.ase_texcoord9.xy*(unity_LightmapST).xy + (unity_LightmapST).zw);
-				float2 UV1Static1247_g8 = temp_output_1219_0_g8;
-				float3 bakedGI1252_g8 = ASEBakedGI( worldNormal1158_g8, UV1Static1247_g8, true);
-				float3 lerpResult1169_g8 = lerp( float3( 1,1,1 ) , ( SRP_Lambert_Half1362_g8 + bakedGI1252_g8 ) , _IndirectDiffuse);
-				float3 temp_output_1173_0_g8 = ( lerpResult1169_g8 + step( float3( 1,1,1 ) , ( 1.0 - lerpResult1169_g8 ) ) );
-				float3 tanNormal1072_g8 = temp_output_975_0_g8;
-				float3 worldNormal1072_g8 = normalize( float3(dot(tanToWorld0,tanNormal1072_g8), dot(tanToWorld1,tanNormal1072_g8), dot(tanToWorld2,tanNormal1072_g8)) );
-				float3 ase_worldViewDir = ( _WorldSpaceCameraPos.xyz - WorldPosition );
-				ase_worldViewDir = SafeNormalize( ase_worldViewDir );
-				float3 normalizeResult1044_g8 = ASESafeNormalize( ( ase_worldViewDir + SafeNormalize(_MainLightPosition.xyz) ) );
-				float dotResult1046_g8 = dot( worldNormal1072_g8 , normalizeResult1044_g8 );
-				float Dot_NdotH1098_g8 = dotResult1046_g8;
-				float temp_output_1108_0_g8 = ( 1.0 - ( ( 1.0 - Dot_NdotH1098_g8 ) * _MainLightPosition.w ) );
-				float ase_lightIntensity = max( max( _MainLightColor.r, _MainLightColor.g ), _MainLightColor.b );
-				float4 ase_lightColor = float4( _MainLightColor.rgb / ase_lightIntensity, ase_lightIntensity );
-				float LightColorIntensity1349_g8 = max( ase_lightColor.a , 0.0 );
-				float3 temp_output_1112_0_g8 = ( temp_output_1173_0_g8 * temp_output_1108_0_g8 * LightColorIntensity1349_g8 );
-				float dotResult1055_g8 = dot( worldNormal1072_g8 , SafeNormalize(_MainLightPosition.xyz) );
-				float Dot_NdotL1100_g8 = dotResult1055_g8;
-				float Shadow_Strength1138_g8 = _ShadowStrength;
-				float lerpResult1130_g8 = lerp( ( Shadow_Strength1138_g8 * Shadow_Strength1138_g8 * 0.7978846 ) , ( Shadow_Strength1138_g8 * Shadow_Strength1138_g8 * sqrt( ( 2.0 / ( 2.0 * PI ) ) ) ) , _ShadowApproxmation);
-				float temp_output_1312_0_g8 = ( ( max( Dot_NdotL1100_g8 , 0.0 ) * lerpResult1130_g8 ) + ( 1.0 - lerpResult1130_g8 ) );
-				float temp_output_1117_0_g8 = saturate( ( ( ( max( Dot_NdotH1098_g8 , 0.0 ) * temp_output_1312_0_g8 * temp_output_1312_0_g8 ) + _ShadowOffset ) / _ShadowSharpness ) );
-				float3 temp_cast_1 = (temp_output_1117_0_g8).xxx;
-				float3 temp_cast_2 = (temp_output_1117_0_g8).xxx;
-				float3 lerpResult1379_g8 = lerp( (_ShadowColor).rgb , temp_cast_2 , temp_output_1117_0_g8);
-				float3 lerpResult1377_g8 = lerp( temp_cast_1 , lerpResult1379_g8 , _ShadowColorEnable);
-				float3 temp_cast_3 = (temp_output_1108_0_g8).xxx;
-				float3 lerpResult1109_g8 = lerp( ( lerpResult1377_g8 * Dot_NdotH1098_g8 ) , temp_cast_3 , _ShadowStrength);
-				float4 tex2DNode21_g7 = SAMPLE_TEXTURE2D( _MainTex, sampler_MainTex, temp_output_133_0_g7 );
-				float3 temp_output_89_0_g7 = ( (_BaseColor).rgb * (tex2DNode21_g7).rgb * _Brightness );
-				float3 temp_output_898_0_g8 = temp_output_89_0_g7;
-				float3 temp_output_1210_0_g8 = saturate( ( ( temp_output_1112_0_g8 + lerpResult1109_g8 ) * temp_output_898_0_g8 ) );
-				float3 worldPosValue184_g12 = WorldPosition;
-				float3 WorldPosition158_g12 = worldPosValue184_g12;
-				float2 ScreenUV183_g12 = (ase_screenPosNorm).xy;
-				float2 ScreenUV158_g12 = ScreenUV183_g12;
-				float3 tanNormal1260_g8 = Normal1069_g8;
-				float3 worldNormal1260_g8 = normalize( float3(dot(tanToWorld0,tanNormal1260_g8), dot(tanToWorld1,tanNormal1260_g8), dot(tanToWorld2,tanNormal1260_g8)) );
-				float3 worldNormalValue185_g12 = worldNormal1260_g8;
-				float3 WorldNormal158_g12 = worldNormalValue185_g12;
-				ase_worldViewDir = normalize(ase_worldViewDir);
-				float3 temp_output_15_0_g12 = ase_worldViewDir;
-				float3 WorldView158_g12 = temp_output_15_0_g12;
-				float3 temp_output_1196_0_g8 = (_IndirectSpecularColor).rgb;
-				float3 temp_output_14_0_g12 = temp_output_1196_0_g8;
-				float3 SpecColor158_g12 = temp_output_14_0_g12;
-				float temp_output_18_0_g12 = _IndirectSpecularSmoothness;
-				float Smoothness158_g12 = temp_output_18_0_g12;
-				float3 localAdditionalLightsSpecular14x158_g12 = AdditionalLightsSpecular14x( WorldPosition158_g12 , ScreenUV158_g12 , WorldNormal158_g12 , WorldView158_g12 , SpecColor158_g12 , Smoothness158_g12 );
-				float3 LightColorAtten1105_g8 = ( Dot_NdotH1098_g8 * ase_lightColor.rgb );
-				float3 normalizeResult1197_g8 = normalize( ( ase_worldViewDir + SafeNormalize(_MainLightPosition.xyz) ) );
-				float dotResult1187_g8 = dot( normalizeResult1197_g8 , worldNormal1260_g8 );
-				float3 temp_output_1192_0_g8 = ( temp_output_1196_0_g8 * LightColorAtten1105_g8 * pow( max( dotResult1187_g8 , 0.0 ) , exp2( (_IndirectSpecularSmoothness*10.0 + 1.0) ) ) );
-				float3 temp_output_1202_0_g8 = ( localAdditionalLightsSpecular14x158_g12 + temp_output_1192_0_g8 );
-				float3 BaseColor1240_g8 = temp_output_898_0_g8;
-				float3 switchResult1238_g8 = (((ase_vface>0)?(( temp_output_1202_0_g8 + 0.0 )):(BaseColor1240_g8)));
-				float fresnelNdotV1262_g8 = dot( worldNormal1260_g8, ase_worldViewDir );
-				float fresnelNode1262_g8 = ( 0.04 + _IndirectSpecularSmoothness * pow( 1.0 - fresnelNdotV1262_g8, 5.0 ) );
-				float3 lerpResult1236_g8 = lerp( temp_output_1210_0_g8 , switchResult1238_g8 , saturate( fresnelNode1262_g8 ));
+				float2 temp_output_133_0_g37 = ( ( IN.ase_texcoord4.xy * (_MainUVs).xy ) + (_MainUVs).zw );
+				float4 tex2DNode21_g37 = SAMPLE_TEXTURE2D( _MainTex, sampler_MainTex, temp_output_133_0_g37 );
+				float3 temp_output_89_0_g37 = ( (_BaseColor).rgb * (tex2DNode21_g37).rgb * _Brightness );
 				
 
-				float3 BaseColor = lerpResult1236_g8;
+				float3 BaseColor = temp_output_89_0_g37;
 				float3 Emission = 0;
 				float Alpha = 1;
 				float AlphaClipThreshold = 0.5;
@@ -2399,12 +1966,16 @@ Shader "AmplifyShaderPack/Baked GI Specular"
 			#define _SPECULAR_SETUP 1
 			#define ASE_BAKEDGI 1
 			#define _NORMALMAP 1
-			#define ASE_SRP_VERSION 140010
+			#define ASE_SRP_VERSION 140011
 			#define ASE_USING_SAMPLING_MACROS 1
 
 
 			#pragma vertex vert
 			#pragma fragment frag
+
+			#if defined(_SPECULAR_SETUP) && defined(_ASE_LIGHTING_SIMPLE)
+				#define _SPECULAR_COLOR 1
+			#endif
 
 			#define SHADERPASS SHADERPASS_2D
 
@@ -2416,30 +1987,25 @@ Shader "AmplifyShaderPack/Baked GI Specular"
 			#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/TextureStack.hlsl"
 
 			
+            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
+           
+
+			
             #if ASE_SRP_VERSION >=140009
 			#include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
 			#endif
 		
 
-			
-            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
-           
-
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/ShaderGraphFunctions.hlsl"
 			#include "Packages/com.unity.render-pipelines.universal/Editor/ShaderGraph/Includes/ShaderPass.hlsl"
 
-			#define ASE_NEEDS_FRAG_WORLD_POSITION
-			#define ASE_NEEDS_VERT_NORMAL
-
+			
 
 			struct VertexInput
 			{
 				float4 positionOS : POSITION;
 				float3 normalOS : NORMAL;
 				float4 ase_texcoord : TEXCOORD0;
-				float4 ase_tangent : TANGENT;
-				float4 ase_texcoord2 : TEXCOORD2;
-				float4 ase_texcoord1 : TEXCOORD1;
 				UNITY_VERTEX_INPUT_INSTANCE_ID
 			};
 
@@ -2453,33 +2019,19 @@ Shader "AmplifyShaderPack/Baked GI Specular"
 					float4 shadowCoord : TEXCOORD1;
 				#endif
 				float4 ase_texcoord2 : TEXCOORD2;
-				float4 ase_texcoord3 : TEXCOORD3;
-				float4 ase_texcoord4 : TEXCOORD4;
-				float4 ase_texcoord5 : TEXCOORD5;
-				float4 ase_texcoord6 : TEXCOORD6;
-				float4 ase_texcoord7 : TEXCOORD7;
 				UNITY_VERTEX_INPUT_INSTANCE_ID
 				UNITY_VERTEX_OUTPUT_STEREO
 			};
 
 			CBUFFER_START(UnityPerMaterial)
+			half4 _BaseColor;
 			float4 _MainUVs;
 			float4 _SpecularColor;
-			float4 _IndirectSpecularColor;
-			float4 _ShadowColor;
-			half4 _BaseColor;
 			int _Cull;
-			half _SmoothnessStrength;
-			half _SpecularStrength;
-			half _IndirectSpecularSmoothness;
 			half _Brightness;
-			float _ShadowColorEnable;
-			half _ShadowSharpness;
-			half _ShadowOffset;
-			half _ShadowApproxmation;
-			half _ShadowStrength;
-			float _IndirectDiffuse;
 			half _NormalStrength;
+			half _SpecularStrength;
+			half _SmoothnessStrength;
 			half _OcclusionStrengthAO;
 			float _BakedGIEnable;
 			#ifdef ASE_TRANSMISSION
@@ -2512,119 +2064,11 @@ Shader "AmplifyShaderPack/Baked GI Specular"
 				int _PassValue;
 			#endif
 
-			TEXTURE2D(_BumpMap);
-			SAMPLER(sampler_BumpMap);
 			TEXTURE2D(_MainTex);
 			SAMPLER(sampler_MainTex);
 
 
-			half4 CalculateShadowMask1_g23( half2 LightmapUV )
-			{
-				#if defined(SHADOWS_SHADOWMASK) && defined(LIGHTMAP_ON)
-				return SAMPLE_SHADOWMASK( LightmapUV.xy );
-				#elif !defined (LIGHTMAP_ON)
-				return unity_ProbesOcclusion;
-				#else
-				return half4( 1, 1, 1, 1 );
-				#endif
-			}
 			
-			float3 AdditionalLightsHalfLambertMask14x( float3 WorldPosition, float2 ScreenUV, float3 WorldNormal, float4 ShadowMask )
-			{
-				float3 Color = 0;
-				#if defined(_ADDITIONAL_LIGHTS)
-					#define SUM_LIGHTHALFLAMBERT(Light)\
-						half3 AttLightColor = Light.color * ( Light.distanceAttenuation * Light.shadowAttenuation );\
-						Color += ( dot( Light.direction, WorldNormal ) * 0.5 + 0.5 )* AttLightColor;
-					InputData inputData = (InputData)0;
-					inputData.normalizedScreenSpaceUV = ScreenUV;
-					inputData.positionWS = WorldPosition;
-					uint meshRenderingLayers = GetMeshRenderingLayer();
-					uint pixelLightCount = GetAdditionalLightsCount();	
-					#if USE_FORWARD_PLUS
-					for (uint lightIndex = 0; lightIndex < min(URP_FP_DIRECTIONAL_LIGHTS_COUNT, MAX_VISIBLE_LIGHTS); lightIndex++)
-					{
-						FORWARD_PLUS_SUBTRACTIVE_LIGHT_CHECK
-						Light light = GetAdditionalLight(lightIndex, WorldPosition, ShadowMask);
-						#ifdef _LIGHT_LAYERS
-						if (IsMatchingLightLayer(light.layerMask, meshRenderingLayers))
-						#endif
-						{
-							SUM_LIGHTHALFLAMBERT( light );
-						}
-					}
-					#endif
-					LIGHT_LOOP_BEGIN( pixelLightCount )
-						Light light = GetAdditionalLight(lightIndex, WorldPosition, ShadowMask);
-						#ifdef _LIGHT_LAYERS
-						if (IsMatchingLightLayer(light.layerMask, meshRenderingLayers))
-						#endif
-						{
-							SUM_LIGHTHALFLAMBERT( light );
-						}
-					LIGHT_LOOP_END
-				#endif
-				return Color;
-			}
-			
-			float3 ASEBakedGI( float3 normalWS, float2 uvStaticLightmap, bool applyScaling )
-			{
-			#ifdef LIGHTMAP_ON
-				if( applyScaling )
-					uvStaticLightmap = uvStaticLightmap * unity_LightmapST.xy + unity_LightmapST.zw;
-				return SampleLightmap( uvStaticLightmap, normalWS );
-			#else
-				return SampleSH(normalWS);
-			#endif
-			}
-			
-			float3 ASESafeNormalize(float3 inVec)
-			{
-				float dp3 = max(1.175494351e-38, dot(inVec, inVec));
-				return inVec* rsqrt(dp3);
-			}
-			
-			float3 AdditionalLightsSpecular14x( float3 WorldPosition, float2 ScreenUV, float3 WorldNormal, float3 WorldView, float3 SpecColor, float Smoothness )
-			{
-				float3 Color = 0;
-				#if defined(_ADDITIONAL_LIGHTS)
-					Smoothness = exp2(10 * Smoothness + 1);
-					
-					#define SUM_LIGHTSPECULAR(Light)\
-						half3 AttLightColor = light.color * ( light.distanceAttenuation * light.shadowAttenuation );\
-						Color += LightingSpecular( AttLightColor, light.direction, WorldNormal, WorldView, half4( SpecColor, 0 ), Smoothness );	
-					InputData inputData = (InputData)0;
-					inputData.normalizedScreenSpaceUV = ScreenUV;
-					inputData.positionWS = WorldPosition;
-					uint meshRenderingLayers = GetMeshRenderingLayer();		
-					uint pixelLightCount = GetAdditionalLightsCount();	
-					#if USE_FORWARD_PLUS
-					for (uint lightIndex = 0; lightIndex < min(URP_FP_DIRECTIONAL_LIGHTS_COUNT, MAX_VISIBLE_LIGHTS); lightIndex++)
-					{
-						FORWARD_PLUS_SUBTRACTIVE_LIGHT_CHECK
-						Light light = GetAdditionalLight(lightIndex, WorldPosition);
-						#ifdef _LIGHT_LAYERS
-						if (IsMatchingLightLayer(light.layerMask, meshRenderingLayers))
-						#endif
-						{
-							SUM_LIGHTSPECULAR( light );
-						}
-					}
-					#endif
-					LIGHT_LOOP_BEGIN( pixelLightCount )
-						Light light = GetAdditionalLight(lightIndex, WorldPosition);
-						#ifdef _LIGHT_LAYERS
-						if (IsMatchingLightLayer(light.layerMask, meshRenderingLayers))
-						#endif
-						{
-							SUM_LIGHTSPECULAR( light );
-						}
-					LIGHT_LOOP_END
-				#endif
-				return Color;
-			}
-			
-
 			VertexOutput VertexFunction( VertexInput v  )
 			{
 				VertexOutput o = (VertexOutput)0;
@@ -2632,26 +2076,10 @@ Shader "AmplifyShaderPack/Baked GI Specular"
 				UNITY_TRANSFER_INSTANCE_ID( v, o );
 				UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO( o );
 
-				float4 ase_clipPos = TransformObjectToHClip((v.positionOS).xyz);
-				float4 screenPos = ComputeScreenPos(ase_clipPos);
-				o.ase_texcoord2 = screenPos;
-				float3 ase_worldTangent = TransformObjectToWorldDir(v.ase_tangent.xyz);
-				o.ase_texcoord4.xyz = ase_worldTangent;
-				float3 ase_worldNormal = TransformObjectToWorldNormal(v.normalOS);
-				o.ase_texcoord5.xyz = ase_worldNormal;
-				float ase_vertexTangentSign = v.ase_tangent.w * ( unity_WorldTransformParams.w >= 0.0 ? 1.0 : -1.0 );
-				float3 ase_worldBitangent = cross( ase_worldNormal, ase_worldTangent ) * ase_vertexTangentSign;
-				o.ase_texcoord6.xyz = ase_worldBitangent;
-				
-				o.ase_texcoord3.xy = v.ase_texcoord.xy;
-				o.ase_texcoord3.zw = v.ase_texcoord2.xy;
-				o.ase_texcoord7.xy = v.ase_texcoord1.xy;
+				o.ase_texcoord2.xy = v.ase_texcoord.xy;
 				
 				//setting value to unused interpolator channels and avoid initialization warnings
-				o.ase_texcoord4.w = 0;
-				o.ase_texcoord5.w = 0;
-				o.ase_texcoord6.w = 0;
-				o.ase_texcoord7.zw = 0;
+				o.ase_texcoord2.zw = 0;
 
 				#ifdef ASE_ABSOLUTE_VERTEX_POS
 					float3 defaultVertexValue = v.positionOS.xyz;
@@ -2690,9 +2118,6 @@ Shader "AmplifyShaderPack/Baked GI Specular"
 				float4 vertex : INTERNALTESSPOS;
 				float3 normalOS : NORMAL;
 				float4 ase_texcoord : TEXCOORD0;
-				float4 ase_tangent : TANGENT;
-				float4 ase_texcoord2 : TEXCOORD2;
-				float4 ase_texcoord1 : TEXCOORD1;
 
 				UNITY_VERTEX_INPUT_INSTANCE_ID
 			};
@@ -2711,9 +2136,6 @@ Shader "AmplifyShaderPack/Baked GI Specular"
 				o.vertex = v.positionOS;
 				o.normalOS = v.normalOS;
 				o.ase_texcoord = v.ase_texcoord;
-				o.ase_tangent = v.ase_tangent;
-				o.ase_texcoord2 = v.ase_texcoord2;
-				o.ase_texcoord1 = v.ase_texcoord1;
 				return o;
 			}
 
@@ -2753,9 +2175,6 @@ Shader "AmplifyShaderPack/Baked GI Specular"
 				o.positionOS = patch[0].vertex * bary.x + patch[1].vertex * bary.y + patch[2].vertex * bary.z;
 				o.normalOS = patch[0].normalOS * bary.x + patch[1].normalOS * bary.y + patch[2].normalOS * bary.z;
 				o.ase_texcoord = patch[0].ase_texcoord * bary.x + patch[1].ase_texcoord * bary.y + patch[2].ase_texcoord * bary.z;
-				o.ase_tangent = patch[0].ase_tangent * bary.x + patch[1].ase_tangent * bary.y + patch[2].ase_tangent * bary.z;
-				o.ase_texcoord2 = patch[0].ase_texcoord2 * bary.x + patch[1].ase_texcoord2 * bary.y + patch[2].ase_texcoord2 * bary.z;
-				o.ase_texcoord1 = patch[0].ase_texcoord1 * bary.x + patch[1].ase_texcoord1 * bary.y + patch[2].ase_texcoord1 * bary.z;
 				#if defined(ASE_PHONG_TESSELLATION)
 				float3 pp[3];
 				for (int i = 0; i < 3; ++i)
@@ -2773,7 +2192,7 @@ Shader "AmplifyShaderPack/Baked GI Specular"
 			}
 			#endif
 
-			half4 frag(VertexOutput IN , bool ase_vface : SV_IsFrontFace ) : SV_TARGET
+			half4 frag(VertexOutput IN  ) : SV_TARGET
 			{
 				UNITY_SETUP_INSTANCE_ID( IN );
 				UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX( IN );
@@ -2792,102 +2211,12 @@ Shader "AmplifyShaderPack/Baked GI Specular"
 					#endif
 				#endif
 
-				float3 worldPosValue184_g25 = WorldPosition;
-				float3 WorldPosition152_g25 = worldPosValue184_g25;
-				float4 screenPos = IN.ase_texcoord2;
-				float4 ase_screenPosNorm = screenPos / screenPos.w;
-				ase_screenPosNorm.z = ( UNITY_NEAR_CLIP_VALUE >= 0 ) ? ase_screenPosNorm.z : ase_screenPosNorm.z * 0.5 + 0.5;
-				float2 ScreenUV183_g25 = (ase_screenPosNorm).xy;
-				float2 ScreenUV152_g25 = ScreenUV183_g25;
-				float2 temp_output_133_0_g7 = ( ( IN.ase_texcoord3.xy * (_MainUVs).xy ) + (_MainUVs).zw );
-				float3 unpack98_g7 = UnpackNormalScale( SAMPLE_TEXTURE2D( _BumpMap, sampler_BumpMap, temp_output_133_0_g7 ), _NormalStrength );
-				unpack98_g7.z = lerp( 1, unpack98_g7.z, saturate(_NormalStrength) );
-				float3 temp_output_33_6 = unpack98_g7;
-				float3 temp_output_975_0_g8 = temp_output_33_6;
-				float3 Normal1069_g8 = temp_output_975_0_g8;
-				float3 ase_worldTangent = IN.ase_texcoord4.xyz;
-				float3 ase_worldNormal = IN.ase_texcoord5.xyz;
-				float3 ase_worldBitangent = IN.ase_texcoord6.xyz;
-				float3 tanToWorld0 = float3( ase_worldTangent.x, ase_worldBitangent.x, ase_worldNormal.x );
-				float3 tanToWorld1 = float3( ase_worldTangent.y, ase_worldBitangent.y, ase_worldNormal.y );
-				float3 tanToWorld2 = float3( ase_worldTangent.z, ase_worldBitangent.z, ase_worldNormal.z );
-				float3 tanNormal12_g25 = Normal1069_g8;
-				float3 worldNormal12_g25 = normalize( float3(dot(tanToWorld0,tanNormal12_g25), dot(tanToWorld1,tanNormal12_g25), dot(tanToWorld2,tanNormal12_g25)) );
-				float3 worldNormalValue185_g25 = worldNormal12_g25;
-				float3 WorldNormal152_g25 = worldNormalValue185_g25;
-				float2 temp_output_1255_0_g8 = (IN.ase_texcoord3.zw*(unity_DynamicLightmapST).xy + (unity_DynamicLightmapST).zw);
-				float2 UV2Dynamic1251_g8 = temp_output_1255_0_g8;
-				half2 LightmapUV1_g23 = UV2Dynamic1251_g8;
-				half4 localCalculateShadowMask1_g23 = CalculateShadowMask1_g23( LightmapUV1_g23 );
-				float4 shadowMaskValue182_g25 = localCalculateShadowMask1_g23;
-				float4 ShadowMask152_g25 = shadowMaskValue182_g25;
-				float3 localAdditionalLightsHalfLambertMask14x152_g25 = AdditionalLightsHalfLambertMask14x( WorldPosition152_g25 , ScreenUV152_g25 , WorldNormal152_g25 , ShadowMask152_g25 );
-				float3 SRP_Lambert_Half1362_g8 = localAdditionalLightsHalfLambertMask14x152_g25;
-				float3 tanNormal1158_g8 = Normal1069_g8;
-				float3 worldNormal1158_g8 = normalize( float3(dot(tanToWorld0,tanNormal1158_g8), dot(tanToWorld1,tanNormal1158_g8), dot(tanToWorld2,tanNormal1158_g8)) );
-				float2 temp_output_1219_0_g8 = (IN.ase_texcoord7.xy*(unity_LightmapST).xy + (unity_LightmapST).zw);
-				float2 UV1Static1247_g8 = temp_output_1219_0_g8;
-				float3 bakedGI1252_g8 = ASEBakedGI( worldNormal1158_g8, UV1Static1247_g8, true);
-				float3 lerpResult1169_g8 = lerp( float3( 1,1,1 ) , ( SRP_Lambert_Half1362_g8 + bakedGI1252_g8 ) , _IndirectDiffuse);
-				float3 temp_output_1173_0_g8 = ( lerpResult1169_g8 + step( float3( 1,1,1 ) , ( 1.0 - lerpResult1169_g8 ) ) );
-				float3 tanNormal1072_g8 = temp_output_975_0_g8;
-				float3 worldNormal1072_g8 = normalize( float3(dot(tanToWorld0,tanNormal1072_g8), dot(tanToWorld1,tanNormal1072_g8), dot(tanToWorld2,tanNormal1072_g8)) );
-				float3 ase_worldViewDir = ( _WorldSpaceCameraPos.xyz - WorldPosition );
-				ase_worldViewDir = SafeNormalize( ase_worldViewDir );
-				float3 normalizeResult1044_g8 = ASESafeNormalize( ( ase_worldViewDir + SafeNormalize(_MainLightPosition.xyz) ) );
-				float dotResult1046_g8 = dot( worldNormal1072_g8 , normalizeResult1044_g8 );
-				float Dot_NdotH1098_g8 = dotResult1046_g8;
-				float temp_output_1108_0_g8 = ( 1.0 - ( ( 1.0 - Dot_NdotH1098_g8 ) * _MainLightPosition.w ) );
-				float ase_lightIntensity = max( max( _MainLightColor.r, _MainLightColor.g ), _MainLightColor.b );
-				float4 ase_lightColor = float4( _MainLightColor.rgb / ase_lightIntensity, ase_lightIntensity );
-				float LightColorIntensity1349_g8 = max( ase_lightColor.a , 0.0 );
-				float3 temp_output_1112_0_g8 = ( temp_output_1173_0_g8 * temp_output_1108_0_g8 * LightColorIntensity1349_g8 );
-				float dotResult1055_g8 = dot( worldNormal1072_g8 , SafeNormalize(_MainLightPosition.xyz) );
-				float Dot_NdotL1100_g8 = dotResult1055_g8;
-				float Shadow_Strength1138_g8 = _ShadowStrength;
-				float lerpResult1130_g8 = lerp( ( Shadow_Strength1138_g8 * Shadow_Strength1138_g8 * 0.7978846 ) , ( Shadow_Strength1138_g8 * Shadow_Strength1138_g8 * sqrt( ( 2.0 / ( 2.0 * PI ) ) ) ) , _ShadowApproxmation);
-				float temp_output_1312_0_g8 = ( ( max( Dot_NdotL1100_g8 , 0.0 ) * lerpResult1130_g8 ) + ( 1.0 - lerpResult1130_g8 ) );
-				float temp_output_1117_0_g8 = saturate( ( ( ( max( Dot_NdotH1098_g8 , 0.0 ) * temp_output_1312_0_g8 * temp_output_1312_0_g8 ) + _ShadowOffset ) / _ShadowSharpness ) );
-				float3 temp_cast_1 = (temp_output_1117_0_g8).xxx;
-				float3 temp_cast_2 = (temp_output_1117_0_g8).xxx;
-				float3 lerpResult1379_g8 = lerp( (_ShadowColor).rgb , temp_cast_2 , temp_output_1117_0_g8);
-				float3 lerpResult1377_g8 = lerp( temp_cast_1 , lerpResult1379_g8 , _ShadowColorEnable);
-				float3 temp_cast_3 = (temp_output_1108_0_g8).xxx;
-				float3 lerpResult1109_g8 = lerp( ( lerpResult1377_g8 * Dot_NdotH1098_g8 ) , temp_cast_3 , _ShadowStrength);
-				float4 tex2DNode21_g7 = SAMPLE_TEXTURE2D( _MainTex, sampler_MainTex, temp_output_133_0_g7 );
-				float3 temp_output_89_0_g7 = ( (_BaseColor).rgb * (tex2DNode21_g7).rgb * _Brightness );
-				float3 temp_output_898_0_g8 = temp_output_89_0_g7;
-				float3 temp_output_1210_0_g8 = saturate( ( ( temp_output_1112_0_g8 + lerpResult1109_g8 ) * temp_output_898_0_g8 ) );
-				float3 worldPosValue184_g12 = WorldPosition;
-				float3 WorldPosition158_g12 = worldPosValue184_g12;
-				float2 ScreenUV183_g12 = (ase_screenPosNorm).xy;
-				float2 ScreenUV158_g12 = ScreenUV183_g12;
-				float3 tanNormal1260_g8 = Normal1069_g8;
-				float3 worldNormal1260_g8 = normalize( float3(dot(tanToWorld0,tanNormal1260_g8), dot(tanToWorld1,tanNormal1260_g8), dot(tanToWorld2,tanNormal1260_g8)) );
-				float3 worldNormalValue185_g12 = worldNormal1260_g8;
-				float3 WorldNormal158_g12 = worldNormalValue185_g12;
-				ase_worldViewDir = normalize(ase_worldViewDir);
-				float3 temp_output_15_0_g12 = ase_worldViewDir;
-				float3 WorldView158_g12 = temp_output_15_0_g12;
-				float3 temp_output_1196_0_g8 = (_IndirectSpecularColor).rgb;
-				float3 temp_output_14_0_g12 = temp_output_1196_0_g8;
-				float3 SpecColor158_g12 = temp_output_14_0_g12;
-				float temp_output_18_0_g12 = _IndirectSpecularSmoothness;
-				float Smoothness158_g12 = temp_output_18_0_g12;
-				float3 localAdditionalLightsSpecular14x158_g12 = AdditionalLightsSpecular14x( WorldPosition158_g12 , ScreenUV158_g12 , WorldNormal158_g12 , WorldView158_g12 , SpecColor158_g12 , Smoothness158_g12 );
-				float3 LightColorAtten1105_g8 = ( Dot_NdotH1098_g8 * ase_lightColor.rgb );
-				float3 normalizeResult1197_g8 = normalize( ( ase_worldViewDir + SafeNormalize(_MainLightPosition.xyz) ) );
-				float dotResult1187_g8 = dot( normalizeResult1197_g8 , worldNormal1260_g8 );
-				float3 temp_output_1192_0_g8 = ( temp_output_1196_0_g8 * LightColorAtten1105_g8 * pow( max( dotResult1187_g8 , 0.0 ) , exp2( (_IndirectSpecularSmoothness*10.0 + 1.0) ) ) );
-				float3 temp_output_1202_0_g8 = ( localAdditionalLightsSpecular14x158_g12 + temp_output_1192_0_g8 );
-				float3 BaseColor1240_g8 = temp_output_898_0_g8;
-				float3 switchResult1238_g8 = (((ase_vface>0)?(( temp_output_1202_0_g8 + 0.0 )):(BaseColor1240_g8)));
-				float fresnelNdotV1262_g8 = dot( worldNormal1260_g8, ase_worldViewDir );
-				float fresnelNode1262_g8 = ( 0.04 + _IndirectSpecularSmoothness * pow( 1.0 - fresnelNdotV1262_g8, 5.0 ) );
-				float3 lerpResult1236_g8 = lerp( temp_output_1210_0_g8 , switchResult1238_g8 , saturate( fresnelNode1262_g8 ));
+				float2 temp_output_133_0_g37 = ( ( IN.ase_texcoord2.xy * (_MainUVs).xy ) + (_MainUVs).zw );
+				float4 tex2DNode21_g37 = SAMPLE_TEXTURE2D( _MainTex, sampler_MainTex, temp_output_133_0_g37 );
+				float3 temp_output_89_0_g37 = ( (_BaseColor).rgb * (tex2DNode21_g37).rgb * _Brightness );
 				
 
-				float3 BaseColor = lerpResult1236_g8;
+				float3 BaseColor = temp_output_89_0_g37;
 				float Alpha = 1;
 				float AlphaClipThreshold = 0.5;
 
@@ -2916,6 +2245,10 @@ Shader "AmplifyShaderPack/Baked GI Specular"
 
 			HLSLPROGRAM
 
+			
+
+			
+
 			#define _NORMAL_DROPOFF_TS 1
 			#pragma multi_compile_instancing
 			#pragma multi_compile _ LOD_FADE_CROSSFADE
@@ -2923,16 +2256,20 @@ Shader "AmplifyShaderPack/Baked GI Specular"
 			#define _SPECULAR_SETUP 1
 			#define ASE_BAKEDGI 1
 			#define _NORMALMAP 1
-			#define ASE_SRP_VERSION 140010
+			#define ASE_SRP_VERSION 140011
 			#define ASE_USING_SAMPLING_MACROS 1
 
+
+			
+
+			
 
 			#pragma vertex vert
 			#pragma fragment frag
 
-			
-
-			
+			#if defined(_SPECULAR_SETUP) && defined(_ASE_LIGHTING_SIMPLE)
+				#define _SPECULAR_COLOR 1
+			#endif
 
 			#define SHADERPASS SHADERPASS_DEPTHNORMALSONLY
 			//#define SHADERPASS SHADERPASS_DEPTHNORMALS
@@ -2957,14 +2294,14 @@ Shader "AmplifyShaderPack/Baked GI Specular"
 			#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/TextureStack.hlsl"
 
 			
+            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
+           
+
+			
             #if ASE_SRP_VERSION >=140009
 			#include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
 			#endif
 		
-
-			
-            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
-           
 
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/ShaderGraphFunctions.hlsl"
 			#include "Packages/com.unity.render-pipelines.universal/Editor/ShaderGraph/Includes/ShaderPass.hlsl"
@@ -3010,23 +2347,14 @@ Shader "AmplifyShaderPack/Baked GI Specular"
 			};
 
 			CBUFFER_START(UnityPerMaterial)
+			half4 _BaseColor;
 			float4 _MainUVs;
 			float4 _SpecularColor;
-			float4 _IndirectSpecularColor;
-			float4 _ShadowColor;
-			half4 _BaseColor;
 			int _Cull;
-			half _SmoothnessStrength;
-			half _SpecularStrength;
-			half _IndirectSpecularSmoothness;
 			half _Brightness;
-			float _ShadowColorEnable;
-			half _ShadowSharpness;
-			half _ShadowOffset;
-			half _ShadowApproxmation;
-			half _ShadowStrength;
-			float _IndirectDiffuse;
 			half _NormalStrength;
+			half _SpecularStrength;
+			half _SmoothnessStrength;
 			half _OcclusionStrengthAO;
 			float _BakedGIEnable;
 			#ifdef ASE_TRANSMISSION
@@ -3228,10 +2556,10 @@ Shader "AmplifyShaderPack/Baked GI Specular"
 					#endif
 				#endif
 
-				float2 temp_output_133_0_g7 = ( ( IN.ase_texcoord5.xy * (_MainUVs).xy ) + (_MainUVs).zw );
-				float3 unpack98_g7 = UnpackNormalScale( SAMPLE_TEXTURE2D( _BumpMap, sampler_BumpMap, temp_output_133_0_g7 ), _NormalStrength );
-				unpack98_g7.z = lerp( 1, unpack98_g7.z, saturate(_NormalStrength) );
-				float3 temp_output_33_6 = unpack98_g7;
+				float2 temp_output_133_0_g37 = ( ( IN.ase_texcoord5.xy * (_MainUVs).xy ) + (_MainUVs).zw );
+				float3 unpack98_g37 = UnpackNormalScale( SAMPLE_TEXTURE2D( _BumpMap, sampler_BumpMap, temp_output_133_0_g37 ), _NormalStrength );
+				unpack98_g37.z = lerp( 1, unpack98_g37.z, saturate(_NormalStrength) );
+				float3 temp_output_33_6 = unpack98_g37;
 				
 
 				float3 Normal = temp_output_33_6;
@@ -3300,23 +2628,25 @@ Shader "AmplifyShaderPack/Baked GI Specular"
 
 			HLSLPROGRAM
 
+			
+
 			#define _NORMAL_DROPOFF_TS 1
+			#pragma shader_feature_local _RECEIVE_SHADOWS_OFF
 			#pragma multi_compile_instancing
 			#pragma instancing_options renderinglayer
 			#pragma multi_compile _ LOD_FADE_CROSSFADE
 			#pragma multi_compile_fog
 			#define ASE_FOG 1
 			#define _SPECULAR_SETUP 1
-			#pragma shader_feature_local_fragment _SPECULAR_SETUP
+			#pragma shader_feature_local_fragment _SPECULARHIGHLIGHTS_OFF
+			#pragma shader_feature_local_fragment _ENVIRONMENTREFLECTIONS_OFF
 			#define ASE_BAKEDGI 1
 			#define _NORMALMAP 1
-			#define ASE_SRP_VERSION 140010
+			#define ASE_SRP_VERSION 140011
 			#define ASE_USING_SAMPLING_MACROS 1
 
 
-			#pragma shader_feature_local _RECEIVE_SHADOWS_OFF
-			#pragma shader_feature_local_fragment _SPECULARHIGHLIGHTS_OFF
-			#pragma shader_feature_local_fragment _ENVIRONMENTREFLECTIONS_OFF
+			
 
 			#pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _MAIN_LIGHT_SHADOWS_SCREEN
 			#pragma multi_compile_fragment _ _REFLECTION_PROBE_BLENDING
@@ -3342,10 +2672,12 @@ Shader "AmplifyShaderPack/Baked GI Specular"
 			#pragma multi_compile _ DYNAMICLIGHTMAP_ON
 			#pragma multi_compile_fragment _ DEBUG_DISPLAY
 
-			
-
 			#pragma vertex vert
 			#pragma fragment frag
+
+			#if defined(_SPECULAR_SETUP) && defined(_ASE_LIGHTING_SIMPLE)
+				#define _SPECULAR_COLOR 1
+			#endif
 
 			#define SHADERPASS SHADERPASS_GBUFFER
 
@@ -3369,14 +2701,14 @@ Shader "AmplifyShaderPack/Baked GI Specular"
 			#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/TextureStack.hlsl"
 
 			
+            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
+           
+
+			
             #if ASE_SRP_VERSION >=140009
 			#include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
 			#endif
 		
-
-			
-            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
-           
 
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Shadows.hlsl"
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/ShaderGraphFunctions.hlsl"
@@ -3391,12 +2723,9 @@ Shader "AmplifyShaderPack/Baked GI Specular"
 				#define ENABLE_TERRAIN_PERPIXEL_NORMAL
 			#endif
 
-			#define ASE_NEEDS_FRAG_WORLD_POSITION
-			#define ASE_NEEDS_FRAG_SCREEN_POSITION
 			#define ASE_NEEDS_FRAG_WORLD_TANGENT
 			#define ASE_NEEDS_FRAG_WORLD_NORMAL
 			#define ASE_NEEDS_FRAG_WORLD_BITANGENT
-			#define ASE_NEEDS_FRAG_WORLD_VIEW_DIR
 
 
 			#if defined(ASE_EARLY_Z_DEPTH_OPTIMIZE) && (SHADER_TARGET >= 45)
@@ -3441,23 +2770,14 @@ Shader "AmplifyShaderPack/Baked GI Specular"
 			};
 
 			CBUFFER_START(UnityPerMaterial)
+			half4 _BaseColor;
 			float4 _MainUVs;
 			float4 _SpecularColor;
-			float4 _IndirectSpecularColor;
-			float4 _ShadowColor;
-			half4 _BaseColor;
 			int _Cull;
-			half _SmoothnessStrength;
-			half _SpecularStrength;
-			half _IndirectSpecularSmoothness;
 			half _Brightness;
-			float _ShadowColorEnable;
-			half _ShadowSharpness;
-			half _ShadowOffset;
-			half _ShadowApproxmation;
-			half _ShadowStrength;
-			float _IndirectDiffuse;
 			half _NormalStrength;
+			half _SpecularStrength;
+			half _SmoothnessStrength;
 			half _OcclusionStrengthAO;
 			float _BakedGIEnable;
 			#ifdef ASE_TRANSMISSION
@@ -3490,10 +2810,10 @@ Shader "AmplifyShaderPack/Baked GI Specular"
 				int _PassValue;
 			#endif
 
-			TEXTURE2D(_BumpMap);
-			SAMPLER(sampler_BumpMap);
 			TEXTURE2D(_MainTex);
 			SAMPLER(sampler_MainTex);
+			TEXTURE2D(_BumpMap);
+			SAMPLER(sampler_BumpMap);
 			TEXTURE2D(_SpecularMap);
 			TEXTURE2D(_SmoothnessMap);
 			TEXTURE2D(_OcclusionMap);
@@ -3501,113 +2821,7 @@ Shader "AmplifyShaderPack/Baked GI Specular"
 
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/UnityGBuffer.hlsl"
 
-			half4 CalculateShadowMask1_g23( half2 LightmapUV )
-			{
-				#if defined(SHADOWS_SHADOWMASK) && defined(LIGHTMAP_ON)
-				return SAMPLE_SHADOWMASK( LightmapUV.xy );
-				#elif !defined (LIGHTMAP_ON)
-				return unity_ProbesOcclusion;
-				#else
-				return half4( 1, 1, 1, 1 );
-				#endif
-			}
-			
-			float3 AdditionalLightsHalfLambertMask14x( float3 WorldPosition, float2 ScreenUV, float3 WorldNormal, float4 ShadowMask )
-			{
-				float3 Color = 0;
-				#if defined(_ADDITIONAL_LIGHTS)
-					#define SUM_LIGHTHALFLAMBERT(Light)\
-						half3 AttLightColor = Light.color * ( Light.distanceAttenuation * Light.shadowAttenuation );\
-						Color += ( dot( Light.direction, WorldNormal ) * 0.5 + 0.5 )* AttLightColor;
-					InputData inputData = (InputData)0;
-					inputData.normalizedScreenSpaceUV = ScreenUV;
-					inputData.positionWS = WorldPosition;
-					uint meshRenderingLayers = GetMeshRenderingLayer();
-					uint pixelLightCount = GetAdditionalLightsCount();	
-					#if USE_FORWARD_PLUS
-					for (uint lightIndex = 0; lightIndex < min(URP_FP_DIRECTIONAL_LIGHTS_COUNT, MAX_VISIBLE_LIGHTS); lightIndex++)
-					{
-						FORWARD_PLUS_SUBTRACTIVE_LIGHT_CHECK
-						Light light = GetAdditionalLight(lightIndex, WorldPosition, ShadowMask);
-						#ifdef _LIGHT_LAYERS
-						if (IsMatchingLightLayer(light.layerMask, meshRenderingLayers))
-						#endif
-						{
-							SUM_LIGHTHALFLAMBERT( light );
-						}
-					}
-					#endif
-					LIGHT_LOOP_BEGIN( pixelLightCount )
-						Light light = GetAdditionalLight(lightIndex, WorldPosition, ShadowMask);
-						#ifdef _LIGHT_LAYERS
-						if (IsMatchingLightLayer(light.layerMask, meshRenderingLayers))
-						#endif
-						{
-							SUM_LIGHTHALFLAMBERT( light );
-						}
-					LIGHT_LOOP_END
-				#endif
-				return Color;
-			}
-			
-			float3 ASEBakedGI( float3 normalWS, float2 uvStaticLightmap, bool applyScaling )
-			{
-			#ifdef LIGHTMAP_ON
-				if( applyScaling )
-					uvStaticLightmap = uvStaticLightmap * unity_LightmapST.xy + unity_LightmapST.zw;
-				return SampleLightmap( uvStaticLightmap, normalWS );
-			#else
-				return SampleSH(normalWS);
-			#endif
-			}
-			
-			float3 ASESafeNormalize(float3 inVec)
-			{
-				float dp3 = max(1.175494351e-38, dot(inVec, inVec));
-				return inVec* rsqrt(dp3);
-			}
-			
-			float3 AdditionalLightsSpecular14x( float3 WorldPosition, float2 ScreenUV, float3 WorldNormal, float3 WorldView, float3 SpecColor, float Smoothness )
-			{
-				float3 Color = 0;
-				#if defined(_ADDITIONAL_LIGHTS)
-					Smoothness = exp2(10 * Smoothness + 1);
-					
-					#define SUM_LIGHTSPECULAR(Light)\
-						half3 AttLightColor = light.color * ( light.distanceAttenuation * light.shadowAttenuation );\
-						Color += LightingSpecular( AttLightColor, light.direction, WorldNormal, WorldView, half4( SpecColor, 0 ), Smoothness );	
-					InputData inputData = (InputData)0;
-					inputData.normalizedScreenSpaceUV = ScreenUV;
-					inputData.positionWS = WorldPosition;
-					uint meshRenderingLayers = GetMeshRenderingLayer();		
-					uint pixelLightCount = GetAdditionalLightsCount();	
-					#if USE_FORWARD_PLUS
-					for (uint lightIndex = 0; lightIndex < min(URP_FP_DIRECTIONAL_LIGHTS_COUNT, MAX_VISIBLE_LIGHTS); lightIndex++)
-					{
-						FORWARD_PLUS_SUBTRACTIVE_LIGHT_CHECK
-						Light light = GetAdditionalLight(lightIndex, WorldPosition);
-						#ifdef _LIGHT_LAYERS
-						if (IsMatchingLightLayer(light.layerMask, meshRenderingLayers))
-						#endif
-						{
-							SUM_LIGHTSPECULAR( light );
-						}
-					}
-					#endif
-					LIGHT_LOOP_BEGIN( pixelLightCount )
-						Light light = GetAdditionalLight(lightIndex, WorldPosition);
-						#ifdef _LIGHT_LAYERS
-						if (IsMatchingLightLayer(light.layerMask, meshRenderingLayers))
-						#endif
-						{
-							SUM_LIGHTSPECULAR( light );
-						}
-					LIGHT_LOOP_END
-				#endif
-				return Color;
-			}
-			
-			float4 URPDecodeInstruction984_g28(  )
+			float4 URPDecodeInstruction984_g32(  )
 			{
 				return float4(LIGHTMAP_HDR_MULTIPLIER, LIGHTMAP_HDR_EXPONENT, 0, 0);
 			}
@@ -3678,8 +2892,8 @@ Shader "AmplifyShaderPack/Baked GI Specular"
 				UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
 
 				o.ase_texcoord8.xy = v.texcoord.xy;
-				o.ase_texcoord8.zw = v.texcoord2.xy;
-				o.ase_texcoord9.xy = v.texcoord1.xy;
+				o.ase_texcoord8.zw = v.texcoord1.xy;
+				o.ase_texcoord9.xy = v.texcoord2.xy;
 				
 				//setting value to unused interpolator channels and avoid initialization warnings
 				o.ase_texcoord9.zw = 0;
@@ -3832,7 +3046,7 @@ Shader "AmplifyShaderPack/Baked GI Specular"
 								#ifdef ASE_DEPTH_WRITE_ON
 								,out float outputDepth : ASE_SV_DEPTH
 								#endif
-								, bool ase_vface : SV_IsFrontFace )
+								 )
 			{
 				UNITY_SETUP_INSTANCE_ID(IN);
 				UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(IN);
@@ -3871,119 +3085,41 @@ Shader "AmplifyShaderPack/Baked GI Specular"
 
 				WorldViewDirection = SafeNormalize( WorldViewDirection );
 
-				float3 worldPosValue184_g25 = WorldPosition;
-				float3 WorldPosition152_g25 = worldPosValue184_g25;
-				float4 ase_screenPosNorm = ScreenPos / ScreenPos.w;
-				ase_screenPosNorm.z = ( UNITY_NEAR_CLIP_VALUE >= 0 ) ? ase_screenPosNorm.z : ase_screenPosNorm.z * 0.5 + 0.5;
-				float2 ScreenUV183_g25 = (ase_screenPosNorm).xy;
-				float2 ScreenUV152_g25 = ScreenUV183_g25;
-				float2 temp_output_133_0_g7 = ( ( IN.ase_texcoord8.xy * (_MainUVs).xy ) + (_MainUVs).zw );
-				float3 unpack98_g7 = UnpackNormalScale( SAMPLE_TEXTURE2D( _BumpMap, sampler_BumpMap, temp_output_133_0_g7 ), _NormalStrength );
-				unpack98_g7.z = lerp( 1, unpack98_g7.z, saturate(_NormalStrength) );
-				float3 temp_output_33_6 = unpack98_g7;
-				float3 temp_output_975_0_g8 = temp_output_33_6;
-				float3 Normal1069_g8 = temp_output_975_0_g8;
+				float2 temp_output_133_0_g37 = ( ( IN.ase_texcoord8.xy * (_MainUVs).xy ) + (_MainUVs).zw );
+				float4 tex2DNode21_g37 = SAMPLE_TEXTURE2D( _MainTex, sampler_MainTex, temp_output_133_0_g37 );
+				float3 temp_output_89_0_g37 = ( (_BaseColor).rgb * (tex2DNode21_g37).rgb * _Brightness );
+				
+				float3 unpack98_g37 = UnpackNormalScale( SAMPLE_TEXTURE2D( _BumpMap, sampler_BumpMap, temp_output_133_0_g37 ), _NormalStrength );
+				unpack98_g37.z = lerp( 1, unpack98_g37.z, saturate(_NormalStrength) );
+				float3 temp_output_33_6 = unpack98_g37;
+				
+				float3 temp_output_202_0_g37 = (_SpecularColor).rgb;
+				
+				float localSampleLightmapBicubic965_g32 = ( 0.0 );
 				float3 tanToWorld0 = float3( WorldTangent.x, WorldBiTangent.x, WorldNormal.x );
 				float3 tanToWorld1 = float3( WorldTangent.y, WorldBiTangent.y, WorldNormal.y );
 				float3 tanToWorld2 = float3( WorldTangent.z, WorldBiTangent.z, WorldNormal.z );
-				float3 tanNormal12_g25 = Normal1069_g8;
-				float3 worldNormal12_g25 = normalize( float3(dot(tanToWorld0,tanNormal12_g25), dot(tanToWorld1,tanNormal12_g25), dot(tanToWorld2,tanNormal12_g25)) );
-				float3 worldNormalValue185_g25 = worldNormal12_g25;
-				float3 WorldNormal152_g25 = worldNormalValue185_g25;
-				float2 temp_output_1255_0_g8 = (IN.ase_texcoord8.zw*(unity_DynamicLightmapST).xy + (unity_DynamicLightmapST).zw);
-				float2 UV2Dynamic1251_g8 = temp_output_1255_0_g8;
-				half2 LightmapUV1_g23 = UV2Dynamic1251_g8;
-				half4 localCalculateShadowMask1_g23 = CalculateShadowMask1_g23( LightmapUV1_g23 );
-				float4 shadowMaskValue182_g25 = localCalculateShadowMask1_g23;
-				float4 ShadowMask152_g25 = shadowMaskValue182_g25;
-				float3 localAdditionalLightsHalfLambertMask14x152_g25 = AdditionalLightsHalfLambertMask14x( WorldPosition152_g25 , ScreenUV152_g25 , WorldNormal152_g25 , ShadowMask152_g25 );
-				float3 SRP_Lambert_Half1362_g8 = localAdditionalLightsHalfLambertMask14x152_g25;
-				float3 tanNormal1158_g8 = Normal1069_g8;
-				float3 worldNormal1158_g8 = normalize( float3(dot(tanToWorld0,tanNormal1158_g8), dot(tanToWorld1,tanNormal1158_g8), dot(tanToWorld2,tanNormal1158_g8)) );
-				float2 temp_output_1219_0_g8 = (IN.ase_texcoord9.xy*(unity_LightmapST).xy + (unity_LightmapST).zw);
-				float2 UV1Static1247_g8 = temp_output_1219_0_g8;
-				float3 bakedGI1252_g8 = ASEBakedGI( worldNormal1158_g8, UV1Static1247_g8, true);
-				float3 lerpResult1169_g8 = lerp( float3( 1,1,1 ) , ( SRP_Lambert_Half1362_g8 + bakedGI1252_g8 ) , _IndirectDiffuse);
-				float3 temp_output_1173_0_g8 = ( lerpResult1169_g8 + step( float3( 1,1,1 ) , ( 1.0 - lerpResult1169_g8 ) ) );
-				float3 tanNormal1072_g8 = temp_output_975_0_g8;
-				float3 worldNormal1072_g8 = normalize( float3(dot(tanToWorld0,tanNormal1072_g8), dot(tanToWorld1,tanNormal1072_g8), dot(tanToWorld2,tanNormal1072_g8)) );
-				float3 normalizeResult1044_g8 = ASESafeNormalize( ( WorldViewDirection + SafeNormalize(_MainLightPosition.xyz) ) );
-				float dotResult1046_g8 = dot( worldNormal1072_g8 , normalizeResult1044_g8 );
-				float Dot_NdotH1098_g8 = dotResult1046_g8;
-				float temp_output_1108_0_g8 = ( 1.0 - ( ( 1.0 - Dot_NdotH1098_g8 ) * _MainLightPosition.w ) );
-				float ase_lightIntensity = max( max( _MainLightColor.r, _MainLightColor.g ), _MainLightColor.b );
-				float4 ase_lightColor = float4( _MainLightColor.rgb / ase_lightIntensity, ase_lightIntensity );
-				float LightColorIntensity1349_g8 = max( ase_lightColor.a , 0.0 );
-				float3 temp_output_1112_0_g8 = ( temp_output_1173_0_g8 * temp_output_1108_0_g8 * LightColorIntensity1349_g8 );
-				float dotResult1055_g8 = dot( worldNormal1072_g8 , SafeNormalize(_MainLightPosition.xyz) );
-				float Dot_NdotL1100_g8 = dotResult1055_g8;
-				float Shadow_Strength1138_g8 = _ShadowStrength;
-				float lerpResult1130_g8 = lerp( ( Shadow_Strength1138_g8 * Shadow_Strength1138_g8 * 0.7978846 ) , ( Shadow_Strength1138_g8 * Shadow_Strength1138_g8 * sqrt( ( 2.0 / ( 2.0 * PI ) ) ) ) , _ShadowApproxmation);
-				float temp_output_1312_0_g8 = ( ( max( Dot_NdotL1100_g8 , 0.0 ) * lerpResult1130_g8 ) + ( 1.0 - lerpResult1130_g8 ) );
-				float temp_output_1117_0_g8 = saturate( ( ( ( max( Dot_NdotH1098_g8 , 0.0 ) * temp_output_1312_0_g8 * temp_output_1312_0_g8 ) + _ShadowOffset ) / _ShadowSharpness ) );
-				float3 temp_cast_1 = (temp_output_1117_0_g8).xxx;
-				float3 temp_cast_2 = (temp_output_1117_0_g8).xxx;
-				float3 lerpResult1379_g8 = lerp( (_ShadowColor).rgb , temp_cast_2 , temp_output_1117_0_g8);
-				float3 lerpResult1377_g8 = lerp( temp_cast_1 , lerpResult1379_g8 , _ShadowColorEnable);
-				float3 temp_cast_3 = (temp_output_1108_0_g8).xxx;
-				float3 lerpResult1109_g8 = lerp( ( lerpResult1377_g8 * Dot_NdotH1098_g8 ) , temp_cast_3 , _ShadowStrength);
-				float4 tex2DNode21_g7 = SAMPLE_TEXTURE2D( _MainTex, sampler_MainTex, temp_output_133_0_g7 );
-				float3 temp_output_89_0_g7 = ( (_BaseColor).rgb * (tex2DNode21_g7).rgb * _Brightness );
-				float3 temp_output_898_0_g8 = temp_output_89_0_g7;
-				float3 temp_output_1210_0_g8 = saturate( ( ( temp_output_1112_0_g8 + lerpResult1109_g8 ) * temp_output_898_0_g8 ) );
-				float3 worldPosValue184_g12 = WorldPosition;
-				float3 WorldPosition158_g12 = worldPosValue184_g12;
-				float2 ScreenUV183_g12 = (ase_screenPosNorm).xy;
-				float2 ScreenUV158_g12 = ScreenUV183_g12;
-				float3 tanNormal1260_g8 = Normal1069_g8;
-				float3 worldNormal1260_g8 = normalize( float3(dot(tanToWorld0,tanNormal1260_g8), dot(tanToWorld1,tanNormal1260_g8), dot(tanToWorld2,tanNormal1260_g8)) );
-				float3 worldNormalValue185_g12 = worldNormal1260_g8;
-				float3 WorldNormal158_g12 = worldNormalValue185_g12;
-				float3 temp_output_15_0_g12 = WorldViewDirection;
-				float3 WorldView158_g12 = temp_output_15_0_g12;
-				float3 temp_output_1196_0_g8 = (_IndirectSpecularColor).rgb;
-				float3 temp_output_14_0_g12 = temp_output_1196_0_g8;
-				float3 SpecColor158_g12 = temp_output_14_0_g12;
-				float temp_output_18_0_g12 = _IndirectSpecularSmoothness;
-				float Smoothness158_g12 = temp_output_18_0_g12;
-				float3 localAdditionalLightsSpecular14x158_g12 = AdditionalLightsSpecular14x( WorldPosition158_g12 , ScreenUV158_g12 , WorldNormal158_g12 , WorldView158_g12 , SpecColor158_g12 , Smoothness158_g12 );
-				float3 LightColorAtten1105_g8 = ( Dot_NdotH1098_g8 * ase_lightColor.rgb );
-				float3 normalizeResult1197_g8 = normalize( ( WorldViewDirection + SafeNormalize(_MainLightPosition.xyz) ) );
-				float dotResult1187_g8 = dot( normalizeResult1197_g8 , worldNormal1260_g8 );
-				float3 temp_output_1192_0_g8 = ( temp_output_1196_0_g8 * LightColorAtten1105_g8 * pow( max( dotResult1187_g8 , 0.0 ) , exp2( (_IndirectSpecularSmoothness*10.0 + 1.0) ) ) );
-				float3 temp_output_1202_0_g8 = ( localAdditionalLightsSpecular14x158_g12 + temp_output_1192_0_g8 );
-				float3 BaseColor1240_g8 = temp_output_898_0_g8;
-				float3 switchResult1238_g8 = (((ase_vface>0)?(( temp_output_1202_0_g8 + 0.0 )):(BaseColor1240_g8)));
-				float fresnelNdotV1262_g8 = dot( worldNormal1260_g8, WorldViewDirection );
-				float fresnelNode1262_g8 = ( 0.04 + _IndirectSpecularSmoothness * pow( 1.0 - fresnelNdotV1262_g8, 5.0 ) );
-				float3 lerpResult1236_g8 = lerp( temp_output_1210_0_g8 , switchResult1238_g8 , saturate( fresnelNode1262_g8 ));
-				
-				float3 temp_output_202_0_g7 = (_SpecularColor).rgb;
-				
-				float localSampleLightmapBicubic965_g28 = ( 0.0 );
-				float3 temp_output_975_0_g28 = temp_output_33_6;
-				float3 tanNormal1070_g28 = temp_output_975_0_g28;
-				float3 worldNormal1070_g28 = float3(dot(tanToWorld0,tanNormal1070_g28), dot(tanToWorld1,tanNormal1070_g28), dot(tanToWorld2,tanNormal1070_g28));
-				float3 NormalWS1073_g28 = worldNormal1070_g28;
-				float3 normalWS965_g28 = NormalWS1073_g28;
-				float3 temp_output_1063_0_g28 = ( worldNormal1070_g28 * float3( -1,-1,-1 ) );
-				float3 BackNormalWS1101_g28 = temp_output_1063_0_g28;
-				float3 backNormalWS965_g28 = BackNormalWS1101_g28;
-				float2 temp_output_1219_0_g28 = (IN.ase_texcoord9.xy*(unity_LightmapST).xy + (unity_LightmapST).zw);
-				float2 UV1Static1247_g28 = temp_output_1219_0_g28;
-				float2 staticUV965_g28 = UV1Static1247_g28;
-				float2 temp_output_1255_0_g28 = (IN.ase_texcoord8.zw*(unity_DynamicLightmapST).xy + (unity_DynamicLightmapST).zw);
-				float2 UV2Dynamic1251_g28 = temp_output_1255_0_g28;
-				float2 dynamicUV965_g28 = UV2Dynamic1251_g28;
-				float3 bakeDiffuseLighting965_g28 = float3( 0,0,0 );
-				float3 backBakeDiffuseLighting965_g28 = float3( 0,0,0 );
-				float4 localURPDecodeInstruction984_g28 = URPDecodeInstruction984_g28();
-				float4 decodeInstructions965_g28 = localURPDecodeInstruction984_g28;
-				float localSampleDirectionBicubic961_g28 = ( 0.0 );
-				float2 staticUV961_g28 = UV1Static1247_g28;
-				float2 dynamicUV961_g28 = UV2Dynamic1251_g28;
-				float4 staticDir961_g28 = float4( 0,0,0,0 );
-				float4 dynamicDir961_g28 = float4( 0,0,0,0 );
+				float3 tanNormal1070_g32 = temp_output_33_6;
+				float3 worldNormal1070_g32 = float3(dot(tanToWorld0,tanNormal1070_g32), dot(tanToWorld1,tanNormal1070_g32), dot(tanToWorld2,tanNormal1070_g32));
+				float3 NormalWS1073_g32 = worldNormal1070_g32;
+				float3 normalWS965_g32 = NormalWS1073_g32;
+				float3 BackNormalWS1101_g32 = ( worldNormal1070_g32 * float3( -1,-1,-1 ) );
+				float3 backNormalWS965_g32 = BackNormalWS1101_g32;
+				float2 temp_output_1219_0_g32 = (IN.ase_texcoord8.zw*(unity_LightmapST).xy + (unity_LightmapST).zw);
+				float2 UV1Static1247_g32 = temp_output_1219_0_g32;
+				float2 staticUV965_g32 = UV1Static1247_g32;
+				float2 temp_output_1255_0_g32 = (IN.ase_texcoord9.xy*(unity_DynamicLightmapST).xy + (unity_DynamicLightmapST).zw);
+				float2 UV2Dynamic1251_g32 = temp_output_1255_0_g32;
+				float2 dynamicUV965_g32 = UV2Dynamic1251_g32;
+				float3 bakeDiffuseLighting965_g32 = float3( 0,0,0 );
+				float3 backBakeDiffuseLighting965_g32 = float3( 0,0,0 );
+				float4 localURPDecodeInstruction984_g32 = URPDecodeInstruction984_g32();
+				float4 decodeInstructions965_g32 = localURPDecodeInstruction984_g32;
+				float localSampleDirectionBicubic961_g32 = ( 0.0 );
+				float2 staticUV961_g32 = UV1Static1247_g32;
+				float2 dynamicUV961_g32 = UV2Dynamic1251_g32;
+				float4 staticDir961_g32 = float4( 0,0,0,0 );
+				float4 dynamicDir961_g32 = float4( 0,0,0,0 );
 				{
 				#if defined( DIRLIGHTMAP_COMBINED ) && ( defined( SHADER_STAGE_FRAGMENT ) || defined( SHADER_STAGE_RAY_TRACING ) )
 				    int width, height;
@@ -4000,32 +3136,34 @@ Shader "AmplifyShaderPack/Baked GI Specular"
 				        #endif
 				        LM_IND_NAME.GetDimensions( width, height );
 				        texSize = float4( width, height, 1.0 / float2( width, height ) );
-				        staticDir961_g28 = SampleTexture2DBicubic( LM_IND_NAME, LM_SAMPLER, staticUV961_g28, texSize, float2( 1, 1 ), LM_SLICE );
+				        staticDir961_g32 = SampleTexture2DBicubic( LM_IND_NAME, LM_SAMPLER, staticUV961_g32, texSize, float2( 1, 1 ), LM_SLICE );
 				    #endif
 				    #if defined( DYNAMICLIGHTMAP_ON )
 				        unity_DynamicDirectionality.GetDimensions( width, height );
 				        texSize = float4( width, height, 1.0 / float2( width, height ) );
-				        dynamicDir961_g28 = SampleTexture2DBicubic( unity_DynamicDirectionality, samplerunity_DynamicLightmap, dynamicUV961_g28, texSize, float2( 1, 1 ), 0 );
+				        dynamicDir961_g32 = SampleTexture2DBicubic( unity_DynamicDirectionality, samplerunity_DynamicLightmap, dynamicUV961_g32, texSize, float2( 1, 1 ), 0 );
 				    #endif
 				#endif
 				}
-				float4 staticDir965_g28 = staticDir961_g28;
-				float4 dynamicDir965_g28 = dynamicDir961_g28;
-				SampleLightmapBicubic( normalWS965_g28 , backNormalWS965_g28 , staticUV965_g28 , dynamicUV965_g28 , bakeDiffuseLighting965_g28 , backBakeDiffuseLighting965_g28 , decodeInstructions965_g28 , staticDir965_g28 , dynamicDir965_g28 );
-				float3 lerpResult941_g28 = lerp( float3( 0,0,0 ) , bakeDiffuseLighting965_g28 , _BakedGIEnable);
+				float4 staticDir965_g32 = staticDir961_g32;
+				float4 dynamicDir965_g32 = dynamicDir961_g32;
+				SampleLightmapBicubic( normalWS965_g32 , backNormalWS965_g32 , staticUV965_g32 , dynamicUV965_g32 , bakeDiffuseLighting965_g32 , backBakeDiffuseLighting965_g32 , decodeInstructions965_g32 , staticDir965_g32 , dynamicDir965_g32 );
+				float temp_output_1343_0_g32 = ( 1.0 );
+				float3 temp_output_1344_0_g32 = ( bakeDiffuseLighting965_g32 * temp_output_1343_0_g32 );
+				float3 lerpResult941_g32 = lerp( float3( 0,0,0 ) , temp_output_1344_0_g32 , _BakedGIEnable);
 				
 
-				float3 BaseColor = lerpResult1236_g8;
+				float3 BaseColor = temp_output_89_0_g37;
 				float3 Normal = temp_output_33_6;
 				float3 Emission = 0;
-				float3 Specular = ( temp_output_202_0_g7 * (SAMPLE_TEXTURE2D( _SpecularMap, sampler_MainTex, temp_output_133_0_g7 )).rgb * _SpecularStrength );
+				float3 Specular = ( temp_output_202_0_g37 * (SAMPLE_TEXTURE2D( _SpecularMap, sampler_MainTex, temp_output_133_0_g37 )).rgb * _SpecularStrength );
 				float Metallic = 0;
-				float Smoothness = ( _SmoothnessStrength * (SAMPLE_TEXTURE2D( _SmoothnessMap, sampler_MainTex, temp_output_133_0_g7 )).rgb ).x;
-				float Occlusion = saturate( ( ( 1.0 - _OcclusionStrengthAO ) * (SAMPLE_TEXTURE2D( _OcclusionMap, sampler_MainTex, temp_output_133_0_g7 )).rgb ) ).x;
+				float Smoothness = ( _SmoothnessStrength * (SAMPLE_TEXTURE2D( _SmoothnessMap, sampler_MainTex, temp_output_133_0_g37 )).rgb ).x;
+				float Occlusion = saturate( ( ( 1.0 - _OcclusionStrengthAO ) * (SAMPLE_TEXTURE2D( _OcclusionMap, sampler_MainTex, temp_output_133_0_g37 )).rgb ) ).x;
 				float Alpha = 1;
 				float AlphaClipThreshold = 0.5;
 				float AlphaClipThresholdShadow = 0.5;
-				float3 BakedGI = lerpResult941_g28;
+				float3 BakedGI = lerpResult941_g32;
 				float3 RefractionColor = 1;
 				float RefractionIndex = 1;
 				float3 Transmission = 1;
@@ -4144,7 +3282,7 @@ Shader "AmplifyShaderPack/Baked GI Specular"
 			#define _SPECULAR_SETUP 1
 			#define ASE_BAKEDGI 1
 			#define _NORMALMAP 1
-			#define ASE_SRP_VERSION 140010
+			#define ASE_SRP_VERSION 140011
 			#define ASE_USING_SAMPLING_MACROS 1
 
 
@@ -4152,6 +3290,10 @@ Shader "AmplifyShaderPack/Baked GI Specular"
 
 			#pragma vertex vert
 			#pragma fragment frag
+
+			#if defined(_SPECULAR_SETUP) && defined(_ASE_LIGHTING_SIMPLE)
+				#define _SPECULAR_COLOR 1
+			#endif
 
 			#define SCENESELECTIONPASS 1
 
@@ -4167,14 +3309,14 @@ Shader "AmplifyShaderPack/Baked GI Specular"
 			#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/TextureStack.hlsl"
 
 			
+            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
+           
+
+			
             #if ASE_SRP_VERSION >=140009
 			#include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
 			#endif
 		
-
-			
-            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
-           
 
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/ShaderGraphFunctions.hlsl"
 
@@ -4205,23 +3347,14 @@ Shader "AmplifyShaderPack/Baked GI Specular"
 			};
 
 			CBUFFER_START(UnityPerMaterial)
+			half4 _BaseColor;
 			float4 _MainUVs;
 			float4 _SpecularColor;
-			float4 _IndirectSpecularColor;
-			float4 _ShadowColor;
-			half4 _BaseColor;
 			int _Cull;
-			half _SmoothnessStrength;
-			half _SpecularStrength;
-			half _IndirectSpecularSmoothness;
 			half _Brightness;
-			float _ShadowColorEnable;
-			half _ShadowSharpness;
-			half _ShadowOffset;
-			half _ShadowApproxmation;
-			half _ShadowStrength;
-			float _IndirectDiffuse;
 			half _NormalStrength;
+			half _SpecularStrength;
+			half _SmoothnessStrength;
 			half _OcclusionStrengthAO;
 			float _BakedGIEnable;
 			#ifdef ASE_TRANSMISSION
@@ -4425,7 +3558,7 @@ Shader "AmplifyShaderPack/Baked GI Specular"
 			#define _SPECULAR_SETUP 1
 			#define ASE_BAKEDGI 1
 			#define _NORMALMAP 1
-			#define ASE_SRP_VERSION 140010
+			#define ASE_SRP_VERSION 140011
 			#define ASE_USING_SAMPLING_MACROS 1
 
 
@@ -4433,6 +3566,10 @@ Shader "AmplifyShaderPack/Baked GI Specular"
 
 			#pragma vertex vert
 			#pragma fragment frag
+
+			#if defined(_SPECULAR_SETUP) && defined(_ASE_LIGHTING_SIMPLE)
+				#define _SPECULAR_COLOR 1
+			#endif
 
 		    #define SCENEPICKINGPASS 1
 
@@ -4448,14 +3585,14 @@ Shader "AmplifyShaderPack/Baked GI Specular"
 			#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/TextureStack.hlsl"
 
 			
+            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
+           
+
+			
             #if ASE_SRP_VERSION >=140009
 			#include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
 			#endif
 		
-
-			
-            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
-           
 
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/ShaderGraphFunctions.hlsl"
 
@@ -4486,23 +3623,14 @@ Shader "AmplifyShaderPack/Baked GI Specular"
 			};
 
 			CBUFFER_START(UnityPerMaterial)
+			half4 _BaseColor;
 			float4 _MainUVs;
 			float4 _SpecularColor;
-			float4 _IndirectSpecularColor;
-			float4 _ShadowColor;
-			half4 _BaseColor;
 			int _Cull;
-			half _SmoothnessStrength;
-			half _SpecularStrength;
-			half _IndirectSpecularSmoothness;
 			half _Brightness;
-			float _ShadowColorEnable;
-			half _ShadowSharpness;
-			half _ShadowOffset;
-			half _ShadowApproxmation;
-			half _ShadowStrength;
-			float _IndirectDiffuse;
 			half _NormalStrength;
+			half _SpecularStrength;
+			half _SmoothnessStrength;
 			half _OcclusionStrengthAO;
 			float _BakedGIEnable;
 			#ifdef ASE_TRANSMISSION
@@ -4695,11 +3823,10 @@ Shader "AmplifyShaderPack/Baked GI Specular"
 	Fallback Off
 }
 /*ASEBEGIN
-Version=19303
-Node;AmplifyShaderEditor.FunctionNode;33;-160,0;Inherit;False;Material Sample;1;;7;09f1910db887ebd4cb569d6c76c63be3;4,251,0,216,0,263,0,346,1;0;12;FLOAT3;1;FLOAT3;6;FLOAT3;372;FLOAT3;328;FLOAT3;3;FLOAT3;5;FLOAT3;2;FLOAT3;4;FLOAT;8;FLOAT;71;FLOAT;72;FLOAT3;378
+Version=19603
 Node;AmplifyShaderEditor.IntNode;41;512,-80;Inherit;False;Property;_Cull;Render Face;0;1;[Enum];Create;False;1;;0;1;Front,2,Back,1,Both,0;True;0;False;2;2;False;0;1;INT;0
-Node;AmplifyShaderEditor.FunctionNode;34;160,-64;Inherit;False;Material Lighting;40;;8;b5db59747a6f5584db32cde93c4695e4;9,1290,0,1289,0,1288,0,1074,0,1322,0,1323,0,1280,1,1128,1,1378,1;8;898;FLOAT3;0,0,0;False;975;FLOAT3;0,0,1;False;1081;FLOAT;0;False;1079;FLOAT;0;False;1077;FLOAT;0;False;1075;FLOAT;0;False;1246;FLOAT2;0,0;False;1250;FLOAT2;0,0;False;1;FLOAT3;894
-Node;AmplifyShaderEditor.FunctionNode;52;160,208;Inherit;False;Material Baked GI;35;;28;4963945102cd7c746bbe83f48754e7cb;8,910,1,827,1,826,1,838,1,831,1,839,1,1322,0,1323,0;4;975;FLOAT3;0,0,1;False;765;FLOAT3;0,0,1;False;1246;FLOAT2;0,0;False;1250;FLOAT2;0,0;False;2;FLOAT3;948;FLOAT3;949
+Node;AmplifyShaderEditor.FunctionNode;52;160,208;Inherit;False;Material Baked GI;35;;32;4963945102cd7c746bbe83f48754e7cb;8,910,1,827,1,826,1,838,1,831,1,839,1,1322,0,1323,0;3;975;FLOAT3;0,0,1;False;1246;FLOAT2;0,0;False;1250;FLOAT2;0,0;False;2;FLOAT3;948;FLOAT3;949
+Node;AmplifyShaderEditor.FunctionNode;33;-160,0;Inherit;False;Material Sample;1;;37;09f1910db887ebd4cb569d6c76c63be3;4,251,0,216,0,263,0,346,1;0;11;FLOAT3;1;FLOAT3;6;FLOAT3;328;FLOAT3;3;FLOAT3;5;FLOAT3;2;FLOAT3;4;FLOAT;8;FLOAT;71;FLOAT;72;FLOAT3;378
 Node;AmplifyShaderEditor.TemplateMultiPassMasterNode;42;506.9998,0;Float;False;False;-1;2;UnityEditor.ShaderGraphLitGUI;0;1;New Amplify Shader;94348b07e5e8bab40bd6c8a1e3df54cd;True;ExtraPrePass;0;0;ExtraPrePass;5;False;False;False;False;False;False;False;False;False;False;False;False;True;0;False;;False;True;0;False;;False;False;False;False;False;False;False;False;False;True;False;0;False;;255;False;;255;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;False;True;1;False;;True;3;False;;True;True;0;False;;0;False;;True;4;RenderPipeline=UniversalPipeline;RenderType=Opaque=RenderType;Queue=Geometry=Queue=0;UniversalMaterialType=Lit;True;5;True;12;all;0;False;True;1;1;False;;0;False;;0;1;False;;0;False;;False;False;False;False;False;False;False;False;False;False;False;False;True;0;False;;False;True;True;True;True;True;0;False;;False;False;False;False;False;False;False;True;False;0;False;;255;False;;255;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;False;True;1;False;;True;3;False;;True;True;0;False;;0;False;;True;0;False;False;0;;0;0;Standard;0;False;0
 Node;AmplifyShaderEditor.TemplateMultiPassMasterNode;44;506.9998,-25;Float;False;False;-1;2;UnityEditor.ShaderGraphLitGUI;0;1;New Amplify Shader;94348b07e5e8bab40bd6c8a1e3df54cd;True;ShadowCaster;0;2;ShadowCaster;0;False;False;False;False;False;False;False;False;False;False;False;False;True;0;False;;False;True;0;False;;False;False;False;False;False;False;False;False;False;True;False;0;False;;255;False;;255;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;False;True;1;False;;True;3;False;;True;True;0;False;;0;False;;True;4;RenderPipeline=UniversalPipeline;RenderType=Opaque=RenderType;Queue=Geometry=Queue=0;UniversalMaterialType=Lit;True;5;True;12;all;0;False;False;False;False;False;False;False;False;False;False;False;False;True;0;False;;False;False;False;True;False;False;False;False;0;False;;False;False;False;False;False;False;False;False;False;True;1;False;;True;3;False;;False;True;1;LightMode=ShadowCaster;False;False;0;;0;0;Standard;0;False;0
 Node;AmplifyShaderEditor.TemplateMultiPassMasterNode;45;506.9998,-25;Float;False;False;-1;2;UnityEditor.ShaderGraphLitGUI;0;1;New Amplify Shader;94348b07e5e8bab40bd6c8a1e3df54cd;True;DepthOnly;0;3;DepthOnly;0;False;False;False;False;False;False;False;False;False;False;False;False;True;0;False;;False;True;0;False;;False;False;False;False;False;False;False;False;False;True;False;0;False;;255;False;;255;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;False;True;1;False;;True;3;False;;True;True;0;False;;0;False;;True;4;RenderPipeline=UniversalPipeline;RenderType=Opaque=RenderType;Queue=Geometry=Queue=0;UniversalMaterialType=Lit;True;5;True;12;all;0;False;False;False;False;False;False;False;False;False;False;False;False;True;0;False;;False;False;False;True;False;False;False;False;0;False;;False;False;False;False;False;False;False;False;False;True;1;False;;False;False;True;1;LightMode=DepthOnly;False;False;0;;0;0;Standard;0;False;0
@@ -4709,16 +3836,13 @@ Node;AmplifyShaderEditor.TemplateMultiPassMasterNode;48;506.9998,-25;Float;False
 Node;AmplifyShaderEditor.TemplateMultiPassMasterNode;49;506.9998,-25;Float;False;False;-1;2;UnityEditor.ShaderGraphLitGUI;0;1;New Amplify Shader;94348b07e5e8bab40bd6c8a1e3df54cd;True;GBuffer;0;7;GBuffer;0;False;False;False;False;False;False;False;False;False;False;False;False;True;0;False;;False;True;0;False;;False;False;False;False;False;False;False;False;False;True;False;0;False;;255;False;;255;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;False;True;1;False;;True;3;False;;True;True;0;False;;0;False;;True;4;RenderPipeline=UniversalPipeline;RenderType=Opaque=RenderType;Queue=Geometry=Queue=0;UniversalMaterialType=Lit;True;5;True;12;all;0;False;True;1;1;False;;0;False;;1;1;False;;0;False;;False;False;False;False;False;False;False;False;False;False;False;False;False;False;True;True;True;True;True;0;False;;False;False;False;False;False;False;False;True;False;0;False;;255;False;;255;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;False;True;1;False;;True;3;False;;True;True;0;False;;0;False;;True;1;LightMode=UniversalGBuffer;False;False;0;;0;0;Standard;0;False;0
 Node;AmplifyShaderEditor.TemplateMultiPassMasterNode;50;506.9998,55;Float;False;False;-1;2;UnityEditor.ShaderGraphLitGUI;0;1;New Amplify Shader;94348b07e5e8bab40bd6c8a1e3df54cd;True;SceneSelectionPass;0;8;SceneSelectionPass;0;False;False;False;False;False;False;False;False;False;False;False;False;True;0;False;;False;True;0;False;;False;False;False;False;False;False;False;False;False;True;False;0;False;;255;False;;255;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;False;True;1;False;;True;3;False;;True;True;0;False;;0;False;;True;4;RenderPipeline=UniversalPipeline;RenderType=Opaque=RenderType;Queue=Geometry=Queue=0;UniversalMaterialType=Lit;True;5;True;12;all;0;False;False;False;False;False;False;False;False;False;False;False;False;True;0;False;;False;True;2;False;;False;False;False;False;False;False;False;False;False;False;False;False;False;False;True;1;LightMode=SceneSelectionPass;False;False;0;;0;0;Standard;0;False;0
 Node;AmplifyShaderEditor.TemplateMultiPassMasterNode;51;506.9998,55;Float;False;False;-1;2;UnityEditor.ShaderGraphLitGUI;0;1;New Amplify Shader;94348b07e5e8bab40bd6c8a1e3df54cd;True;ScenePickingPass;0;9;ScenePickingPass;0;False;False;False;False;False;False;False;False;False;False;False;False;True;0;False;;False;True;0;False;;False;False;False;False;False;False;False;False;False;True;False;0;False;;255;False;;255;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;False;True;1;False;;True;3;False;;True;True;0;False;;0;False;;True;4;RenderPipeline=UniversalPipeline;RenderType=Opaque=RenderType;Queue=Geometry=Queue=0;UniversalMaterialType=Lit;True;5;True;12;all;0;False;False;False;False;False;False;False;False;False;False;False;False;True;0;False;;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;True;1;LightMode=Picking;False;False;0;;0;0;Standard;0;False;0
-Node;AmplifyShaderEditor.TemplateMultiPassMasterNode;43;512,0;Float;False;True;-1;2;UnityEditor.ShaderGraphLitGUI;0;12;AmplifyShaderPack/Baked GI Specular;94348b07e5e8bab40bd6c8a1e3df54cd;True;Forward;0;1;Forward;21;False;False;False;False;False;False;False;False;False;False;False;False;True;0;False;;True;True;0;True;_Cull;False;False;False;False;False;False;False;False;False;True;False;0;False;;255;False;;255;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;False;True;1;False;;True;3;False;;True;True;0;False;;0;False;;True;4;RenderPipeline=UniversalPipeline;RenderType=Opaque=RenderType;Queue=Geometry=Queue=0;UniversalMaterialType=Lit;True;5;True;12;all;0;False;True;1;1;False;;0;False;;1;1;False;;0;False;;False;False;False;False;False;False;False;False;False;False;False;False;False;False;True;True;True;True;True;0;False;;False;False;False;False;False;False;False;True;False;0;False;;255;False;;255;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;False;True;1;False;;True;3;False;;True;True;0;False;;0;False;;True;1;LightMode=UniversalForward;False;False;0;;0;0;Standard;39;Workflow;0;638163211359336651;Surface;0;0;  Refraction Model;0;0;  Blend;0;0;Two Sided;1;0;Fragment Normal Space,InvertActionOnDeselection;0;0;Forward Only;0;0;Transmission;0;0;  Transmission Shadow;0.5,False,;0;Translucency;0;0;  Translucency Strength;1,False,;0;  Normal Distortion;0.5,False,;0;  Scattering;2,False,;0;  Direct;0.9,False,;0;  Ambient;0.1,False,;0;  Shadow;0.5,False,;0;Cast Shadows;1;0;  Use Shadow Threshold;0;0;GPU Instancing;1;0;LOD CrossFade;1;0;Built-in Fog;1;0;_FinalColorxAlpha;0;0;Meta Pass;1;0;Override Baked GI;1;638163211292179814;Extra Pre Pass;0;0;Tessellation;0;0;  Phong;0;0;  Strength;0.5,False,;0;  Type;0;0;  Tess;16,False,;0;  Min;10,False,;0;  Max;25,False,;0;  Edge Length;16,False,;0;  Max Displacement;25,False,;0;Write Depth;0;0;  Early Z;0;0;Vertex Position,InvertActionOnDeselection;1;0;Debug Display;0;0;Clear Coat;0;0;0;10;False;True;True;True;True;True;True;True;True;True;False;;True;0
-WireConnection;34;898;33;1
-WireConnection;34;975;33;6
+Node;AmplifyShaderEditor.TemplateMultiPassMasterNode;43;512,0;Float;False;True;-1;2;UnityEditor.ShaderGraphLitGUI;0;12;AmplifyShaderPack/Baked GI Specular;94348b07e5e8bab40bd6c8a1e3df54cd;True;Forward;0;1;Forward;21;False;False;False;False;False;False;False;False;False;False;False;False;True;0;False;;True;True;0;True;_Cull;False;False;False;False;False;False;False;False;False;True;False;0;False;;255;False;;255;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;False;True;1;False;;True;3;False;;True;True;0;False;;0;False;;True;4;RenderPipeline=UniversalPipeline;RenderType=Opaque=RenderType;Queue=Geometry=Queue=0;UniversalMaterialType=Lit;True;5;True;12;all;0;False;True;1;1;False;;0;False;;1;1;False;;0;False;;False;False;False;False;False;False;False;False;False;False;False;False;False;False;True;True;True;True;True;0;False;;False;False;False;False;False;False;False;True;False;0;False;;255;False;;255;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;False;True;1;False;;True;3;False;;True;True;0;False;;0;False;;True;1;LightMode=UniversalForward;False;False;0;;0;0;Standard;42;Lighting Model;0;0;Workflow;0;638163211359336651;Surface;0;0;  Refraction Model;0;0;  Blend;0;0;Two Sided;1;0;Fragment Normal Space,InvertActionOnDeselection;0;0;Forward Only;0;0;Transmission;0;0;  Transmission Shadow;0.5,False,;0;Translucency;0;0;  Translucency Strength;1,False,;0;  Normal Distortion;0.5,False,;0;  Scattering;2,False,;0;  Direct;0.9,False,;0;  Ambient;0.1,False,;0;  Shadow;0.5,False,;0;Cast Shadows;1;0;  Use Shadow Threshold;0;0;Receive Shadows;1;0;Receive SSAO;1;0;GPU Instancing;1;0;LOD CrossFade;1;0;Built-in Fog;1;0;_FinalColorxAlpha;0;0;Meta Pass;1;0;Override Baked GI;1;638163211292179814;Extra Pre Pass;0;0;Tessellation;0;0;  Phong;0;0;  Strength;0.5,False,;0;  Type;0;0;  Tess;16,False,;0;  Min;10,False,;0;  Max;25,False,;0;  Edge Length;16,False,;0;  Max Displacement;25,False,;0;Write Depth;0;0;  Early Z;0;0;Vertex Position,InvertActionOnDeselection;1;0;Debug Display;0;0;Clear Coat;0;0;0;10;False;True;True;True;True;True;True;True;True;True;False;;True;0
 WireConnection;52;975;33;6
-WireConnection;52;765;33;6
-WireConnection;43;0;34;894
+WireConnection;43;0;33;1
 WireConnection;43;1;33;6
 WireConnection;43;9;33;5
 WireConnection;43;4;33;2
 WireConnection;43;5;33;4
 WireConnection;43;11;52;948
 ASEEND*/
-//CHKSM=E26DE14AB8DF19A83DA2648CBC95D9D7BB7FE53C
+//CHKSM=CFC52163F72BB4A7406AE8FE858A6F92FE6E747C

@@ -1,4 +1,4 @@
-// Made with Amplify Shader Editor v1.9.3.3
+// Made with Amplify Shader Editor v1.9.6.3
 // Available at the Unity Asset Store - http://u3d.as/y3X 
 Shader "AmplifyShaderPack/UI SpriteFX"
 {
@@ -140,7 +140,7 @@ Shader "AmplifyShaderPack/UI SpriteFX"
 	Fallback Off
 }
 /*ASEBEGIN
-Version=19303
+Version=19603
 Node;AmplifyShaderEditor.TemplateShaderPropertyNode;29;-2528,-208;Inherit;False;0;0;_MainTex;Shader;False;0;5;SAMPLER2D;0;FLOAT;1;FLOAT;2;FLOAT;3;FLOAT;4
 Node;AmplifyShaderEditor.CommentaryNode;66;-1168,608;Inherit;False;745;437;Comment;4;32;63;64;65;Wavy Ring;1,1,1,1;0;0
 Node;AmplifyShaderEditor.CommentaryNode;61;-2138.606,153.7167;Inherit;False;797.0422;558.1058;Comment;7;57;55;50;51;52;53;54;Remap Sprite UVs;1,1,1,1;0;0
@@ -153,14 +153,14 @@ Node;AmplifyShaderEditor.RangedFloatNode;51;-2026.44,596.8225;Float;False;Consta
 Node;AmplifyShaderEditor.TFHCRemapNode;53;-1741.042,270.4898;Inherit;False;5;0;FLOAT;0;False;1;FLOAT;0;False;2;FLOAT;1;False;3;FLOAT;0;False;4;FLOAT;1;False;1;FLOAT;0
 Node;AmplifyShaderEditor.TFHCRemapNode;52;-1746.327,470.5828;Inherit;False;5;0;FLOAT;0;False;1;FLOAT;0;False;2;FLOAT;1;False;3;FLOAT;0;False;4;FLOAT;1;False;1;FLOAT;0
 Node;AmplifyShaderEditor.SimpleMultiplyOpNode;64;-736,816;Inherit;False;2;2;0;FLOAT;0;False;1;FLOAT;0;False;1;FLOAT;0
-Node;AmplifyShaderEditor.SamplerNode;30;-1360,-224;Inherit;True;Property;_TextureSample0;Texture Sample 0;1;0;Create;True;0;0;0;False;0;False;-1;None;None;True;0;False;white;Auto;False;Object;-1;Auto;Texture2D;8;0;SAMPLER2D;;False;1;FLOAT2;0,0;False;2;FLOAT;0;False;3;FLOAT2;0,0;False;4;FLOAT2;0,0;False;5;FLOAT;1;False;6;FLOAT;0;False;7;SAMPLERSTATE;;False;5;COLOR;0;FLOAT;1;FLOAT;2;FLOAT;3;FLOAT;4
+Node;AmplifyShaderEditor.SamplerNode;30;-1360,-224;Inherit;True;Property;_TextureSample0;Texture Sample 0;1;0;Create;True;0;0;0;False;0;False;-1;None;None;True;0;False;white;Auto;False;Object;-1;Auto;Texture2D;8;0;SAMPLER2D;;False;1;FLOAT2;0,0;False;2;FLOAT;0;False;3;FLOAT2;0,0;False;4;FLOAT2;0,0;False;5;FLOAT;1;False;6;FLOAT;0;False;7;SAMPLERSTATE;;False;6;COLOR;0;FLOAT;1;FLOAT;2;FLOAT;3;FLOAT;4;FLOAT3;5
 Node;AmplifyShaderEditor.CommentaryNode;67;-1042,-98;Inherit;False;1151;592;Comment;5;31;36;58;60;71;Rotation FX;0,1,0.1310346,1;0;0
 Node;AmplifyShaderEditor.DynamicAppendNode;65;-592,688;Inherit;False;FLOAT4;4;0;FLOAT;0;False;1;FLOAT;0;False;2;FLOAT;0;False;3;FLOAT;0;False;1;FLOAT4;0
 Node;AmplifyShaderEditor.OneMinusNode;36;-960,384;Inherit;False;1;0;FLOAT;0;False;1;FLOAT;0
 Node;AmplifyShaderEditor.TexturePropertyNode;31;-992,80;Float;True;Property;_Ring;Ring;8;1;[NoScaleOffset];Create;True;0;0;0;False;0;False;None;2d68d658f4789a241a173ed536f6340e;False;white;Auto;Texture2D;-1;0;2;SAMPLER2D;0;SAMPLERSTATE;1
 Node;AmplifyShaderEditor.DynamicAppendNode;54;-1520,400;Inherit;False;FLOAT2;4;0;FLOAT;0;False;1;FLOAT;0;False;2;FLOAT;0;False;3;FLOAT;0;False;1;FLOAT2;0
 Node;AmplifyShaderEditor.FunctionNode;71;-400,144;Inherit;False;UI-Sprite Effect Layer;0;;9;789bf62641c5cfe4ab7126850acc22b8;18,74,2,204,2,191,0,225,1,242,0,237,1,249,0,186,0,177,0,182,0,229,0,92,0,98,1,234,0,126,1,129,1,130,1,31,0;18;192;COLOR;1,1,1,1;False;39;COLOR;1,1,1,1;False;37;SAMPLER2D;;False;218;FLOAT2;0,0;False;239;FLOAT2;0,0;False;181;FLOAT2;0,0;False;75;SAMPLER2D;;False;80;FLOAT;1;False;183;FLOAT2;0,0;False;188;SAMPLER2D;;False;33;SAMPLER2D;;False;248;FLOAT2;0,0;False;233;SAMPLER2D;;False;101;SAMPLER2D;;False;57;FLOAT4;0,0,0,0;False;40;FLOAT;0;False;231;FLOAT;1;False;30;FLOAT;1;False;2;COLOR;0;FLOAT2;172
-Node;AmplifyShaderEditor.ColorNode;58;-368,-48;Float;False;Property;_RingColor;Ring Color;7;0;Create;True;0;0;0;False;0;False;0,0.3793104,1,1;0,1,0.3793102,1;False;0;5;COLOR;0;FLOAT;1;FLOAT;2;FLOAT;3;FLOAT;4
+Node;AmplifyShaderEditor.ColorNode;58;-368,-48;Float;False;Property;_RingColor;Ring Color;7;0;Create;True;0;0;0;False;0;False;0,0.3793104,1,1;0,1,0.3793102,1;False;True;0;6;COLOR;0;FLOAT;1;FLOAT;2;FLOAT;3;FLOAT;4;FLOAT3;5
 Node;AmplifyShaderEditor.ComponentMaskNode;60;-128,128;Inherit;False;False;False;False;True;1;0;COLOR;0,0,0,0;False;1;FLOAT;0
 Node;AmplifyShaderEditor.LerpOp;59;176,-208;Inherit;False;3;0;COLOR;0,0,0,0;False;1;COLOR;0,0,0,0;False;2;FLOAT;0;False;1;COLOR;0
 Node;AmplifyShaderEditor.TemplateMultiPassMasterNode;27;336,-208;Float;False;True;-1;2;ASEMaterialInspector;0;10;AmplifyShaderPack/UI SpriteFX;0f8ba0101102bb14ebf021ddadce9b49;True;SubShader 0 Pass 0;0;0;;2;False;True;3;1;False;;10;False;;0;1;False;;0;False;;False;False;False;False;False;False;False;False;False;False;False;False;True;2;False;;False;False;False;False;False;False;False;False;False;False;False;True;2;False;;False;False;True;5;Queue=Transparent=Queue=0;IgnoreProjector=True;RenderType=Transparent=RenderType;PreviewType=Plane;CanUseSpriteAtlas=True;False;False;0;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;True;2;False;0;;0;0;Standard;0;0;1;True;False;;False;0
@@ -195,4 +195,4 @@ WireConnection;59;1;58;0
 WireConnection;59;2;60;0
 WireConnection;27;0;59;0
 ASEEND*/
-//CHKSM=FCCAA2BDA838C5ECBAAF009BE2607F746FB29566
+//CHKSM=2B2E72978A60CFC29E7AFBC85BA52AF8DF45F2E2

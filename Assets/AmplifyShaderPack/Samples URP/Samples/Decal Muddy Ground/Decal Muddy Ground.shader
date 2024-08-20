@@ -1,4 +1,4 @@
-// Made with Amplify Shader Editor v1.9.3.3
+// Made with Amplify Shader Editor v1.9.6.3
 // Available at the Unity Asset Store - http://u3d.as/y3X 
 Shader  "AmplifyShaderPack/Decal Muddy Ground"
 {
@@ -69,7 +69,7 @@ Shader  "AmplifyShaderPack/Decal Muddy Ground"
 			#define _MATERIAL_AFFECTS_NORMAL_BLEND 1
 			#define  _MATERIAL_AFFECTS_MAOS 1
 			#define DECAL_ANGLE_FADE 1
-			#define ASE_SRP_VERSION 140010
+			#define ASE_SRP_VERSION 140011
 
 
 			#pragma vertex Vert
@@ -396,7 +396,7 @@ Shader  "AmplifyShaderPack/Decal Muddy Ground"
 				float2 fbtiling17 = float2(fbcolsoffset17, fbrowsoffset17);
 				// UV Offset - calculate current tile linear index, and convert it to (X * coloffset, Y * rowoffset)
 				// Calculate current tile linear index
-				float fbcurrenttileindex17 = round( fmod( fbspeed17 + _DecalType, fbtotaltiles17) );
+				float fbcurrenttileindex17 = floor( fmod( fbspeed17 + _DecalType, fbtotaltiles17) );
 				fbcurrenttileindex17 += ( fbcurrenttileindex17 < 0) ? fbtotaltiles17 : 0;
 				// Obtain Offset X coordinate from current tile linear index
 				float fblinearindextox17 = round ( fmod ( fbcurrenttileindex17, _DecalQuantity ) );
@@ -413,6 +413,7 @@ Shader  "AmplifyShaderPack/Decal Muddy Ground"
 				// Flipbook UV
 				half2 fbuv17 = texCoord15 * fbtiling17 + fboffset17;
 				// *** END Flipbook UV Animation vars ***
+				int flipbookFrame17 = ( ( int )fbcurrenttileindex17);
 				float2 FlipUVs20 = fbuv17;
 				float4 tex2DNode9 = tex2D( _BaseColor, FlipUVs20 );
 				
@@ -464,7 +465,7 @@ Shader  "AmplifyShaderPack/Decal Muddy Ground"
 			#define _MATERIAL_AFFECTS_NORMAL_BLEND 1
 			#define  _MATERIAL_AFFECTS_MAOS 1
 			#define DECAL_ANGLE_FADE 1
-			#define ASE_SRP_VERSION 140010
+			#define ASE_SRP_VERSION 140011
 
 
 			#pragma vertex Vert
@@ -893,7 +894,7 @@ Shader  "AmplifyShaderPack/Decal Muddy Ground"
 				float2 fbtiling17 = float2(fbcolsoffset17, fbrowsoffset17);
 				// UV Offset - calculate current tile linear index, and convert it to (X * coloffset, Y * rowoffset)
 				// Calculate current tile linear index
-				float fbcurrenttileindex17 = round( fmod( fbspeed17 + _DecalType, fbtotaltiles17) );
+				float fbcurrenttileindex17 = floor( fmod( fbspeed17 + _DecalType, fbtotaltiles17) );
 				fbcurrenttileindex17 += ( fbcurrenttileindex17 < 0) ? fbtotaltiles17 : 0;
 				// Obtain Offset X coordinate from current tile linear index
 				float fblinearindextox17 = round ( fmod ( fbcurrenttileindex17, _DecalQuantity ) );
@@ -910,6 +911,7 @@ Shader  "AmplifyShaderPack/Decal Muddy Ground"
 				// Flipbook UV
 				half2 fbuv17 = texCoord15 * fbtiling17 + fboffset17;
 				// *** END Flipbook UV Animation vars ***
+				int flipbookFrame17 = ( ( int )fbcurrenttileindex17);
 				float2 FlipUVs20 = fbuv17;
 				float4 tex2DNode9 = tex2D( _BaseColor, FlipUVs20 );
 				
@@ -986,7 +988,7 @@ Shader  "AmplifyShaderPack/Decal Muddy Ground"
 			#define _MATERIAL_AFFECTS_NORMAL_BLEND 1
 			#define  _MATERIAL_AFFECTS_MAOS 1
 			#define DECAL_ANGLE_FADE 1
-			#define ASE_SRP_VERSION 140010
+			#define ASE_SRP_VERSION 140011
 
 
 			#pragma vertex Vert
@@ -1404,7 +1406,7 @@ Shader  "AmplifyShaderPack/Decal Muddy Ground"
 				float2 fbtiling17 = float2(fbcolsoffset17, fbrowsoffset17);
 				// UV Offset - calculate current tile linear index, and convert it to (X * coloffset, Y * rowoffset)
 				// Calculate current tile linear index
-				float fbcurrenttileindex17 = round( fmod( fbspeed17 + _DecalType, fbtotaltiles17) );
+				float fbcurrenttileindex17 = floor( fmod( fbspeed17 + _DecalType, fbtotaltiles17) );
 				fbcurrenttileindex17 += ( fbcurrenttileindex17 < 0) ? fbtotaltiles17 : 0;
 				// Obtain Offset X coordinate from current tile linear index
 				float fblinearindextox17 = round ( fmod ( fbcurrenttileindex17, _DecalQuantity ) );
@@ -1421,6 +1423,7 @@ Shader  "AmplifyShaderPack/Decal Muddy Ground"
 				// Flipbook UV
 				half2 fbuv17 = texCoord15 * fbtiling17 + fboffset17;
 				// *** END Flipbook UV Animation vars ***
+				int flipbookFrame17 = ( ( int )fbcurrenttileindex17);
 				float2 FlipUVs20 = fbuv17;
 				float4 tex2DNode9 = tex2D( _BaseColor, FlipUVs20 );
 				
@@ -1511,7 +1514,7 @@ Shader  "AmplifyShaderPack/Decal Muddy Ground"
 			#define _MATERIAL_AFFECTS_NORMAL 1
 			#define _MATERIAL_AFFECTS_NORMAL_BLEND 1
 			#define  _MATERIAL_AFFECTS_MAOS 1
-			#define ASE_SRP_VERSION 140010
+			#define ASE_SRP_VERSION 140011
 
 
 			#pragma vertex Vert
@@ -1841,7 +1844,7 @@ Shader  "AmplifyShaderPack/Decal Muddy Ground"
 				float2 fbtiling17 = float2(fbcolsoffset17, fbrowsoffset17);
 				// UV Offset - calculate current tile linear index, and convert it to (X * coloffset, Y * rowoffset)
 				// Calculate current tile linear index
-				float fbcurrenttileindex17 = round( fmod( fbspeed17 + _DecalType, fbtotaltiles17) );
+				float fbcurrenttileindex17 = floor( fmod( fbspeed17 + _DecalType, fbtotaltiles17) );
 				fbcurrenttileindex17 += ( fbcurrenttileindex17 < 0) ? fbtotaltiles17 : 0;
 				// Obtain Offset X coordinate from current tile linear index
 				float fblinearindextox17 = round ( fmod ( fbcurrenttileindex17, _DecalQuantity ) );
@@ -1858,6 +1861,7 @@ Shader  "AmplifyShaderPack/Decal Muddy Ground"
 				// Flipbook UV
 				half2 fbuv17 = texCoord15 * fbtiling17 + fboffset17;
 				// *** END Flipbook UV Animation vars ***
+				int flipbookFrame17 = ( ( int )fbcurrenttileindex17);
 				float2 FlipUVs20 = fbuv17;
 				float4 tex2DNode9 = tex2D( _BaseColor, FlipUVs20 );
 				
@@ -1907,7 +1911,7 @@ Shader  "AmplifyShaderPack/Decal Muddy Ground"
 			#define _MATERIAL_AFFECTS_NORMAL 1
 			#define _MATERIAL_AFFECTS_NORMAL_BLEND 1
 			#define  _MATERIAL_AFFECTS_MAOS 1
-			#define ASE_SRP_VERSION 140010
+			#define ASE_SRP_VERSION 140011
 
 
 			#pragma vertex Vert
@@ -2341,7 +2345,7 @@ Shader  "AmplifyShaderPack/Decal Muddy Ground"
 				float2 fbtiling17 = float2(fbcolsoffset17, fbrowsoffset17);
 				// UV Offset - calculate current tile linear index, and convert it to (X * coloffset, Y * rowoffset)
 				// Calculate current tile linear index
-				float fbcurrenttileindex17 = round( fmod( fbspeed17 + _DecalType, fbtotaltiles17) );
+				float fbcurrenttileindex17 = floor( fmod( fbspeed17 + _DecalType, fbtotaltiles17) );
 				fbcurrenttileindex17 += ( fbcurrenttileindex17 < 0) ? fbtotaltiles17 : 0;
 				// Obtain Offset X coordinate from current tile linear index
 				float fblinearindextox17 = round ( fmod ( fbcurrenttileindex17, _DecalQuantity ) );
@@ -2358,6 +2362,7 @@ Shader  "AmplifyShaderPack/Decal Muddy Ground"
 				// Flipbook UV
 				half2 fbuv17 = texCoord15 * fbtiling17 + fboffset17;
 				// *** END Flipbook UV Animation vars ***
+				int flipbookFrame17 = ( ( int )fbcurrenttileindex17);
 				float2 FlipUVs20 = fbuv17;
 				float4 tex2DNode9 = tex2D( _BaseColor, FlipUVs20 );
 				
@@ -2430,7 +2435,7 @@ Shader  "AmplifyShaderPack/Decal Muddy Ground"
 			#define _MATERIAL_AFFECTS_NORMAL 1
 			#define _MATERIAL_AFFECTS_NORMAL_BLEND 1
 			#define  _MATERIAL_AFFECTS_MAOS 1
-			#define ASE_SRP_VERSION 140010
+			#define ASE_SRP_VERSION 140011
 
 
 			#pragma vertex Vert
@@ -2862,7 +2867,7 @@ Shader  "AmplifyShaderPack/Decal Muddy Ground"
 				float2 fbtiling17 = float2(fbcolsoffset17, fbrowsoffset17);
 				// UV Offset - calculate current tile linear index, and convert it to (X * coloffset, Y * rowoffset)
 				// Calculate current tile linear index
-				float fbcurrenttileindex17 = round( fmod( fbspeed17 + _DecalType, fbtotaltiles17) );
+				float fbcurrenttileindex17 = floor( fmod( fbspeed17 + _DecalType, fbtotaltiles17) );
 				fbcurrenttileindex17 += ( fbcurrenttileindex17 < 0) ? fbtotaltiles17 : 0;
 				// Obtain Offset X coordinate from current tile linear index
 				float fblinearindextox17 = round ( fmod ( fbcurrenttileindex17, _DecalQuantity ) );
@@ -2879,6 +2884,7 @@ Shader  "AmplifyShaderPack/Decal Muddy Ground"
 				// Flipbook UV
 				half2 fbuv17 = texCoord15 * fbtiling17 + fboffset17;
 				// *** END Flipbook UV Animation vars ***
+				int flipbookFrame17 = ( ( int )fbcurrenttileindex17);
 				float2 FlipUVs20 = fbuv17;
 				float4 tex2DNode9 = tex2D( _BaseColor, FlipUVs20 );
 				
@@ -2963,7 +2969,7 @@ Shader  "AmplifyShaderPack/Decal Muddy Ground"
 			#define _MATERIAL_AFFECTS_NORMAL 1
 			#define _MATERIAL_AFFECTS_NORMAL_BLEND 1
 			#define  _MATERIAL_AFFECTS_MAOS 1
-			#define ASE_SRP_VERSION 140010
+			#define ASE_SRP_VERSION 140011
 
 
 			#pragma multi_compile_instancing
@@ -3145,7 +3151,7 @@ Shader  "AmplifyShaderPack/Decal Muddy Ground"
 				float2 fbtiling17 = float2(fbcolsoffset17, fbrowsoffset17);
 				// UV Offset - calculate current tile linear index, and convert it to (X * coloffset, Y * rowoffset)
 				// Calculate current tile linear index
-				float fbcurrenttileindex17 = round( fmod( fbspeed17 + _DecalType, fbtotaltiles17) );
+				float fbcurrenttileindex17 = floor( fmod( fbspeed17 + _DecalType, fbtotaltiles17) );
 				fbcurrenttileindex17 += ( fbcurrenttileindex17 < 0) ? fbtotaltiles17 : 0;
 				// Obtain Offset X coordinate from current tile linear index
 				float fblinearindextox17 = round ( fmod ( fbcurrenttileindex17, _DecalQuantity ) );
@@ -3162,6 +3168,7 @@ Shader  "AmplifyShaderPack/Decal Muddy Ground"
 				// Flipbook UV
 				half2 fbuv17 = texCoord15 * fbtiling17 + fboffset17;
 				// *** END Flipbook UV Animation vars ***
+				int flipbookFrame17 = ( ( int )fbcurrenttileindex17);
 				float2 FlipUVs20 = fbuv17;
 				float4 tex2DNode9 = tex2D( _BaseColor, FlipUVs20 );
 				
@@ -3179,12 +3186,12 @@ Shader  "AmplifyShaderPack/Decal Muddy Ground"
 	Fallback Off
 }
 /*ASEBEGIN
-Version=19303
+Version=19603
 Node;AmplifyShaderEditor.CommentaryNode;24;-1393.936,-96.76087;Inherit;False;817;368;Decal flipbook, put all your decals in a single atlas to simplify their use.;5;15;18;19;17;20;;1,1,1,1;0;0
 Node;AmplifyShaderEditor.RangedFloatNode;19;-1360.936,173.2391;Inherit;False;Property;_DecalType;Decal Type;6;1;[IntRange];Create;True;0;0;0;False;0;False;3;0;0;3;0;1;FLOAT;0
 Node;AmplifyShaderEditor.TextureCoordinatesNode;15;-1343.936,-46.76087;Inherit;False;0;-1;2;3;2;SAMPLER2D;;False;0;FLOAT2;1,1;False;1;FLOAT2;0,0;False;5;FLOAT2;0;FLOAT;1;FLOAT;2;FLOAT;3;FLOAT;4
 Node;AmplifyShaderEditor.RangedFloatNode;18;-1305.936,81.23914;Inherit;False;Property;_DecalQuantity;Decal Quantity;5;0;Create;True;0;0;0;False;0;False;2;0;0;0;0;1;FLOAT;0
-Node;AmplifyShaderEditor.TFHCFlipBookUVAnimation;17;-1082.936,-11.76087;Inherit;False;0;0;6;0;FLOAT2;0,0;False;1;FLOAT;0;False;2;FLOAT;0;False;3;FLOAT;0;False;4;FLOAT;0;False;5;FLOAT;0;False;3;FLOAT2;0;FLOAT;1;FLOAT;2
+Node;AmplifyShaderEditor.TFHCFlipBookUVAnimation;17;-1082.936,-11.76087;Inherit;False;0;0;7;0;FLOAT2;0,0;False;1;FLOAT;0;False;2;FLOAT;0;False;3;FLOAT;0;False;4;FLOAT;0;False;5;FLOAT;0;False;6;FLOAT;-1;False;4;FLOAT2;0;FLOAT;1;FLOAT;2;INT;3
 Node;AmplifyShaderEditor.RegisterLocalVarNode;20;-800.9363,-4.760866;Inherit;False;FlipUVs;-1;True;1;0;FLOAT2;0,0;False;1;FLOAT2;0
 Node;AmplifyShaderEditor.GetLocalVarNode;21;-557,-69;Inherit;False;20;FlipUVs;1;0;OBJECT;;False;1;FLOAT2;0
 Node;AmplifyShaderEditor.RangedFloatNode;14;-588,247;Inherit;False;Property;_NormalIntensity;Normal Intensity;4;0;Create;True;0;0;0;False;0;False;1;0;0;0;0;1;FLOAT;0
@@ -3192,10 +3199,10 @@ Node;AmplifyShaderEditor.RangedFloatNode;13;-407,623;Inherit;False;Property;_Smo
 Node;AmplifyShaderEditor.GetLocalVarNode;22;-565,169;Inherit;False;20;FlipUVs;1;0;OBJECT;;False;1;FLOAT2;0
 Node;AmplifyShaderEditor.GetLocalVarNode;23;-548,403;Inherit;False;20;FlipUVs;1;0;OBJECT;;False;1;FLOAT2;0
 Node;AmplifyShaderEditor.SimpleMultiplyOpNode;12;-18,563;Inherit;False;2;2;0;FLOAT;0;False;1;FLOAT;0;False;1;FLOAT;0
-Node;AmplifyShaderEditor.SamplerNode;11;-377,364;Inherit;True;Property;_Mask;Mask;1;0;Create;True;0;0;0;False;0;False;-1;7d02b70a11844539aa69f4dfdf8a5771;7d02b70a11844539aa69f4dfdf8a5771;True;0;False;white;Auto;False;Object;-1;Auto;Texture2D;8;0;SAMPLER2D;;False;1;FLOAT2;0,0;False;2;FLOAT;0;False;3;FLOAT2;0,0;False;4;FLOAT2;0,0;False;5;FLOAT;1;False;6;FLOAT;0;False;7;SAMPLERSTATE;;False;5;COLOR;0;FLOAT;1;FLOAT;2;FLOAT;3;FLOAT;4
+Node;AmplifyShaderEditor.SamplerNode;11;-377,364;Inherit;True;Property;_Mask;Mask;1;0;Create;True;0;0;0;False;0;False;-1;7d02b70a11844539aa69f4dfdf8a5771;7d02b70a11844539aa69f4dfdf8a5771;True;0;False;white;Auto;False;Object;-1;Auto;Texture2D;8;0;SAMPLER2D;;False;1;FLOAT2;0,0;False;2;FLOAT;0;False;3;FLOAT2;0,0;False;4;FLOAT2;0,0;False;5;FLOAT;1;False;6;FLOAT;0;False;7;SAMPLERSTATE;;False;6;COLOR;0;FLOAT;1;FLOAT;2;FLOAT;3;FLOAT;4;FLOAT3;5
 Node;AmplifyShaderEditor.TextureCoordinatesNode;26;-224.7173,-436.5936;Inherit;False;0;-1;2;3;2;SAMPLER2D;;False;0;FLOAT2;1,1;False;1;FLOAT2;0,0;False;5;FLOAT2;0;FLOAT;1;FLOAT;2;FLOAT;3;FLOAT;4
-Node;AmplifyShaderEditor.SamplerNode;10;-373,148;Inherit;True;Property;_Normal;Normal;2;0;Create;True;0;0;0;False;0;False;-1;ba478537f03c452f82cf7e0c4a9587c2;ba478537f03c452f82cf7e0c4a9587c2;True;0;True;bump;Auto;True;Object;-1;Auto;Texture2D;8;0;SAMPLER2D;;False;1;FLOAT2;0,0;False;2;FLOAT;0;False;3;FLOAT2;0,0;False;4;FLOAT2;0,0;False;5;FLOAT;1;False;6;FLOAT;0;False;7;SAMPLERSTATE;;False;5;FLOAT3;0;FLOAT;1;FLOAT;2;FLOAT;3;FLOAT;4
-Node;AmplifyShaderEditor.SamplerNode;9;-393,-94;Inherit;True;Property;_BaseColor;Base Color;0;0;Create;True;0;0;0;False;0;False;-1;3f19e5aabc6340ee9098748a5c075c67;3f19e5aabc6340ee9098748a5c075c67;True;0;False;white;Auto;False;Object;-1;Auto;Texture2D;8;0;SAMPLER2D;;False;1;FLOAT2;0,0;False;2;FLOAT;0;False;3;FLOAT2;0,0;False;4;FLOAT2;0,0;False;5;FLOAT;1;False;6;FLOAT;0;False;7;SAMPLERSTATE;;False;5;COLOR;0;FLOAT;1;FLOAT;2;FLOAT;3;FLOAT;4
+Node;AmplifyShaderEditor.SamplerNode;10;-373,148;Inherit;True;Property;_Normal;Normal;2;0;Create;True;0;0;0;False;0;False;-1;ba478537f03c452f82cf7e0c4a9587c2;ba478537f03c452f82cf7e0c4a9587c2;True;0;True;bump;Auto;True;Object;-1;Auto;Texture2D;8;0;SAMPLER2D;;False;1;FLOAT2;0,0;False;2;FLOAT;0;False;3;FLOAT2;0,0;False;4;FLOAT2;0,0;False;5;FLOAT;1;False;6;FLOAT;0;False;7;SAMPLERSTATE;;False;6;FLOAT3;0;FLOAT;1;FLOAT;2;FLOAT;3;FLOAT;4;FLOAT3;5
+Node;AmplifyShaderEditor.SamplerNode;9;-393,-94;Inherit;True;Property;_BaseColor;Base Color;0;0;Create;True;0;0;0;False;0;False;-1;3f19e5aabc6340ee9098748a5c075c67;3f19e5aabc6340ee9098748a5c075c67;True;0;False;white;Auto;False;Object;-1;Auto;Texture2D;8;0;SAMPLER2D;;False;1;FLOAT2;0,0;False;2;FLOAT;0;False;3;FLOAT2;0,0;False;4;FLOAT2;0,0;False;5;FLOAT;1;False;6;FLOAT;0;False;7;SAMPLERSTATE;;False;6;COLOR;0;FLOAT;1;FLOAT;2;FLOAT;3;FLOAT;4;FLOAT3;5
 Node;AmplifyShaderEditor.TemplateMultiPassMasterNode;0;0,-85;Float;False;False;-1;2;UnityEditor.Rendering.Universal.DecalShaderGraphGUI;0;1;New Amplify Shader;c2a467ab6d5391a4ea692226d82ffefd;True;DBufferProjector;0;0;DBufferProjector;0;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;True;5;RenderPipeline=UniversalPipeline;PreviewType=Plane;DisableBatching=LODFading=DisableBatching;ShaderGraphShader=true;ShaderGraphTargetId=UniversalDecalSubTarget;True;3;True;12;all;0;False;True;2;5;False;;10;False;;1;0;False;;10;False;;False;False;True;2;5;False;;10;False;;1;0;False;;10;False;;False;False;True;2;5;False;;10;False;;1;0;False;;10;False;;False;False;False;False;False;False;True;1;False;;False;False;False;True;True;True;True;True;0;False;;False;True;True;True;True;True;0;False;;False;False;False;False;False;True;2;False;;True;2;False;;False;True;1;LightMode=DBufferProjector;False;True;9;d3d11;metal;vulkan;xboxone;xboxseries;playstation;ps4;ps5;switch;0;;0;0;Standard;0;False;0
 Node;AmplifyShaderEditor.TemplateMultiPassMasterNode;2;176,-85;Float;False;True;-1;2;UnityEditor.Rendering.Universal.DecalShaderGraphGUI;0;14;AmplifyShaderPack/Decal Muddy Ground;c2a467ab6d5391a4ea692226d82ffefd;True;DecalScreenSpaceProjector;0;2;DecalScreenSpaceProjector;9;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;True;5;RenderPipeline=UniversalPipeline;PreviewType=Plane;DisableBatching=LODFading=DisableBatching;ShaderGraphShader=true;ShaderGraphTargetId=UniversalDecalSubTarget;True;3;True;12;all;0;False;True;2;5;False;;10;False;;0;1;False;;0;False;;False;False;False;False;False;False;False;False;False;False;False;False;True;1;False;;False;False;False;False;False;False;False;False;False;False;False;True;2;False;;True;2;False;;False;True;1;LightMode=DecalScreenSpaceProjector;False;False;0;;0;0;Standard;7;Affect BaseColor;1;0;Affect Normal;1;0;Blend;1;0;Affect MAOS;1;0;Affect Emission;0;0;Support LOD CrossFade;0;0;Angle Fade;1;0;0;9;True;False;True;True;True;False;True;True;True;False;;False;0
 Node;AmplifyShaderEditor.TemplateMultiPassMasterNode;1;0,-85;Float;False;False;-1;2;UnityEditor.Rendering.Universal.DecalShaderGraphGUI;0;1;New Amplify Shader;c2a467ab6d5391a4ea692226d82ffefd;True;DecalProjectorForwardEmissive;0;1;DecalProjectorForwardEmissive;0;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;True;5;RenderPipeline=UniversalPipeline;PreviewType=Plane;DisableBatching=LODFading=DisableBatching;ShaderGraphShader=true;ShaderGraphTargetId=UniversalDecalSubTarget;True;3;True;12;all;0;False;True;8;5;False;;1;False;;0;1;False;;0;False;;False;False;False;False;False;False;False;False;False;False;False;False;True;1;False;;False;False;False;False;False;False;False;False;False;False;False;True;2;False;;True;2;False;;False;True;1;LightMode=DecalProjectorForwardEmissive;False;False;0;;0;0;Standard;0;False;0
@@ -3225,4 +3232,4 @@ WireConnection;2;5;11;2
 WireConnection;2;6;12;0
 WireConnection;2;7;9;4
 ASEEND*/
-//CHKSM=5C2565907270F2FA9F6974274351E87404B88A07
+//CHKSM=E882D6B4EB659336D0BA0C281E544D3A28B0A910

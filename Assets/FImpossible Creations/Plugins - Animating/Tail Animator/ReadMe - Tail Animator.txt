@@ -1,7 +1,7 @@
 ﻿_________________________________________________________________________________________________________
 
 Package "Tail Animator V2"
-Version 2.0.6
+Version 2.0.6.1
 
 Made by FImpossible Creations - Filip Moeglich
 https://www.FilipMoeglich.pl
@@ -58,6 +58,9 @@ Description:
 
 _________________________________________________________________________________________________________
 Version history:
+
+V2.0.6.1
+- Added IK Invert Order option for Tail Animator IK
 
 V2.0.6
 - Reworked wind effect

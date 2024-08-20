@@ -736,7 +736,17 @@ namespace FIMSpace.FTail
                 GUILayout.Space(7f);
                 EditorGUILayout.PropertyField(sp_IKReactionQuality);
                 EditorGUILayout.PropertyField(sp_IKSmoothing);
+
+                EditorGUILayout.BeginHorizontal();
                 EditorGUILayout.PropertyField(sp_IKContinous);
+                var spc = sp_IKContinous.Copy();
+                spc.Next(false);
+                GUILayout.FlexibleSpace();
+                EditorGUIUtility.labelWidth = 110;
+                EditorGUILayout.PropertyField(spc);
+                EditorGUIUtility.labelWidth = 0;
+                EditorGUILayout.EndHorizontal();
+
 
                 if (sp_IKMaxStretching.floatValue > 1f)
                     sp_IKMaxStretching.floatValue = EditorGUILayout.FloatField(new GUIContent(sp_IKMaxStretching.displayName, sp_IKMaxStretching.tooltip), sp_IKMaxStretching.floatValue);

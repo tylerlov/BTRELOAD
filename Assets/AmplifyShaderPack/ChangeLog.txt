@@ -1,3 +1,58 @@
+v2.3.2
+
+   Highlights
+      * Updated per ASE editor v1.9.6.3
+      * Updated "Community Physical Based Rendering" (BIRP/HDRP/HDRP)
+         * PBR Light model name changed to PBR Core
+         * PBR Core updated Indirect Diffuse
+      * Updated Function "Material Baked GI" (BIRP/HDRP/HDRP)
+      * Updated Function "Material Lighting" (BIRP/HDRP/HDRP)
+
+v2.3.1
+
+   Highlights
+      * Updated per ASE editor v1.9.6.2
+      * Housekeeping removed unused prefabs
+
+v2.3.0
+
+   Highlights
+      * Updated per ASE editor v1.9.6.0
+      * Updated 17x per Unity 6000.0.9 and higher
+      * Optimized package size
+      * Housekeeping removed unused prefabs 
+      * Updated "Community Physical Based Rendering" (BIRP/HDRP/HDRP)
+         * PBR Light model
+         * GSF GGX
+         * GSF Schlick Beckman
+         * GSF Schlick GGX
+         * GSF Schlick
+         * GSF Smith Beckman
+         * GSF Smith GGX
+         * NDF Beckman
+         * NDF BlinnPhong
+         * NDF Gaussian
+         * NDF GGX
+         * NDF Trowbridge Reitz Anisotropic
+         * NDF Trowbridge Reitz
+         * NDF Ward Anisotropic
+         * Diffuse Fresnel
+         * Schlick Fresnel Approx
+
+   Samples
+      * Update Particle Heat Haze (BIRP/HDRP/HDRP)
+
+v2.2.0
+
+   Highlights
+      * Updated per ASE editor v1.9.5.1
+      * New Material Sample Specular Simple (URP)
+      * New community shader Physical Based Rendering (BIRP/HDRP/HDRP)
+      * Updated Reflection Probe URP (URP)
+      * Updated Terrain Samples (BIRP/HDRP)
+      * Update demo scene lighting (BIRP/HDRP/HDRP)
+ 
+
 v2.1.2
 
    Highlights
@@ -86,4 +141,4 @@ v1.0.1 rev 00:
 v1.0.0 rev 00:
 * New Samples added:
     * Added tons of new cool samples across all rendering pipelines.
-        * HDRP and URP samples were created both on 7.7.1 and 10.5.1 versions
+        * HDRP and URP samples were created both on 7.7.1 and 10.5.1 versions* HDRP and URP samples were created both on 7.7.1 and 10.5.1 versions

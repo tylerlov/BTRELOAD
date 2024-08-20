@@ -70,6 +70,10 @@ public class EnemyBasicSetup : BaseBehaviour, IDamageable, IAttackAgent
     private Vector3 cachedShootDirection;
     private Quaternion cachedShootRotation;
 
+    private EnemyBasicDamagablePart[] cachedDamageableParts;
+
+    private bool isLockedOn = false; // Add this field
+
     // Awake method
     private void Awake()
     {
@@ -91,6 +95,7 @@ public class EnemyBasicSetup : BaseBehaviour, IDamageable, IAttackAgent
         cachedMyTime = GetComponent<Timeline>();
         cachedClock = Timekeeper.instance.Clock("Test");
         cachedController = GetComponent<RVOController>();
+        cachedDamageableParts = GetComponentsInChildren<EnemyBasicDamagablePart>(true);
     }
 
     private void Initialize()
@@ -112,7 +117,7 @@ public class EnemyBasicSetup : BaseBehaviour, IDamageable, IAttackAgent
     private void ActivateEnemy()
     {
         enemyModel.SetActive(true);
-        lockedStatus(false);
+        SetLockOnStatus(false);
         FMODUnity.RuntimeManager.PlayOneShotAttached($"event:/Enemy/{enemyType}/Birth", gameObject);
         birthParticles.GetFromPool(cachedTransform.position, Quaternion.identity);
     }
@@ -140,12 +145,9 @@ public class EnemyBasicSetup : BaseBehaviour, IDamageable, IAttackAgent
 
     private void InitializeDamagableParts()
     {
-        if (damageableParts != null && damageableParts.Length > 0)
+        foreach (var part in cachedDamageableParts)
         {
-            foreach (var part in damageableParts)
-            {
-                part.mainEnemyScript = this;
-            }
+            part.mainEnemyScript = this;
         }
     }
 
@@ -163,21 +165,40 @@ public class EnemyBasicSetup : BaseBehaviour, IDamageable, IAttackAgent
         HandleDamage(amount);
         if (currentHealth <= 0)
         {
-            lockedStatus(false); // Unlock when the enemy is hit and health is depleted
+            SetLockOnStatus(false); // Unlock when the enemy is hit and health is depleted
         }
     }
 
+    // Rename this method from lockedStatus to SetLockOnStatus
+    public void SetLockOnStatus(bool status)
+    {
+        isLockedOn = status;
+        UpdateLockOnVisuals();
+        
+        // Inform GameManager of the lock state change for the main enemy
+        if (GameManager.instance != null)
+        {
+            GameManager.instance.SetEnemyLockState(cachedTransform, status);
+        }
+    }
+
+    // Keep this method for GameManager compatibility
     public void lockedStatus(bool status)
     {
-        locked = status;
-        lockedonAnim.SetActive(status);
-        if (!status && lockOnDisabledParticles != null)
+        SetLockOnStatus(status);
+    }
+
+    private void UpdateLockOnVisuals()
+    {
+        if (lockedonAnim != null)
+        {
+            lockedonAnim.SetActive(isLockedOn);
+        }
+
+        if (!isLockedOn && lockOnDisabledParticles != null)
         {
             lockOnDisabledParticles.GetFromPool(cachedTransform.position, Quaternion.identity);
         }
-        
-        // Inform GameManager of the lock state change
-        GameManager.instance.SetEnemyLockState(cachedTransform, status);
     }
 
     public bool IsAlive() => currentHealth > 0;
@@ -224,7 +245,7 @@ public class EnemyBasicSetup : BaseBehaviour, IDamageable, IAttackAgent
     private void HandleDamage(float amount)
     {
         currentHealth = Mathf.Max(currentHealth - amount, 0);
-        lockedStatus(false);
+        SetLockOnStatus(false);
 
         ConditionalDebug.Log($"{gameObject} is taking damage of {amount}");
 
@@ -236,7 +257,7 @@ public class EnemyBasicSetup : BaseBehaviour, IDamageable, IAttackAgent
 
     private IEnumerator Death()
     {
-        lockedStatus(false);
+        SetLockOnStatus(false);
         ConditionalDebug.Log("Enemy has died");
 
         deathParticles.GetFromPool(cachedTransform.position, Quaternion.identity);
@@ -293,13 +314,15 @@ public class EnemyBasicSetup : BaseBehaviour, IDamageable, IAttackAgent
 
     public void RegisterProjectiles()
     {
-        // Assuming you have a list or array of projectiles associated with this enemy
-        foreach (var projectile in GetComponentsInChildren<ProjectileStateBased>())
+        if (ProjectileManager.Instance != null)
         {
-            if (projectile != null)
+            var projectiles = GetComponentsInChildren<ProjectileStateBased>(true);
+            foreach (var projectile in projectiles)
             {
-                // Register the projectile with the ProjectileManager
-                ProjectileManager.Instance.RegisterProjectile(projectile);
+                if (projectile != null)
+                {
+                    ProjectileManager.Instance.RegisterProjectile(projectile);
+                }
             }
         }
     }
@@ -308,5 +331,10 @@ public class EnemyBasicSetup : BaseBehaviour, IDamageable, IAttackAgent
     public float GetPartDamageAmount()
     {
         return partDamageAmount;
+    }
+
+    public bool IsLockedOn()
+    {
+        return isLockedOn;
     }
 }

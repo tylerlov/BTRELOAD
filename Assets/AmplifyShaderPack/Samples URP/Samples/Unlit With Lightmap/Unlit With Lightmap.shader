@@ -1,4 +1,4 @@
-// Made with Amplify Shader Editor v1.9.3.3
+// Made with Amplify Shader Editor v1.9.6.3
 // Available at the Unity Asset Store - http://u3d.as/y3X 
 Shader "AmplifyShaderPack/Unlit With Lightmap"
 {
@@ -168,12 +168,16 @@ Shader "AmplifyShaderPack/Unlit With Lightmap"
 
 			HLSLPROGRAM
 
-			#pragma multi_compile_instancing
-			#pragma instancing_options renderinglayer
-			#define ASE_SRP_VERSION 140010
-
+			
 
 			#pragma shader_feature_local _RECEIVE_SHADOWS_OFF
+			#pragma multi_compile_instancing
+			#pragma instancing_options renderinglayer
+			#define ASE_SRP_VERSION 140011
+
+
+			
+
 			#pragma multi_compile_fragment _ _SCREEN_SPACE_OCCLUSION
 			#pragma multi_compile_fragment _ _DBUFFER_MRT1 _DBUFFER_MRT2 _DBUFFER_MRT3
 
@@ -183,8 +187,6 @@ Shader "AmplifyShaderPack/Unlit With Lightmap"
             #pragma multi_compile _ LIGHTMAP_ON
             #pragma multi_compile _ DYNAMICLIGHTMAP_ON
 			#pragma multi_compile_fragment _ DEBUG_DISPLAY
-
-			
 
 			#pragma vertex vert
 			#pragma fragment frag
@@ -209,6 +211,15 @@ Shader "AmplifyShaderPack/Unlit With Lightmap"
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Input.hlsl"
 			#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/TextureStack.hlsl"
+
+			
+			#if ASE_SRP_VERSION >=140010
+			#include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
+			#endif
+		
+
+			
+
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/ShaderGraphFunctions.hlsl"
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DBuffer.hlsl"
 			#include "Packages/com.unity.render-pipelines.universal/Editor/ShaderGraph/Includes/ShaderPass.hlsl"
@@ -234,16 +245,17 @@ Shader "AmplifyShaderPack/Unlit With Lightmap"
 			struct VertexOutput
 			{
 				float4 positionCS : SV_POSITION;
+				float4 clipPosV : TEXCOORD0;
 				#if defined(ASE_NEEDS_FRAG_WORLD_POSITION)
-					float3 positionWS : TEXCOORD0;
+					float3 positionWS : TEXCOORD1;
 				#endif
 				#if defined(REQUIRES_VERTEX_SHADOW_COORD_INTERPOLATOR) && defined(ASE_NEEDS_FRAG_SHADOWCOORDS)
-					float4 shadowCoord : TEXCOORD1;
+					float4 shadowCoord : TEXCOORD2;
 				#endif
 				#ifdef ASE_FOG
-					float fogFactor : TEXCOORD2;
+					float fogFactor : TEXCOORD3;
 				#endif
-				float4 ase_texcoord3 : TEXCOORD3;
+				float4 ase_texcoord4 : TEXCOORD4;
 				UNITY_VERTEX_INPUT_INSTANCE_ID
 				UNITY_VERTEX_OUTPUT_STEREO
 			};
@@ -283,9 +295,9 @@ Shader "AmplifyShaderPack/Unlit With Lightmap"
 
 				float2 texCoord2_g6 = v.ase_texcoord1.xy * float2( 1,1 ) + float2( 0,0 );
 				float2 vertexToFrag10_g6 = ( ( texCoord2_g6 * (unity_LightmapST).xy ) + (unity_LightmapST).zw );
-				o.ase_texcoord3.xy = vertexToFrag10_g6;
+				o.ase_texcoord4.xy = vertexToFrag10_g6;
 				
-				o.ase_texcoord3.zw = v.ase_texcoord.xy;
+				o.ase_texcoord4.zw = v.ase_texcoord.xy;
 
 				#ifdef ASE_ABSOLUTE_VERTEX_POS
 					float3 defaultVertexValue = v.positionOS.xyz;
@@ -303,26 +315,22 @@ Shader "AmplifyShaderPack/Unlit With Lightmap"
 
 				v.normalOS = v.normalOS;
 
-				float3 positionWS = TransformObjectToWorld( v.positionOS.xyz );
-				float4 positionCS = TransformWorldToHClip( positionWS );
+				VertexPositionInputs vertexInput = GetVertexPositionInputs( v.positionOS.xyz );
 
 				#if defined(ASE_NEEDS_FRAG_WORLD_POSITION)
-					o.positionWS = positionWS;
-				#endif
-
-				#if defined(REQUIRES_VERTEX_SHADOW_COORD_INTERPOLATOR) && defined(ASE_NEEDS_FRAG_SHADOWCOORDS)
-					VertexPositionInputs vertexInput = (VertexPositionInputs)0;
-					vertexInput.positionWS = positionWS;
-					vertexInput.positionCS = positionCS;
-					o.shadowCoord = GetShadowCoord( vertexInput );
+					o.positionWS = vertexInput.positionWS;
 				#endif
 
 				#ifdef ASE_FOG
-					o.fogFactor = ComputeFogFactor( positionCS.z );
+					o.fogFactor = ComputeFogFactor( vertexInput.positionCS.z );
 				#endif
 
-				o.positionCS = positionCS;
+				#if defined(REQUIRES_VERTEX_SHADOW_COORD_INTERPOLATOR) && defined(ASE_NEEDS_FRAG_SHADOWCOORDS)
+					o.shadowCoord = GetShadowCoord( vertexInput );
+				#endif
 
+				o.positionCS = vertexInput.positionCS;
+				o.clipPosV = vertexInput.positionCS;
 				return o;
 			}
 
@@ -424,6 +432,9 @@ Shader "AmplifyShaderPack/Unlit With Lightmap"
 
 				float4 ShadowCoords = float4( 0, 0, 0, 0 );
 
+				float4 ClipPos = IN.clipPosV;
+				float4 ScreenPos = ComputeScreenPos( IN.clipPosV );
+
 				#if defined(ASE_NEEDS_FRAG_SHADOWCOORDS)
 					#if defined(REQUIRES_VERTEX_SHADOW_COORD_INTERPOLATOR)
 						ShadowCoords = IN.shadowCoord;
@@ -432,12 +443,12 @@ Shader "AmplifyShaderPack/Unlit With Lightmap"
 					#endif
 				#endif
 
-				float2 vertexToFrag10_g6 = IN.ase_texcoord3.xy;
+				float2 vertexToFrag10_g6 = IN.ase_texcoord4.xy;
 				float2 UV11_g6 = vertexToFrag10_g6;
 				float4 localSampleLightmapHD11_g6 = SampleLightmapHD11_g6( UV11_g6 );
 				float4 localURPDecodeInstruction19_g6 = URPDecodeInstruction19_g6();
 				float3 decodeLightMap6_g6 = DecodeLightmap(localSampleLightmapHD11_g6,localURPDecodeInstruction19_g6);
-				float2 uv_MainTex = IN.ase_texcoord3.zw * _MainTex_ST.xy + _MainTex_ST.zw;
+				float2 uv_MainTex = IN.ase_texcoord4.zw * _MainTex_ST.xy + _MainTex_ST.zw;
 				float4 appendResult8 = (float4(( decodeLightMap6_g6 * (tex2D( _MainTex, uv_MainTex )).rgb ) , 1.0));
 				
 				float3 BakedAlbedo = 0;
@@ -453,10 +464,6 @@ Shader "AmplifyShaderPack/Unlit With Lightmap"
 
 				#if defined(_DBUFFER)
 					ApplyDecalToBaseColor(IN.positionCS, Color);
-				#endif
-
-				#if defined(_ALPHAPREMULTIPLY_ON)
-				Color *= Alpha;
 				#endif
 
 				#ifdef LOD_FADE_CROSSFADE
@@ -491,16 +498,18 @@ Shader "AmplifyShaderPack/Unlit With Lightmap"
 
 			HLSLPROGRAM
 
+			
+
 			#pragma multi_compile_instancing
-			#define ASE_SRP_VERSION 140010
+			#define ASE_SRP_VERSION 140011
 
 
-			#pragma vertex vert
-			#pragma fragment frag
+			
 
 			#pragma multi_compile_vertex _ _CASTING_PUNCTUAL_LIGHT_SHADOW
 
-			
+			#pragma vertex vert
+			#pragma fragment frag
 
 			#define SHADERPASS SHADERPASS_SHADOWCASTER
 
@@ -519,7 +528,10 @@ Shader "AmplifyShaderPack/Unlit With Lightmap"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/LODCrossFade.hlsl"
             #endif
 
-			
+			#pragma multi_compile _ LIGHTMAP_ON
+			#pragma multi_compile _ DYNAMICLIGHTMAP_ON
+			#pragma multi_compile _ DIRLIGHTMAP_COMBINED
+
 
 			struct VertexInput
 			{
@@ -757,7 +769,7 @@ Shader "AmplifyShaderPack/Unlit With Lightmap"
 			
 
 			#pragma multi_compile_instancing
-			#define ASE_SRP_VERSION 140010
+			#define ASE_SRP_VERSION 140011
 
 
 			
@@ -780,7 +792,10 @@ Shader "AmplifyShaderPack/Unlit With Lightmap"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/LODCrossFade.hlsl"
             #endif
 
-			
+			#pragma multi_compile _ LIGHTMAP_ON
+			#pragma multi_compile _ DYNAMICLIGHTMAP_ON
+			#pragma multi_compile _ DIRLIGHTMAP_COMBINED
+
 
 			struct VertexInput
 			{
@@ -793,11 +808,12 @@ Shader "AmplifyShaderPack/Unlit With Lightmap"
 			struct VertexOutput
 			{
 				float4 positionCS : SV_POSITION;
+				float4 clipPosV : TEXCOORD0;
 				#if defined(ASE_NEEDS_FRAG_WORLD_POSITION)
-				float3 positionWS : TEXCOORD0;
+				float3 positionWS : TEXCOORD1;
 				#endif
 				#if defined(REQUIRES_VERTEX_SHADOW_COORD_INTERPOLATOR) && defined(ASE_NEEDS_FRAG_SHADOWCOORDS)
-				float4 shadowCoord : TEXCOORD1;
+				float4 shadowCoord : TEXCOORD2;
 				#endif
 				
 				UNITY_VERTEX_INPUT_INSTANCE_ID
@@ -844,20 +860,18 @@ Shader "AmplifyShaderPack/Unlit With Lightmap"
 
 				v.normalOS = v.normalOS;
 
-				float3 positionWS = TransformObjectToWorld( v.positionOS.xyz );
+				VertexPositionInputs vertexInput = GetVertexPositionInputs( v.positionOS.xyz );
 
 				#if defined(ASE_NEEDS_FRAG_WORLD_POSITION)
-					o.positionWS = positionWS;
+					o.positionWS = vertexInput.positionWS;
 				#endif
 
-				o.positionCS = TransformWorldToHClip( positionWS );
 				#if defined(REQUIRES_VERTEX_SHADOW_COORD_INTERPOLATOR) && defined(ASE_NEEDS_FRAG_SHADOWCOORDS)
-					VertexPositionInputs vertexInput = (VertexPositionInputs)0;
-					vertexInput.positionWS = positionWS;
-					vertexInput.positionCS = o.positionCS;
 					o.shadowCoord = GetShadowCoord( vertexInput );
 				#endif
 
+				o.positionCS = vertexInput.positionCS;
+				o.clipPosV = vertexInput.positionCS;
 				return o;
 			}
 
@@ -951,6 +965,9 @@ Shader "AmplifyShaderPack/Unlit With Lightmap"
 
 				float4 ShadowCoords = float4( 0, 0, 0, 0 );
 
+				float4 ClipPos = IN.clipPosV;
+				float4 ScreenPos = ComputeScreenPos( IN.clipPosV );
+
 				#if defined(ASE_NEEDS_FRAG_SHADOWCOORDS)
 					#if defined(REQUIRES_VERTEX_SHADOW_COORD_INTERPOLATOR)
 						ShadowCoords = IN.shadowCoord;
@@ -990,7 +1007,7 @@ Shader "AmplifyShaderPack/Unlit With Lightmap"
 
 			
 
-			#define ASE_SRP_VERSION 140010
+			#define ASE_SRP_VERSION 140011
 
 
 			
@@ -1008,15 +1025,33 @@ Shader "AmplifyShaderPack/Unlit With Lightmap"
 			#endif
 		
 
+			
+			#if ASE_SRP_VERSION >=140007
+			#include_with_pragmas "Packages/com.unity.render-pipelines.universal/ShaderLibrary/RenderingLayers.hlsl"
+			#endif
+		
+
 			#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Color.hlsl"
 			#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Texture.hlsl"
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
 			#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/TextureStack.hlsl"
+
+			
+			#if ASE_SRP_VERSION >=140010
+			#include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
+			#endif
+		
+
+			
+
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/ShaderGraphFunctions.hlsl"
 			#include "Packages/com.unity.render-pipelines.universal/Editor/ShaderGraph/Includes/ShaderPass.hlsl"
 
-			
+			#pragma multi_compile _ LIGHTMAP_ON
+			#pragma multi_compile _ DYNAMICLIGHTMAP_ON
+			#pragma multi_compile _ DIRLIGHTMAP_COMBINED
+
 
 			struct VertexInput
 			{
@@ -1207,7 +1242,7 @@ Shader "AmplifyShaderPack/Unlit With Lightmap"
 
 			
 
-			#define ASE_SRP_VERSION 140010
+			#define ASE_SRP_VERSION 140011
 
 
 			
@@ -1226,11 +1261,26 @@ Shader "AmplifyShaderPack/Unlit With Lightmap"
 			#endif
 		
 
+			
+			#if ASE_SRP_VERSION >=140007
+			#include_with_pragmas "Packages/com.unity.render-pipelines.universal/ShaderLibrary/RenderingLayers.hlsl"
+			#endif
+		
+
 			#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Color.hlsl"
 			#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Texture.hlsl"
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
 			#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/TextureStack.hlsl"
+
+			
+			#if ASE_SRP_VERSION >=140010
+			#include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
+			#endif
+		
+
+			
+
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/ShaderGraphFunctions.hlsl"
 			#include "Packages/com.unity.render-pipelines.universal/Editor/ShaderGraph/Includes/ShaderPass.hlsl"
 
@@ -1238,7 +1288,10 @@ Shader "AmplifyShaderPack/Unlit With Lightmap"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/LODCrossFade.hlsl"
             #endif
 
-			
+			#pragma multi_compile _ LIGHTMAP_ON
+			#pragma multi_compile _ DYNAMICLIGHTMAP_ON
+			#pragma multi_compile _ DIRLIGHTMAP_COMBINED
+
 
 			struct VertexInput
 			{
@@ -1430,18 +1483,18 @@ Shader "AmplifyShaderPack/Unlit With Lightmap"
 
 			
 
-			#pragma multi_compile_instancing
-			#define ASE_SRP_VERSION 140010
+        	#pragma multi_compile_instancing
+        	#define ASE_SRP_VERSION 140011
 
+
+			
+
+        	#pragma multi_compile_fragment _ _GBUFFER_NORMALS_OCT
 
 			
 
 			#pragma vertex vert
 			#pragma fragment frag
-
-        	#pragma multi_compile_fragment _ _GBUFFER_NORMALS_OCT
-
-			
 
 			#define ATTRIBUTES_NEED_NORMAL
 			#define ATTRIBUTES_NEED_TANGENT
@@ -1466,6 +1519,15 @@ Shader "AmplifyShaderPack/Unlit With Lightmap"
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
 			#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/TextureStack.hlsl"
+
+			
+			#if ASE_SRP_VERSION >=140010
+			#include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
+			#endif
+		
+
+			
+
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/ShaderGraphFunctions.hlsl"
 			#include "Packages/com.unity.render-pipelines.universal/Editor/ShaderGraph/Includes/ShaderPass.hlsl"
 
@@ -1473,7 +1535,10 @@ Shader "AmplifyShaderPack/Unlit With Lightmap"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/LODCrossFade.hlsl"
             #endif
 
-			
+			#pragma multi_compile _ LIGHTMAP_ON
+			#pragma multi_compile _ DYNAMICLIGHTMAP_ON
+			#pragma multi_compile _ DIRLIGHTMAP_COMBINED
+
 
 			struct VertexInput
 			{
@@ -1486,7 +1551,8 @@ Shader "AmplifyShaderPack/Unlit With Lightmap"
 			struct VertexOutput
 			{
 				float4 positionCS : SV_POSITION;
-				float3 normalWS : TEXCOORD0;
+				float4 clipPosV : TEXCOORD0;
+				float3 normalWS : TEXCOORD1;
 				
 				UNITY_VERTEX_INPUT_INSTANCE_ID
 				UNITY_VERTEX_OUTPUT_STEREO
@@ -1540,12 +1606,11 @@ Shader "AmplifyShaderPack/Unlit With Lightmap"
 
 				v.normalOS = v.normalOS;
 
-				float3 positionWS = TransformObjectToWorld( v.positionOS.xyz );
-				float3 normalWS = TransformObjectToWorldNormal(v.normalOS);
+				VertexPositionInputs vertexInput = GetVertexPositionInputs( v.positionOS.xyz );
 
-				o.positionCS = TransformWorldToHClip(positionWS);
-				o.normalWS.xyz =  normalWS;
-
+				o.positionCS = vertexInput.positionCS;
+				o.clipPosV = vertexInput.positionCS;
+				o.normalWS = TransformObjectToWorldNormal( v.normalOS );
 				return o;
 			}
 
@@ -1635,15 +1700,16 @@ Shader "AmplifyShaderPack/Unlit With Lightmap"
 			#endif
 				 )
 			{
-				SurfaceDescription surfaceDescription = (SurfaceDescription)0;
+				float4 ClipPos = IN.clipPosV;
+				float4 ScreenPos = ComputeScreenPos( IN.clipPosV );
 
 				
 
-				surfaceDescription.Alpha = 1;
-				surfaceDescription.AlphaClipThreshold = 0.5;
+				float Alpha = 1;
+				float AlphaClipThreshold = 0.5;
 
 				#if _ALPHATEST_ON
-					clip(surfaceDescription.Alpha - surfaceDescription.AlphaClipThreshold);
+					clip( Alpha - AlphaClipThreshold );
 				#endif
 
 				#ifdef LOD_FADE_CROSSFADE
@@ -1679,15 +1745,15 @@ Shader "AmplifyShaderPack/Unlit With Lightmap"
 	Fallback Off
 }
 /*ASEBEGIN
-Version=19303
+Version=19603
 Node;AmplifyShaderEditor.SimpleMultiplyOpNode;7;92.27861,-34.62788;Inherit;False;2;2;0;FLOAT3;0,0,0;False;1;FLOAT3;0,0,0;False;1;FLOAT3;0
 Node;AmplifyShaderEditor.DynamicAppendNode;8;283.3786,-35.12809;Inherit;False;FLOAT4;4;0;FLOAT3;0,0,0;False;1;FLOAT;0;False;2;FLOAT;0;False;3;FLOAT;0;False;1;FLOAT4;0
 Node;AmplifyShaderEditor.RangedFloatNode;9;100.9786,65.4722;Float;False;Constant;_Float0;Float 0;1;0;Create;True;0;0;0;False;0;False;1;0;0;0;0;1;FLOAT;0
 Node;AmplifyShaderEditor.SwizzleNode;30;-91.37158,37.4086;Inherit;False;FLOAT3;0;1;2;3;1;0;COLOR;0,0,0,0;False;1;FLOAT3;0
-Node;AmplifyShaderEditor.SamplerNode;5;-464.1202,37.97169;Inherit;True;Property;_MainTex;MainTex;2;0;Create;True;0;0;0;False;0;False;-1;None;aab8de1052c54173b3d61e7f8b05aedf;True;0;False;white;Auto;False;Object;-1;Auto;Texture2D;8;0;SAMPLER2D;;False;1;FLOAT2;0,0;False;2;FLOAT;0;False;3;FLOAT2;0,0;False;4;FLOAT2;0,0;False;5;FLOAT;1;False;6;FLOAT;0;False;7;SAMPLERSTATE;;False;5;COLOR;0;FLOAT;1;FLOAT;2;FLOAT;3;FLOAT;4
-Node;AmplifyShaderEditor.FunctionNode;31;-160.4124,-33.86099;Inherit;False;FetchLightmapValue;0;;6;43de3d4ae59f645418fdd020d1b8e78e;0;0;1;FLOAT3;0
+Node;AmplifyShaderEditor.SamplerNode;5;-464.1202,37.97169;Inherit;True;Property;_MainTex;MainTex;2;0;Create;True;0;0;0;False;0;False;-1;None;aab8de1052c54173b3d61e7f8b05aedf;True;0;False;white;Auto;False;Object;-1;Auto;Texture2D;8;0;SAMPLER2D;;False;1;FLOAT2;0,0;False;2;FLOAT;0;False;3;FLOAT2;0,0;False;4;FLOAT2;0,0;False;5;FLOAT;1;False;6;FLOAT;0;False;7;SAMPLERSTATE;;False;6;COLOR;0;FLOAT;1;FLOAT;2;FLOAT;3;FLOAT;4;FLOAT3;5
+Node;AmplifyShaderEditor.FunctionNode;31;-160.4124,-33.86099;Inherit;False;FetchLightmapValue;0;;6;43de3d4ae59f645418fdd020d1b8e78e;1,23,0;0;1;FLOAT3;0
 Node;AmplifyShaderEditor.TemplateMultiPassMasterNode;32;445.9998,-34;Float;False;False;-1;2;UnityEditor.ShaderGraphUnlitGUI;0;1;New Amplify Shader;2992e84f91cbeb14eab234972e07ea9d;True;ExtraPrePass;0;0;ExtraPrePass;5;False;False;False;False;False;False;False;False;False;False;False;False;True;0;False;;False;True;0;False;;False;False;False;False;False;False;False;False;False;True;False;0;False;;255;False;;255;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;False;False;False;False;True;4;RenderPipeline=UniversalPipeline;RenderType=Opaque=RenderType;Queue=Geometry=Queue=0;UniversalMaterialType=Unlit;True;5;True;12;all;0;False;True;1;1;False;;0;False;;0;1;False;;0;False;;False;False;False;False;False;False;False;False;False;False;False;False;True;0;False;;False;True;True;True;True;True;0;False;;False;False;False;False;False;False;False;True;False;0;False;;255;False;;255;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;False;True;1;False;;True;3;False;;True;True;0;False;;0;False;;True;0;False;False;0;;0;0;Standard;0;False;0
-Node;AmplifyShaderEditor.TemplateMultiPassMasterNode;33;445.9998,-34;Float;False;True;-1;2;UnityEditor.ShaderGraphUnlitGUI;0;13;AmplifyShaderPack/Unlit With Lightmap;2992e84f91cbeb14eab234972e07ea9d;True;Forward;0;1;Forward;8;False;False;False;False;False;False;False;False;False;False;False;False;True;0;False;;False;True;0;False;;False;False;False;False;False;False;False;False;False;True;False;0;False;;255;False;;255;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;False;False;False;False;True;4;RenderPipeline=UniversalPipeline;RenderType=Opaque=RenderType;Queue=Geometry=Queue=0;UniversalMaterialType=Unlit;True;5;True;12;all;0;False;True;1;1;False;;0;False;;1;1;False;;0;False;;False;False;False;False;False;False;False;False;False;False;False;False;False;False;True;True;True;True;True;0;False;;False;False;False;False;False;False;False;True;False;0;False;;255;False;;255;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;False;True;1;False;;True;3;False;;True;True;0;False;;0;False;;True;1;LightMode=UniversalForwardOnly;False;False;0;;0;0;Standard;21;Surface;0;0;  Blend;0;0;Two Sided;1;0;Forward Only;0;0;Cast Shadows;1;0;  Use Shadow Threshold;0;0;GPU Instancing;1;0;LOD CrossFade;0;0;Built-in Fog;0;0;Meta Pass;0;0;Extra Pre Pass;0;0;Tessellation;0;0;  Phong;0;0;  Strength;0.5,False,;0;  Type;0;0;  Tess;16,False,;0;  Min;10,False,;0;  Max;25,False,;0;  Edge Length;16,False,;0;  Max Displacement;25,False,;0;Vertex Position,InvertActionOnDeselection;1;0;0;10;False;True;True;True;False;False;True;True;True;False;False;;False;0
+Node;AmplifyShaderEditor.TemplateMultiPassMasterNode;33;445.9998,-34;Float;False;True;-1;2;UnityEditor.ShaderGraphUnlitGUI;0;13;AmplifyShaderPack/Unlit With Lightmap;2992e84f91cbeb14eab234972e07ea9d;True;Forward;0;1;Forward;8;False;False;False;False;False;False;False;False;False;False;False;False;True;0;False;;False;True;0;False;;False;False;False;False;False;False;False;False;False;True;False;0;False;;255;False;;255;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;False;False;False;False;True;4;RenderPipeline=UniversalPipeline;RenderType=Opaque=RenderType;Queue=Geometry=Queue=0;UniversalMaterialType=Unlit;True;5;True;12;all;0;False;True;1;1;False;;0;False;;1;1;False;;0;False;;False;False;False;False;False;False;False;False;False;False;False;False;False;False;True;True;True;True;True;0;False;;False;False;False;False;False;False;False;True;False;0;False;;255;False;;255;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;False;True;1;False;;True;3;False;;True;True;0;False;;0;False;;True;1;LightMode=UniversalForwardOnly;False;False;0;;0;0;Standard;22;Surface;0;0;  Blend;0;0;Two Sided;1;0;Forward Only;0;0;Cast Shadows;1;0;  Use Shadow Threshold;0;0;Receive Shadows;1;0;GPU Instancing;1;0;LOD CrossFade;0;0;Built-in Fog;0;0;Meta Pass;0;0;Extra Pre Pass;0;0;Tessellation;0;0;  Phong;0;0;  Strength;0.5,False,;0;  Type;0;0;  Tess;16,False,;0;  Min;10,False,;0;  Max;25,False,;0;  Edge Length;16,False,;0;  Max Displacement;25,False,;0;Vertex Position,InvertActionOnDeselection;1;0;0;10;False;True;True;True;False;False;True;True;True;False;False;;False;0
 Node;AmplifyShaderEditor.TemplateMultiPassMasterNode;34;445.9998,-34;Float;False;False;-1;2;UnityEditor.ShaderGraphUnlitGUI;0;1;New Amplify Shader;2992e84f91cbeb14eab234972e07ea9d;True;ShadowCaster;0;2;ShadowCaster;0;False;False;False;False;False;False;False;False;False;False;False;False;True;0;False;;False;True;0;False;;False;False;False;False;False;False;False;False;False;True;False;0;False;;255;False;;255;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;False;False;False;False;True;4;RenderPipeline=UniversalPipeline;RenderType=Opaque=RenderType;Queue=Geometry=Queue=0;UniversalMaterialType=Unlit;True;5;True;12;all;0;False;False;False;False;False;False;False;False;False;False;False;False;True;0;False;;False;False;False;True;False;False;False;False;0;False;;False;False;False;False;False;False;False;False;False;True;1;False;;True;3;False;;False;True;1;LightMode=ShadowCaster;False;False;0;;0;0;Standard;0;False;0
 Node;AmplifyShaderEditor.TemplateMultiPassMasterNode;35;445.9998,-34;Float;False;False;-1;2;UnityEditor.ShaderGraphUnlitGUI;0;1;New Amplify Shader;2992e84f91cbeb14eab234972e07ea9d;True;DepthOnly;0;3;DepthOnly;0;False;False;False;False;False;False;False;False;False;False;False;False;True;0;False;;False;True;0;False;;False;False;False;False;False;False;False;False;False;True;False;0;False;;255;False;;255;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;False;False;False;False;True;4;RenderPipeline=UniversalPipeline;RenderType=Opaque=RenderType;Queue=Geometry=Queue=0;UniversalMaterialType=Unlit;True;5;True;12;all;0;False;False;False;False;False;False;False;False;False;False;False;False;True;0;False;;False;False;False;True;False;False;False;False;0;False;;False;False;False;False;False;False;False;False;False;True;1;False;;False;False;True;1;LightMode=DepthOnly;False;False;0;;0;0;Standard;0;False;0
 Node;AmplifyShaderEditor.TemplateMultiPassMasterNode;36;445.9998,-34;Float;False;False;-1;2;UnityEditor.ShaderGraphUnlitGUI;0;1;New Amplify Shader;2992e84f91cbeb14eab234972e07ea9d;True;Meta;0;4;Meta;0;False;False;False;False;False;False;False;False;False;False;False;False;True;0;False;;False;True;0;False;;False;False;False;False;False;False;False;False;False;True;False;0;False;;255;False;;255;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;False;False;False;False;True;4;RenderPipeline=UniversalPipeline;RenderType=Opaque=RenderType;Queue=Geometry=Queue=0;UniversalMaterialType=Unlit;True;5;True;12;all;0;False;False;False;False;False;False;False;False;False;False;False;False;False;False;True;2;False;;False;False;False;False;False;False;False;False;False;False;False;False;False;False;True;1;LightMode=Meta;False;False;0;;0;0;Standard;0;False;0
@@ -1703,4 +1769,4 @@ WireConnection;8;3;9;0
 WireConnection;30;0;5;0
 WireConnection;33;2;8;0
 ASEEND*/
-//CHKSM=76A18C3C5DF1BF502373E9BC0636892048B2CE8E
+//CHKSM=F0823F6E1051E6BC1A6D8A79107D05C0D8AF2350

@@ -1,4 +1,4 @@
-// Made with Amplify Shader Editor v1.9.3.3
+// Made with Amplify Shader Editor v1.9.6.3
 // Available at the Unity Asset Store - http://u3d.as/y3X 
 Shader "AmplifyShaderPack/Stencil Portal Write"
 {
@@ -175,12 +175,16 @@ Shader "AmplifyShaderPack/Stencil Portal Write"
 
 			HLSLPROGRAM
 
-			#pragma multi_compile_instancing
-			#pragma instancing_options renderinglayer
-			#define ASE_SRP_VERSION 140010
-
+			
 
 			#pragma shader_feature_local _RECEIVE_SHADOWS_OFF
+			#pragma multi_compile_instancing
+			#pragma instancing_options renderinglayer
+			#define ASE_SRP_VERSION 140011
+
+
+			
+
 			#pragma multi_compile_fragment _ _SCREEN_SPACE_OCCLUSION
 			#pragma multi_compile_fragment _ _DBUFFER_MRT1 _DBUFFER_MRT2 _DBUFFER_MRT3
 
@@ -190,8 +194,6 @@ Shader "AmplifyShaderPack/Stencil Portal Write"
             #pragma multi_compile _ LIGHTMAP_ON
             #pragma multi_compile _ DYNAMICLIGHTMAP_ON
 			#pragma multi_compile_fragment _ DEBUG_DISPLAY
-
-			
 
 			#pragma vertex vert
 			#pragma fragment frag
@@ -216,6 +218,15 @@ Shader "AmplifyShaderPack/Stencil Portal Write"
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Input.hlsl"
 			#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/TextureStack.hlsl"
+
+			
+			#if ASE_SRP_VERSION >=140010
+			#include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
+			#endif
+		
+
+			
+
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/ShaderGraphFunctions.hlsl"
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DBuffer.hlsl"
 			#include "Packages/com.unity.render-pipelines.universal/Editor/ShaderGraph/Includes/ShaderPass.hlsl"
@@ -240,14 +251,15 @@ Shader "AmplifyShaderPack/Stencil Portal Write"
 			struct VertexOutput
 			{
 				float4 positionCS : SV_POSITION;
+				float4 clipPosV : TEXCOORD0;
 				#if defined(ASE_NEEDS_FRAG_WORLD_POSITION)
-					float3 positionWS : TEXCOORD0;
+					float3 positionWS : TEXCOORD1;
 				#endif
 				#if defined(REQUIRES_VERTEX_SHADOW_COORD_INTERPOLATOR) && defined(ASE_NEEDS_FRAG_SHADOWCOORDS)
-					float4 shadowCoord : TEXCOORD1;
+					float4 shadowCoord : TEXCOORD2;
 				#endif
 				#ifdef ASE_FOG
-					float fogFactor : TEXCOORD2;
+					float fogFactor : TEXCOORD3;
 				#endif
 				
 				UNITY_VERTEX_INPUT_INSTANCE_ID
@@ -294,26 +306,22 @@ Shader "AmplifyShaderPack/Stencil Portal Write"
 
 				v.normalOS = v.normalOS;
 
-				float3 positionWS = TransformObjectToWorld( v.positionOS.xyz );
-				float4 positionCS = TransformWorldToHClip( positionWS );
+				VertexPositionInputs vertexInput = GetVertexPositionInputs( v.positionOS.xyz );
 
 				#if defined(ASE_NEEDS_FRAG_WORLD_POSITION)
-					o.positionWS = positionWS;
-				#endif
-
-				#if defined(REQUIRES_VERTEX_SHADOW_COORD_INTERPOLATOR) && defined(ASE_NEEDS_FRAG_SHADOWCOORDS)
-					VertexPositionInputs vertexInput = (VertexPositionInputs)0;
-					vertexInput.positionWS = positionWS;
-					vertexInput.positionCS = positionCS;
-					o.shadowCoord = GetShadowCoord( vertexInput );
+					o.positionWS = vertexInput.positionWS;
 				#endif
 
 				#ifdef ASE_FOG
-					o.fogFactor = ComputeFogFactor( positionCS.z );
+					o.fogFactor = ComputeFogFactor( vertexInput.positionCS.z );
 				#endif
 
-				o.positionCS = positionCS;
+				#if defined(REQUIRES_VERTEX_SHADOW_COORD_INTERPOLATOR) && defined(ASE_NEEDS_FRAG_SHADOWCOORDS)
+					o.shadowCoord = GetShadowCoord( vertexInput );
+				#endif
 
+				o.positionCS = vertexInput.positionCS;
+				o.clipPosV = vertexInput.positionCS;
 				return o;
 			}
 
@@ -411,6 +419,9 @@ Shader "AmplifyShaderPack/Stencil Portal Write"
 
 				float4 ShadowCoords = float4( 0, 0, 0, 0 );
 
+				float4 ClipPos = IN.clipPosV;
+				float4 ScreenPos = ComputeScreenPos( IN.clipPosV );
+
 				#if defined(ASE_NEEDS_FRAG_SHADOWCOORDS)
 					#if defined(REQUIRES_VERTEX_SHADOW_COORD_INTERPOLATOR)
 						ShadowCoords = IN.shadowCoord;
@@ -434,10 +445,6 @@ Shader "AmplifyShaderPack/Stencil Portal Write"
 
 				#if defined(_DBUFFER)
 					ApplyDecalToBaseColor(IN.positionCS, Color);
-				#endif
-
-				#if defined(_ALPHAPREMULTIPLY_ON)
-				Color *= Alpha;
 				#endif
 
 				#ifdef LOD_FADE_CROSSFADE
@@ -474,7 +481,7 @@ Shader "AmplifyShaderPack/Stencil Portal Write"
 			
 
 			#pragma multi_compile_instancing
-			#define ASE_SRP_VERSION 140010
+			#define ASE_SRP_VERSION 140011
 
 
 			
@@ -510,11 +517,12 @@ Shader "AmplifyShaderPack/Stencil Portal Write"
 			struct VertexOutput
 			{
 				float4 positionCS : SV_POSITION;
+				float4 clipPosV : TEXCOORD0;
 				#if defined(ASE_NEEDS_FRAG_WORLD_POSITION)
-				float3 positionWS : TEXCOORD0;
+				float3 positionWS : TEXCOORD1;
 				#endif
 				#if defined(REQUIRES_VERTEX_SHADOW_COORD_INTERPOLATOR) && defined(ASE_NEEDS_FRAG_SHADOWCOORDS)
-				float4 shadowCoord : TEXCOORD1;
+				float4 shadowCoord : TEXCOORD2;
 				#endif
 				
 				UNITY_VERTEX_INPUT_INSTANCE_ID
@@ -561,20 +569,18 @@ Shader "AmplifyShaderPack/Stencil Portal Write"
 
 				v.normalOS = v.normalOS;
 
-				float3 positionWS = TransformObjectToWorld( v.positionOS.xyz );
+				VertexPositionInputs vertexInput = GetVertexPositionInputs( v.positionOS.xyz );
 
 				#if defined(ASE_NEEDS_FRAG_WORLD_POSITION)
-					o.positionWS = positionWS;
+					o.positionWS = vertexInput.positionWS;
 				#endif
 
-				o.positionCS = TransformWorldToHClip( positionWS );
 				#if defined(REQUIRES_VERTEX_SHADOW_COORD_INTERPOLATOR) && defined(ASE_NEEDS_FRAG_SHADOWCOORDS)
-					VertexPositionInputs vertexInput = (VertexPositionInputs)0;
-					vertexInput.positionWS = positionWS;
-					vertexInput.positionCS = o.positionCS;
 					o.shadowCoord = GetShadowCoord( vertexInput );
 				#endif
 
+				o.positionCS = vertexInput.positionCS;
+				o.clipPosV = vertexInput.positionCS;
 				return o;
 			}
 
@@ -668,6 +674,9 @@ Shader "AmplifyShaderPack/Stencil Portal Write"
 
 				float4 ShadowCoords = float4( 0, 0, 0, 0 );
 
+				float4 ClipPos = IN.clipPosV;
+				float4 ScreenPos = ComputeScreenPos( IN.clipPosV );
+
 				#if defined(ASE_NEEDS_FRAG_SHADOWCOORDS)
 					#if defined(REQUIRES_VERTEX_SHADOW_COORD_INTERPOLATOR)
 						ShadowCoords = IN.shadowCoord;
@@ -707,7 +716,7 @@ Shader "AmplifyShaderPack/Stencil Portal Write"
 
 			
 
-			#define ASE_SRP_VERSION 140010
+			#define ASE_SRP_VERSION 140011
 
 
 			
@@ -725,11 +734,26 @@ Shader "AmplifyShaderPack/Stencil Portal Write"
 			#endif
 		
 
+			
+			#if ASE_SRP_VERSION >=140007
+			#include_with_pragmas "Packages/com.unity.render-pipelines.universal/ShaderLibrary/RenderingLayers.hlsl"
+			#endif
+		
+
 			#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Color.hlsl"
 			#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Texture.hlsl"
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
 			#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/TextureStack.hlsl"
+
+			
+			#if ASE_SRP_VERSION >=140010
+			#include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
+			#endif
+		
+
+			
+
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/ShaderGraphFunctions.hlsl"
 			#include "Packages/com.unity.render-pipelines.universal/Editor/ShaderGraph/Includes/ShaderPass.hlsl"
 
@@ -924,7 +948,7 @@ Shader "AmplifyShaderPack/Stencil Portal Write"
 
 			
 
-			#define ASE_SRP_VERSION 140010
+			#define ASE_SRP_VERSION 140011
 
 
 			
@@ -943,11 +967,26 @@ Shader "AmplifyShaderPack/Stencil Portal Write"
 			#endif
 		
 
+			
+			#if ASE_SRP_VERSION >=140007
+			#include_with_pragmas "Packages/com.unity.render-pipelines.universal/ShaderLibrary/RenderingLayers.hlsl"
+			#endif
+		
+
 			#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Color.hlsl"
 			#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Texture.hlsl"
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
 			#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/TextureStack.hlsl"
+
+			
+			#if ASE_SRP_VERSION >=140010
+			#include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
+			#endif
+		
+
+			
+
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/ShaderGraphFunctions.hlsl"
 			#include "Packages/com.unity.render-pipelines.universal/Editor/ShaderGraph/Includes/ShaderPass.hlsl"
 
@@ -1147,18 +1186,18 @@ Shader "AmplifyShaderPack/Stencil Portal Write"
 
 			
 
-			#pragma multi_compile_instancing
-			#define ASE_SRP_VERSION 140010
+        	#pragma multi_compile_instancing
+        	#define ASE_SRP_VERSION 140011
 
+
+			
+
+        	#pragma multi_compile_fragment _ _GBUFFER_NORMALS_OCT
 
 			
 
 			#pragma vertex vert
 			#pragma fragment frag
-
-        	#pragma multi_compile_fragment _ _GBUFFER_NORMALS_OCT
-
-			
 
 			#define ATTRIBUTES_NEED_NORMAL
 			#define ATTRIBUTES_NEED_TANGENT
@@ -1183,6 +1222,15 @@ Shader "AmplifyShaderPack/Stencil Portal Write"
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
 			#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/TextureStack.hlsl"
+
+			
+			#if ASE_SRP_VERSION >=140010
+			#include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
+			#endif
+		
+
+			
+
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/ShaderGraphFunctions.hlsl"
 			#include "Packages/com.unity.render-pipelines.universal/Editor/ShaderGraph/Includes/ShaderPass.hlsl"
 
@@ -1203,7 +1251,8 @@ Shader "AmplifyShaderPack/Stencil Portal Write"
 			struct VertexOutput
 			{
 				float4 positionCS : SV_POSITION;
-				float3 normalWS : TEXCOORD0;
+				float4 clipPosV : TEXCOORD0;
+				float3 normalWS : TEXCOORD1;
 				
 				UNITY_VERTEX_INPUT_INSTANCE_ID
 				UNITY_VERTEX_OUTPUT_STEREO
@@ -1257,12 +1306,11 @@ Shader "AmplifyShaderPack/Stencil Portal Write"
 
 				v.normalOS = v.normalOS;
 
-				float3 positionWS = TransformObjectToWorld( v.positionOS.xyz );
-				float3 normalWS = TransformObjectToWorldNormal(v.normalOS);
+				VertexPositionInputs vertexInput = GetVertexPositionInputs( v.positionOS.xyz );
 
-				o.positionCS = TransformWorldToHClip(positionWS);
-				o.normalWS.xyz =  normalWS;
-
+				o.positionCS = vertexInput.positionCS;
+				o.clipPosV = vertexInput.positionCS;
+				o.normalWS = TransformObjectToWorldNormal( v.normalOS );
 				return o;
 			}
 
@@ -1352,15 +1400,16 @@ Shader "AmplifyShaderPack/Stencil Portal Write"
 			#endif
 				 )
 			{
-				SurfaceDescription surfaceDescription = (SurfaceDescription)0;
+				float4 ClipPos = IN.clipPosV;
+				float4 ScreenPos = ComputeScreenPos( IN.clipPosV );
 
 				
 
-				surfaceDescription.Alpha = 1;
-				surfaceDescription.AlphaClipThreshold = 0.5;
+				float Alpha = 1;
+				float AlphaClipThreshold = 0.5;
 
 				#if _ALPHATEST_ON
-					clip(surfaceDescription.Alpha - surfaceDescription.AlphaClipThreshold);
+					clip( Alpha - AlphaClipThreshold );
 				#endif
 
 				#ifdef LOD_FADE_CROSSFADE
@@ -1396,11 +1445,11 @@ Shader "AmplifyShaderPack/Stencil Portal Write"
 	Fallback "Hidden/InternalErrorShader"
 }
 /*ASEBEGIN
-Version=19303
+Version=19603
 Node;AmplifyShaderEditor.RangedFloatNode;6;-309.5,-115.5;Inherit;False;Property;_StencilReference;StencilReference;0;0;Create;True;0;0;0;True;0;False;0;1;0;0;0;1;FLOAT;0
-Node;AmplifyShaderEditor.ColorNode;5;-300.5,-16.5;Inherit;False;Constant;_Color0;Color 0;0;0;Create;True;0;0;0;False;0;False;1,0,0,0;0,0,0,0;True;0;5;COLOR;0;FLOAT;1;FLOAT;2;FLOAT;3;FLOAT;4
+Node;AmplifyShaderEditor.ColorNode;5;-300.5,-16.5;Inherit;False;Constant;_Color0;Color 0;0;0;Create;True;0;0;0;False;0;False;1,0,0,0;0,0,0,0;True;True;0;6;COLOR;0;FLOAT;1;FLOAT;2;FLOAT;3;FLOAT;4;FLOAT3;5
 Node;AmplifyShaderEditor.TemplateMultiPassMasterNode;0;0,0;Float;False;False;-1;2;UnityEditor.ShaderGraphUnlitGUI;0;1;New Amplify Shader;2992e84f91cbeb14eab234972e07ea9d;True;ExtraPrePass;0;0;ExtraPrePass;5;False;False;False;False;False;False;False;False;False;False;False;False;True;0;False;;False;True;0;False;;False;False;False;False;False;False;False;False;False;True;False;255;False;;255;False;;255;False;;7;False;;1;False;;1;False;;1;False;;7;False;;1;False;;1;False;;1;False;;False;False;False;False;True;4;RenderPipeline=UniversalPipeline;RenderType=Opaque=RenderType;Queue=Geometry=Queue=0;UniversalMaterialType=Unlit;True;5;True;12;all;0;False;True;1;1;False;;0;False;;0;1;False;;0;False;;False;False;False;False;False;False;False;False;False;False;False;False;True;0;False;;False;True;True;True;True;True;0;False;;False;False;False;False;False;False;False;True;False;255;False;;255;False;;255;False;;7;False;;1;False;;1;False;;1;False;;7;False;;1;False;;1;False;;1;False;;False;True;1;False;;True;3;False;;True;True;0;False;;0;False;;True;0;False;False;0;Hidden/InternalErrorShader;0;0;Standard;0;False;0
-Node;AmplifyShaderEditor.TemplateMultiPassMasterNode;1;0,0;Float;False;True;-1;2;UnityEditor.ShaderGraphUnlitGUI;0;13;AmplifyShaderPack/Stencil Portal Write;2992e84f91cbeb14eab234972e07ea9d;True;Forward;0;1;Forward;8;False;False;False;False;False;False;False;False;False;False;False;False;True;0;False;;False;True;0;False;;False;False;False;False;False;False;False;False;True;True;True;1;True;_StencilReference;0;False;;255;False;;7;False;;3;False;;1;False;;1;False;;7;False;;1;False;;1;False;;1;False;;False;False;False;False;True;4;RenderPipeline=UniversalPipeline;RenderType=Opaque=RenderType;Queue=Geometry=Queue=0;UniversalMaterialType=Unlit;True;5;True;12;all;0;False;True;1;1;False;;0;False;;1;1;False;;0;False;;False;False;False;False;False;False;False;False;False;False;False;False;False;True;True;False;False;False;False;0;False;;False;False;False;False;False;False;True;True;False;1;False;;0;False;;255;False;;7;False;;3;False;;1;False;;1;False;;7;False;;1;False;;1;False;;1;False;;True;True;2;False;;True;3;False;;True;True;0;False;;0;False;;True;1;LightMode=UniversalForward;False;False;0;Hidden/InternalErrorShader;0;0;Standard;21;Surface;0;0;  Blend;0;0;Two Sided;1;0;Forward Only;0;0;Cast Shadows;0;0;  Use Shadow Threshold;0;0;GPU Instancing;1;0;LOD CrossFade;0;0;Built-in Fog;0;0;Meta Pass;0;0;Extra Pre Pass;0;0;Tessellation;0;0;  Phong;0;0;  Strength;0.5,False,;0;  Type;0;0;  Tess;16,False,;0;  Min;10,False,;0;  Max;25,False,;0;  Edge Length;16,False,;0;  Max Displacement;25,False,;0;Vertex Position,InvertActionOnDeselection;1;0;0;10;False;True;False;True;False;False;True;True;True;False;False;;False;0
+Node;AmplifyShaderEditor.TemplateMultiPassMasterNode;1;0,0;Float;False;True;-1;2;UnityEditor.ShaderGraphUnlitGUI;0;13;AmplifyShaderPack/Stencil Portal Write;2992e84f91cbeb14eab234972e07ea9d;True;Forward;0;1;Forward;8;False;False;False;False;False;False;False;False;False;False;False;False;True;0;False;;False;True;0;False;;False;False;False;False;False;False;False;False;True;True;True;1;True;_StencilReference;0;False;;255;False;;7;False;;3;False;;1;False;;1;False;;7;False;;1;False;;1;False;;1;False;;False;False;False;False;True;4;RenderPipeline=UniversalPipeline;RenderType=Opaque=RenderType;Queue=Geometry=Queue=0;UniversalMaterialType=Unlit;True;5;True;12;all;0;False;True;1;1;False;;0;False;;1;1;False;;0;False;;False;False;False;False;False;False;False;False;False;False;False;False;False;True;True;False;False;False;False;0;False;;False;False;False;False;False;False;True;True;False;1;False;;0;False;;255;False;;7;False;;3;False;;1;False;;1;False;;7;False;;1;False;;1;False;;1;False;;True;True;2;False;;True;3;False;;True;True;0;False;;0;False;;True;1;LightMode=UniversalForward;False;False;0;Hidden/InternalErrorShader;0;0;Standard;22;Surface;0;0;  Blend;0;0;Two Sided;1;0;Forward Only;0;0;Cast Shadows;0;0;  Use Shadow Threshold;0;0;Receive Shadows;1;0;GPU Instancing;1;0;LOD CrossFade;0;0;Built-in Fog;0;0;Meta Pass;0;0;Extra Pre Pass;0;0;Tessellation;0;0;  Phong;0;0;  Strength;0.5,False,;0;  Type;0;0;  Tess;16,False,;0;  Min;10,False,;0;  Max;25,False,;0;  Edge Length;16,False,;0;  Max Displacement;25,False,;0;Vertex Position,InvertActionOnDeselection;1;0;0;10;False;True;False;True;False;False;True;True;True;False;False;;False;0
 Node;AmplifyShaderEditor.TemplateMultiPassMasterNode;2;0,0;Float;False;False;-1;2;UnityEditor.ShaderGraphUnlitGUI;0;1;New Amplify Shader;2992e84f91cbeb14eab234972e07ea9d;True;ShadowCaster;0;2;ShadowCaster;0;False;False;False;False;False;False;False;False;False;False;False;False;True;0;False;;False;True;0;False;;False;False;False;False;False;False;False;False;False;True;False;255;False;;255;False;;255;False;;7;False;;1;False;;1;False;;1;False;;7;False;;1;False;;1;False;;1;False;;False;False;False;False;True;4;RenderPipeline=UniversalPipeline;RenderType=Opaque=RenderType;Queue=Geometry=Queue=0;UniversalMaterialType=Unlit;True;5;True;12;all;0;False;False;False;False;False;False;False;False;False;False;False;False;True;0;False;;False;False;False;True;False;False;False;False;0;False;;False;False;False;False;False;False;False;False;False;True;1;False;;True;3;False;;False;True;1;LightMode=ShadowCaster;False;False;0;Hidden/InternalErrorShader;0;0;Standard;0;False;0
 Node;AmplifyShaderEditor.TemplateMultiPassMasterNode;3;0,0;Float;False;False;-1;2;UnityEditor.ShaderGraphUnlitGUI;0;1;New Amplify Shader;2992e84f91cbeb14eab234972e07ea9d;True;DepthOnly;0;3;DepthOnly;0;False;False;False;False;False;False;False;False;False;False;False;False;True;0;False;;False;True;0;False;;False;False;False;False;False;False;False;False;False;True;False;255;False;;255;False;;255;False;;7;False;;1;False;;1;False;;1;False;;7;False;;1;False;;1;False;;1;False;;False;False;False;False;True;4;RenderPipeline=UniversalPipeline;RenderType=Opaque=RenderType;Queue=Geometry=Queue=0;UniversalMaterialType=Unlit;True;5;True;12;all;0;False;False;False;False;False;False;False;False;False;False;False;False;True;0;False;;False;False;False;True;False;False;False;False;0;False;;False;False;False;False;False;False;False;False;False;True;1;False;;False;False;True;1;LightMode=DepthOnly;False;False;0;Hidden/InternalErrorShader;0;0;Standard;0;False;0
 Node;AmplifyShaderEditor.TemplateMultiPassMasterNode;4;0,0;Float;False;False;-1;2;UnityEditor.ShaderGraphUnlitGUI;0;1;New Amplify Shader;2992e84f91cbeb14eab234972e07ea9d;True;Meta;0;4;Meta;0;False;False;False;False;False;False;False;False;False;False;False;False;True;0;False;;False;True;0;False;;False;False;False;False;False;False;False;False;False;True;False;255;False;;255;False;;255;False;;7;False;;1;False;;1;False;;1;False;;7;False;;1;False;;1;False;;1;False;;False;False;False;False;True;4;RenderPipeline=UniversalPipeline;RenderType=Opaque=RenderType;Queue=Geometry=Queue=0;UniversalMaterialType=Unlit;True;5;True;12;all;0;False;False;False;False;False;False;False;False;False;False;False;False;False;False;True;2;False;;False;False;False;False;False;False;False;False;False;False;False;False;False;False;True;1;LightMode=Meta;False;False;0;Hidden/InternalErrorShader;0;0;Standard;0;False;0
@@ -1411,4 +1460,4 @@ Node;AmplifyShaderEditor.TemplateMultiPassMasterNode;10;0,50;Float;False;False;-
 Node;AmplifyShaderEditor.TemplateMultiPassMasterNode;11;0,50;Float;False;False;-1;2;UnityEditor.ShaderGraphUnlitGUI;0;1;New Amplify Shader;2992e84f91cbeb14eab234972e07ea9d;True;DepthNormalsOnly;0;9;DepthNormalsOnly;0;False;False;False;False;False;False;False;False;False;False;False;False;True;0;False;;False;True;0;False;;False;False;False;False;False;False;False;False;False;True;False;0;False;;255;False;;255;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;False;False;False;False;True;4;RenderPipeline=UniversalPipeline;RenderType=Opaque=RenderType;Queue=Geometry=Queue=0;UniversalMaterialType=Unlit;True;5;True;12;all;0;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;True;1;False;;True;3;False;;False;True;1;LightMode=DepthNormalsOnly;False;True;9;d3d11;metal;vulkan;xboxone;xboxseries;playstation;ps4;ps5;switch;0;;0;0;Standard;0;False;0
 WireConnection;1;2;5;0
 ASEEND*/
-//CHKSM=4CE419BE590ED1E1816811D238001D604CFFB68D
+//CHKSM=04C20A57FE452C2D610F5678F0E421BC67D034CA

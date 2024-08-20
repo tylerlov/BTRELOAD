@@ -1,4 +1,4 @@
-// Made with Amplify Shader Editor v1.9.3.3
+// Made with Amplify Shader Editor v1.9.6.3
 // Available at the Unity Asset Store - http://u3d.as/y3X 
 Shader "Hidden/AmplifyShaderPack/Terrain/Snow AddPass"
 {
@@ -12,26 +12,26 @@ Shader "Hidden/AmplifyShaderPack/Terrain/Snow AddPass"
 		[HideInInspector]_Splat0("Splat0", 2D) = "white" {}
 		[HideInInspector]_Normal0("Normal0", 2D) = "bump" {}
 		[HideInInspector]_NormalScale0("NormalScale0", Float) = 1
-		[HideInInspector]_Mask0("Mask0", 2D) = "white" {}
-		[HideInInspector][Gamma]_Metallic0("Metallic0", Range( 0 , 1)) = 0
-		[HideInInspector]_Smoothness0("Smoothness0", Range( 0 , 1)) = 0
+		[HideInInspector]_Mask0("Mask0", 2D) = "gray" {}
+		[HideInInspector]_Metallic0("Metallic0", Range( 0 , 1)) = 0
+		[HideInInspector]_Smoothness0("Smoothness 0", Range( 0 , 1)) = 0
 		[HideInInspector]_Splat1("Splat1", 2D) = "white" {}
 		[HideInInspector]_Normal1("Normal1", 2D) = "bump" {}
 		[HideInInspector]_NormalScale1("NormalScale1", Float) = 1
-		[HideInInspector]_Mask1("Mask1", 2D) = "white" {}
-		[HideInInspector][Gamma]_Metallic1("Metallic1", Range( 0 , 1)) = 0
+		[HideInInspector]_Mask1("Mask1", 2D) = "gray" {}
+		[HideInInspector]_Metallic1("Metallic1", Range( 0 , 1)) = 0
 		[HideInInspector]_Smoothness1("Smoothness1", Range( 0 , 1)) = 0
 		[HideInInspector]_Splat2("Splat2", 2D) = "white" {}
 		[HideInInspector]_Normal2("Normal2", 2D) = "bump" {}
 		[HideInInspector]_NormalScale2("NormalScale2", Float) = 1
-		[HideInInspector]_Mask2("Mask2", 2D) = "white" {}
-		[HideInInspector][Gamma]_Metallic2("Metallic2", Range( 0 , 1)) = 0
+		[HideInInspector]_Mask2("Mask2", 2D) = "gray" {}
+		[HideInInspector]_Metallic2("Metallic2", Range( 0 , 1)) = 0
 		[HideInInspector]_Smoothness2("Smoothness2", Range( 0 , 1)) = 0
 		[HideInInspector]_Splat3("Splat3", 2D) = "white" {}
 		[HideInInspector]_Normal3("Normal3", 2D) = "bump" {}
 		[HideInInspector]_NormalScale3("_NormalScale3", Float) = 1
-		[HideInInspector]_Mask3("Mask3", 2D) = "white" {}
-		[HideInInspector][Gamma]_Metallic3("Metallic3", Range( 0 , 1)) = 0
+		[HideInInspector]_Mask3("Mask3", 2D) = "gray" {}
+		[HideInInspector]_Metallic3("Metallic3", Range( 0 , 1)) = 0
 		[HideInInspector]_Smoothness3("Smoothness3", Range( 0 , 1)) = 0
 		[Header(SNOW)][ToggleUI]_SnowEnable("ENABLE", Float) = 0
 		[SingleLineTexture]_SnowMapSplat("Splat Mask", 2D) = "white" {}
@@ -87,8 +87,8 @@ Shader "Hidden/AmplifyShaderPack/Terrain/Snow AddPass"
 		//_TessEdgeLength ( "Tess Edge length", Range( 2, 50 ) ) = 16
 		//_TessMaxDisp( "Tess Max Displacement", Float ) = 25
 
-		[HideInInspector][ToggleOff] _SpecularHighlights("Specular Highlights", Float) = 1.0
-		[HideInInspector][ToggleOff] _EnvironmentReflections("Environment Reflections", Float) = 1.0
+		[HideInInspector][ToggleOff] _SpecularHighlights("Specular Highlights", Float) = 1
+		[HideInInspector][ToggleOff] _EnvironmentReflections("Environment Reflections", Float) = 1
 		[HideInInspector][ToggleOff] _ReceiveShadows("Receive Shadows", Float) = 1.0
 
 		[HideInInspector] _QueueOffset("_QueueOffset", Float) = 0
@@ -245,18 +245,20 @@ Shader "Hidden/AmplifyShaderPack/Terrain/Snow AddPass"
 
 			HLSLPROGRAM
 
+			
+
 			#define _NORMAL_DROPOFF_TS 1
+			#pragma shader_feature_local _RECEIVE_SHADOWS_OFF
+			#pragma multi_compile_fragment _ _SCREEN_SPACE_OCCLUSION
 			#define _SURFACE_TYPE_TRANSPARENT 1
 			#define ASE_FINAL_COLOR_ALPHA_MULTIPLY 1
 			#define _ALPHATEST_ON 1
 			#define _NORMALMAP 1
-			#define ASE_SRP_VERSION 140010
+			#define ASE_SRP_VERSION 140011
 			#define ASE_USING_SAMPLING_MACROS 1
 
 
-			#pragma shader_feature_local _RECEIVE_SHADOWS_OFF
-			#pragma shader_feature_local_fragment _SPECULARHIGHLIGHTS_OFF
-			#pragma shader_feature_local_fragment _ENVIRONMENTREFLECTIONS_OFF
+			
 
 			#pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _MAIN_LIGHT_SHADOWS_SCREEN
 			#pragma multi_compile _ _ADDITIONAL_LIGHTS_VERTEX _ADDITIONAL_LIGHTS
@@ -275,13 +277,10 @@ Shader "Hidden/AmplifyShaderPack/Terrain/Snow AddPass"
 			#pragma multi_compile_fragment _ _SHADOWS_SOFT _SHADOWS_SOFT_LOW _SHADOWS_SOFT_MEDIUM _SHADOWS_SOFT_HIGH
            
 
-			#pragma multi_compile_fragment _ _SCREEN_SPACE_OCCLUSION
 			#pragma multi_compile_fragment _ _DBUFFER_MRT1 _DBUFFER_MRT2 _DBUFFER_MRT3
 			#pragma multi_compile _ _LIGHT_LAYERS
 			#pragma multi_compile_fragment _ _LIGHT_COOKIES
 			#pragma multi_compile _ _FORWARD_PLUS
-		
-			
 
 			
 
@@ -294,6 +293,10 @@ Shader "Hidden/AmplifyShaderPack/Terrain/Snow AddPass"
 
 			#pragma vertex vert
 			#pragma fragment frag
+
+			#if defined(_SPECULAR_SETUP) && defined(_ASE_LIGHTING_SIMPLE)
+				#define _SPECULAR_COLOR 1
+			#endif
 
 			#define SHADERPASS SHADERPASS_FORWARD
 
@@ -317,14 +320,14 @@ Shader "Hidden/AmplifyShaderPack/Terrain/Snow AddPass"
 			#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/TextureStack.hlsl"
 
 			
+            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
+           
+
+			
             #if ASE_SRP_VERSION >=140009
 			#include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
 			#endif
 		
-
-			
-            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
-           
 
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Shadows.hlsl"
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/ShaderGraphFunctions.hlsl"
@@ -344,7 +347,7 @@ Shader "Hidden/AmplifyShaderPack/Terrain/Snow AddPass"
 			#define ASE_NEEDS_VERT_POSITION
 			#pragma shader_feature_local _TERRAIN_INSTANCED_PERPIXEL_NORMAL
 			#pragma multi_compile_instancing
-			#pragma instancing_options assumeuniformscaling nomatrices nolightprobe nolightmap forwardadd
+			#pragma instancing_options assumeuniformscaling nomatrices nolightprobe nolightmap
 			#define TERRAIN_SPLAT_ADDPASS 1
 
 
@@ -475,15 +478,15 @@ Shader "Hidden/AmplifyShaderPack/Terrain/Snow AddPass"
 
 			TEXTURE2D(_Control);
 			SAMPLER(sampler_Control);
-			float4 _DiffuseRemapScale0;
 			TEXTURE2D(_Splat0);
 			SAMPLER(sampler_Splat0);
-			float4 _DiffuseRemapScale1;
+			float4 _DiffuseRemapScale0;
 			TEXTURE2D(_Splat1);
-			float4 _DiffuseRemapScale2;
+			float4 _DiffuseRemapScale1;
 			TEXTURE2D(_Splat2);
-			float4 _DiffuseRemapScale3;
+			float4 _DiffuseRemapScale2;
 			TEXTURE2D(_Splat3);
+			float4 _DiffuseRemapScale3;
 			TEXTURE2D(_TerrainHolesTexture);
 			SAMPLER(sampler_TerrainHolesTexture);
 			TEXTURE2D(_SnowMapSplat);
@@ -778,7 +781,7 @@ Shader "Hidden/AmplifyShaderPack/Terrain/Snow AddPass"
 				float4 tex2DNode423_g14 = SAMPLE_TEXTURE2D( _Splat3, sampler_Splat0, uv_Splat3 );
 				float3 Splat3390_g14 = (tex2DNode423_g14).rgb;
 				float4 weightedBlendVar9_g14 = Control26_g14;
-				float3 weightedBlend9_g14 = ( weightedBlendVar9_g14.x*( ( (Control26_g14).rrr * (_DiffuseRemapScale0).rgb ) * Splat0342_g14 ) + weightedBlendVar9_g14.y*( ( (Control26_g14).ggg * (_DiffuseRemapScale1).rgb ) * Splat1379_g14 ) + weightedBlendVar9_g14.z*( ( (Control26_g14).bbb * (_DiffuseRemapScale2).rgb ) * Splat2357_g14 ) + weightedBlendVar9_g14.w*( ( (Control26_g14).aaa * (_DiffuseRemapScale3).rgb ) * Splat3390_g14 ) );
+				float3 weightedBlend9_g14 = ( weightedBlendVar9_g14.x*( Splat0342_g14 * (_DiffuseRemapScale0).rgb ) + weightedBlendVar9_g14.y*( Splat1379_g14 * (_DiffuseRemapScale1).rgb ) + weightedBlendVar9_g14.z*( Splat2357_g14 * (_DiffuseRemapScale2).rgb ) + weightedBlendVar9_g14.w*( Splat3390_g14 * (_DiffuseRemapScale3).rgb ) );
 				float3 localClipHoles453_g14 = ( weightedBlend9_g14 );
 				float2 uv_TerrainHolesTexture = IN.ase_texcoord8.zw * _TerrainHolesTexture_ST.xy + _TerrainHolesTexture_ST.zw;
 				float Hole453_g14 = SAMPLE_TEXTURE2D( _TerrainHolesTexture, sampler_TerrainHolesTexture, uv_TerrainHolesTexture ).r;
@@ -882,14 +885,15 @@ Shader "Hidden/AmplifyShaderPack/Terrain/Snow AddPass"
 				float4 tex2DNode425_g14 = SAMPLE_TEXTURE2D( _Mask3, sampler_Mask0, uv_Splat3 );
 				float Mask3R388_g14 = tex2DNode425_g14.r;
 				float4 weightedBlendVar536_g14 = Control26_g14;
-				float weightedBlend536_g14 = ( weightedBlendVar536_g14.x*( ( 1.0 - _Metallic0 ) * Mask0R334_g14 ) + weightedBlendVar536_g14.y*( ( 1.0 - _Metallic1 ) * Mask1R370_g14 ) + weightedBlendVar536_g14.z*( ( 1.0 - _Metallic2 ) * Mask2R359_g14 ) + weightedBlendVar536_g14.w*( ( 1.0 - _Metallic3 ) * Mask3R388_g14 ) );
+				float weightedBlend536_g14 = ( weightedBlendVar536_g14.x*max( _Metallic0 , Mask0R334_g14 ) + weightedBlendVar536_g14.y*max( _Metallic1 , Mask1R370_g14 ) + weightedBlendVar536_g14.z*max( _Metallic2 , Mask2R359_g14 ) + weightedBlendVar536_g14.w*max( _Metallic3 , Mask3R388_g14 ) );
 				
-				float Mask0A335_g14 = tex2DNode416_g14.a;
+				float4 appendResult1168_g14 = (float4(_Smoothness0 , _Smoothness1 , _Smoothness2 , _Smoothness3));
+				float Splat0A435_g14 = tex2DNode414_g14.a;
 				float Mask1A369_g14 = tex2DNode422_g14.a;
 				float Mask2A360_g14 = tex2DNode419_g14.a;
 				float Mask3A391_g14 = tex2DNode425_g14.a;
-				float4 weightedBlendVar547_g14 = Control26_g14;
-				float weightedBlend547_g14 = ( weightedBlendVar547_g14.x*( ( 1.0 - _Smoothness0 ) * Mask0A335_g14 ) + weightedBlendVar547_g14.y*( ( 1.0 - _Smoothness1 ) * Mask1A369_g14 ) + weightedBlendVar547_g14.z*( ( 1.0 - _Smoothness2 ) * Mask2A360_g14 ) + weightedBlendVar547_g14.w*( ( 1.0 - _Smoothness3 ) * Mask3A391_g14 ) );
+				float4 appendResult1169_g14 = (float4(Splat0A435_g14 , Mask1A369_g14 , Mask2A360_g14 , Mask3A391_g14));
+				float dotResult1166_g14 = dot( ( appendResult1168_g14 * appendResult1169_g14 ) , Control26_g14 );
 				
 				float Mask0G409_g14 = tex2DNode416_g14.g;
 				float Mask1G371_g14 = tex2DNode422_g14.g;
@@ -904,7 +908,7 @@ Shader "Hidden/AmplifyShaderPack/Terrain/Snow AddPass"
 				float3 Emission = 0;
 				float3 Specular = 0.5;
 				float Metallic = weightedBlend536_g14;
-				float Smoothness = weightedBlend547_g14;
+				float Smoothness = dotResult1166_g14;
 				float Occlusion = saturate( weightedBlend602_g14 );
 				float Alpha = dotResult278_g14;
 				float AlphaClipThreshold = 0.0;
@@ -1009,7 +1013,11 @@ Shader "Hidden/AmplifyShaderPack/Terrain/Snow AddPass"
 					ApplyDecalToSurfaceData(IN.positionCS, surfaceData, inputData);
 				#endif
 
-				half4 color = UniversalFragmentPBR( inputData, surfaceData);
+				#ifdef _ASE_LIGHTING_SIMPLE
+					half4 color = UniversalFragmentBlinnPhong( inputData, surfaceData);
+				#else
+					half4 color = UniversalFragmentPBR( inputData, surfaceData);
+				#endif
 
 				#ifdef ASE_TRANSMISSION
 				{
@@ -1160,7 +1168,7 @@ Shader "Hidden/AmplifyShaderPack/Terrain/Snow AddPass"
 			#define ASE_FINAL_COLOR_ALPHA_MULTIPLY 1
 			#define _ALPHATEST_ON 1
 			#define _NORMALMAP 1
-			#define ASE_SRP_VERSION 140010
+			#define ASE_SRP_VERSION 140011
 			#define ASE_USING_SAMPLING_MACROS 1
 
 
@@ -1168,6 +1176,10 @@ Shader "Hidden/AmplifyShaderPack/Terrain/Snow AddPass"
 
 			#pragma vertex vert
 			#pragma fragment frag
+
+			#if defined(_SPECULAR_SETUP) && defined(_ASE_LIGHTING_SIMPLE)
+				#define _SPECULAR_COLOR 1
+			#endif
 
 			#define SHADERPASS SHADERPASS_DEPTHONLY
 
@@ -1185,14 +1197,14 @@ Shader "Hidden/AmplifyShaderPack/Terrain/Snow AddPass"
 			#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/TextureStack.hlsl"
 
 			
+            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
+           
+
+			
             #if ASE_SRP_VERSION >=140009
 			#include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
 			#endif
 		
-
-			
-            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
-           
 
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/ShaderGraphFunctions.hlsl"
 			#include "Packages/com.unity.render-pipelines.universal/Editor/ShaderGraph/Includes/ShaderPass.hlsl"
@@ -1204,7 +1216,7 @@ Shader "Hidden/AmplifyShaderPack/Terrain/Snow AddPass"
 			#define ASE_NEEDS_VERT_NORMAL
 			#define ASE_NEEDS_VERT_POSITION
 			#pragma multi_compile_instancing
-			#pragma instancing_options assumeuniformscaling nomatrices nolightprobe nolightmap forwardadd
+			#pragma instancing_options assumeuniformscaling nomatrices nolightprobe nolightmap
 			#define TERRAIN_SPLAT_ADDPASS 1
 
 
@@ -1557,20 +1569,22 @@ Shader "Hidden/AmplifyShaderPack/Terrain/Snow AddPass"
 			Cull Off
 
 			HLSLPROGRAM
-
 			#define _NORMAL_DROPOFF_TS 1
 			#define _SURFACE_TYPE_TRANSPARENT 1
 			#define ASE_FINAL_COLOR_ALPHA_MULTIPLY 1
 			#define _ALPHATEST_ON 1
 			#define _NORMALMAP 1
-			#define ASE_SRP_VERSION 140010
+			#define ASE_SRP_VERSION 140011
 			#define ASE_USING_SAMPLING_MACROS 1
 
+			#pragma shader_feature EDITOR_VISUALIZATION
 
 			#pragma vertex vert
 			#pragma fragment frag
 
-			#pragma shader_feature EDITOR_VISUALIZATION
+			#if defined(_SPECULAR_SETUP) && defined(_ASE_LIGHTING_SIMPLE)
+				#define _SPECULAR_COLOR 1
+			#endif
 
 			#define SHADERPASS SHADERPASS_META
 
@@ -1582,14 +1596,14 @@ Shader "Hidden/AmplifyShaderPack/Terrain/Snow AddPass"
 			#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/TextureStack.hlsl"
 
 			
+            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
+           
+
+			
             #if ASE_SRP_VERSION >=140009
 			#include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
 			#endif
 		
-
-			
-            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
-           
 
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/ShaderGraphFunctions.hlsl"
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/MetaInput.hlsl"
@@ -1599,7 +1613,7 @@ Shader "Hidden/AmplifyShaderPack/Terrain/Snow AddPass"
 			#define ASE_NEEDS_FRAG_WORLD_POSITION
 			#define ASE_NEEDS_VERT_POSITION
 			#pragma multi_compile_instancing
-			#pragma instancing_options assumeuniformscaling nomatrices nolightprobe nolightmap forwardadd
+			#pragma instancing_options assumeuniformscaling nomatrices nolightprobe nolightmap
 			#define TERRAIN_SPLAT_ADDPASS 1
 
 
@@ -1719,15 +1733,15 @@ Shader "Hidden/AmplifyShaderPack/Terrain/Snow AddPass"
 
 			TEXTURE2D(_Control);
 			SAMPLER(sampler_Control);
-			float4 _DiffuseRemapScale0;
 			TEXTURE2D(_Splat0);
 			SAMPLER(sampler_Splat0);
-			float4 _DiffuseRemapScale1;
+			float4 _DiffuseRemapScale0;
 			TEXTURE2D(_Splat1);
-			float4 _DiffuseRemapScale2;
+			float4 _DiffuseRemapScale1;
 			TEXTURE2D(_Splat2);
-			float4 _DiffuseRemapScale3;
+			float4 _DiffuseRemapScale2;
 			TEXTURE2D(_Splat3);
+			float4 _DiffuseRemapScale3;
 			TEXTURE2D(_TerrainHolesTexture);
 			SAMPLER(sampler_TerrainHolesTexture);
 			TEXTURE2D(_SnowMapSplat);
@@ -1963,7 +1977,7 @@ Shader "Hidden/AmplifyShaderPack/Terrain/Snow AddPass"
 				float4 tex2DNode423_g14 = SAMPLE_TEXTURE2D( _Splat3, sampler_Splat0, uv_Splat3 );
 				float3 Splat3390_g14 = (tex2DNode423_g14).rgb;
 				float4 weightedBlendVar9_g14 = Control26_g14;
-				float3 weightedBlend9_g14 = ( weightedBlendVar9_g14.x*( ( (Control26_g14).rrr * (_DiffuseRemapScale0).rgb ) * Splat0342_g14 ) + weightedBlendVar9_g14.y*( ( (Control26_g14).ggg * (_DiffuseRemapScale1).rgb ) * Splat1379_g14 ) + weightedBlendVar9_g14.z*( ( (Control26_g14).bbb * (_DiffuseRemapScale2).rgb ) * Splat2357_g14 ) + weightedBlendVar9_g14.w*( ( (Control26_g14).aaa * (_DiffuseRemapScale3).rgb ) * Splat3390_g14 ) );
+				float3 weightedBlend9_g14 = ( weightedBlendVar9_g14.x*( Splat0342_g14 * (_DiffuseRemapScale0).rgb ) + weightedBlendVar9_g14.y*( Splat1379_g14 * (_DiffuseRemapScale1).rgb ) + weightedBlendVar9_g14.z*( Splat2357_g14 * (_DiffuseRemapScale2).rgb ) + weightedBlendVar9_g14.w*( Splat3390_g14 * (_DiffuseRemapScale3).rgb ) );
 				float3 localClipHoles453_g14 = ( weightedBlend9_g14 );
 				float2 uv_TerrainHolesTexture = IN.ase_texcoord4.zw * _TerrainHolesTexture_ST.xy + _TerrainHolesTexture_ST.zw;
 				float Hole453_g14 = SAMPLE_TEXTURE2D( _TerrainHolesTexture, sampler_TerrainHolesTexture, uv_TerrainHolesTexture ).r;
@@ -2066,12 +2080,16 @@ Shader "Hidden/AmplifyShaderPack/Terrain/Snow AddPass"
 			#define ASE_FINAL_COLOR_ALPHA_MULTIPLY 1
 			#define _ALPHATEST_ON 1
 			#define _NORMALMAP 1
-			#define ASE_SRP_VERSION 140010
+			#define ASE_SRP_VERSION 140011
 			#define ASE_USING_SAMPLING_MACROS 1
 
 
 			#pragma vertex vert
 			#pragma fragment frag
+
+			#if defined(_SPECULAR_SETUP) && defined(_ASE_LIGHTING_SIMPLE)
+				#define _SPECULAR_COLOR 1
+			#endif
 
 			#define SHADERPASS SHADERPASS_2D
 
@@ -2083,14 +2101,14 @@ Shader "Hidden/AmplifyShaderPack/Terrain/Snow AddPass"
 			#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/TextureStack.hlsl"
 
 			
+            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
+           
+
+			
             #if ASE_SRP_VERSION >=140009
 			#include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
 			#endif
 		
-
-			
-            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
-           
 
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/ShaderGraphFunctions.hlsl"
 			#include "Packages/com.unity.render-pipelines.universal/Editor/ShaderGraph/Includes/ShaderPass.hlsl"
@@ -2099,7 +2117,7 @@ Shader "Hidden/AmplifyShaderPack/Terrain/Snow AddPass"
 			#define ASE_NEEDS_FRAG_WORLD_POSITION
 			#define ASE_NEEDS_VERT_POSITION
 			#pragma multi_compile_instancing
-			#pragma instancing_options assumeuniformscaling nomatrices nolightprobe nolightmap forwardadd
+			#pragma instancing_options assumeuniformscaling nomatrices nolightprobe nolightmap
 			#define TERRAIN_SPLAT_ADDPASS 1
 
 
@@ -2212,15 +2230,15 @@ Shader "Hidden/AmplifyShaderPack/Terrain/Snow AddPass"
 
 			TEXTURE2D(_Control);
 			SAMPLER(sampler_Control);
-			float4 _DiffuseRemapScale0;
 			TEXTURE2D(_Splat0);
 			SAMPLER(sampler_Splat0);
-			float4 _DiffuseRemapScale1;
+			float4 _DiffuseRemapScale0;
 			TEXTURE2D(_Splat1);
-			float4 _DiffuseRemapScale2;
+			float4 _DiffuseRemapScale1;
 			TEXTURE2D(_Splat2);
-			float4 _DiffuseRemapScale3;
+			float4 _DiffuseRemapScale2;
 			TEXTURE2D(_Splat3);
+			float4 _DiffuseRemapScale3;
 			TEXTURE2D(_TerrainHolesTexture);
 			SAMPLER(sampler_TerrainHolesTexture);
 			TEXTURE2D(_SnowMapSplat);
@@ -2437,7 +2455,7 @@ Shader "Hidden/AmplifyShaderPack/Terrain/Snow AddPass"
 				float4 tex2DNode423_g14 = SAMPLE_TEXTURE2D( _Splat3, sampler_Splat0, uv_Splat3 );
 				float3 Splat3390_g14 = (tex2DNode423_g14).rgb;
 				float4 weightedBlendVar9_g14 = Control26_g14;
-				float3 weightedBlend9_g14 = ( weightedBlendVar9_g14.x*( ( (Control26_g14).rrr * (_DiffuseRemapScale0).rgb ) * Splat0342_g14 ) + weightedBlendVar9_g14.y*( ( (Control26_g14).ggg * (_DiffuseRemapScale1).rgb ) * Splat1379_g14 ) + weightedBlendVar9_g14.z*( ( (Control26_g14).bbb * (_DiffuseRemapScale2).rgb ) * Splat2357_g14 ) + weightedBlendVar9_g14.w*( ( (Control26_g14).aaa * (_DiffuseRemapScale3).rgb ) * Splat3390_g14 ) );
+				float3 weightedBlend9_g14 = ( weightedBlendVar9_g14.x*( Splat0342_g14 * (_DiffuseRemapScale0).rgb ) + weightedBlendVar9_g14.y*( Splat1379_g14 * (_DiffuseRemapScale1).rgb ) + weightedBlendVar9_g14.z*( Splat2357_g14 * (_DiffuseRemapScale2).rgb ) + weightedBlendVar9_g14.w*( Splat3390_g14 * (_DiffuseRemapScale3).rgb ) );
 				float3 localClipHoles453_g14 = ( weightedBlend9_g14 );
 				float2 uv_TerrainHolesTexture = IN.ase_texcoord2.zw * _TerrainHolesTexture_ST.xy + _TerrainHolesTexture_ST.zw;
 				float Hole453_g14 = SAMPLE_TEXTURE2D( _TerrainHolesTexture, sampler_TerrainHolesTexture, uv_TerrainHolesTexture ).r;
@@ -2527,21 +2545,29 @@ Shader "Hidden/AmplifyShaderPack/Terrain/Snow AddPass"
 
 			HLSLPROGRAM
 
+			
+
+			
+
 			#define _NORMAL_DROPOFF_TS 1
 			#define _SURFACE_TYPE_TRANSPARENT 1
 			#define ASE_FINAL_COLOR_ALPHA_MULTIPLY 1
 			#define _ALPHATEST_ON 1
 			#define _NORMALMAP 1
-			#define ASE_SRP_VERSION 140010
+			#define ASE_SRP_VERSION 140011
 			#define ASE_USING_SAMPLING_MACROS 1
 
+
+			
+
+			
 
 			#pragma vertex vert
 			#pragma fragment frag
 
-			
-
-			
+			#if defined(_SPECULAR_SETUP) && defined(_ASE_LIGHTING_SIMPLE)
+				#define _SPECULAR_COLOR 1
+			#endif
 
 			#define SHADERPASS SHADERPASS_DEPTHNORMALSONLY
 			//#define SHADERPASS SHADERPASS_DEPTHNORMALS
@@ -2566,14 +2592,14 @@ Shader "Hidden/AmplifyShaderPack/Terrain/Snow AddPass"
 			#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/TextureStack.hlsl"
 
 			
+            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
+           
+
+			
             #if ASE_SRP_VERSION >=140009
 			#include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
 			#endif
 		
-
-			
-            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
-           
 
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/ShaderGraphFunctions.hlsl"
 			#include "Packages/com.unity.render-pipelines.universal/Editor/ShaderGraph/Includes/ShaderPass.hlsl"
@@ -2586,7 +2612,7 @@ Shader "Hidden/AmplifyShaderPack/Terrain/Snow AddPass"
 			#define ASE_NEEDS_VERT_POSITION
 			#pragma shader_feature_local _TERRAIN_INSTANCED_PERPIXEL_NORMAL
 			#pragma multi_compile_instancing
-			#pragma instancing_options assumeuniformscaling nomatrices nolightprobe nolightmap forwardadd
+			#pragma instancing_options assumeuniformscaling nomatrices nolightprobe nolightmap
 			#define TERRAIN_SPLAT_ADDPASS 1
 
 
@@ -3061,18 +3087,19 @@ Shader "Hidden/AmplifyShaderPack/Terrain/Snow AddPass"
 
 			HLSLPROGRAM
 
+			
+
 			#define _NORMAL_DROPOFF_TS 1
+			#pragma shader_feature_local _RECEIVE_SHADOWS_OFF
 			#define _SURFACE_TYPE_TRANSPARENT 1
 			#define ASE_FINAL_COLOR_ALPHA_MULTIPLY 1
 			#define _ALPHATEST_ON 1
 			#define _NORMALMAP 1
-			#define ASE_SRP_VERSION 140010
+			#define ASE_SRP_VERSION 140011
 			#define ASE_USING_SAMPLING_MACROS 1
 
 
-			#pragma shader_feature_local _RECEIVE_SHADOWS_OFF
-			#pragma shader_feature_local_fragment _SPECULARHIGHLIGHTS_OFF
-			#pragma shader_feature_local_fragment _ENVIRONMENTREFLECTIONS_OFF
+			
 
 			#pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _MAIN_LIGHT_SHADOWS_SCREEN
 			#pragma multi_compile_fragment _ _REFLECTION_PROBE_BLENDING
@@ -3098,10 +3125,12 @@ Shader "Hidden/AmplifyShaderPack/Terrain/Snow AddPass"
 			#pragma multi_compile _ DYNAMICLIGHTMAP_ON
 			#pragma multi_compile_fragment _ DEBUG_DISPLAY
 
-			
-
 			#pragma vertex vert
 			#pragma fragment frag
+
+			#if defined(_SPECULAR_SETUP) && defined(_ASE_LIGHTING_SIMPLE)
+				#define _SPECULAR_COLOR 1
+			#endif
 
 			#define SHADERPASS SHADERPASS_GBUFFER
 
@@ -3125,14 +3154,14 @@ Shader "Hidden/AmplifyShaderPack/Terrain/Snow AddPass"
 			#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/TextureStack.hlsl"
 
 			
+            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
+           
+
+			
             #if ASE_SRP_VERSION >=140009
 			#include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
 			#endif
 		
-
-			
-            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
-           
 
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Shadows.hlsl"
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/ShaderGraphFunctions.hlsl"
@@ -3152,7 +3181,7 @@ Shader "Hidden/AmplifyShaderPack/Terrain/Snow AddPass"
 			#define ASE_NEEDS_VERT_POSITION
 			#pragma shader_feature_local _TERRAIN_INSTANCED_PERPIXEL_NORMAL
 			#pragma multi_compile_instancing
-			#pragma instancing_options assumeuniformscaling nomatrices nolightprobe nolightmap forwardadd
+			#pragma instancing_options assumeuniformscaling nomatrices nolightprobe nolightmap
 			#define TERRAIN_SPLAT_ADDPASS 1
 
 
@@ -3283,15 +3312,15 @@ Shader "Hidden/AmplifyShaderPack/Terrain/Snow AddPass"
 
 			TEXTURE2D(_Control);
 			SAMPLER(sampler_Control);
-			float4 _DiffuseRemapScale0;
 			TEXTURE2D(_Splat0);
 			SAMPLER(sampler_Splat0);
-			float4 _DiffuseRemapScale1;
+			float4 _DiffuseRemapScale0;
 			TEXTURE2D(_Splat1);
-			float4 _DiffuseRemapScale2;
+			float4 _DiffuseRemapScale1;
 			TEXTURE2D(_Splat2);
-			float4 _DiffuseRemapScale3;
+			float4 _DiffuseRemapScale2;
 			TEXTURE2D(_Splat3);
+			float4 _DiffuseRemapScale3;
 			TEXTURE2D(_TerrainHolesTexture);
 			SAMPLER(sampler_TerrainHolesTexture);
 			TEXTURE2D(_SnowMapSplat);
@@ -3581,7 +3610,7 @@ Shader "Hidden/AmplifyShaderPack/Terrain/Snow AddPass"
 				float4 tex2DNode423_g14 = SAMPLE_TEXTURE2D( _Splat3, sampler_Splat0, uv_Splat3 );
 				float3 Splat3390_g14 = (tex2DNode423_g14).rgb;
 				float4 weightedBlendVar9_g14 = Control26_g14;
-				float3 weightedBlend9_g14 = ( weightedBlendVar9_g14.x*( ( (Control26_g14).rrr * (_DiffuseRemapScale0).rgb ) * Splat0342_g14 ) + weightedBlendVar9_g14.y*( ( (Control26_g14).ggg * (_DiffuseRemapScale1).rgb ) * Splat1379_g14 ) + weightedBlendVar9_g14.z*( ( (Control26_g14).bbb * (_DiffuseRemapScale2).rgb ) * Splat2357_g14 ) + weightedBlendVar9_g14.w*( ( (Control26_g14).aaa * (_DiffuseRemapScale3).rgb ) * Splat3390_g14 ) );
+				float3 weightedBlend9_g14 = ( weightedBlendVar9_g14.x*( Splat0342_g14 * (_DiffuseRemapScale0).rgb ) + weightedBlendVar9_g14.y*( Splat1379_g14 * (_DiffuseRemapScale1).rgb ) + weightedBlendVar9_g14.z*( Splat2357_g14 * (_DiffuseRemapScale2).rgb ) + weightedBlendVar9_g14.w*( Splat3390_g14 * (_DiffuseRemapScale3).rgb ) );
 				float3 localClipHoles453_g14 = ( weightedBlend9_g14 );
 				float2 uv_TerrainHolesTexture = IN.ase_texcoord8.zw * _TerrainHolesTexture_ST.xy + _TerrainHolesTexture_ST.zw;
 				float Hole453_g14 = SAMPLE_TEXTURE2D( _TerrainHolesTexture, sampler_TerrainHolesTexture, uv_TerrainHolesTexture ).r;
@@ -3685,14 +3714,15 @@ Shader "Hidden/AmplifyShaderPack/Terrain/Snow AddPass"
 				float4 tex2DNode425_g14 = SAMPLE_TEXTURE2D( _Mask3, sampler_Mask0, uv_Splat3 );
 				float Mask3R388_g14 = tex2DNode425_g14.r;
 				float4 weightedBlendVar536_g14 = Control26_g14;
-				float weightedBlend536_g14 = ( weightedBlendVar536_g14.x*( ( 1.0 - _Metallic0 ) * Mask0R334_g14 ) + weightedBlendVar536_g14.y*( ( 1.0 - _Metallic1 ) * Mask1R370_g14 ) + weightedBlendVar536_g14.z*( ( 1.0 - _Metallic2 ) * Mask2R359_g14 ) + weightedBlendVar536_g14.w*( ( 1.0 - _Metallic3 ) * Mask3R388_g14 ) );
+				float weightedBlend536_g14 = ( weightedBlendVar536_g14.x*max( _Metallic0 , Mask0R334_g14 ) + weightedBlendVar536_g14.y*max( _Metallic1 , Mask1R370_g14 ) + weightedBlendVar536_g14.z*max( _Metallic2 , Mask2R359_g14 ) + weightedBlendVar536_g14.w*max( _Metallic3 , Mask3R388_g14 ) );
 				
-				float Mask0A335_g14 = tex2DNode416_g14.a;
+				float4 appendResult1168_g14 = (float4(_Smoothness0 , _Smoothness1 , _Smoothness2 , _Smoothness3));
+				float Splat0A435_g14 = tex2DNode414_g14.a;
 				float Mask1A369_g14 = tex2DNode422_g14.a;
 				float Mask2A360_g14 = tex2DNode419_g14.a;
 				float Mask3A391_g14 = tex2DNode425_g14.a;
-				float4 weightedBlendVar547_g14 = Control26_g14;
-				float weightedBlend547_g14 = ( weightedBlendVar547_g14.x*( ( 1.0 - _Smoothness0 ) * Mask0A335_g14 ) + weightedBlendVar547_g14.y*( ( 1.0 - _Smoothness1 ) * Mask1A369_g14 ) + weightedBlendVar547_g14.z*( ( 1.0 - _Smoothness2 ) * Mask2A360_g14 ) + weightedBlendVar547_g14.w*( ( 1.0 - _Smoothness3 ) * Mask3A391_g14 ) );
+				float4 appendResult1169_g14 = (float4(Splat0A435_g14 , Mask1A369_g14 , Mask2A360_g14 , Mask3A391_g14));
+				float dotResult1166_g14 = dot( ( appendResult1168_g14 * appendResult1169_g14 ) , Control26_g14 );
 				
 				float Mask0G409_g14 = tex2DNode416_g14.g;
 				float Mask1G371_g14 = tex2DNode422_g14.g;
@@ -3707,7 +3737,7 @@ Shader "Hidden/AmplifyShaderPack/Terrain/Snow AddPass"
 				float3 Emission = 0;
 				float3 Specular = 0.5;
 				float Metallic = weightedBlend536_g14;
-				float Smoothness = weightedBlend547_g14;
+				float Smoothness = dotResult1166_g14;
 				float Occlusion = saturate( weightedBlend602_g14 );
 				float Alpha = dotResult278_g14;
 				float AlphaClipThreshold = 0.0;
@@ -3833,7 +3863,7 @@ Shader "Hidden/AmplifyShaderPack/Terrain/Snow AddPass"
 			#define ASE_FINAL_COLOR_ALPHA_MULTIPLY 1
 			#define _ALPHATEST_ON 1
 			#define _NORMALMAP 1
-			#define ASE_SRP_VERSION 140010
+			#define ASE_SRP_VERSION 140011
 			#define ASE_USING_SAMPLING_MACROS 1
 
 
@@ -3841,6 +3871,10 @@ Shader "Hidden/AmplifyShaderPack/Terrain/Snow AddPass"
 
 			#pragma vertex vert
 			#pragma fragment frag
+
+			#if defined(_SPECULAR_SETUP) && defined(_ASE_LIGHTING_SIMPLE)
+				#define _SPECULAR_COLOR 1
+			#endif
 
 			#define SCENESELECTIONPASS 1
 
@@ -3856,14 +3890,14 @@ Shader "Hidden/AmplifyShaderPack/Terrain/Snow AddPass"
 			#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/TextureStack.hlsl"
 
 			
+            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
+           
+
+			
             #if ASE_SRP_VERSION >=140009
 			#include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
 			#endif
 		
-
-			
-            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
-           
 
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/ShaderGraphFunctions.hlsl"
 
@@ -3878,7 +3912,7 @@ Shader "Hidden/AmplifyShaderPack/Terrain/Snow AddPass"
 			#define ASE_NEEDS_VERT_NORMAL
 			#define ASE_NEEDS_VERT_POSITION
 			#pragma multi_compile_instancing
-			#pragma instancing_options assumeuniformscaling nomatrices nolightprobe nolightmap forwardadd
+			#pragma instancing_options assumeuniformscaling nomatrices nolightprobe nolightmap
 			#define TERRAIN_SPLAT_ADDPASS 1
 
 
@@ -4204,7 +4238,7 @@ Shader "Hidden/AmplifyShaderPack/Terrain/Snow AddPass"
 			#define ASE_FINAL_COLOR_ALPHA_MULTIPLY 1
 			#define _ALPHATEST_ON 1
 			#define _NORMALMAP 1
-			#define ASE_SRP_VERSION 140010
+			#define ASE_SRP_VERSION 140011
 			#define ASE_USING_SAMPLING_MACROS 1
 
 
@@ -4212,6 +4246,10 @@ Shader "Hidden/AmplifyShaderPack/Terrain/Snow AddPass"
 
 			#pragma vertex vert
 			#pragma fragment frag
+
+			#if defined(_SPECULAR_SETUP) && defined(_ASE_LIGHTING_SIMPLE)
+				#define _SPECULAR_COLOR 1
+			#endif
 
 		    #define SCENEPICKINGPASS 1
 
@@ -4227,14 +4265,14 @@ Shader "Hidden/AmplifyShaderPack/Terrain/Snow AddPass"
 			#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/TextureStack.hlsl"
 
 			
+            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
+           
+
+			
             #if ASE_SRP_VERSION >=140009
 			#include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
 			#endif
 		
-
-			
-            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
-           
 
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/ShaderGraphFunctions.hlsl"
 
@@ -4249,7 +4287,7 @@ Shader "Hidden/AmplifyShaderPack/Terrain/Snow AddPass"
 			#define ASE_NEEDS_VERT_NORMAL
 			#define ASE_NEEDS_VERT_POSITION
 			#pragma multi_compile_instancing
-			#pragma instancing_options assumeuniformscaling nomatrices nolightprobe nolightmap forwardadd
+			#pragma instancing_options assumeuniformscaling nomatrices nolightprobe nolightmap
 			#define TERRAIN_SPLAT_ADDPASS 1
 
 
@@ -4556,17 +4594,17 @@ Shader "Hidden/AmplifyShaderPack/Terrain/Snow AddPass"
 		
 	}
 	
-	CustomEditor "UnityEditor.ShaderGraphLitGUI"
+	CustomEditor "UnityEditor.Rendering.Universal.TerrainLitShaderGUI"
 	FallBack "Hidden/Shader Graph/FallbackError"
 	
 	Fallback "Hidden/Universal Render Pipeline/FallbackError"
 }
 /*ASEBEGIN
-Version=19303
-Node;AmplifyShaderEditor.FunctionNode;53;333.8652,42.77539;Inherit;False;Terrain 4 Layer;0;;14;a8a57459582f78d4ca5db58f601fb616;4,504,1,102,1,668,1,669,1;0;8;FLOAT3;0;FLOAT3;14;FLOAT;56;FLOAT;45;FLOAT;200;FLOAT;282;FLOAT3;709;FLOAT4;701
+Version=19603
+Node;AmplifyShaderEditor.FunctionNode;53;333.8652,42.77539;Inherit;False;Terrain 4 Layer;0;;14;a8a57459582f78d4ca5db58f601fb616;4,504,1,102,1,669,1,668,1;0;8;FLOAT3;0;FLOAT3;14;FLOAT;56;FLOAT;45;FLOAT;200;FLOAT;282;FLOAT3;709;FLOAT4;701
 Node;AmplifyShaderEditor.RangedFloatNode;64;336,288;Inherit;False;Constant;_AlphaClipThreshold1;AlphaClipThreshold;1;0;Create;True;0;0;0;False;0;False;0;0;0;0;0;1;FLOAT;0
 Node;AmplifyShaderEditor.TemplateMultiPassMasterNode;54;644.0565,42.11808;Float;False;False;-1;2;UnityEditor.ShaderGraphLitGUI;0;1;New Amplify Shader;94348b07e5e8bab40bd6c8a1e3df54cd;True;ExtraPrePass;0;0;ExtraPrePass;5;False;False;False;False;False;False;False;False;False;False;False;False;True;0;False;;False;True;0;False;;False;False;False;False;False;False;False;False;False;True;False;0;False;;255;False;;255;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;False;True;1;False;;True;3;False;;True;True;0;False;;0;False;;True;4;RenderPipeline=UniversalPipeline;RenderType=Opaque=RenderType;Queue=Geometry=Queue=0;UniversalMaterialType=Lit;True;5;True;12;all;0;False;True;1;1;False;;0;False;;0;1;False;;0;False;;False;False;False;False;False;False;False;False;False;False;False;False;True;0;False;;False;True;True;True;True;True;0;False;;False;False;False;False;False;False;False;True;False;0;False;;255;False;;255;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;False;True;1;False;;True;3;False;;True;True;0;False;;0;False;;True;0;False;False;0;;0;0;Standard;0;False;0
-Node;AmplifyShaderEditor.TemplateMultiPassMasterNode;55;644.0565,42.11808;Float;False;True;-1;2;UnityEditor.ShaderGraphLitGUI;0;12;Hidden/AmplifyShaderPack/Terrain/Snow AddPass;94348b07e5e8bab40bd6c8a1e3df54cd;True;Forward;0;1;Forward;21;False;False;False;False;False;False;False;False;False;False;False;False;True;0;False;;False;True;0;False;;False;False;False;False;False;False;False;False;False;True;False;0;False;;255;False;;255;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;True;True;1;False;;True;3;False;;True;True;0;False;;0;False;;True;6;RenderPipeline=UniversalPipeline;RenderType=Transparent=RenderType;Queue=Transparent=Queue=-99;UniversalMaterialType=Lit;TerrainCompatible=True;IgnoreProjector=True;True;5;True;12;all;0;False;True;1;1;False;;1;False;;1;1;False;;10;False;;False;False;False;False;False;False;False;False;False;False;False;False;False;False;True;True;True;True;True;0;False;;False;False;False;False;False;False;False;True;False;0;False;;255;False;;255;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;False;True;1;False;;True;3;False;;True;True;0;False;;0;False;;True;3;LightMode=UniversalForwardOnly;TerrainCompatible=True;IgnoreProjector=True;False;False;4;Include;;False;;Native;False;0;0;;Define;TERRAIN_SPLAT_ADDPASS 1;False;;Custom;False;0;0;;Pragma;instancing_options assumeuniformscaling nomatrices nolightprobe nolightmap;False;;Custom;True;0;0;Forward, GBuffer;Pragma;multi_compile_instancing;False;;Custom;True;0;0;Forward,GBuffer,ShadowCaster,DepthOnly,DepthNormals;Hidden/Universal Render Pipeline/FallbackError;0;0;Standard;39;Workflow;1;0;Surface;1;638162443384408054;  Refraction Model;0;0;  Blend;2;638162443425392252;Two Sided;1;0;Fragment Normal Space,InvertActionOnDeselection;0;0;Forward Only;0;0;Transmission;0;0;  Transmission Shadow;0.5,False,;0;Translucency;0;0;  Translucency Strength;1,False,;0;  Normal Distortion;0.5,False,;0;  Scattering;2,False,;0;  Direct;0.9,False,;0;  Ambient;0.1,False,;0;  Shadow;0.5,False,;0;Cast Shadows;0;638162454290526574;  Use Shadow Threshold;0;0;GPU Instancing;0;638162456918797600;LOD CrossFade;0;638162443532656889;Built-in Fog;0;638162443556014694;_FinalColorxAlpha;1;638162443637993649;Meta Pass;1;0;Override Baked GI;0;0;Extra Pre Pass;0;0;Tessellation;0;0;  Phong;0;0;  Strength;0.5,False,;0;  Type;0;0;  Tess;16,False,;0;  Min;10,False,;0;  Max;25,False,;0;  Edge Length;16,False,;0;  Max Displacement;25,False,;0;Write Depth;0;0;  Early Z;0;0;Vertex Position,InvertActionOnDeselection;1;0;Debug Display;0;0;Clear Coat;0;0;0;10;False;True;False;True;True;True;True;True;True;True;True;;True;0
+Node;AmplifyShaderEditor.TemplateMultiPassMasterNode;55;644.0565,42.11808;Float;False;True;-1;2;UnityEditor.Rendering.Universal.TerrainLitShaderGUI;0;12;Hidden/AmplifyShaderPack/Terrain/Snow AddPass;94348b07e5e8bab40bd6c8a1e3df54cd;True;Forward;0;1;Forward;21;False;False;False;False;False;False;False;False;False;False;False;False;True;0;False;;False;True;0;False;;False;False;False;False;False;False;False;False;False;True;False;0;False;;255;False;;255;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;True;True;1;False;;True;3;False;;True;True;0;False;;0;False;;True;6;RenderPipeline=UniversalPipeline;RenderType=Transparent=RenderType;Queue=Transparent=Queue=-99;UniversalMaterialType=Lit;TerrainCompatible=True;IgnoreProjector=True;True;5;True;12;all;0;False;True;1;1;False;;1;False;;1;1;False;;10;False;;False;False;False;False;False;False;False;False;False;False;False;False;False;False;True;True;True;True;True;0;False;;False;False;False;False;False;False;False;True;False;0;False;;255;False;;255;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;False;True;1;False;;True;3;False;;True;True;0;False;;0;False;;True;3;LightMode=UniversalForwardOnly;TerrainCompatible=True;IgnoreProjector=True;False;False;4;Include;;False;;Native;False;0;0;;Define;TERRAIN_SPLAT_ADDPASS 1;False;;Custom;False;0;0;;Pragma;instancing_options assumeuniformscaling nomatrices nolightprobe nolightmap;False;;Custom;True;0;0;Forward, GBuffer;Pragma;multi_compile_instancing;False;;Custom;True;0;0;Forward,GBuffer,ShadowCaster,DepthOnly,DepthNormals;Hidden/Universal Render Pipeline/FallbackError;0;0;Standard;42;Lighting Model;0;0;Workflow;1;0;Surface;1;638162443384408054;  Refraction Model;0;0;  Blend;2;638162443425392252;Two Sided;1;0;Fragment Normal Space,InvertActionOnDeselection;0;0;Forward Only;0;0;Transmission;0;0;  Transmission Shadow;0.5,False,;0;Translucency;0;0;  Translucency Strength;1,False,;0;  Normal Distortion;0.5,False,;0;  Scattering;2,False,;0;  Direct;0.9,False,;0;  Ambient;0.1,False,;0;  Shadow;0.5,False,;0;Cast Shadows;0;638162454290526574;  Use Shadow Threshold;0;0;Receive Shadows;1;0;Receive SSAO;1;0;GPU Instancing;0;638162456918797600;LOD CrossFade;0;638162443532656889;Built-in Fog;0;638162443556014694;_FinalColorxAlpha;1;638162443637993649;Meta Pass;1;0;Override Baked GI;0;0;Extra Pre Pass;0;0;Tessellation;0;0;  Phong;0;0;  Strength;0.5,False,;0;  Type;0;0;  Tess;16,False,;0;  Min;10,False,;0;  Max;25,False,;0;  Edge Length;16,False,;0;  Max Displacement;25,False,;0;Write Depth;0;0;  Early Z;0;0;Vertex Position,InvertActionOnDeselection;1;0;Debug Display;0;0;Clear Coat;0;0;0;10;False;True;False;True;True;True;True;True;True;True;True;;True;0
 Node;AmplifyShaderEditor.TemplateMultiPassMasterNode;56;644.0565,42.11808;Float;False;False;-1;2;UnityEditor.ShaderGraphLitGUI;0;1;New Amplify Shader;94348b07e5e8bab40bd6c8a1e3df54cd;True;ShadowCaster;0;2;ShadowCaster;0;False;False;False;False;False;False;False;False;False;False;False;False;True;0;False;;False;True;0;False;;False;False;False;False;False;False;False;False;False;True;False;0;False;;255;False;;255;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;False;True;1;False;;True;3;False;;True;True;0;False;;0;False;;True;4;RenderPipeline=UniversalPipeline;RenderType=Opaque=RenderType;Queue=Geometry=Queue=0;UniversalMaterialType=Lit;True;5;True;12;all;0;False;False;False;False;False;False;False;False;False;False;False;False;True;0;False;;False;False;False;True;False;False;False;False;0;False;;False;False;False;False;False;False;False;False;False;True;1;False;;True;3;False;;False;True;1;LightMode=ShadowCaster;False;False;0;;0;0;Standard;0;False;0
 Node;AmplifyShaderEditor.TemplateMultiPassMasterNode;57;644.0565,42.11808;Float;False;False;-1;2;UnityEditor.ShaderGraphLitGUI;0;1;New Amplify Shader;94348b07e5e8bab40bd6c8a1e3df54cd;True;DepthOnly;0;3;DepthOnly;0;False;False;False;False;False;False;False;False;False;False;False;False;True;0;False;;False;True;0;False;;False;False;False;False;False;False;False;False;False;True;False;0;False;;255;False;;255;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;False;True;1;False;;True;3;False;;True;True;0;False;;0;False;;True;4;RenderPipeline=UniversalPipeline;RenderType=Opaque=RenderType;Queue=Geometry=Queue=0;UniversalMaterialType=Lit;True;5;True;12;all;0;False;False;False;False;False;False;False;False;False;False;False;False;True;0;False;;False;False;False;True;False;False;False;False;0;False;;False;False;False;False;False;False;False;False;False;True;1;False;;False;False;True;1;LightMode=DepthOnly;False;False;0;;0;0;Standard;0;False;0
 Node;AmplifyShaderEditor.TemplateMultiPassMasterNode;58;644.0565,42.11808;Float;False;False;-1;2;UnityEditor.ShaderGraphLitGUI;0;1;New Amplify Shader;94348b07e5e8bab40bd6c8a1e3df54cd;True;Meta;0;4;Meta;0;False;False;False;False;False;False;False;False;False;False;False;False;True;0;False;;False;True;0;False;;False;False;False;False;False;False;False;False;False;True;False;0;False;;255;False;;255;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;False;True;1;False;;True;3;False;;True;True;0;False;;0;False;;True;4;RenderPipeline=UniversalPipeline;RenderType=Opaque=RenderType;Queue=Geometry=Queue=0;UniversalMaterialType=Lit;True;5;True;12;all;0;False;False;False;False;False;False;False;False;False;False;False;False;False;False;True;2;False;;False;False;False;False;False;False;False;False;False;False;False;False;False;False;True;1;LightMode=Meta;False;False;0;;0;0;Standard;0;False;0
@@ -4585,4 +4623,4 @@ WireConnection;55;7;64;0
 WireConnection;55;10;53;709
 WireConnection;55;30;53;701
 ASEEND*/
-//CHKSM=37CCBFD0EFE2334807237D1A5D6361163B94351C
+//CHKSM=969414F138D0963B4B2AF246EFABB6057453A0CC

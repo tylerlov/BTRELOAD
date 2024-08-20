@@ -1,17 +1,27 @@
 using UnityEngine;
 using OccaSoftware.BOP;
+using BehaviorDesigner.Runtime.Tactical;
 
 
-public class EnemyBasicDamagablePart : MonoBehaviour
+[RequireComponent(typeof(Collider))]
+public class EnemyBasicDamagablePart : MonoBehaviour, IDamageable
 {
     public EnemyBasicSetup mainEnemyScript;
-    [SerializeField] private GameObject lockOnAnim; // Reference to the lock-on animation GameObject
-    [SerializeField] private Pooler lockOnDisabledParticles; // Reference to the Pooler for the particle effect
-    [SerializeField] private Pooler deathParticles; // Reference to the Pooler for the death particle effect
+    [SerializeField] private GameObject lockOnAnim;
+    [SerializeField] private Pooler lockOnDisabledParticles;
+    [SerializeField] private Pooler deathParticles;
 
-    private int hitsTaken = 0; // Track the number of hits taken
+    private int hitsTaken = 0;
+    private Collider partCollider;
+    private bool isLockedOn = false;
 
-    public void TakeDamage(float damage)
+    private void Awake()
+    {
+        partCollider = GetComponent<Collider>();
+        partCollider.isTrigger = true;
+    }
+
+    public void Damage(float amount)
     {
         if (mainEnemyScript != null)
         {
@@ -20,7 +30,7 @@ public class EnemyBasicDamagablePart : MonoBehaviour
             hitsTaken++;
             CheckForDeath();
         }
-        DisableLockOn(); // Disable lock-on when taking damage
+        SetLockOnStatus(false);
     }
 
     private void CheckForDeath()
@@ -38,31 +48,32 @@ public class EnemyBasicDamagablePart : MonoBehaviour
             deathParticles.GetFromPool(transform.position, Quaternion.identity);
         }
 
-        // Apply damage one last time when the part is destroyed
         if (mainEnemyScript != null)
         {
             float partDamage = mainEnemyScript.GetPartDamageAmount();
             mainEnemyScript.Damage(partDamage);
         }
 
-        gameObject.SetActive(false); // Make the GameObject inactive
+        gameObject.SetActive(false);
     }
 
-    public void EnableLockOn()
+    public void SetLockOnStatus(bool status)
+    {
+        isLockedOn = status;
+        UpdateLockOnVisuals();
+    }
+
+    private void UpdateLockOnVisuals()
     {
         if (lockOnAnim != null)
         {
-            lockOnAnim.SetActive(true);
+            lockOnAnim.SetActive(isLockedOn);
         }
-    }
 
-    public void DisableLockOn()
-    {
-        if (lockOnAnim != null)
+        if (!isLockedOn)
         {
-            lockOnAnim.SetActive(false);
+            TriggerLockDisabledParticles();
         }
-        TriggerLockDisabledParticles();
     }
 
     private void TriggerLockDisabledParticles()
@@ -71,5 +82,15 @@ public class EnemyBasicDamagablePart : MonoBehaviour
         {
             lockOnDisabledParticles.GetFromPool(transform.position, Quaternion.identity);
         }
+    }
+
+    public bool IsAlive()
+    {
+        return hitsTaken < mainEnemyScript.hitsToKillPart;
+    }
+
+    public bool IsLockedOn()
+    {
+        return isLockedOn;
     }
 }

@@ -456,16 +456,16 @@ private IEnumerator SlowToBeat()
     private Transform GetEnemyTransform(RaycastHit hit)
     {
         EnemyBasicSetup enemySetup = hit.collider.GetComponentInParent<EnemyBasicSetup>();
-        ColliderHitCallback colliderCallback = hit.collider.GetComponent<ColliderHitCallback>();
+        EnemyBasicDamagablePart damagablePart = hit.collider.GetComponent<EnemyBasicDamagablePart>();
 
         if (enemySetup != null)
         {
-            enemySetup.lockedStatus(true);
+            enemySetup.SetLockOnStatus(true);
             return hit.collider.transform;
         }
-        else if (colliderCallback != null)
+        else if (damagablePart != null)
         {
-            colliderCallback.SetLockedStatus(true);
+            damagablePart.SetLockOnStatus(true);
             return hit.collider.transform;
         }
 
@@ -483,17 +483,20 @@ private IEnumerator SlowToBeat()
         FMODUnity.RuntimeManager.PlayOneShot("event:/Player/LockEnemy");
         uiLockOnEffect.LockOnTarget(enemyTarget);
         lastEnemyTime = Time.time;
-
-        GameManager.instance.SetEnemyLockState(enemyTarget, true);
     }
 
     private void UnlockOldestEnemy()
     {
         Transform oldestEnemy = enemyTargetList[0];
-        oldestEnemy.GetComponent<EnemyBasicSetup>()?.lockedStatus(false);
-        oldestEnemy.GetComponent<ColliderHitCallback>()?.SetLockedStatus(false);
+        EnemyBasicSetup enemySetup = oldestEnemy.GetComponent<EnemyBasicSetup>();
+        EnemyBasicDamagablePart damagablePart = oldestEnemy.GetComponent<EnemyBasicDamagablePart>();
+
+        if (enemySetup != null)
+            enemySetup.SetLockOnStatus(false);
+        else if (damagablePart != null)
+            damagablePart.SetLockOnStatus(false);
+
         enemyTargetList.RemoveAt(0);
-        GameManager.instance.SetEnemyLockState(oldestEnemy, false);
     }
 
     private void UpdateLastEnemyLockTime() => lastEnemyTime = Time.time;
@@ -643,13 +646,20 @@ private IEnumerator SlowToBeat()
     {
         enemyTargetList.RemoveAll(enemy => enemy == null);
         foreach (var enemy in enemyTargetList)
-            enemy.GetComponent<EnemyBasicSetup>()?.lockedStatus(false);
+        {
+            EnemyBasicSetup enemySetup = enemy.GetComponent<EnemyBasicSetup>();
+            EnemyBasicDamagablePart damagablePart = enemy.GetComponent<EnemyBasicDamagablePart>();
+
+            if (enemySetup != null)
+                enemySetup.SetLockOnStatus(false);
+            else if (damagablePart != null)
+                damagablePart.SetLockOnStatus(false);
+        }
 
         enemyTargetList.Clear();
         projectileTargetList.RemoveAll(projectile => projectile == null);
         LockedList.RemoveAll(locked => locked == null);
         enemyTarget = null;
-        GameManager.instance.ClearAllEnemyLocks();
     }
 
     public void OnNewWaveOrAreaTransition() => ClearLockedTargets();

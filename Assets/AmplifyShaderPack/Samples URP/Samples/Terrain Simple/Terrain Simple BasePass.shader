@@ -1,4 +1,4 @@
-// Made with Amplify Shader Editor v1.9.3.3
+// Made with Amplify Shader Editor v1.9.6.3
 // Available at the Unity Asset Store - http://u3d.as/y3X 
 Shader "Hidden/AmplifyShaderPack/Terrain/Simple BasePass"
 {
@@ -25,8 +25,8 @@ Shader "Hidden/AmplifyShaderPack/Terrain/Simple BasePass"
 		//_TessEdgeLength ( "Tess Edge length", Range( 2, 50 ) ) = 16
 		//_TessMaxDisp( "Tess Max Displacement", Float ) = 25
 
-		[HideInInspector][ToggleOff] _SpecularHighlights("Specular Highlights", Float) = 1.0
-		[HideInInspector][ToggleOff] _EnvironmentReflections("Environment Reflections", Float) = 1.0
+		[HideInInspector][ToggleOff] _SpecularHighlights("Specular Highlights", Float) = 1
+		[HideInInspector][ToggleOff] _EnvironmentReflections("Environment Reflections", Float) = 1
 		[HideInInspector][ToggleOff] _ReceiveShadows("Receive Shadows", Float) = 1.0
 
 		[HideInInspector] _QueueOffset("_QueueOffset", Float) = 0
@@ -183,17 +183,19 @@ Shader "Hidden/AmplifyShaderPack/Terrain/Simple BasePass"
 
 			HLSLPROGRAM
 
+			
+
 			#define _NORMAL_DROPOFF_TS 1
+			#pragma shader_feature_local _RECEIVE_SHADOWS_OFF
+			#pragma multi_compile_fragment _ _SCREEN_SPACE_OCCLUSION
 			#pragma multi_compile_fog
 			#define ASE_FOG 1
 			#define ASE_FINAL_COLOR_ALPHA_MULTIPLY 1
-			#define ASE_SRP_VERSION 140010
+			#define ASE_SRP_VERSION 140011
 			#define ASE_USING_SAMPLING_MACROS 1
 
 
-			#pragma shader_feature_local _RECEIVE_SHADOWS_OFF
-			#pragma shader_feature_local_fragment _SPECULARHIGHLIGHTS_OFF
-			#pragma shader_feature_local_fragment _ENVIRONMENTREFLECTIONS_OFF
+			
 
 			#pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _MAIN_LIGHT_SHADOWS_SCREEN
 			#pragma multi_compile _ _ADDITIONAL_LIGHTS_VERTEX _ADDITIONAL_LIGHTS
@@ -212,13 +214,10 @@ Shader "Hidden/AmplifyShaderPack/Terrain/Simple BasePass"
 			#pragma multi_compile_fragment _ _SHADOWS_SOFT _SHADOWS_SOFT_LOW _SHADOWS_SOFT_MEDIUM _SHADOWS_SOFT_HIGH
            
 
-			#pragma multi_compile_fragment _ _SCREEN_SPACE_OCCLUSION
 			#pragma multi_compile_fragment _ _DBUFFER_MRT1 _DBUFFER_MRT2 _DBUFFER_MRT3
 			#pragma multi_compile _ _LIGHT_LAYERS
 			#pragma multi_compile_fragment _ _LIGHT_COOKIES
 			#pragma multi_compile _ _FORWARD_PLUS
-		
-			
 
 			
 
@@ -231,6 +230,10 @@ Shader "Hidden/AmplifyShaderPack/Terrain/Simple BasePass"
 
 			#pragma vertex vert
 			#pragma fragment frag
+
+			#if defined(_SPECULAR_SETUP) && defined(_ASE_LIGHTING_SIMPLE)
+				#define _SPECULAR_COLOR 1
+			#endif
 
 			#define SHADERPASS SHADERPASS_FORWARD
 
@@ -254,14 +257,14 @@ Shader "Hidden/AmplifyShaderPack/Terrain/Simple BasePass"
 			#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/TextureStack.hlsl"
 
 			
+            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
+           
+
+			
             #if ASE_SRP_VERSION >=140009
 			#include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
 			#endif
 		
-
-			
-            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
-           
 
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Shadows.hlsl"
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/ShaderGraphFunctions.hlsl"
@@ -279,7 +282,7 @@ Shader "Hidden/AmplifyShaderPack/Terrain/Simple BasePass"
 			#define ASE_NEEDS_VERT_NORMAL
 			#define ASE_NEEDS_VERT_POSITION
 			#pragma multi_compile_instancing
-			#pragma instancing_options assumeuniformscaling nomatrices nolightprobe nolightmap forwardadd
+			#pragma instancing_options assumeuniformscaling nomatrices nolightprobe nolightmap
 			#define TERRAIN_SPLAT_BASEPASS 1
 
 
@@ -723,7 +726,11 @@ Shader "Hidden/AmplifyShaderPack/Terrain/Simple BasePass"
 					ApplyDecalToSurfaceData(IN.positionCS, surfaceData, inputData);
 				#endif
 
-				half4 color = UniversalFragmentPBR( inputData, surfaceData);
+				#ifdef _ASE_LIGHTING_SIMPLE
+					half4 color = UniversalFragmentBlinnPhong( inputData, surfaceData);
+				#else
+					half4 color = UniversalFragmentPBR( inputData, surfaceData);
+				#endif
 
 				#ifdef ASE_TRANSMISSION
 				{
@@ -872,7 +879,7 @@ Shader "Hidden/AmplifyShaderPack/Terrain/Simple BasePass"
 			#define _NORMAL_DROPOFF_TS 1
 			#define ASE_FOG 1
 			#define ASE_FINAL_COLOR_ALPHA_MULTIPLY 1
-			#define ASE_SRP_VERSION 140010
+			#define ASE_SRP_VERSION 140011
 			#define ASE_USING_SAMPLING_MACROS 1
 
 
@@ -880,6 +887,10 @@ Shader "Hidden/AmplifyShaderPack/Terrain/Simple BasePass"
 
 			#pragma vertex vert
 			#pragma fragment frag
+
+			#if defined(_SPECULAR_SETUP) && defined(_ASE_LIGHTING_SIMPLE)
+				#define _SPECULAR_COLOR 1
+			#endif
 
 			#define SHADERPASS SHADERPASS_DEPTHONLY
 
@@ -897,14 +908,14 @@ Shader "Hidden/AmplifyShaderPack/Terrain/Simple BasePass"
 			#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/TextureStack.hlsl"
 
 			
+            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
+           
+
+			
             #if ASE_SRP_VERSION >=140009
 			#include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
 			#endif
 		
-
-			
-            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
-           
 
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/ShaderGraphFunctions.hlsl"
 			#include "Packages/com.unity.render-pipelines.universal/Editor/ShaderGraph/Includes/ShaderPass.hlsl"
@@ -916,7 +927,7 @@ Shader "Hidden/AmplifyShaderPack/Terrain/Simple BasePass"
 			#define ASE_NEEDS_VERT_NORMAL
 			#define ASE_NEEDS_VERT_POSITION
 			#pragma multi_compile_instancing
-			#pragma instancing_options assumeuniformscaling nomatrices nolightprobe nolightmap forwardadd
+			#pragma instancing_options assumeuniformscaling nomatrices nolightprobe nolightmap
 			#define TERRAIN_SPLAT_BASEPASS 1
 
 
@@ -1204,18 +1215,20 @@ Shader "Hidden/AmplifyShaderPack/Terrain/Simple BasePass"
 			Cull Off
 
 			HLSLPROGRAM
-
 			#define _NORMAL_DROPOFF_TS 1
 			#define ASE_FOG 1
 			#define ASE_FINAL_COLOR_ALPHA_MULTIPLY 1
-			#define ASE_SRP_VERSION 140010
+			#define ASE_SRP_VERSION 140011
 			#define ASE_USING_SAMPLING_MACROS 1
 
+			#pragma shader_feature EDITOR_VISUALIZATION
 
 			#pragma vertex vert
 			#pragma fragment frag
 
-			#pragma shader_feature EDITOR_VISUALIZATION
+			#if defined(_SPECULAR_SETUP) && defined(_ASE_LIGHTING_SIMPLE)
+				#define _SPECULAR_COLOR 1
+			#endif
 
 			#define SHADERPASS SHADERPASS_META
 
@@ -1227,14 +1240,14 @@ Shader "Hidden/AmplifyShaderPack/Terrain/Simple BasePass"
 			#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/TextureStack.hlsl"
 
 			
+            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
+           
+
+			
             #if ASE_SRP_VERSION >=140009
 			#include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
 			#endif
 		
-
-			
-            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
-           
 
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/ShaderGraphFunctions.hlsl"
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/MetaInput.hlsl"
@@ -1243,7 +1256,7 @@ Shader "Hidden/AmplifyShaderPack/Terrain/Simple BasePass"
 			#define ASE_NEEDS_VERT_NORMAL
 			#define ASE_NEEDS_VERT_POSITION
 			#pragma multi_compile_instancing
-			#pragma instancing_options assumeuniformscaling nomatrices nolightprobe nolightmap forwardadd
+			#pragma instancing_options assumeuniformscaling nomatrices nolightprobe nolightmap
 			#define TERRAIN_SPLAT_BASEPASS 1
 
 
@@ -1557,12 +1570,16 @@ Shader "Hidden/AmplifyShaderPack/Terrain/Simple BasePass"
 			#define _NORMAL_DROPOFF_TS 1
 			#define ASE_FOG 1
 			#define ASE_FINAL_COLOR_ALPHA_MULTIPLY 1
-			#define ASE_SRP_VERSION 140010
+			#define ASE_SRP_VERSION 140011
 			#define ASE_USING_SAMPLING_MACROS 1
 
 
 			#pragma vertex vert
 			#pragma fragment frag
+
+			#if defined(_SPECULAR_SETUP) && defined(_ASE_LIGHTING_SIMPLE)
+				#define _SPECULAR_COLOR 1
+			#endif
 
 			#define SHADERPASS SHADERPASS_2D
 
@@ -1574,14 +1591,14 @@ Shader "Hidden/AmplifyShaderPack/Terrain/Simple BasePass"
 			#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/TextureStack.hlsl"
 
 			
+            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
+           
+
+			
             #if ASE_SRP_VERSION >=140009
 			#include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
 			#endif
 		
-
-			
-            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
-           
 
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/ShaderGraphFunctions.hlsl"
 			#include "Packages/com.unity.render-pipelines.universal/Editor/ShaderGraph/Includes/ShaderPass.hlsl"
@@ -1589,7 +1606,7 @@ Shader "Hidden/AmplifyShaderPack/Terrain/Simple BasePass"
 			#define ASE_NEEDS_VERT_NORMAL
 			#define ASE_NEEDS_VERT_POSITION
 			#pragma multi_compile_instancing
-			#pragma instancing_options assumeuniformscaling nomatrices nolightprobe nolightmap forwardadd
+			#pragma instancing_options assumeuniformscaling nomatrices nolightprobe nolightmap
 			#define TERRAIN_SPLAT_BASEPASS 1
 
 
@@ -1866,19 +1883,27 @@ Shader "Hidden/AmplifyShaderPack/Terrain/Simple BasePass"
 
 			HLSLPROGRAM
 
+			
+
+			
+
 			#define _NORMAL_DROPOFF_TS 1
 			#define ASE_FOG 1
 			#define ASE_FINAL_COLOR_ALPHA_MULTIPLY 1
-			#define ASE_SRP_VERSION 140010
+			#define ASE_SRP_VERSION 140011
 			#define ASE_USING_SAMPLING_MACROS 1
 
+
+			
+
+			
 
 			#pragma vertex vert
 			#pragma fragment frag
 
-			
-
-			
+			#if defined(_SPECULAR_SETUP) && defined(_ASE_LIGHTING_SIMPLE)
+				#define _SPECULAR_COLOR 1
+			#endif
 
 			#define SHADERPASS SHADERPASS_DEPTHNORMALSONLY
 			//#define SHADERPASS SHADERPASS_DEPTHNORMALS
@@ -1903,14 +1928,14 @@ Shader "Hidden/AmplifyShaderPack/Terrain/Simple BasePass"
 			#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/TextureStack.hlsl"
 
 			
+            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
+           
+
+			
             #if ASE_SRP_VERSION >=140009
 			#include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
 			#endif
 		
-
-			
-            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
-           
 
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/ShaderGraphFunctions.hlsl"
 			#include "Packages/com.unity.render-pipelines.universal/Editor/ShaderGraph/Includes/ShaderPass.hlsl"
@@ -1922,7 +1947,7 @@ Shader "Hidden/AmplifyShaderPack/Terrain/Simple BasePass"
 			#define ASE_NEEDS_VERT_NORMAL
 			#define ASE_NEEDS_VERT_POSITION
 			#pragma multi_compile_instancing
-			#pragma instancing_options assumeuniformscaling nomatrices nolightprobe nolightmap forwardadd
+			#pragma instancing_options assumeuniformscaling nomatrices nolightprobe nolightmap
 			#define TERRAIN_SPLAT_BASEPASS 1
 
 
@@ -2263,17 +2288,18 @@ Shader "Hidden/AmplifyShaderPack/Terrain/Simple BasePass"
 
 			HLSLPROGRAM
 
+			
+
 			#define _NORMAL_DROPOFF_TS 1
+			#pragma shader_feature_local _RECEIVE_SHADOWS_OFF
 			#pragma multi_compile_fog
 			#define ASE_FOG 1
 			#define ASE_FINAL_COLOR_ALPHA_MULTIPLY 1
-			#define ASE_SRP_VERSION 140010
+			#define ASE_SRP_VERSION 140011
 			#define ASE_USING_SAMPLING_MACROS 1
 
 
-			#pragma shader_feature_local _RECEIVE_SHADOWS_OFF
-			#pragma shader_feature_local_fragment _SPECULARHIGHLIGHTS_OFF
-			#pragma shader_feature_local_fragment _ENVIRONMENTREFLECTIONS_OFF
+			
 
 			#pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _MAIN_LIGHT_SHADOWS_SCREEN
 			#pragma multi_compile_fragment _ _REFLECTION_PROBE_BLENDING
@@ -2299,10 +2325,12 @@ Shader "Hidden/AmplifyShaderPack/Terrain/Simple BasePass"
 			#pragma multi_compile _ DYNAMICLIGHTMAP_ON
 			#pragma multi_compile_fragment _ DEBUG_DISPLAY
 
-			
-
 			#pragma vertex vert
 			#pragma fragment frag
+
+			#if defined(_SPECULAR_SETUP) && defined(_ASE_LIGHTING_SIMPLE)
+				#define _SPECULAR_COLOR 1
+			#endif
 
 			#define SHADERPASS SHADERPASS_GBUFFER
 
@@ -2326,14 +2354,14 @@ Shader "Hidden/AmplifyShaderPack/Terrain/Simple BasePass"
 			#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/TextureStack.hlsl"
 
 			
+            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
+           
+
+			
             #if ASE_SRP_VERSION >=140009
 			#include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
 			#endif
 		
-
-			
-            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
-           
 
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Shadows.hlsl"
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/ShaderGraphFunctions.hlsl"
@@ -2351,7 +2379,7 @@ Shader "Hidden/AmplifyShaderPack/Terrain/Simple BasePass"
 			#define ASE_NEEDS_VERT_NORMAL
 			#define ASE_NEEDS_VERT_POSITION
 			#pragma multi_compile_instancing
-			#pragma instancing_options assumeuniformscaling nomatrices nolightprobe nolightmap forwardadd
+			#pragma instancing_options assumeuniformscaling nomatrices nolightprobe nolightmap
 			#define TERRAIN_SPLAT_BASEPASS 1
 
 
@@ -2809,7 +2837,7 @@ Shader "Hidden/AmplifyShaderPack/Terrain/Simple BasePass"
 			#define _NORMAL_DROPOFF_TS 1
 			#define ASE_FOG 1
 			#define ASE_FINAL_COLOR_ALPHA_MULTIPLY 1
-			#define ASE_SRP_VERSION 140010
+			#define ASE_SRP_VERSION 140011
 			#define ASE_USING_SAMPLING_MACROS 1
 
 
@@ -2817,6 +2845,10 @@ Shader "Hidden/AmplifyShaderPack/Terrain/Simple BasePass"
 
 			#pragma vertex vert
 			#pragma fragment frag
+
+			#if defined(_SPECULAR_SETUP) && defined(_ASE_LIGHTING_SIMPLE)
+				#define _SPECULAR_COLOR 1
+			#endif
 
 			#define SCENESELECTIONPASS 1
 
@@ -2832,14 +2864,14 @@ Shader "Hidden/AmplifyShaderPack/Terrain/Simple BasePass"
 			#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/TextureStack.hlsl"
 
 			
+            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
+           
+
+			
             #if ASE_SRP_VERSION >=140009
 			#include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
 			#endif
 		
-
-			
-            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
-           
 
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/ShaderGraphFunctions.hlsl"
 
@@ -2854,7 +2886,7 @@ Shader "Hidden/AmplifyShaderPack/Terrain/Simple BasePass"
 			#define ASE_NEEDS_VERT_NORMAL
 			#define ASE_NEEDS_VERT_POSITION
 			#pragma multi_compile_instancing
-			#pragma instancing_options assumeuniformscaling nomatrices nolightprobe nolightmap forwardadd
+			#pragma instancing_options assumeuniformscaling nomatrices nolightprobe nolightmap
 			#define TERRAIN_SPLAT_BASEPASS 1
 
 
@@ -3113,7 +3145,7 @@ Shader "Hidden/AmplifyShaderPack/Terrain/Simple BasePass"
 			#define _NORMAL_DROPOFF_TS 1
 			#define ASE_FOG 1
 			#define ASE_FINAL_COLOR_ALPHA_MULTIPLY 1
-			#define ASE_SRP_VERSION 140010
+			#define ASE_SRP_VERSION 140011
 			#define ASE_USING_SAMPLING_MACROS 1
 
 
@@ -3121,6 +3153,10 @@ Shader "Hidden/AmplifyShaderPack/Terrain/Simple BasePass"
 
 			#pragma vertex vert
 			#pragma fragment frag
+
+			#if defined(_SPECULAR_SETUP) && defined(_ASE_LIGHTING_SIMPLE)
+				#define _SPECULAR_COLOR 1
+			#endif
 
 		    #define SCENEPICKINGPASS 1
 
@@ -3136,14 +3172,14 @@ Shader "Hidden/AmplifyShaderPack/Terrain/Simple BasePass"
 			#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/TextureStack.hlsl"
 
 			
+            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
+           
+
+			
             #if ASE_SRP_VERSION >=140009
 			#include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
 			#endif
 		
-
-			
-            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRendering.hlsl"
-           
 
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/ShaderGraphFunctions.hlsl"
 
@@ -3158,7 +3194,7 @@ Shader "Hidden/AmplifyShaderPack/Terrain/Simple BasePass"
 			#define ASE_NEEDS_VERT_NORMAL
 			#define ASE_NEEDS_VERT_POSITION
 			#pragma multi_compile_instancing
-			#pragma instancing_options assumeuniformscaling nomatrices nolightprobe nolightmap forwardadd
+			#pragma instancing_options assumeuniformscaling nomatrices nolightprobe nolightmap
 			#define TERRAIN_SPLAT_BASEPASS 1
 
 
@@ -3400,16 +3436,16 @@ Shader "Hidden/AmplifyShaderPack/Terrain/Simple BasePass"
 		
 	}
 	
-	CustomEditor "UnityEditor.ShaderGraphLitGUI"
+	CustomEditor "UnityEditor.Rendering.Universal.TerrainLitShaderGUI"
 	FallBack "Hidden/Shader Graph/FallbackError"
 	
 	Fallback "Hidden/Universal Render Pipeline/FallbackError"
 }
 /*ASEBEGIN
-Version=19303
+Version=19603
 Node;AmplifyShaderEditor.FunctionNode;8;-170.929,0.8702154;Inherit;False;Terrain 4 Layer BasePass;0;;1;c8412200c39e42b47b386a0f238f572e;0;0;5;FLOAT3;58;FLOAT;51;FLOAT;52;FLOAT3;91;FLOAT4;92
 Node;AmplifyShaderEditor.TemplateMultiPassMasterNode;9;130.1901,1;Float;False;False;-1;2;UnityEditor.ShaderGraphLitGUI;0;1;New Amplify Shader;94348b07e5e8bab40bd6c8a1e3df54cd;True;ExtraPrePass;0;0;ExtraPrePass;5;False;False;False;False;False;False;False;False;False;False;False;False;True;0;False;;False;True;0;False;;False;False;False;False;False;False;False;False;False;True;False;0;False;;255;False;;255;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;False;True;1;False;;True;3;False;;True;True;0;False;;0;False;;True;4;RenderPipeline=UniversalPipeline;RenderType=Opaque=RenderType;Queue=Geometry=Queue=0;UniversalMaterialType=Lit;True;5;True;12;all;0;False;True;1;1;False;;0;False;;0;1;False;;0;False;;False;False;False;False;False;False;False;False;False;False;False;False;True;0;False;;False;True;True;True;True;True;0;False;;False;False;False;False;False;False;False;True;False;0;False;;255;False;;255;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;False;True;1;False;;True;3;False;;True;True;0;False;;0;False;;True;0;False;False;0;;0;0;Standard;0;False;0
-Node;AmplifyShaderEditor.TemplateMultiPassMasterNode;10;130.1901,1;Float;False;True;-1;2;UnityEditor.ShaderGraphLitGUI;0;12;Hidden/AmplifyShaderPack/Terrain/Simple BasePass;94348b07e5e8bab40bd6c8a1e3df54cd;True;Forward;0;1;Forward;21;False;False;False;False;False;False;False;False;False;False;False;False;True;0;False;;False;True;0;False;;False;False;False;False;False;False;False;False;False;True;False;0;False;;255;False;;255;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;False;True;1;False;;True;3;False;;True;True;0;False;;0;False;;True;5;RenderPipeline=UniversalPipeline;RenderType=Opaque=RenderType;Queue=Geometry=Queue=0;UniversalMaterialType=Lit;TerrainCompatible=True;True;5;True;12;all;0;False;True;1;1;False;;0;False;;1;1;False;;0;False;;False;False;False;False;False;False;False;False;False;False;False;False;False;False;True;True;True;True;True;0;False;;False;False;False;False;False;False;False;True;False;0;False;;255;False;;255;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;False;True;1;False;;True;3;False;;True;True;0;False;;0;False;;True;3;LightMode=UniversalForwardOnly;IgnoreProjector=True;TerrainCompatible=True;False;False;4;Include;;False;;Native;False;0;0;;Define;TERRAIN_SPLAT_BASEPASS 1;False;;Custom;False;0;0;;Pragma;instancing_options assumeuniformscaling nomatrices nolightprobe nolightmap;False;;Custom;True;0;0;Forward, GBuffer;Pragma;multi_compile_instancing;False;;Custom;True;0;0;Forward,GBuffer,ShadowCaster,DepthOnly,DepthNormals;Hidden/Universal Render Pipeline/FallbackError;0;0;Standard;39;Workflow;1;0;Surface;0;0;  Refraction Model;0;0;  Blend;0;0;Two Sided;1;0;Fragment Normal Space,InvertActionOnDeselection;0;0;Forward Only;0;0;Transmission;0;0;  Transmission Shadow;0.5,False,;0;Translucency;0;0;  Translucency Strength;1,False,;0;  Normal Distortion;0.5,False,;0;  Scattering;2,False,;0;  Direct;0.9,False,;0;  Ambient;0.1,False,;0;  Shadow;0.5,False,;0;Cast Shadows;0;638162445333496689;  Use Shadow Threshold;0;0;GPU Instancing;0;638162456810742844;LOD CrossFade;0;638162442663637599;Built-in Fog;1;0;_FinalColorxAlpha;1;638162445409012830;Meta Pass;1;0;Override Baked GI;0;0;Extra Pre Pass;0;0;Tessellation;0;0;  Phong;0;0;  Strength;0.5,False,;0;  Type;0;0;  Tess;16,False,;0;  Min;10,False,;0;  Max;25,False,;0;  Edge Length;16,False,;0;  Max Displacement;25,False,;0;Write Depth;0;0;  Early Z;0;0;Vertex Position,InvertActionOnDeselection;1;0;Debug Display;0;0;Clear Coat;0;0;0;10;False;True;False;True;True;True;True;True;True;True;True;;True;0
+Node;AmplifyShaderEditor.TemplateMultiPassMasterNode;10;130.1901,1;Float;False;True;-1;2;UnityEditor.Rendering.Universal.TerrainLitShaderGUI;0;12;Hidden/AmplifyShaderPack/Terrain/Simple BasePass;94348b07e5e8bab40bd6c8a1e3df54cd;True;Forward;0;1;Forward;21;False;False;False;False;False;False;False;False;False;False;False;False;True;0;False;;False;True;0;False;;False;False;False;False;False;False;False;False;False;True;False;0;False;;255;False;;255;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;False;True;1;False;;True;3;False;;True;True;0;False;;0;False;;True;5;RenderPipeline=UniversalPipeline;RenderType=Opaque=RenderType;Queue=Geometry=Queue=0;UniversalMaterialType=Lit;TerrainCompatible=True;True;5;True;12;all;0;False;True;1;1;False;;0;False;;1;1;False;;0;False;;False;False;False;False;False;False;False;False;False;False;False;False;False;False;True;True;True;True;True;0;False;;False;False;False;False;False;False;False;True;False;0;False;;255;False;;255;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;False;True;1;False;;True;3;False;;True;True;0;False;;0;False;;True;3;LightMode=UniversalForwardOnly;IgnoreProjector=True;TerrainCompatible=True;False;False;4;Include;;False;;Native;False;0;0;;Define;TERRAIN_SPLAT_BASEPASS 1;False;;Custom;False;0;0;;Pragma;instancing_options assumeuniformscaling nomatrices nolightprobe nolightmap;False;;Custom;True;0;0;Forward, GBuffer;Pragma;multi_compile_instancing;False;;Custom;True;0;0;Forward,GBuffer,ShadowCaster,DepthOnly,DepthNormals;Hidden/Universal Render Pipeline/FallbackError;0;0;Standard;42;Lighting Model;0;0;Workflow;1;0;Surface;0;0;  Refraction Model;0;0;  Blend;0;0;Two Sided;1;0;Fragment Normal Space,InvertActionOnDeselection;0;0;Forward Only;0;0;Transmission;0;0;  Transmission Shadow;0.5,False,;0;Translucency;0;0;  Translucency Strength;1,False,;0;  Normal Distortion;0.5,False,;0;  Scattering;2,False,;0;  Direct;0.9,False,;0;  Ambient;0.1,False,;0;  Shadow;0.5,False,;0;Cast Shadows;0;638162445333496689;  Use Shadow Threshold;0;0;Receive Shadows;1;0;Receive SSAO;1;0;GPU Instancing;0;638162456810742844;LOD CrossFade;0;638162442663637599;Built-in Fog;1;0;_FinalColorxAlpha;1;638162445409012830;Meta Pass;1;0;Override Baked GI;0;0;Extra Pre Pass;0;0;Tessellation;0;0;  Phong;0;0;  Strength;0.5,False,;0;  Type;0;0;  Tess;16,False,;0;  Min;10,False,;0;  Max;25,False,;0;  Edge Length;16,False,;0;  Max Displacement;25,False,;0;Write Depth;0;0;  Early Z;0;0;Vertex Position,InvertActionOnDeselection;1;0;Debug Display;0;0;Clear Coat;0;0;0;10;False;True;False;True;True;True;True;True;True;True;True;;True;0
 Node;AmplifyShaderEditor.TemplateMultiPassMasterNode;11;130.1901,1;Float;False;False;-1;2;UnityEditor.ShaderGraphLitGUI;0;1;New Amplify Shader;94348b07e5e8bab40bd6c8a1e3df54cd;True;ShadowCaster;0;2;ShadowCaster;0;False;False;False;False;False;False;False;False;False;False;False;False;True;0;False;;False;True;0;False;;False;False;False;False;False;False;False;False;False;True;False;0;False;;255;False;;255;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;False;True;1;False;;True;3;False;;True;True;0;False;;0;False;;True;4;RenderPipeline=UniversalPipeline;RenderType=Opaque=RenderType;Queue=Geometry=Queue=0;UniversalMaterialType=Lit;True;5;True;12;all;0;False;False;False;False;False;False;False;False;False;False;False;False;True;0;False;;False;False;False;True;False;False;False;False;0;False;;False;False;False;False;False;False;False;False;False;True;1;False;;True;3;False;;False;True;1;LightMode=ShadowCaster;False;False;0;;0;0;Standard;0;False;0
 Node;AmplifyShaderEditor.TemplateMultiPassMasterNode;12;130.1901,1;Float;False;False;-1;2;UnityEditor.ShaderGraphLitGUI;0;1;New Amplify Shader;94348b07e5e8bab40bd6c8a1e3df54cd;True;DepthOnly;0;3;DepthOnly;0;False;False;False;False;False;False;False;False;False;False;False;False;True;0;False;;False;True;0;False;;False;False;False;False;False;False;False;False;False;True;False;0;False;;255;False;;255;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;False;True;1;False;;True;3;False;;True;True;0;False;;0;False;;True;4;RenderPipeline=UniversalPipeline;RenderType=Opaque=RenderType;Queue=Geometry=Queue=0;UniversalMaterialType=Lit;True;5;True;12;all;0;False;False;False;False;False;False;False;False;False;False;False;False;True;0;False;;False;False;False;True;False;False;False;False;0;False;;False;False;False;False;False;False;False;False;False;True;1;False;;False;False;True;1;LightMode=DepthOnly;False;False;0;;0;0;Standard;0;False;0
 Node;AmplifyShaderEditor.TemplateMultiPassMasterNode;13;130.1901,1;Float;False;False;-1;2;UnityEditor.ShaderGraphLitGUI;0;1;New Amplify Shader;94348b07e5e8bab40bd6c8a1e3df54cd;True;Meta;0;4;Meta;0;False;False;False;False;False;False;False;False;False;False;False;False;True;0;False;;False;True;0;False;;False;False;False;False;False;False;False;False;False;True;False;0;False;;255;False;;255;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;False;True;1;False;;True;3;False;;True;True;0;False;;0;False;;True;4;RenderPipeline=UniversalPipeline;RenderType=Opaque=RenderType;Queue=Geometry=Queue=0;UniversalMaterialType=Lit;True;5;True;12;all;0;False;False;False;False;False;False;False;False;False;False;False;False;False;False;True;2;False;;False;False;False;False;False;False;False;False;False;False;False;False;False;False;True;1;LightMode=Meta;False;False;0;;0;0;Standard;0;False;0
@@ -3424,4 +3460,4 @@ WireConnection;10;4;8;52
 WireConnection;10;10;8;91
 WireConnection;10;30;8;92
 ASEEND*/
-//CHKSM=C3216C09C6070EBFFB144A9782EE39FC4DB9A728
+//CHKSM=53E91BA20D0340A388EA8AE0E27D4FDC43AD28E1

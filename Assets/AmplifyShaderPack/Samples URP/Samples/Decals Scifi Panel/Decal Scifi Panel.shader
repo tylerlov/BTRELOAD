@@ -1,4 +1,4 @@
-// Made with Amplify Shader Editor v1.9.3.3
+// Made with Amplify Shader Editor v1.9.6.3
 // Available at the Unity Asset Store - http://u3d.as/y3X 
 Shader  "AmplifyShaderPack/Decal Scifi Panel"
 {
@@ -70,7 +70,7 @@ Shader  "AmplifyShaderPack/Decal Scifi Panel"
 			#define  _MATERIAL_AFFECTS_MAOS 1
 			#define _MATERIAL_AFFECTS_EMISSION 1
 			#define DECAL_ANGLE_FADE 1
-			#define ASE_SRP_VERSION 140010
+			#define ASE_SRP_VERSION 140011
 
 
 			#pragma vertex Vert
@@ -433,7 +433,7 @@ Shader  "AmplifyShaderPack/Decal Scifi Panel"
 			#define  _MATERIAL_AFFECTS_MAOS 1
 			#define _MATERIAL_AFFECTS_EMISSION 1
 			#define DECAL_ANGLE_FADE 1
-			#define ASE_SRP_VERSION 140010
+			#define ASE_SRP_VERSION 140011
 
 
 			#pragma vertex Vert
@@ -764,7 +764,7 @@ Shader  "AmplifyShaderPack/Decal Scifi Panel"
 			#define  _MATERIAL_AFFECTS_MAOS 1
 			#define _MATERIAL_AFFECTS_EMISSION 1
 			#define DECAL_ANGLE_FADE 1
-			#define ASE_SRP_VERSION 140010
+			#define ASE_SRP_VERSION 140011
 
 
 			#pragma vertex Vert
@@ -1257,7 +1257,7 @@ Shader  "AmplifyShaderPack/Decal Scifi Panel"
 			#define  _MATERIAL_AFFECTS_MAOS 1
 			#define _MATERIAL_AFFECTS_EMISSION 1
 			#define DECAL_ANGLE_FADE 1
-			#define ASE_SRP_VERSION 140010
+			#define ASE_SRP_VERSION 140011
 
 
 			#pragma vertex Vert
@@ -1753,7 +1753,7 @@ Shader  "AmplifyShaderPack/Decal Scifi Panel"
 			#define _MATERIAL_AFFECTS_NORMAL_BLEND 1
 			#define  _MATERIAL_AFFECTS_MAOS 1
 			#define _MATERIAL_AFFECTS_EMISSION 1
-			#define ASE_SRP_VERSION 140010
+			#define ASE_SRP_VERSION 140011
 
 
 			#pragma vertex Vert
@@ -2117,7 +2117,7 @@ Shader  "AmplifyShaderPack/Decal Scifi Panel"
 			#define _MATERIAL_AFFECTS_NORMAL_BLEND 1
 			#define  _MATERIAL_AFFECTS_MAOS 1
 			#define _MATERIAL_AFFECTS_EMISSION 1
-			#define ASE_SRP_VERSION 140010
+			#define ASE_SRP_VERSION 140011
 
 
 			#pragma vertex Vert
@@ -2483,7 +2483,7 @@ Shader  "AmplifyShaderPack/Decal Scifi Panel"
 			#define _MATERIAL_AFFECTS_NORMAL_BLEND 1
 			#define  _MATERIAL_AFFECTS_MAOS 1
 			#define _MATERIAL_AFFECTS_EMISSION 1
-			#define ASE_SRP_VERSION 140010
+			#define ASE_SRP_VERSION 140011
 
 
 			#pragma vertex Vert
@@ -2977,7 +2977,7 @@ Shader  "AmplifyShaderPack/Decal Scifi Panel"
 			#define _MATERIAL_AFFECTS_NORMAL_BLEND 1
 			#define  _MATERIAL_AFFECTS_MAOS 1
 			#define _MATERIAL_AFFECTS_EMISSION 1
-			#define ASE_SRP_VERSION 140010
+			#define ASE_SRP_VERSION 140011
 
 
 			#pragma vertex Vert
@@ -3481,7 +3481,7 @@ Shader  "AmplifyShaderPack/Decal Scifi Panel"
 			#define _MATERIAL_AFFECTS_NORMAL_BLEND 1
 			#define  _MATERIAL_AFFECTS_MAOS 1
 			#define _MATERIAL_AFFECTS_EMISSION 1
-			#define ASE_SRP_VERSION 140010
+			#define ASE_SRP_VERSION 140011
 
 
 			#pragma multi_compile_instancing
@@ -3667,7 +3667,7 @@ Shader  "AmplifyShaderPack/Decal Scifi Panel"
 	Fallback Off
 }
 /*ASEBEGIN
-Version=19303
+Version=19603
 Node;AmplifyShaderEditor.CommentaryNode;27;-1557.951,-345.944;Inherit;False;746;356;Tile and Offset adjusted manually in each decal;4;18;19;21;22;;1,1,1,1;0;0
 Node;AmplifyShaderEditor.Vector2Node;19;-1489.951,-153.944;Inherit;False;Property;_Offset;Offset;6;0;Create;True;0;0;0;False;0;False;0,0;1,1.67;0;3;FLOAT2;0;FLOAT;1;FLOAT;2
 Node;AmplifyShaderEditor.Vector2Node;18;-1507.951,-295.944;Inherit;False;Property;_Tiling;Tiling;5;0;Create;True;0;0;0;False;0;False;0,0;0.33,0.33;0;3;FLOAT2;0;FLOAT;1;FLOAT;2
@@ -3675,16 +3675,16 @@ Node;AmplifyShaderEditor.TextureCoordinatesNode;21;-1284.951,-266.944;Inherit;Fa
 Node;AmplifyShaderEditor.RegisterLocalVarNode;22;-1035.951,-267.944;Inherit;False;FinalUVs;-1;True;1;0;FLOAT2;0,0;False;1;FLOAT2;0
 Node;AmplifyShaderEditor.GetLocalVarNode;23;-615.9507,-302.944;Inherit;False;22;FinalUVs;1;0;OBJECT;;False;1;FLOAT2;0
 Node;AmplifyShaderEditor.GetLocalVarNode;26;-587.9507,405.056;Inherit;False;22;FinalUVs;1;0;OBJECT;;False;1;FLOAT2;0
-Node;AmplifyShaderEditor.SamplerNode;9;-432,-336;Inherit;True;Property;_BaseColor;Base Color;0;1;[NoScaleOffset];Create;True;0;0;0;False;0;False;-1;9058b7ce77d448f9a967080425fab9d4;9058b7ce77d448f9a967080425fab9d4;True;0;False;white;Auto;False;Object;-1;Auto;Texture2D;8;0;SAMPLER2D;;False;1;FLOAT2;0,0;False;2;FLOAT;0;False;3;FLOAT2;0,0;False;4;FLOAT2;0,0;False;5;FLOAT;1;False;6;FLOAT;0;False;7;SAMPLERSTATE;;False;5;COLOR;0;FLOAT;1;FLOAT;2;FLOAT;3;FLOAT;4
-Node;AmplifyShaderEditor.SamplerNode;11;-432,128;Inherit;True;Property;_Mask;Mask;2;1;[NoScaleOffset];Create;True;0;0;0;False;0;False;-1;860dd950cbaa4f16b9554bf71f25ae4f;860dd950cbaa4f16b9554bf71f25ae4f;True;0;False;white;Auto;False;Object;-1;Auto;Texture2D;8;0;SAMPLER2D;;False;1;FLOAT2;0,0;False;2;FLOAT;0;False;3;FLOAT2;0,0;False;4;FLOAT2;0,0;False;5;FLOAT;1;False;6;FLOAT;0;False;7;SAMPLERSTATE;;False;5;COLOR;0;FLOAT;1;FLOAT;2;FLOAT;3;FLOAT;4
+Node;AmplifyShaderEditor.SamplerNode;9;-432,-336;Inherit;True;Property;_BaseColor;Base Color;0;1;[NoScaleOffset];Create;True;0;0;0;False;0;False;-1;9058b7ce77d448f9a967080425fab9d4;9058b7ce77d448f9a967080425fab9d4;True;0;False;white;Auto;False;Object;-1;Auto;Texture2D;8;0;SAMPLER2D;;False;1;FLOAT2;0,0;False;2;FLOAT;0;False;3;FLOAT2;0,0;False;4;FLOAT2;0,0;False;5;FLOAT;1;False;6;FLOAT;0;False;7;SAMPLERSTATE;;False;6;COLOR;0;FLOAT;1;FLOAT;2;FLOAT;3;FLOAT;4;FLOAT3;5
+Node;AmplifyShaderEditor.SamplerNode;11;-432,128;Inherit;True;Property;_Mask;Mask;2;1;[NoScaleOffset];Create;True;0;0;0;False;0;False;-1;860dd950cbaa4f16b9554bf71f25ae4f;860dd950cbaa4f16b9554bf71f25ae4f;True;0;False;white;Auto;False;Object;-1;Auto;Texture2D;8;0;SAMPLER2D;;False;1;FLOAT2;0,0;False;2;FLOAT;0;False;3;FLOAT2;0,0;False;4;FLOAT2;0,0;False;5;FLOAT;1;False;6;FLOAT;0;False;7;SAMPLERSTATE;;False;6;COLOR;0;FLOAT;1;FLOAT;2;FLOAT;3;FLOAT;4;FLOAT3;5
 Node;AmplifyShaderEditor.SimpleMultiplyOpNode;13;78.04932,442.056;Inherit;False;3;3;0;COLOR;0,0,0,0;False;1;COLOR;0,0,0,0;False;2;FLOAT;0;False;1;COLOR;0
 Node;AmplifyShaderEditor.GetLocalVarNode;25;-590.9507,151.056;Inherit;False;22;FinalUVs;1;0;OBJECT;;False;1;FLOAT2;0
-Node;AmplifyShaderEditor.SamplerNode;12;-432,384;Inherit;True;Property;_Emissive;Emissive;1;1;[NoScaleOffset];Create;True;0;0;0;False;0;False;-1;1566835bc2024388b365b715bfd7e1aa;1566835bc2024388b365b715bfd7e1aa;True;0;False;white;Auto;False;Object;-1;Auto;Texture2D;8;0;SAMPLER2D;;False;1;FLOAT2;0,0;False;2;FLOAT;0;False;3;FLOAT2;0,0;False;4;FLOAT2;0,0;False;5;FLOAT;1;False;6;FLOAT;0;False;7;SAMPLERSTATE;;False;5;COLOR;0;FLOAT;1;FLOAT;2;FLOAT;3;FLOAT;4
+Node;AmplifyShaderEditor.SamplerNode;12;-432,384;Inherit;True;Property;_Emissive;Emissive;1;1;[NoScaleOffset];Create;True;0;0;0;False;0;False;-1;1566835bc2024388b365b715bfd7e1aa;1566835bc2024388b365b715bfd7e1aa;True;0;False;white;Auto;False;Object;-1;Auto;Texture2D;8;0;SAMPLER2D;;False;1;FLOAT2;0,0;False;2;FLOAT;0;False;3;FLOAT2;0,0;False;4;FLOAT2;0,0;False;5;FLOAT;1;False;6;FLOAT;0;False;7;SAMPLERSTATE;;False;6;COLOR;0;FLOAT;1;FLOAT;2;FLOAT;3;FLOAT;4;FLOAT3;5
 Node;AmplifyShaderEditor.SinTimeNode;16;-363.9507,809.056;Inherit;False;0;5;FLOAT4;0;FLOAT;1;FLOAT;2;FLOAT;3;FLOAT;4
 Node;AmplifyShaderEditor.GetLocalVarNode;24;-615,-87;Inherit;False;22;FinalUVs;1;0;OBJECT;;False;1;FLOAT2;0
 Node;AmplifyShaderEditor.ClampOpNode;15;-179.9507,787.056;Inherit;False;3;0;FLOAT;0;False;1;FLOAT;0.2;False;2;FLOAT;1;False;1;FLOAT;0
-Node;AmplifyShaderEditor.SamplerNode;10;-448,-112;Inherit;True;Property;_Normal;Normal;3;1;[NoScaleOffset];Create;True;0;0;0;False;0;False;-1;f59394e2460c4b4e97cf6f678b4a6532;f59394e2460c4b4e97cf6f678b4a6532;True;0;True;bump;Auto;True;Object;-1;Auto;Texture2D;8;0;SAMPLER2D;;False;1;FLOAT2;0,0;False;2;FLOAT;0;False;3;FLOAT2;0,0;False;4;FLOAT2;0,0;False;5;FLOAT;1;False;6;FLOAT;0;False;7;SAMPLERSTATE;;False;5;FLOAT3;0;FLOAT;1;FLOAT;2;FLOAT;3;FLOAT;4
-Node;AmplifyShaderEditor.ColorNode;14;-388.9507,596.056;Inherit;False;Property;_EmissionTintIntensity;Emission Tint - Intensity;4;1;[HDR];Create;True;0;0;0;False;0;False;0,0,0,0;290.6372,228.2491,0,1;True;0;5;COLOR;0;FLOAT;1;FLOAT;2;FLOAT;3;FLOAT;4
+Node;AmplifyShaderEditor.SamplerNode;10;-448,-112;Inherit;True;Property;_Normal;Normal;3;1;[NoScaleOffset];Create;True;0;0;0;False;0;False;-1;f59394e2460c4b4e97cf6f678b4a6532;f59394e2460c4b4e97cf6f678b4a6532;True;0;True;bump;Auto;True;Object;-1;Auto;Texture2D;8;0;SAMPLER2D;;False;1;FLOAT2;0,0;False;2;FLOAT;0;False;3;FLOAT2;0,0;False;4;FLOAT2;0,0;False;5;FLOAT;1;False;6;FLOAT;0;False;7;SAMPLERSTATE;;False;6;FLOAT3;0;FLOAT;1;FLOAT;2;FLOAT;3;FLOAT;4;FLOAT3;5
+Node;AmplifyShaderEditor.ColorNode;14;-388.9507,596.056;Inherit;False;Property;_EmissionTintIntensity;Emission Tint - Intensity;4;1;[HDR];Create;True;0;0;0;False;0;False;0,0,0,0;290.6372,228.2491,0,1;True;True;0;6;COLOR;0;FLOAT;1;FLOAT;2;FLOAT;3;FLOAT;4;FLOAT3;5
 Node;AmplifyShaderEditor.TemplateMultiPassMasterNode;1;0,-262;Float;False;False;-1;2;UnityEditor.Rendering.Universal.DecalShaderGraphGUI;0;1;New Amplify Shader;c2a467ab6d5391a4ea692226d82ffefd;True;DecalProjectorForwardEmissive;0;1;DecalProjectorForwardEmissive;0;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;True;5;RenderPipeline=UniversalPipeline;PreviewType=Plane;DisableBatching=LODFading=DisableBatching;ShaderGraphShader=true;ShaderGraphTargetId=UniversalDecalSubTarget;True;3;True;12;all;0;False;True;8;5;False;;1;False;;0;1;False;;0;False;;False;False;False;False;False;False;False;False;False;False;False;False;True;1;False;;False;False;False;False;False;False;False;False;False;False;False;True;2;False;;True;2;False;;False;True;1;LightMode=DecalProjectorForwardEmissive;False;False;0;;0;0;Standard;0;False;0
 Node;AmplifyShaderEditor.TemplateMultiPassMasterNode;3;0,0;Float;False;False;-1;2;UnityEditor.Rendering.Universal.DecalShaderGraphGUI;0;1;New Amplify Shader;c2a467ab6d5391a4ea692226d82ffefd;True;DecalGBufferProjector;0;3;DecalGBufferProjector;0;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;True;5;RenderPipeline=UniversalPipeline;PreviewType=Plane;DisableBatching=LODFading=DisableBatching;ShaderGraphShader=true;ShaderGraphTargetId=UniversalDecalSubTarget;True;3;True;12;all;0;False;True;2;5;False;;10;False;;0;1;False;;0;False;;False;False;True;2;5;False;;10;False;;0;1;False;;0;False;;False;False;True;2;5;False;;10;False;;0;1;False;;0;False;;False;False;True;2;5;False;;10;False;;0;1;False;;0;False;;False;False;False;True;1;False;;False;False;False;True;False;False;False;False;0;False;;False;True;True;True;True;False;0;False;;False;True;True;True;True;False;0;False;;False;False;False;True;2;False;;True;2;False;;False;True;1;LightMode=DecalGBufferProjector;False;False;0;;0;0;Standard;0;False;0
 Node;AmplifyShaderEditor.TemplateMultiPassMasterNode;5;0,0;Float;False;False;-1;2;UnityEditor.Rendering.Universal.DecalShaderGraphGUI;0;1;New Amplify Shader;c2a467ab6d5391a4ea692226d82ffefd;True;DecalMeshForwardEmissive;0;5;DecalMeshForwardEmissive;0;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;True;5;RenderPipeline=UniversalPipeline;PreviewType=Plane;DisableBatching=LODFading=DisableBatching;ShaderGraphShader=true;ShaderGraphTargetId=UniversalDecalSubTarget;True;3;True;12;all;0;False;True;8;5;False;;1;False;;0;1;False;;0;False;;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;True;2;False;;True;3;False;;False;True;1;LightMode=DecalMeshForwardEmissive;False;False;0;;0;0;Standard;0;False;0
@@ -3715,4 +3715,4 @@ WireConnection;2;6;11;4
 WireConnection;2;7;9;4
 WireConnection;2;8;13;0
 ASEEND*/
-//CHKSM=766EDA226F5D277DCB156E6BAD7EE70F3ECFF90A
+//CHKSM=27C6A381FE8869B73E09CF62A821AC3D44823257

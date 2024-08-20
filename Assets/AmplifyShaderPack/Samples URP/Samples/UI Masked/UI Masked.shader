@@ -1,4 +1,4 @@
-// Made with Amplify Shader Editor v1.9.3.3
+// Made with Amplify Shader Editor v1.9.6.3
 // Available at the Unity Asset Store - http://u3d.as/y3X 
 Shader "AmplifyShaderPack/UI Masked"
 {
@@ -198,7 +198,7 @@ Shader "AmplifyShaderPack/UI Masked"
 	Fallback Off
 }
 /*ASEBEGIN
-Version=19303
+Version=19603
 Node;AmplifyShaderEditor.CommentaryNode;146;904.3149,-1925.409;Inherit;False;893.204;465.4991;Comment;6;93;86;104;91;90;99;Offset UVs;1,1,1,1;0;0
 Node;AmplifyShaderEditor.RangedFloatNode;93;967.1171,-1574.91;Float;False;Constant;_Float3;Float 3;6;0;Create;True;0;0;0;False;0;False;2;0;0;0;0;1;FLOAT;0
 Node;AmplifyShaderEditor.CommentaryNode;145;931.9144,-2451.912;Inherit;False;844.3919;332.3784;Comment;3;139;97;125;Set Overall Height;1,1,1,1;0;0
@@ -228,12 +228,12 @@ Node;AmplifyShaderEditor.RangedFloatNode;128;2079.313,-1566.531;Float;False;Prop
 Node;AmplifyShaderEditor.GetLocalVarNode;131;2085.512,-1413.629;Inherit;False;124;scaledTime;1;0;OBJECT;;False;1;FLOAT;0
 Node;AmplifyShaderEditor.RangedFloatNode;126;2053.711,-2141.431;Float;False;Property;_WaveAmplitudeA;Wave Amplitude A;0;0;Create;True;0;0;0;False;0;False;0;0.2;0;0;0;1;FLOAT;0
 Node;AmplifyShaderEditor.RangedFloatNode;95;2052.215,-1912.615;Float;False;Property;_WaveWidthA;Wave Width A;1;0;Create;True;0;0;0;False;0;False;2.5;8;0;0;0;1;FLOAT;0
-Node;AmplifyShaderEditor.ColorNode;115;2435.916,-1257.111;Float;False;Property;_ColorWaveB;Color Wave B;6;0;Create;True;0;0;0;False;0;False;1,0.376056,0.05882353,1;1,0.3760559,0.05882348,1;False;0;5;COLOR;0;FLOAT;1;FLOAT;2;FLOAT;3;FLOAT;4
-Node;AmplifyShaderEditor.ColorNode;110;2332.813,-2237.615;Float;False;Property;_ColorWaveA;Color Wave A;2;0;Create;True;0;0;0;False;0;False;0.4485294,0.313166,0.1517085,1;0.4485292,0.3131659,0.1517084,1;False;0;5;COLOR;0;FLOAT;1;FLOAT;2;FLOAT;3;FLOAT;4
+Node;AmplifyShaderEditor.ColorNode;115;2435.916,-1257.111;Float;False;Property;_ColorWaveB;Color Wave B;6;0;Create;True;0;0;0;False;0;False;1,0.376056,0.05882353,1;1,0.3760559,0.05882348,1;False;True;0;6;COLOR;0;FLOAT;1;FLOAT;2;FLOAT;3;FLOAT;4;FLOAT3;5
+Node;AmplifyShaderEditor.ColorNode;110;2332.813,-2237.615;Float;False;Property;_ColorWaveA;Color Wave A;2;0;Create;True;0;0;0;False;0;False;0.4485294,0.313166,0.1517085,1;0.4485292,0.3131659,0.1517084,1;False;True;0;6;COLOR;0;FLOAT;1;FLOAT;2;FLOAT;3;FLOAT;4;FLOAT3;5
 Node;AmplifyShaderEditor.TemplateShaderPropertyNode;6;2672.898,-367.6007;Inherit;False;0;0;_MainTex;Shader;False;0;5;SAMPLER2D;0;FLOAT;1;FLOAT;2;FLOAT;3;FLOAT;4
 Node;AmplifyShaderEditor.FunctionNode;150;2440.218,-1544.512;Inherit;False;UI Masked CoolWave;-1;;13;b2ee99647053b0745a8b40f9f5921b4d;0;6;35;FLOAT;0;False;4;FLOAT;0;False;6;FLOAT;0;False;3;FLOAT;0;False;1;FLOAT2;0,0;False;2;FLOAT;0;False;1;FLOAT;0
 Node;AmplifyShaderEditor.FunctionNode;149;2354.311,-2005.012;Inherit;False;UI Masked CoolWave;-1;;14;b2ee99647053b0745a8b40f9f5921b4d;0;6;35;FLOAT;0;False;4;FLOAT;0;False;6;FLOAT;0;False;3;FLOAT;0;False;1;FLOAT2;0,0;False;2;FLOAT;0;False;1;FLOAT;0
-Node;AmplifyShaderEditor.SamplerNode;5;2932.799,-433.501;Inherit;True;Property;_TextureSample0;Texture Sample 0;0;0;Create;True;0;0;0;False;0;False;-1;None;None;True;0;False;white;Auto;False;Object;-1;Auto;Texture2D;8;0;SAMPLER2D;;False;1;FLOAT2;0,0;False;2;FLOAT;1;False;3;FLOAT2;0,0;False;4;FLOAT2;0,0;False;5;FLOAT;1;False;6;FLOAT;0;False;7;SAMPLERSTATE;;False;5;COLOR;0;FLOAT;1;FLOAT;2;FLOAT;3;FLOAT;4
+Node;AmplifyShaderEditor.SamplerNode;5;2932.799,-433.501;Inherit;True;Property;_TextureSample0;Texture Sample 0;0;0;Create;True;0;0;0;False;0;False;-1;None;None;True;0;False;white;Auto;False;Object;-1;Auto;Texture2D;8;0;SAMPLER2D;;False;1;FLOAT2;0,0;False;2;FLOAT;1;False;3;FLOAT2;0,0;False;4;FLOAT2;0,0;False;5;FLOAT;1;False;6;FLOAT;0;False;7;SAMPLERSTATE;;False;6;COLOR;0;FLOAT;1;FLOAT;2;FLOAT;3;FLOAT;4;FLOAT3;5
 Node;AmplifyShaderEditor.TemplateShaderPropertyNode;4;2963.498,-188.1996;Inherit;False;0;0;_TextureSampleAdd;Pass;False;0;5;FLOAT4;0;FLOAT;1;FLOAT;2;FLOAT;3;FLOAT;4
 Node;AmplifyShaderEditor.SimpleMultiplyOpNode;114;2798.72,-1430.415;Inherit;False;2;2;0;FLOAT;0;False;1;COLOR;0,0,0,0;False;1;COLOR;0
 Node;AmplifyShaderEditor.SimpleMultiplyOpNode;109;2655.218,-2118.014;Inherit;False;2;2;0;COLOR;0,0,0,0;False;1;FLOAT;0;False;1;COLOR;0
@@ -244,7 +244,7 @@ Node;AmplifyShaderEditor.SimpleAddOpNode;116;2971.924,-1544.211;Inherit;False;2;
 Node;AmplifyShaderEditor.SwizzleNode;135;3377.213,-1503.931;Inherit;False;FLOAT3;0;1;2;3;1;0;COLOR;0,0,0,0;False;1;FLOAT3;0
 Node;AmplifyShaderEditor.SimpleMultiplyOpNode;8;3526.002,-290.0993;Inherit;False;2;2;0;COLOR;0,0,0,0;False;1;COLOR;0,0,0,0;False;1;COLOR;0
 Node;AmplifyShaderEditor.CommentaryNode;144;3763.41,-464.8258;Inherit;False;680.5081;458.4976;Comment;4;137;138;123;136;Combine Default + Waves;1,1,1,1;0;0
-Node;AmplifyShaderEditor.SamplerNode;121;3351.113,-1351.726;Inherit;True;Property;_Mask;Mask;8;0;Create;True;0;0;0;False;0;False;-1;None;fbda8092d7b84f87be3259ec87d72dd1;True;0;False;white;Auto;False;Object;-1;Auto;Texture2D;8;0;SAMPLER2D;;False;1;FLOAT2;0,0;False;2;FLOAT;1;False;3;FLOAT2;0,0;False;4;FLOAT2;0,0;False;5;FLOAT;1;False;6;FLOAT;0;False;7;SAMPLERSTATE;;False;5;COLOR;0;FLOAT;1;FLOAT;2;FLOAT;3;FLOAT;4
+Node;AmplifyShaderEditor.SamplerNode;121;3351.113,-1351.726;Inherit;True;Property;_Mask;Mask;8;0;Create;True;0;0;0;False;0;False;-1;None;fbda8092d7b84f87be3259ec87d72dd1;True;0;False;white;Auto;False;Object;-1;Auto;Texture2D;8;0;SAMPLER2D;;False;1;FLOAT2;0,0;False;2;FLOAT;1;False;3;FLOAT2;0,0;False;4;FLOAT2;0,0;False;5;FLOAT;1;False;6;FLOAT;0;False;7;SAMPLERSTATE;;False;6;COLOR;0;FLOAT;1;FLOAT;2;FLOAT;3;FLOAT;4;FLOAT3;5
 Node;AmplifyShaderEditor.SimpleMultiplyOpNode;122;3663.116,-1491.124;Inherit;False;2;2;0;FLOAT3;0,0,0;False;1;FLOAT;0;False;1;FLOAT3;0
 Node;AmplifyShaderEditor.SwizzleNode;136;3813.41,-404.5289;Inherit;False;FLOAT3;0;1;2;3;1;0;COLOR;0,0,0,0;False;1;FLOAT3;0
 Node;AmplifyShaderEditor.SimpleAddOpNode;123;4019.309,-414.8258;Inherit;False;2;2;0;FLOAT3;0,0,0;False;1;FLOAT3;0,0,0;False;1;FLOAT3;0
@@ -294,4 +294,4 @@ WireConnection;137;0;123;0
 WireConnection;137;3;138;0
 WireConnection;0;0;137;0
 ASEEND*/
-//CHKSM=3135D11C4F41EFA638BE7FC92426AE54CF570C05
+//CHKSM=3E45F66B1286F23E6AB6544DBEA7921B98599230

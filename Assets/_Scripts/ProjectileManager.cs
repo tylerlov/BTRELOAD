@@ -200,81 +200,77 @@ public class ProjectileManager : MonoBehaviour
         projectileRequests.Enqueue(new ProjectileRequest(position, rotation, speed, lifetime, uniformScale, enableHoming, materialId));
     }
 
-    [BurstCompile]
-    private struct UpdateProjectilesJob : IJobParallelFor
-    {
-        [ReadOnly] public NativeArray<int> ProjectileIds;
-        [ReadOnly] public NativeHashMap<int, float> ProjectileLifetimes;
-        [WriteOnly] public NativeArray<float> UpdatedLifetimes;
-        public float DeltaTime;
-        public float GlobalTimeScale;
+   [BurstCompile]
+private struct UpdateProjectilesJob : IJobParallelFor
+{
+    [ReadOnly] public NativeArray<int> ProjectileIds;
+    [ReadOnly] public NativeHashMap<int, float> ProjectileLifetimes;
+    [WriteOnly] public NativeArray<float> UpdatedLifetimes;
+    public float DeltaTime;
+    public float GlobalTimeScale;
 
-        public void Execute(int index)
+    public void Execute(int index)
+    {
+        int projectileId = ProjectileIds[index];
+        if (ProjectileLifetimes.TryGetValue(projectileId, out float lifetime))
         {
-            int projectileId = ProjectileIds[index];
-            if (ProjectileLifetimes.TryGetValue(projectileId, out float lifetime))
-            {
-                lifetime -= DeltaTime * GlobalTimeScale;
-                UpdatedLifetimes[index] = lifetime;
-            }
-            else
-            {
-                UpdatedLifetimes[index] = -1f; // Indicate that this projectile should be removed
-            }
+            // We can't check isLifetimePaused here, so we'll update the lifetime
+            // and let the main thread decide whether to use this update or not
+            lifetime -= DeltaTime * GlobalTimeScale;
+            UpdatedLifetimes[index] = lifetime;
+        }
+        else
+        {
+            UpdatedLifetimes[index] = -1f; // Indicate that this projectile should be removed
         }
     }
+}
 
     private void Update()
     {
         float globalTimeScale = timekeeper.Clock("Test").localTimeScale;
         float deltaTime = Time.deltaTime;
 
-        var projectileIdsArray = new NativeArray<int>(projectileIds.AsArray(), Allocator.TempJob);
-        var updatedLifetimes = new NativeArray<float>(projectileIds.Length, Allocator.TempJob);
-        var updateJob = new UpdateProjectilesJob
-        {
-            ProjectileIds = projectileIdsArray,
-            ProjectileLifetimes = projectileLifetimes,
-            UpdatedLifetimes = updatedLifetimes,
-            DeltaTime = deltaTime,
-            GlobalTimeScale = globalTimeScale
-        };
+        var projectilesToRemove = new List<int>();
 
-        JobHandle jobHandle = updateJob.Schedule(projectileIds.Length, 64);
-        jobHandle.Complete();
-
-        projectileIdsArray.Dispose();
-
-        // Process updated projectiles
-        for (int i = projectileIds.Length - 1; i >= 0; i--)
+        for (int i = 0; i < projectileIds.Length; i++)
         {
             int projectileId = projectileIds[i];
             if (projectileLookup.TryGetValue(projectileId, out ProjectileStateBased projectile))
             {
                 projectile.CustomUpdate(globalTimeScale);
 
-                float lifetime = updatedLifetimes[i];
-                if (lifetime <= 0)
+                projectile.lifetime -= deltaTime * globalTimeScale;
+                if (projectile.lifetime <= 0)
                 {
                     projectile.Death();
-                    projectileIds.RemoveAt(i);
-                    projectileLifetimes.Remove(projectileId);
-                    projectileLookup.Remove(projectileId);
+                    projectilesToRemove.Add(projectileId);
                 }
                 else
                 {
-                    projectileLifetimes[projectileId] = lifetime;
+                    projectileLifetimes[projectileId] = projectile.lifetime;
                 }
             }
             else
             {
-                projectileIds.RemoveAt(i);
-                projectileLifetimes.Remove(projectileId);
-                projectileLookup.Remove(projectileId);
+                projectilesToRemove.Add(projectileId);
             }
         }
 
-        updatedLifetimes.Dispose();
+        // Remove projectiles after the loop
+        for (int i = projectileIds.Length - 1; i >= 0; i--)
+        {
+            if (projectilesToRemove.Contains(projectileIds[i]))
+            {
+                projectileIds.RemoveAt(i);
+            }
+        }
+
+        foreach (int idToRemove in projectilesToRemove)
+        {
+            projectileLifetimes.Remove(idToRemove);
+            projectileLookup.Remove(idToRemove);
+        }
 
         ProcessProjectileRequests();
     }
@@ -343,21 +339,19 @@ public class ProjectileManager : MonoBehaviour
         }
 
         ProjectileStateBased projectile = projectilePool.Dequeue();
-        projectile.transform.SetParent(transform); // Ensure the projectile is parented to ProjectileManager
+        projectile.transform.SetParent(transform);
         projectile.transform.position = request.Position;
         projectile.transform.rotation = request.Rotation;
         projectile.gameObject.SetActive(true);
-        projectile.transform.localScale = Vector3.one * request.UniformScale; // Apply uniform scale
+        projectile.transform.localScale = Vector3.one * request.UniformScale;
 
-        // Ensure Rigidbody is not kinematic
         projectile.rb.isKinematic = false;
-        projectile.rb.velocity = request.Rotation * Vector3.forward * request.Speed; // Assumes the projectile has a Rigidbody component
-        projectile.bulletSpeed = request.Speed; // Set the bullet speed here
+        projectile.rb.velocity = request.Rotation * Vector3.forward * request.Speed;
+        projectile.bulletSpeed = request.Speed;
 
-        projectile.SetLifetime(request.Lifetime); // Set the lifetime of the projectile
-        projectile.EnableHoming(request.EnableHoming); // Set homing based on the parameter
+        projectile.SetLifetime(request.Lifetime);
+        projectile.EnableHoming(request.EnableHoming);
 
-        // Swap the material if a new one is provided and it's not already on the projectile
         Material material = GetMaterialById(request.MaterialId);
         if (material != null && projectile.modelRenderer.material != material)
         {

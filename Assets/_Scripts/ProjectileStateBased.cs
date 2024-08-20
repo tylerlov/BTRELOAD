@@ -90,6 +90,8 @@ public class PlayerLockedState : ProjectileState
     {
         if (_projectile.isParried) return;
 
+        _projectile.SetLifetime(200f);
+
         _projectile.currentTarget = null;
         _projectile.homing = false;
         _projectile.tag = "LaunchableBulletLocked";
@@ -117,8 +119,6 @@ public class PlayerLockedState : ProjectileState
         }
 
         _projectile.playerProjPath.enabled = true;
-        _projectile.lifetime = 6f;
-        _projectile.isLifetimePaused = true;
     }
 
     public override void OnStateEnter()
@@ -169,8 +169,6 @@ public class PlayerLockedState : ProjectileState
             ProjectileManager.Instance.ReturnLockedFXToPool(_projectile.currentLockedFX);
             _projectile.currentLockedFX = null;
         }
-
-        _projectile.isLifetimePaused = false;
     }
 
     public override void OnTriggerEnter(Collider other)
@@ -326,6 +324,7 @@ public class ProjectileStateBased : MonoBehaviour
     [Header("Combat")]
     public float damageAmount = 10f;
     public float lifetime;
+    private float originalLifetime;
     #endregion
 
     #region Accuracy and Approach
@@ -604,16 +603,13 @@ public class ProjectileStateBased : MonoBehaviour
 
     public void SetLifetime(float seconds)
     {
-        lifetime = seconds; // Set the lifetime variable to the specified seconds.
+        lifetime = seconds;
+        originalLifetime = seconds;
     }
 
-    public void UpdateLifetime(float deltaTime)
+    public void ResetLifetime()
     {
-        lifetime -= deltaTime;
-        if (lifetime <= 0)
-        {
-            Death();
-        }
+        lifetime = originalLifetime;
     }
 
     public void SetHomingTarget(Transform target)
@@ -629,8 +625,6 @@ public class ProjectileStateBased : MonoBehaviour
 
     // Set the homing target and enable homing
     public float maxTurnRate = 360f; // Maximum turn rate in degrees per second
-
-    public bool isLifetimePaused = false;
 
     void FixedUpdate()
     {
@@ -653,13 +647,10 @@ public class ProjectileStateBased : MonoBehaviour
             }
         }
 
-        if (!isLifetimePaused)
+        lifetime -= deltaTime;
+        if (lifetime <= 0)
         {
-            lifetime -= deltaTime;
-            if (lifetime <= 0)
-            {
-                Death();
-            }
+            Death();
         }
     }
 

@@ -27,6 +27,8 @@ namespace FIMSpace.FTail
         public float IKAutoAngleLimit = 40f;
         [Tooltip("If ik process should work referencing to previously computed CCDIK pose (can be more precise but need more adjusting in weights and angle limits)")]
         public bool IKContinousSolve = false;
+        [Tooltip("Inverting ik iteration order to generate different pose results - more straight towards target")]
+        public bool IkInvertOrder = false;
 
         [FPD_Suffix(0f, 1f)]
         [Tooltip("How much IK motion sohuld be used in tail animator motion -> 0: turned off")]
@@ -101,6 +103,7 @@ namespace FIMSpace.FTail
                 else IK.IKTargetPosition = IKTarget.position;
             }
 
+            IK.Invert = IkInvertOrder;
             IK.IKWeight = IKBlend;
             IK.SyncWithAnimator = IKAnimatorBlend; //else IK.SyncWithAnimator = 0f;
             IK.ReactionQuality = IKReactionQuality;

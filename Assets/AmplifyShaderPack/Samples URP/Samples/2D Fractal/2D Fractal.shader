@@ -1,4 +1,4 @@
-// Made with Amplify Shader Editor v1.9.3.3
+// Made with Amplify Shader Editor v1.9.6.3
 // Available at the Unity Asset Store - http://u3d.as/y3X 
 Shader "AmplifyShaderPack/2D Fractal"
 {
@@ -173,12 +173,16 @@ Shader "AmplifyShaderPack/2D Fractal"
 
 			HLSLPROGRAM
 
-			#pragma multi_compile_instancing
-			#pragma instancing_options renderinglayer
-			#define ASE_SRP_VERSION 140010
-
+			
 
 			#pragma shader_feature_local _RECEIVE_SHADOWS_OFF
+			#pragma multi_compile_instancing
+			#pragma instancing_options renderinglayer
+			#define ASE_SRP_VERSION 140011
+
+
+			
+
 			#pragma multi_compile_fragment _ _SCREEN_SPACE_OCCLUSION
 			#pragma multi_compile_fragment _ _DBUFFER_MRT1 _DBUFFER_MRT2 _DBUFFER_MRT3
 
@@ -188,8 +192,6 @@ Shader "AmplifyShaderPack/2D Fractal"
             #pragma multi_compile _ LIGHTMAP_ON
             #pragma multi_compile _ DYNAMICLIGHTMAP_ON
 			#pragma multi_compile_fragment _ DEBUG_DISPLAY
-
-			
 
 			#pragma vertex vert
 			#pragma fragment frag
@@ -214,6 +216,15 @@ Shader "AmplifyShaderPack/2D Fractal"
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Input.hlsl"
 			#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/TextureStack.hlsl"
+
+			
+			#if ASE_SRP_VERSION >=140010
+			#include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
+			#endif
+		
+
+			
+
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/ShaderGraphFunctions.hlsl"
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DBuffer.hlsl"
 			#include "Packages/com.unity.render-pipelines.universal/Editor/ShaderGraph/Includes/ShaderPass.hlsl"
@@ -238,16 +249,17 @@ Shader "AmplifyShaderPack/2D Fractal"
 			struct VertexOutput
 			{
 				float4 positionCS : SV_POSITION;
+				float4 clipPosV : TEXCOORD0;
 				#if defined(ASE_NEEDS_FRAG_WORLD_POSITION)
-					float3 positionWS : TEXCOORD0;
+					float3 positionWS : TEXCOORD1;
 				#endif
 				#if defined(REQUIRES_VERTEX_SHADOW_COORD_INTERPOLATOR) && defined(ASE_NEEDS_FRAG_SHADOWCOORDS)
-					float4 shadowCoord : TEXCOORD1;
+					float4 shadowCoord : TEXCOORD2;
 				#endif
 				#ifdef ASE_FOG
-					float fogFactor : TEXCOORD2;
+					float fogFactor : TEXCOORD3;
 				#endif
-				float4 ase_texcoord3 : TEXCOORD3;
+				float4 ase_texcoord4 : TEXCOORD4;
 				UNITY_VERTEX_INPUT_INSTANCE_ID
 				UNITY_VERTEX_OUTPUT_STEREO
 			};
@@ -302,10 +314,10 @@ Shader "AmplifyShaderPack/2D Fractal"
 				UNITY_TRANSFER_INSTANCE_ID(v, o);
 				UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
 
-				o.ase_texcoord3.xy = v.ase_texcoord.xy;
+				o.ase_texcoord4.xy = v.ase_texcoord.xy;
 				
 				//setting value to unused interpolator channels and avoid initialization warnings
-				o.ase_texcoord3.zw = 0;
+				o.ase_texcoord4.zw = 0;
 
 				#ifdef ASE_ABSOLUTE_VERTEX_POS
 					float3 defaultVertexValue = v.positionOS.xyz;
@@ -323,26 +335,22 @@ Shader "AmplifyShaderPack/2D Fractal"
 
 				v.normalOS = v.normalOS;
 
-				float3 positionWS = TransformObjectToWorld( v.positionOS.xyz );
-				float4 positionCS = TransformWorldToHClip( positionWS );
+				VertexPositionInputs vertexInput = GetVertexPositionInputs( v.positionOS.xyz );
 
 				#if defined(ASE_NEEDS_FRAG_WORLD_POSITION)
-					o.positionWS = positionWS;
-				#endif
-
-				#if defined(REQUIRES_VERTEX_SHADOW_COORD_INTERPOLATOR) && defined(ASE_NEEDS_FRAG_SHADOWCOORDS)
-					VertexPositionInputs vertexInput = (VertexPositionInputs)0;
-					vertexInput.positionWS = positionWS;
-					vertexInput.positionCS = positionCS;
-					o.shadowCoord = GetShadowCoord( vertexInput );
+					o.positionWS = vertexInput.positionWS;
 				#endif
 
 				#ifdef ASE_FOG
-					o.fogFactor = ComputeFogFactor( positionCS.z );
+					o.fogFactor = ComputeFogFactor( vertexInput.positionCS.z );
 				#endif
 
-				o.positionCS = positionCS;
+				#if defined(REQUIRES_VERTEX_SHADOW_COORD_INTERPOLATOR) && defined(ASE_NEEDS_FRAG_SHADOWCOORDS)
+					o.shadowCoord = GetShadowCoord( vertexInput );
+				#endif
 
+				o.positionCS = vertexInput.positionCS;
+				o.clipPosV = vertexInput.positionCS;
 				return o;
 			}
 
@@ -441,6 +449,9 @@ Shader "AmplifyShaderPack/2D Fractal"
 
 				float4 ShadowCoords = float4( 0, 0, 0, 0 );
 
+				float4 ClipPos = IN.clipPosV;
+				float4 ScreenPos = ComputeScreenPos( IN.clipPosV );
+
 				#if defined(ASE_NEEDS_FRAG_SHADOWCOORDS)
 					#if defined(REQUIRES_VERTEX_SHADOW_COORD_INTERPOLATOR)
 						ShadowCoords = IN.shadowCoord;
@@ -450,7 +461,7 @@ Shader "AmplifyShaderPack/2D Fractal"
 				#endif
 
 				float saferPower10 = abs( _ZoomBase );
-				float2 texCoord12 = IN.ase_texcoord3.xy * float2( 2,2 ) + float2( -1,-1 );
+				float2 texCoord12 = IN.ase_texcoord4.xy * float2( 2,2 ) + float2( -1,-1 );
 				float2 UV24 = ( ( pow( saferPower10 , (sin( _TimeParameters.x * 0.5 )*_ZoomScale + _ZoomOffset) ) * texCoord12 ) + _Center );
 				int MaxIter24 = _MaxIter;
 				float Threshold24 = _Threshold;
@@ -473,10 +484,6 @@ Shader "AmplifyShaderPack/2D Fractal"
 
 				#if defined(_DBUFFER)
 					ApplyDecalToBaseColor(IN.positionCS, Color);
-				#endif
-
-				#if defined(_ALPHAPREMULTIPLY_ON)
-				Color *= Alpha;
 				#endif
 
 				#ifdef LOD_FADE_CROSSFADE
@@ -511,16 +518,18 @@ Shader "AmplifyShaderPack/2D Fractal"
 
 			HLSLPROGRAM
 
+			
+
 			#pragma multi_compile_instancing
-			#define ASE_SRP_VERSION 140010
+			#define ASE_SRP_VERSION 140011
 
 
-			#pragma vertex vert
-			#pragma fragment frag
+			
 
 			#pragma multi_compile_vertex _ _CASTING_PUNCTUAL_LIGHT_SHADOW
 
-			
+			#pragma vertex vert
+			#pragma fragment frag
 
 			#define SHADERPASS SHADERPASS_SHADOWCASTER
 
@@ -783,7 +792,7 @@ Shader "AmplifyShaderPack/2D Fractal"
 			
 
 			#pragma multi_compile_instancing
-			#define ASE_SRP_VERSION 140010
+			#define ASE_SRP_VERSION 140011
 
 
 			
@@ -819,11 +828,12 @@ Shader "AmplifyShaderPack/2D Fractal"
 			struct VertexOutput
 			{
 				float4 positionCS : SV_POSITION;
+				float4 clipPosV : TEXCOORD0;
 				#if defined(ASE_NEEDS_FRAG_WORLD_POSITION)
-				float3 positionWS : TEXCOORD0;
+				float3 positionWS : TEXCOORD1;
 				#endif
 				#if defined(REQUIRES_VERTEX_SHADOW_COORD_INTERPOLATOR) && defined(ASE_NEEDS_FRAG_SHADOWCOORDS)
-				float4 shadowCoord : TEXCOORD1;
+				float4 shadowCoord : TEXCOORD2;
 				#endif
 				
 				UNITY_VERTEX_INPUT_INSTANCE_ID
@@ -876,20 +886,18 @@ Shader "AmplifyShaderPack/2D Fractal"
 
 				v.normalOS = v.normalOS;
 
-				float3 positionWS = TransformObjectToWorld( v.positionOS.xyz );
+				VertexPositionInputs vertexInput = GetVertexPositionInputs( v.positionOS.xyz );
 
 				#if defined(ASE_NEEDS_FRAG_WORLD_POSITION)
-					o.positionWS = positionWS;
+					o.positionWS = vertexInput.positionWS;
 				#endif
 
-				o.positionCS = TransformWorldToHClip( positionWS );
 				#if defined(REQUIRES_VERTEX_SHADOW_COORD_INTERPOLATOR) && defined(ASE_NEEDS_FRAG_SHADOWCOORDS)
-					VertexPositionInputs vertexInput = (VertexPositionInputs)0;
-					vertexInput.positionWS = positionWS;
-					vertexInput.positionCS = o.positionCS;
 					o.shadowCoord = GetShadowCoord( vertexInput );
 				#endif
 
+				o.positionCS = vertexInput.positionCS;
+				o.clipPosV = vertexInput.positionCS;
 				return o;
 			}
 
@@ -983,6 +991,9 @@ Shader "AmplifyShaderPack/2D Fractal"
 
 				float4 ShadowCoords = float4( 0, 0, 0, 0 );
 
+				float4 ClipPos = IN.clipPosV;
+				float4 ScreenPos = ComputeScreenPos( IN.clipPosV );
+
 				#if defined(ASE_NEEDS_FRAG_SHADOWCOORDS)
 					#if defined(REQUIRES_VERTEX_SHADOW_COORD_INTERPOLATOR)
 						ShadowCoords = IN.shadowCoord;
@@ -1022,7 +1033,7 @@ Shader "AmplifyShaderPack/2D Fractal"
 
 			
 
-			#define ASE_SRP_VERSION 140010
+			#define ASE_SRP_VERSION 140011
 
 
 			
@@ -1040,11 +1051,26 @@ Shader "AmplifyShaderPack/2D Fractal"
 			#endif
 		
 
+			
+			#if ASE_SRP_VERSION >=140007
+			#include_with_pragmas "Packages/com.unity.render-pipelines.universal/ShaderLibrary/RenderingLayers.hlsl"
+			#endif
+		
+
 			#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Color.hlsl"
 			#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Texture.hlsl"
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
 			#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/TextureStack.hlsl"
+
+			
+			#if ASE_SRP_VERSION >=140010
+			#include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
+			#endif
+		
+
+			
+
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/ShaderGraphFunctions.hlsl"
 			#include "Packages/com.unity.render-pipelines.universal/Editor/ShaderGraph/Includes/ShaderPass.hlsl"
 
@@ -1245,7 +1271,7 @@ Shader "AmplifyShaderPack/2D Fractal"
 
 			
 
-			#define ASE_SRP_VERSION 140010
+			#define ASE_SRP_VERSION 140011
 
 
 			
@@ -1264,11 +1290,26 @@ Shader "AmplifyShaderPack/2D Fractal"
 			#endif
 		
 
+			
+			#if ASE_SRP_VERSION >=140007
+			#include_with_pragmas "Packages/com.unity.render-pipelines.universal/ShaderLibrary/RenderingLayers.hlsl"
+			#endif
+		
+
 			#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Color.hlsl"
 			#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Texture.hlsl"
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
 			#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/TextureStack.hlsl"
+
+			
+			#if ASE_SRP_VERSION >=140010
+			#include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
+			#endif
+		
+
+			
+
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/ShaderGraphFunctions.hlsl"
 			#include "Packages/com.unity.render-pipelines.universal/Editor/ShaderGraph/Includes/ShaderPass.hlsl"
 
@@ -1474,18 +1515,18 @@ Shader "AmplifyShaderPack/2D Fractal"
 
 			
 
-			#pragma multi_compile_instancing
-			#define ASE_SRP_VERSION 140010
+        	#pragma multi_compile_instancing
+        	#define ASE_SRP_VERSION 140011
 
+
+			
+
+        	#pragma multi_compile_fragment _ _GBUFFER_NORMALS_OCT
 
 			
 
 			#pragma vertex vert
 			#pragma fragment frag
-
-        	#pragma multi_compile_fragment _ _GBUFFER_NORMALS_OCT
-
-			
 
 			#define ATTRIBUTES_NEED_NORMAL
 			#define ATTRIBUTES_NEED_TANGENT
@@ -1510,6 +1551,15 @@ Shader "AmplifyShaderPack/2D Fractal"
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
 			#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/TextureStack.hlsl"
+
+			
+			#if ASE_SRP_VERSION >=140010
+			#include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
+			#endif
+		
+
+			
+
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/ShaderGraphFunctions.hlsl"
 			#include "Packages/com.unity.render-pipelines.universal/Editor/ShaderGraph/Includes/ShaderPass.hlsl"
 
@@ -1530,7 +1580,8 @@ Shader "AmplifyShaderPack/2D Fractal"
 			struct VertexOutput
 			{
 				float4 positionCS : SV_POSITION;
-				float3 normalWS : TEXCOORD0;
+				float4 clipPosV : TEXCOORD0;
+				float3 normalWS : TEXCOORD1;
 				
 				UNITY_VERTEX_INPUT_INSTANCE_ID
 				UNITY_VERTEX_OUTPUT_STEREO
@@ -1590,12 +1641,11 @@ Shader "AmplifyShaderPack/2D Fractal"
 
 				v.normalOS = v.normalOS;
 
-				float3 positionWS = TransformObjectToWorld( v.positionOS.xyz );
-				float3 normalWS = TransformObjectToWorldNormal(v.normalOS);
+				VertexPositionInputs vertexInput = GetVertexPositionInputs( v.positionOS.xyz );
 
-				o.positionCS = TransformWorldToHClip(positionWS);
-				o.normalWS.xyz =  normalWS;
-
+				o.positionCS = vertexInput.positionCS;
+				o.clipPosV = vertexInput.positionCS;
+				o.normalWS = TransformObjectToWorldNormal( v.normalOS );
 				return o;
 			}
 
@@ -1685,15 +1735,16 @@ Shader "AmplifyShaderPack/2D Fractal"
 			#endif
 				 )
 			{
-				SurfaceDescription surfaceDescription = (SurfaceDescription)0;
+				float4 ClipPos = IN.clipPosV;
+				float4 ScreenPos = ComputeScreenPos( IN.clipPosV );
 
 				
 
-				surfaceDescription.Alpha = 1;
-				surfaceDescription.AlphaClipThreshold = 0.5;
+				float Alpha = 1;
+				float AlphaClipThreshold = 0.5;
 
 				#if _ALPHATEST_ON
-					clip(surfaceDescription.Alpha - surfaceDescription.AlphaClipThreshold);
+					clip( Alpha - AlphaClipThreshold );
 				#endif
 
 				#ifdef LOD_FADE_CROSSFADE
@@ -1729,7 +1780,7 @@ Shader "AmplifyShaderPack/2D Fractal"
 	Fallback Off
 }
 /*ASEBEGIN
-Version=19303
+Version=19603
 Node;AmplifyShaderEditor.CommentaryNode;1;-3312.468,-9.701435;Inherit;False;614.0259;736.254;Animating Zoom;7;3;5;10;9;32;4;8;;0,0,0,1;0;0
 Node;AmplifyShaderEditor.CommentaryNode;2;-2672.707,-16.52525;Inherit;False;1068.148;744.2112;Calculating Fractal;12;13;6;12;7;31;14;17;15;16;24;30;29;;0,0,0,1;0;0
 Node;AmplifyShaderEditor.CommentaryNode;11;-1585.095,-17.20109;Inherit;False;1280.354;744.5106;Coloring the Fractal;10;19;18;21;23;20;28;26;27;22;25;;0,0,0,1;0;0
@@ -1756,15 +1807,13 @@ Node;AmplifyShaderEditor.SimpleSubtractOpNode;23;-1204.976,363.3777;Inherit;Fals
 Node;AmplifyShaderEditor.DynamicAppendNode;21;-1042.276,423.2775;Inherit;False;FLOAT3;4;0;FLOAT;0;False;1;FLOAT;0;False;2;FLOAT;0;False;3;FLOAT;0;False;1;FLOAT3;0
 Node;AmplifyShaderEditor.BreakToComponentsNode;18;-892.276,422.2775;Inherit;False;FLOAT3;1;0;FLOAT3;0,0,0;False;16;FLOAT;0;FLOAT;1;FLOAT;2;FLOAT;3;FLOAT;4;FLOAT;5;FLOAT;6;FLOAT;7;FLOAT;8;FLOAT;9;FLOAT;10;FLOAT;11;FLOAT;12;FLOAT;13;FLOAT;14;FLOAT;15
 Node;AmplifyShaderEditor.HSVToRGBNode;19;-749.9022,418.0797;Float;False;3;0;FLOAT;0;False;1;FLOAT;0;False;2;FLOAT;0;False;4;FLOAT3;0;FLOAT;1;FLOAT;2;FLOAT;3
-Node;AmplifyShaderEditor.ColorNode;27;-742.3774,243.2773;Inherit;False;Property;_Tint;Tint;6;1;[HDR];Create;True;0;0;0;False;0;False;0,0,0,0;1,1,1,0;True;0;5;COLOR;0;FLOAT;1;FLOAT;2;FLOAT;3;FLOAT;4
+Node;AmplifyShaderEditor.ColorNode;27;-742.3774,243.2773;Inherit;False;Property;_Tint;Tint;6;1;[HDR];Create;True;0;0;0;False;0;False;0,0,0,0;1,1,1,0;True;True;0;6;COLOR;0;FLOAT;1;FLOAT;2;FLOAT;3;FLOAT;4;FLOAT3;5
 Node;AmplifyShaderEditor.SimpleMultiplyOpNode;25;-505.04,394.0304;Inherit;False;2;2;0;COLOR;0,0,0,0;False;1;FLOAT3;0,0,0;False;1;COLOR;0
 Node;AmplifyShaderEditor.RangedFloatNode;5;-3272.062,281.5366;Float;False;Property;_ZoomOffset;Zoom Offset;2;0;Create;True;0;0;0;False;0;False;2;1;0;0;0;1;FLOAT;0
 Node;AmplifyShaderEditor.RangedFloatNode;3;-3266.468,205.6482;Float;False;Property;_ZoomScale;Zoom Scale;3;0;Create;True;0;0;0;False;0;False;3;3;0;0;0;1;FLOAT;0
 Node;AmplifyShaderEditor.OneMinusNode;22;-1531.095,456.174;Inherit;False;1;0;FLOAT;0;False;1;FLOAT;0
 Node;AmplifyShaderEditor.IntNode;16;-2030.562,480.9855;Float;False;Property;_MaxIter;MaxIter;0;0;Create;True;0;0;0;False;0;False;0;250;False;0;1;INT;0
 Node;AmplifyShaderEditor.StickyNoteNode;33;-270.8231,271.6676;Inherit;False;253;111;ASE Fractal MaxIter;;0.02830189,0.02830189,0.02830189,1;This sample proceduraly creates an animated 2D Mandlebrot fractal.;0;0
-Node;AmplifyShaderEditor.TemplateMultiPassMasterNode;34;-275,395;Float;False;False;-1;2;UnityEditor.ShaderGraphUnlitGUI;0;1;New Amplify Shader;2992e84f91cbeb14eab234972e07ea9d;True;ExtraPrePass;0;0;ExtraPrePass;5;False;False;False;False;False;False;False;False;False;False;False;False;True;0;False;;False;True;0;False;;False;False;False;False;False;False;False;False;False;True;False;0;False;;255;False;;255;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;False;False;False;False;True;4;RenderPipeline=UniversalPipeline;RenderType=Opaque=RenderType;Queue=Geometry=Queue=0;UniversalMaterialType=Unlit;True;5;True;12;all;0;False;True;1;1;False;;0;False;;0;1;False;;0;False;;False;False;False;False;False;False;False;False;False;False;False;False;True;0;False;;False;True;True;True;True;True;0;False;;False;False;False;False;False;False;False;True;False;0;False;;255;False;;255;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;False;True;1;False;;True;3;False;;True;True;0;False;;0;False;;True;0;False;False;0;;0;0;Standard;0;False;0
-Node;AmplifyShaderEditor.TemplateMultiPassMasterNode;35;-275,395;Float;False;True;-1;2;UnityEditor.ShaderGraphUnlitGUI;0;13;AmplifyShaderPack/2D Fractal;2992e84f91cbeb14eab234972e07ea9d;True;Forward;0;1;Forward;8;False;False;False;False;False;False;False;False;False;False;False;False;True;0;False;;False;True;0;False;;False;False;False;False;False;False;False;False;False;True;False;0;False;;255;False;;255;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;False;False;False;False;True;4;RenderPipeline=UniversalPipeline;RenderType=Opaque=RenderType;Queue=Geometry=Queue=0;UniversalMaterialType=Unlit;True;5;True;12;all;0;False;True;1;1;False;;0;False;;1;1;False;;0;False;;False;False;False;False;False;False;False;False;False;False;False;False;False;False;True;True;True;True;True;0;False;;False;False;False;False;False;False;False;True;False;0;False;;255;False;;255;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;False;True;1;False;;True;3;False;;True;True;0;False;;0;False;;True;1;LightMode=UniversalForwardOnly;False;False;0;;0;0;Standard;21;Surface;0;0;  Blend;0;0;Two Sided;1;0;Forward Only;0;0;Cast Shadows;1;0;  Use Shadow Threshold;0;0;GPU Instancing;1;0;LOD CrossFade;0;0;Built-in Fog;0;0;Meta Pass;0;0;Extra Pre Pass;0;0;Tessellation;0;0;  Phong;0;0;  Strength;0.5,False,;0;  Type;0;0;  Tess;16,False,;0;  Min;10,False,;0;  Max;25,False,;0;  Edge Length;16,False,;0;  Max Displacement;25,False,;0;Vertex Position,InvertActionOnDeselection;1;0;0;10;False;True;True;True;False;False;True;True;True;False;False;;False;0
 Node;AmplifyShaderEditor.TemplateMultiPassMasterNode;36;-275,395;Float;False;False;-1;2;UnityEditor.ShaderGraphUnlitGUI;0;1;New Amplify Shader;2992e84f91cbeb14eab234972e07ea9d;True;ShadowCaster;0;2;ShadowCaster;0;False;False;False;False;False;False;False;False;False;False;False;False;True;0;False;;False;True;0;False;;False;False;False;False;False;False;False;False;False;True;False;0;False;;255;False;;255;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;False;False;False;False;True;4;RenderPipeline=UniversalPipeline;RenderType=Opaque=RenderType;Queue=Geometry=Queue=0;UniversalMaterialType=Unlit;True;5;True;12;all;0;False;False;False;False;False;False;False;False;False;False;False;False;True;0;False;;False;False;False;True;False;False;False;False;0;False;;False;False;False;False;False;False;False;False;False;True;1;False;;True;3;False;;False;True;1;LightMode=ShadowCaster;False;False;0;;0;0;Standard;0;False;0
 Node;AmplifyShaderEditor.TemplateMultiPassMasterNode;37;-275,395;Float;False;False;-1;2;UnityEditor.ShaderGraphUnlitGUI;0;1;New Amplify Shader;2992e84f91cbeb14eab234972e07ea9d;True;DepthOnly;0;3;DepthOnly;0;False;False;False;False;False;False;False;False;False;False;False;False;True;0;False;;False;True;0;False;;False;False;False;False;False;False;False;False;False;True;False;0;False;;255;False;;255;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;False;False;False;False;True;4;RenderPipeline=UniversalPipeline;RenderType=Opaque=RenderType;Queue=Geometry=Queue=0;UniversalMaterialType=Unlit;True;5;True;12;all;0;False;False;False;False;False;False;False;False;False;False;False;False;True;0;False;;False;False;False;True;False;False;False;False;0;False;;False;False;False;False;False;False;False;False;False;True;1;False;;False;False;True;1;LightMode=DepthOnly;False;False;0;;0;0;Standard;0;False;0
 Node;AmplifyShaderEditor.TemplateMultiPassMasterNode;38;-275,395;Float;False;False;-1;2;UnityEditor.ShaderGraphUnlitGUI;0;1;New Amplify Shader;2992e84f91cbeb14eab234972e07ea9d;True;Meta;0;4;Meta;0;False;False;False;False;False;False;False;False;False;False;False;False;True;0;False;;False;True;0;False;;False;False;False;False;False;False;False;False;False;True;False;0;False;;255;False;;255;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;False;False;False;False;True;4;RenderPipeline=UniversalPipeline;RenderType=Opaque=RenderType;Queue=Geometry=Queue=0;UniversalMaterialType=Unlit;True;5;True;12;all;0;False;False;False;False;False;False;False;False;False;False;False;False;False;False;True;2;False;;False;False;False;False;False;False;False;False;False;False;False;False;False;False;True;1;LightMode=Meta;False;False;0;;0;0;Standard;0;False;0
@@ -1773,6 +1822,8 @@ Node;AmplifyShaderEditor.TemplateMultiPassMasterNode;40;-275,445;Float;False;Fal
 Node;AmplifyShaderEditor.TemplateMultiPassMasterNode;41;-275,445;Float;False;False;-1;2;UnityEditor.ShaderGraphUnlitGUI;0;1;New Amplify Shader;2992e84f91cbeb14eab234972e07ea9d;True;ScenePickingPass;0;7;ScenePickingPass;0;False;False;False;False;False;False;False;False;False;False;False;False;True;0;False;;False;True;0;False;;False;False;False;False;False;False;False;False;False;True;False;0;False;;255;False;;255;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;False;False;False;False;True;4;RenderPipeline=UniversalPipeline;RenderType=Opaque=RenderType;Queue=Geometry=Queue=0;UniversalMaterialType=Unlit;True;5;True;12;all;0;False;False;False;False;False;False;False;False;False;False;False;False;True;0;False;;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;True;1;LightMode=Picking;False;False;0;;0;0;Standard;0;False;0
 Node;AmplifyShaderEditor.TemplateMultiPassMasterNode;42;-275,445;Float;False;False;-1;2;UnityEditor.ShaderGraphUnlitGUI;0;1;New Amplify Shader;2992e84f91cbeb14eab234972e07ea9d;True;DepthNormals;0;8;DepthNormals;0;False;False;False;False;False;False;False;False;False;False;False;False;True;0;False;;False;True;0;False;;False;False;False;False;False;False;False;False;False;True;False;0;False;;255;False;;255;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;False;False;False;False;True;4;RenderPipeline=UniversalPipeline;RenderType=Opaque=RenderType;Queue=Geometry=Queue=0;UniversalMaterialType=Unlit;True;5;True;12;all;0;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;True;1;False;;True;3;False;;False;True;1;LightMode=DepthNormalsOnly;False;False;0;;0;0;Standard;0;False;0
 Node;AmplifyShaderEditor.TemplateMultiPassMasterNode;43;-275,445;Float;False;False;-1;2;UnityEditor.ShaderGraphUnlitGUI;0;1;New Amplify Shader;2992e84f91cbeb14eab234972e07ea9d;True;DepthNormalsOnly;0;9;DepthNormalsOnly;0;False;False;False;False;False;False;False;False;False;False;False;False;True;0;False;;False;True;0;False;;False;False;False;False;False;False;False;False;False;True;False;0;False;;255;False;;255;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;False;False;False;False;True;4;RenderPipeline=UniversalPipeline;RenderType=Opaque=RenderType;Queue=Geometry=Queue=0;UniversalMaterialType=Unlit;True;5;True;12;all;0;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;True;1;False;;True;3;False;;False;True;1;LightMode=DepthNormalsOnly;False;True;9;d3d11;metal;vulkan;xboxone;xboxseries;playstation;ps4;ps5;switch;0;;0;0;Standard;0;False;0
+Node;AmplifyShaderEditor.TemplateMultiPassMasterNode;35;-272,464;Float;False;True;-1;2;UnityEditor.ShaderGraphUnlitGUI;0;13;AmplifyShaderPack/2D Fractal;2992e84f91cbeb14eab234972e07ea9d;True;Forward;0;1;Forward;8;False;False;False;False;False;False;False;False;False;False;False;False;True;0;False;;False;True;0;False;;False;False;False;False;False;False;False;False;False;True;False;0;False;;255;False;;255;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;False;False;False;False;True;4;RenderPipeline=UniversalPipeline;RenderType=Opaque=RenderType;Queue=Geometry=Queue=0;UniversalMaterialType=Unlit;True;5;True;12;all;0;False;True;1;1;False;;0;False;;1;1;False;;0;False;;False;False;False;False;False;False;False;False;False;False;False;False;False;False;True;True;True;True;True;0;False;;False;False;False;False;False;False;False;True;False;0;False;;255;False;;255;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;False;True;1;False;;True;3;False;;True;True;0;False;;0;False;;True;1;LightMode=UniversalForwardOnly;False;False;0;;0;0;Standard;22;Surface;0;0;  Blend;0;0;Two Sided;1;0;Forward Only;0;0;Cast Shadows;1;0;  Use Shadow Threshold;0;0;Receive Shadows;1;0;GPU Instancing;1;0;LOD CrossFade;0;0;Built-in Fog;0;0;Meta Pass;0;0;Extra Pre Pass;0;638484390333082654;Tessellation;0;0;  Phong;0;0;  Strength;0.5,False,;0;  Type;0;0;  Tess;16,False,;0;  Min;10,False,;0;  Max;25,False,;0;  Edge Length;16,False,;0;  Max Displacement;25,False,;0;Vertex Position,InvertActionOnDeselection;1;0;0;10;False;True;True;True;False;False;True;True;True;False;False;;False;0
+Node;AmplifyShaderEditor.TemplateMultiPassMasterNode;34;-256,96;Float;False;False;-1;2;UnityEditor.ShaderGraphUnlitGUI;0;13;New Amplify Shader;2992e84f91cbeb14eab234972e07ea9d;True;ExtraPrePass;0;0;ExtraPrePass;5;False;False;False;False;False;False;False;False;False;False;False;False;True;0;False;;False;True;0;False;;False;False;False;False;False;False;False;False;False;True;False;0;False;;255;False;;255;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;False;False;False;False;True;4;RenderPipeline=UniversalPipeline;RenderType=Opaque=RenderType;Queue=Geometry=Queue=0;UniversalMaterialType=Unlit;True;5;True;12;all;0;False;True;1;1;False;;0;False;;0;1;False;;0;False;;False;False;False;False;False;False;False;False;False;False;False;False;True;0;False;;False;True;True;True;True;True;0;False;;False;False;False;False;False;False;False;True;False;0;False;;255;False;;255;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;False;True;1;False;;True;3;False;;True;True;0;False;;0;False;;True;0;False;False;0;;0;0;Standard;0;False;0
 WireConnection;24;0;17;0
 WireConnection;24;1;16;0
 WireConnection;24;2;15;0
@@ -1803,4 +1854,4 @@ WireConnection;25;1;19;0
 WireConnection;22;0;24;0
 WireConnection;35;2;25;0
 ASEEND*/
-//CHKSM=2D4D2EE3C6E77218580AFF9A7BA1BBFC27605EB1
+//CHKSM=39DB0673C5E303A60DBAE5A11742D3985386DEF3

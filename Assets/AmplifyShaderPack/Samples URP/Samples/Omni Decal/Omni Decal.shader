@@ -1,4 +1,4 @@
-// Made with Amplify Shader Editor v1.9.3.3
+// Made with Amplify Shader Editor v1.9.6.3
 // Available at the Unity Asset Store - http://u3d.as/y3X 
 Shader "AmplifyShaderPack/Omni Decal"
 {
@@ -169,14 +169,18 @@ Shader "AmplifyShaderPack/Omni Decal"
 
 			HLSLPROGRAM
 
+			
+
 			#define _SURFACE_TYPE_TRANSPARENT 1
+			#pragma shader_feature_local _RECEIVE_SHADOWS_OFF
 			#pragma multi_compile_instancing
 			#pragma instancing_options renderinglayer
-			#define ASE_SRP_VERSION 140010
+			#define ASE_SRP_VERSION 140011
 			#define REQUIRE_DEPTH_TEXTURE 1
 
 
-			#pragma shader_feature_local _RECEIVE_SHADOWS_OFF
+			
+
 			#pragma multi_compile_fragment _ _SCREEN_SPACE_OCCLUSION
 			#pragma multi_compile_fragment _ _DBUFFER_MRT1 _DBUFFER_MRT2 _DBUFFER_MRT3
 
@@ -186,8 +190,6 @@ Shader "AmplifyShaderPack/Omni Decal"
             #pragma multi_compile _ LIGHTMAP_ON
             #pragma multi_compile _ DYNAMICLIGHTMAP_ON
 			#pragma multi_compile_fragment _ DEBUG_DISPLAY
-
-			
 
 			#pragma vertex vert
 			#pragma fragment frag
@@ -212,6 +214,15 @@ Shader "AmplifyShaderPack/Omni Decal"
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Input.hlsl"
 			#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/TextureStack.hlsl"
+
+			
+			#if ASE_SRP_VERSION >=140010
+			#include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
+			#endif
+		
+
+			
+
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/ShaderGraphFunctions.hlsl"
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DBuffer.hlsl"
 			#include "Packages/com.unity.render-pipelines.universal/Editor/ShaderGraph/Includes/ShaderPass.hlsl"
@@ -223,7 +234,8 @@ Shader "AmplifyShaderPack/Omni Decal"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/LODCrossFade.hlsl"
             #endif
 
-			
+			#define ASE_NEEDS_FRAG_SCREEN_POSITION
+
 
 			struct VertexInput
 			{
@@ -236,16 +248,17 @@ Shader "AmplifyShaderPack/Omni Decal"
 			struct VertexOutput
 			{
 				float4 positionCS : SV_POSITION;
+				float4 clipPosV : TEXCOORD0;
 				#if defined(ASE_NEEDS_FRAG_WORLD_POSITION)
-					float3 positionWS : TEXCOORD0;
+					float3 positionWS : TEXCOORD1;
 				#endif
 				#if defined(REQUIRES_VERTEX_SHADOW_COORD_INTERPOLATOR) && defined(ASE_NEEDS_FRAG_SHADOWCOORDS)
-					float4 shadowCoord : TEXCOORD1;
+					float4 shadowCoord : TEXCOORD2;
 				#endif
 				#ifdef ASE_FOG
-					float fogFactor : TEXCOORD2;
+					float fogFactor : TEXCOORD3;
 				#endif
-				float4 ase_texcoord3 : TEXCOORD3;
+				
 				UNITY_VERTEX_INPUT_INSTANCE_ID
 				UNITY_VERTEX_OUTPUT_STEREO
 			};
@@ -292,9 +305,6 @@ Shader "AmplifyShaderPack/Omni Decal"
 				UNITY_TRANSFER_INSTANCE_ID(v, o);
 				UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
 
-				float4 ase_clipPos = TransformObjectToHClip((v.positionOS).xyz);
-				float4 screenPos = ComputeScreenPos(ase_clipPos);
-				o.ase_texcoord3 = screenPos;
 				
 
 				#ifdef ASE_ABSOLUTE_VERTEX_POS
@@ -313,26 +323,22 @@ Shader "AmplifyShaderPack/Omni Decal"
 
 				v.normalOS = v.normalOS;
 
-				float3 positionWS = TransformObjectToWorld( v.positionOS.xyz );
-				float4 positionCS = TransformWorldToHClip( positionWS );
+				VertexPositionInputs vertexInput = GetVertexPositionInputs( v.positionOS.xyz );
 
 				#if defined(ASE_NEEDS_FRAG_WORLD_POSITION)
-					o.positionWS = positionWS;
-				#endif
-
-				#if defined(REQUIRES_VERTEX_SHADOW_COORD_INTERPOLATOR) && defined(ASE_NEEDS_FRAG_SHADOWCOORDS)
-					VertexPositionInputs vertexInput = (VertexPositionInputs)0;
-					vertexInput.positionWS = positionWS;
-					vertexInput.positionCS = positionCS;
-					o.shadowCoord = GetShadowCoord( vertexInput );
+					o.positionWS = vertexInput.positionWS;
 				#endif
 
 				#ifdef ASE_FOG
-					o.fogFactor = ComputeFogFactor( positionCS.z );
+					o.fogFactor = ComputeFogFactor( vertexInput.positionCS.z );
 				#endif
 
-				o.positionCS = positionCS;
+				#if defined(REQUIRES_VERTEX_SHADOW_COORD_INTERPOLATOR) && defined(ASE_NEEDS_FRAG_SHADOWCOORDS)
+					o.shadowCoord = GetShadowCoord( vertexInput );
+				#endif
 
+				o.positionCS = vertexInput.positionCS;
+				o.clipPosV = vertexInput.positionCS;
 				return o;
 			}
 
@@ -430,6 +436,9 @@ Shader "AmplifyShaderPack/Omni Decal"
 
 				float4 ShadowCoords = float4( 0, 0, 0, 0 );
 
+				float4 ClipPos = IN.clipPosV;
+				float4 ScreenPos = ComputeScreenPos( IN.clipPosV );
+
 				#if defined(ASE_NEEDS_FRAG_SHADOWCOORDS)
 					#if defined(REQUIRES_VERTEX_SHADOW_COORD_INTERPOLATOR)
 						ShadowCoords = IN.shadowCoord;
@@ -439,8 +448,7 @@ Shader "AmplifyShaderPack/Omni Decal"
 				#endif
 
 				float4 transform114 = mul(GetObjectToWorldMatrix(),float4( 0,0,0,1 ));
-				float4 screenPos = IN.ase_texcoord3;
-				float4 ase_screenPosNorm = screenPos / screenPos.w;
+				float4 ase_screenPosNorm = ScreenPos / ScreenPos.w;
 				ase_screenPosNorm.z = ( UNITY_NEAR_CLIP_VALUE >= 0 ) ? ase_screenPosNorm.z : ase_screenPosNorm.z * 0.5 + 0.5;
 				float2 UV22_g21 = ase_screenPosNorm.xy;
 				float2 localUnStereo22_g21 = UnStereo( UV22_g21 );
@@ -478,10 +486,6 @@ Shader "AmplifyShaderPack/Omni Decal"
 					ApplyDecalToBaseColor(IN.positionCS, Color);
 				#endif
 
-				#if defined(_ALPHAPREMULTIPLY_ON)
-				Color *= Alpha;
-				#endif
-
 				#ifdef LOD_FADE_CROSSFADE
 					LODFadeCrossFade( IN.positionCS );
 				#endif
@@ -517,7 +521,7 @@ Shader "AmplifyShaderPack/Omni Decal"
 
 			#define _SURFACE_TYPE_TRANSPARENT 1
 			#pragma multi_compile_instancing
-			#define ASE_SRP_VERSION 140010
+			#define ASE_SRP_VERSION 140011
 			#define REQUIRE_DEPTH_TEXTURE 1
 
 
@@ -541,7 +545,8 @@ Shader "AmplifyShaderPack/Omni Decal"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/LODCrossFade.hlsl"
             #endif
 
-			
+			#define ASE_NEEDS_FRAG_SCREEN_POSITION
+
 
 			struct VertexInput
 			{
@@ -554,13 +559,14 @@ Shader "AmplifyShaderPack/Omni Decal"
 			struct VertexOutput
 			{
 				float4 positionCS : SV_POSITION;
+				float4 clipPosV : TEXCOORD0;
 				#if defined(ASE_NEEDS_FRAG_WORLD_POSITION)
-				float3 positionWS : TEXCOORD0;
+				float3 positionWS : TEXCOORD1;
 				#endif
 				#if defined(REQUIRES_VERTEX_SHADOW_COORD_INTERPOLATOR) && defined(ASE_NEEDS_FRAG_SHADOWCOORDS)
-				float4 shadowCoord : TEXCOORD1;
+				float4 shadowCoord : TEXCOORD2;
 				#endif
-				float4 ase_texcoord2 : TEXCOORD2;
+				
 				UNITY_VERTEX_INPUT_INSTANCE_ID
 				UNITY_VERTEX_OUTPUT_STEREO
 			};
@@ -606,9 +612,6 @@ Shader "AmplifyShaderPack/Omni Decal"
 				UNITY_TRANSFER_INSTANCE_ID(v, o);
 				UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
 
-				float4 ase_clipPos = TransformObjectToHClip((v.positionOS).xyz);
-				float4 screenPos = ComputeScreenPos(ase_clipPos);
-				o.ase_texcoord2 = screenPos;
 				
 
 				#ifdef ASE_ABSOLUTE_VERTEX_POS
@@ -627,20 +630,18 @@ Shader "AmplifyShaderPack/Omni Decal"
 
 				v.normalOS = v.normalOS;
 
-				float3 positionWS = TransformObjectToWorld( v.positionOS.xyz );
+				VertexPositionInputs vertexInput = GetVertexPositionInputs( v.positionOS.xyz );
 
 				#if defined(ASE_NEEDS_FRAG_WORLD_POSITION)
-					o.positionWS = positionWS;
+					o.positionWS = vertexInput.positionWS;
 				#endif
 
-				o.positionCS = TransformWorldToHClip( positionWS );
 				#if defined(REQUIRES_VERTEX_SHADOW_COORD_INTERPOLATOR) && defined(ASE_NEEDS_FRAG_SHADOWCOORDS)
-					VertexPositionInputs vertexInput = (VertexPositionInputs)0;
-					vertexInput.positionWS = positionWS;
-					vertexInput.positionCS = o.positionCS;
 					o.shadowCoord = GetShadowCoord( vertexInput );
 				#endif
 
+				o.positionCS = vertexInput.positionCS;
+				o.clipPosV = vertexInput.positionCS;
 				return o;
 			}
 
@@ -734,6 +735,9 @@ Shader "AmplifyShaderPack/Omni Decal"
 
 				float4 ShadowCoords = float4( 0, 0, 0, 0 );
 
+				float4 ClipPos = IN.clipPosV;
+				float4 ScreenPos = ComputeScreenPos( IN.clipPosV );
+
 				#if defined(ASE_NEEDS_FRAG_SHADOWCOORDS)
 					#if defined(REQUIRES_VERTEX_SHADOW_COORD_INTERPOLATOR)
 						ShadowCoords = IN.shadowCoord;
@@ -743,8 +747,7 @@ Shader "AmplifyShaderPack/Omni Decal"
 				#endif
 
 				float4 transform114 = mul(GetObjectToWorldMatrix(),float4( 0,0,0,1 ));
-				float4 screenPos = IN.ase_texcoord2;
-				float4 ase_screenPosNorm = screenPos / screenPos.w;
+				float4 ase_screenPosNorm = ScreenPos / ScreenPos.w;
 				ase_screenPosNorm.z = ( UNITY_NEAR_CLIP_VALUE >= 0 ) ? ase_screenPosNorm.z : ase_screenPosNorm.z * 0.5 + 0.5;
 				float2 UV22_g21 = ase_screenPosNorm.xy;
 				float2 localUnStereo22_g21 = UnStereo( UV22_g21 );
@@ -797,7 +800,7 @@ Shader "AmplifyShaderPack/Omni Decal"
 			
 
 			#define _SURFACE_TYPE_TRANSPARENT 1
-			#define ASE_SRP_VERSION 140010
+			#define ASE_SRP_VERSION 140011
 			#define REQUIRE_DEPTH_TEXTURE 1
 
 
@@ -816,11 +819,26 @@ Shader "AmplifyShaderPack/Omni Decal"
 			#endif
 		
 
+			
+			#if ASE_SRP_VERSION >=140007
+			#include_with_pragmas "Packages/com.unity.render-pipelines.universal/ShaderLibrary/RenderingLayers.hlsl"
+			#endif
+		
+
 			#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Color.hlsl"
 			#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Texture.hlsl"
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
 			#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/TextureStack.hlsl"
+
+			
+			#if ASE_SRP_VERSION >=140010
+			#include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
+			#endif
+		
+
+			
+
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/ShaderGraphFunctions.hlsl"
 			#include "Packages/com.unity.render-pipelines.universal/Editor/ShaderGraph/Includes/ShaderPass.hlsl"
 
@@ -1061,7 +1079,7 @@ Shader "AmplifyShaderPack/Omni Decal"
 			
 
 			#define _SURFACE_TYPE_TRANSPARENT 1
-			#define ASE_SRP_VERSION 140010
+			#define ASE_SRP_VERSION 140011
 			#define REQUIRE_DEPTH_TEXTURE 1
 
 
@@ -1081,11 +1099,26 @@ Shader "AmplifyShaderPack/Omni Decal"
 			#endif
 		
 
+			
+			#if ASE_SRP_VERSION >=140007
+			#include_with_pragmas "Packages/com.unity.render-pipelines.universal/ShaderLibrary/RenderingLayers.hlsl"
+			#endif
+		
+
 			#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Color.hlsl"
 			#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Texture.hlsl"
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
 			#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/TextureStack.hlsl"
+
+			
+			#if ASE_SRP_VERSION >=140010
+			#include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
+			#endif
+		
+
+			
+
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/ShaderGraphFunctions.hlsl"
 			#include "Packages/com.unity.render-pipelines.universal/Editor/ShaderGraph/Includes/ShaderPass.hlsl"
 
@@ -1330,20 +1363,20 @@ Shader "AmplifyShaderPack/Omni Decal"
 
 			
 
-			#define _SURFACE_TYPE_TRANSPARENT 1
-			#pragma multi_compile_instancing
-			#define ASE_SRP_VERSION 140010
-			#define REQUIRE_DEPTH_TEXTURE 1
+        	#define _SURFACE_TYPE_TRANSPARENT 1
+        	#pragma multi_compile_instancing
+        	#define ASE_SRP_VERSION 140011
+        	#define REQUIRE_DEPTH_TEXTURE 1
 
+
+			
+
+        	#pragma multi_compile_fragment _ _GBUFFER_NORMALS_OCT
 
 			
 
 			#pragma vertex vert
 			#pragma fragment frag
-
-        	#pragma multi_compile_fragment _ _GBUFFER_NORMALS_OCT
-
-			
 
 			#define ATTRIBUTES_NEED_NORMAL
 			#define ATTRIBUTES_NEED_TANGENT
@@ -1368,6 +1401,15 @@ Shader "AmplifyShaderPack/Omni Decal"
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
 			#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/TextureStack.hlsl"
+
+			
+			#if ASE_SRP_VERSION >=140010
+			#include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
+			#endif
+		
+
+			
+
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/ShaderGraphFunctions.hlsl"
 			#include "Packages/com.unity.render-pipelines.universal/Editor/ShaderGraph/Includes/ShaderPass.hlsl"
 
@@ -1375,7 +1417,8 @@ Shader "AmplifyShaderPack/Omni Decal"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/LODCrossFade.hlsl"
             #endif
 
-			
+			#define ASE_NEEDS_FRAG_SCREEN_POSITION
+
 
 			struct VertexInput
 			{
@@ -1388,8 +1431,9 @@ Shader "AmplifyShaderPack/Omni Decal"
 			struct VertexOutput
 			{
 				float4 positionCS : SV_POSITION;
-				float3 normalWS : TEXCOORD0;
-				float4 ase_texcoord1 : TEXCOORD1;
+				float4 clipPosV : TEXCOORD0;
+				float3 normalWS : TEXCOORD1;
+				
 				UNITY_VERTEX_INPUT_INSTANCE_ID
 				UNITY_VERTEX_OUTPUT_STEREO
 			};
@@ -1443,9 +1487,6 @@ Shader "AmplifyShaderPack/Omni Decal"
 				UNITY_TRANSFER_INSTANCE_ID(v, o);
 				UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
 
-				float4 ase_clipPos = TransformObjectToHClip((v.positionOS).xyz);
-				float4 screenPos = ComputeScreenPos(ase_clipPos);
-				o.ase_texcoord1 = screenPos;
 				
 
 				#ifdef ASE_ABSOLUTE_VERTEX_POS
@@ -1464,12 +1505,11 @@ Shader "AmplifyShaderPack/Omni Decal"
 
 				v.normalOS = v.normalOS;
 
-				float3 positionWS = TransformObjectToWorld( v.positionOS.xyz );
-				float3 normalWS = TransformObjectToWorldNormal(v.normalOS);
+				VertexPositionInputs vertexInput = GetVertexPositionInputs( v.positionOS.xyz );
 
-				o.positionCS = TransformWorldToHClip(positionWS);
-				o.normalWS.xyz =  normalWS;
-
+				o.positionCS = vertexInput.positionCS;
+				o.clipPosV = vertexInput.positionCS;
+				o.normalWS = TransformObjectToWorldNormal( v.normalOS );
 				return o;
 			}
 
@@ -1559,11 +1599,11 @@ Shader "AmplifyShaderPack/Omni Decal"
 			#endif
 				 )
 			{
-				SurfaceDescription surfaceDescription = (SurfaceDescription)0;
+				float4 ClipPos = IN.clipPosV;
+				float4 ScreenPos = ComputeScreenPos( IN.clipPosV );
 
 				float4 transform114 = mul(GetObjectToWorldMatrix(),float4( 0,0,0,1 ));
-				float4 screenPos = IN.ase_texcoord1;
-				float4 ase_screenPosNorm = screenPos / screenPos.w;
+				float4 ase_screenPosNorm = ScreenPos / ScreenPos.w;
 				ase_screenPosNorm.z = ( UNITY_NEAR_CLIP_VALUE >= 0 ) ? ase_screenPosNorm.z : ase_screenPosNorm.z * 0.5 + 0.5;
 				float2 UV22_g21 = ase_screenPosNorm.xy;
 				float2 localUnStereo22_g21 = UnStereo( UV22_g21 );
@@ -1586,11 +1626,11 @@ Shader "AmplifyShaderPack/Omni Decal"
 				float temp_output_184_0 = ( 1.0 - saturate( pow( saferPower163 , _Rampfalloff ) ) );
 				
 
-				surfaceDescription.Alpha = temp_output_184_0;
-				surfaceDescription.AlphaClipThreshold = 0.5;
+				float Alpha = temp_output_184_0;
+				float AlphaClipThreshold = 0.5;
 
 				#if _ALPHATEST_ON
-					clip(surfaceDescription.Alpha - surfaceDescription.AlphaClipThreshold);
+					clip( Alpha - AlphaClipThreshold );
 				#endif
 
 				#ifdef LOD_FADE_CROSSFADE
@@ -1626,7 +1666,7 @@ Shader "AmplifyShaderPack/Omni Decal"
 	Fallback "Hidden/InternalErrorShader"
 }
 /*ASEBEGIN
-Version=19303
+Version=19603
 Node;AmplifyShaderEditor.ObjectToWorldTransfNode;114;1650.052,493.4491;Inherit;False;1;0;FLOAT4;0,0,0,1;False;5;FLOAT4;0;FLOAT;1;FLOAT;2;FLOAT;3;FLOAT;4
 Node;AmplifyShaderEditor.FunctionNode;273;1501.361,654.5815;Inherit;False;Reconstruct World Position From Depth;-1;;20;e7094bcbcc80eb140b2a3dbe6a861de8;0;0;1;FLOAT4;0
 Node;AmplifyShaderEditor.SimpleSubtractOpNode;113;1885.928,495.2047;Inherit;False;2;0;FLOAT4;0,0,0,0;False;1;FLOAT4;0,0,0,0;False;1;FLOAT4;0
@@ -1645,11 +1685,11 @@ Node;AmplifyShaderEditor.SaturateNode;187;2994,494;Inherit;False;1;0;FLOAT;0;Fal
 Node;AmplifyShaderEditor.StickyNoteNode;279;1659.932,382.3873;Inherit;False;219;101;;;0.05660379,0.0542898,0.0542898,1;Object pivot position in world space;0;0
 Node;AmplifyShaderEditor.StickyNoteNode;280;2101.932,600.3872;Inherit;False;232;100;;;0,0,0,1;Make the effect scale with the sphere;0;0
 Node;AmplifyShaderEditor.OneMinusNode;184;3154,493;Inherit;False;1;0;FLOAT;0;False;1;FLOAT;0
-Node;AmplifyShaderEditor.SamplerNode;185;3340.951,316;Inherit;True;Property;_Ramp;Ramp;2;0;Create;True;0;0;0;False;0;False;-1;None;60d1a2f814864f548b6b60406c360c51;True;0;False;white;Auto;False;Object;-1;MipLevel;Texture2D;8;0;SAMPLER2D;;False;1;FLOAT2;0,0;False;2;FLOAT;0;False;3;FLOAT2;0,0;False;4;FLOAT2;0,0;False;5;FLOAT;1;False;6;FLOAT;0;False;7;SAMPLERSTATE;;False;5;COLOR;0;FLOAT;1;FLOAT;2;FLOAT;3;FLOAT;4
+Node;AmplifyShaderEditor.SamplerNode;185;3340.951,316;Inherit;True;Property;_Ramp;Ramp;2;0;Create;True;0;0;0;False;0;False;-1;None;60d1a2f814864f548b6b60406c360c51;True;0;False;white;Auto;False;Object;-1;MipLevel;Texture2D;8;0;SAMPLER2D;;False;1;FLOAT2;0,0;False;2;FLOAT;0;False;3;FLOAT2;0,0;False;4;FLOAT2;0,0;False;5;FLOAT;1;False;6;FLOAT;0;False;7;SAMPLERSTATE;;False;6;COLOR;0;FLOAT;1;FLOAT;2;FLOAT;3;FLOAT;4;FLOAT3;5
 Node;AmplifyShaderEditor.RangedFloatNode;233;3176.349,360.7596;Float;False;Constant;_Float0;Float 0;4;0;Create;True;0;0;0;False;0;False;0;0;0;0;0;1;FLOAT;0
 Node;AmplifyShaderEditor.TemplateMultiPassMasterNode;259;3685.973,468.2288;Float;False;False;-1;2;UnityEditor.ShaderGraphUnlitGUI;0;6;New Amplify Shader;2992e84f91cbeb14eab234972e07ea9d;True;ExtraPrePass;0;0;ExtraPrePass;5;False;False;False;False;False;False;False;False;False;False;False;False;True;0;False;;False;True;0;False;;False;False;False;False;False;False;False;False;False;True;False;255;False;;255;False;;255;False;;7;False;;1;False;;1;False;;1;False;;7;False;;1;False;;1;False;;1;False;;False;False;False;False;True;4;RenderPipeline=UniversalPipeline;RenderType=Opaque=RenderType;Queue=Geometry=Queue=0;UniversalMaterialType=Unlit;True;5;True;12;all;0;False;True;1;1;False;;0;False;;0;1;False;;0;False;;False;False;False;False;False;False;False;False;False;False;False;False;True;0;False;;False;True;True;True;True;True;0;False;;False;False;False;False;False;False;False;True;False;255;False;;255;False;;255;False;;7;False;;1;False;;1;False;;1;False;;7;False;;1;False;;1;False;;1;False;;False;True;1;False;;True;3;False;;True;True;0;False;;0;False;;True;0;False;False;0;Hidden/InternalErrorShader;0;0;Standard;0;False;0
 Node;AmplifyShaderEditor.TemplateMultiPassMasterNode;263;3685.973,468.2288;Float;False;False;-1;2;UnityEditor.ShaderGraphUnlitGUI;0;6;New Amplify Shader;2992e84f91cbeb14eab234972e07ea9d;True;Meta;0;4;Meta;0;False;False;False;False;False;False;False;False;False;False;False;False;True;0;False;;False;True;0;False;;False;False;False;False;False;False;False;False;False;True;False;255;False;;255;False;;255;False;;7;False;;1;False;;1;False;;1;False;;7;False;;1;False;;1;False;;1;False;;False;False;False;False;True;4;RenderPipeline=UniversalPipeline;RenderType=Opaque=RenderType;Queue=Geometry=Queue=0;UniversalMaterialType=Unlit;True;5;True;12;all;0;False;False;False;False;False;False;False;False;False;False;False;False;False;False;True;2;False;;False;False;False;False;False;False;False;False;False;False;False;False;False;False;True;1;LightMode=Meta;False;False;0;Hidden/InternalErrorShader;0;0;Standard;0;False;0
-Node;AmplifyShaderEditor.TemplateMultiPassMasterNode;260;3685.973,468.2288;Float;False;True;-1;2;UnityEditor.ShaderGraphUnlitGUI;0;13;AmplifyShaderPack/Omni Decal;2992e84f91cbeb14eab234972e07ea9d;True;Forward;0;1;Forward;8;False;False;False;False;False;False;False;False;False;False;False;False;True;0;False;;False;True;1;False;;False;False;False;False;False;False;False;False;False;True;False;255;False;;255;False;;255;False;;7;False;;1;False;;1;False;;1;False;;7;False;;1;False;;1;False;;1;False;;False;False;False;False;True;4;RenderPipeline=UniversalPipeline;RenderType=Transparent=RenderType;Queue=Transparent=Queue=0;UniversalMaterialType=Unlit;True;5;True;12;all;0;False;True;2;5;False;;10;False;;1;1;False;;10;False;;False;False;False;False;False;False;False;False;False;False;False;False;False;False;True;True;True;True;True;0;False;;False;False;False;False;False;False;False;True;False;255;False;;255;False;;255;False;;7;False;;1;False;;1;False;;1;False;;7;False;;1;False;;1;False;;1;False;;False;True;2;False;;True;7;False;;True;True;0;False;;0;False;;True;1;LightMode=UniversalForward;False;False;0;Hidden/InternalErrorShader;0;0;Standard;21;Surface;1;0;  Blend;0;0;Two Sided;2;0;Forward Only;0;0;Cast Shadows;0;0;  Use Shadow Threshold;0;0;GPU Instancing;1;0;LOD CrossFade;0;0;Built-in Fog;0;0;Meta Pass;0;0;Extra Pre Pass;0;0;Tessellation;0;0;  Phong;0;0;  Strength;0.5,False,;0;  Type;0;0;  Tess;16,False,;0;  Min;10,False,;0;  Max;25,False,;0;  Edge Length;16,False,;0;  Max Displacement;25,False,;0;Vertex Position,InvertActionOnDeselection;1;0;0;10;False;True;False;True;False;False;True;True;True;False;False;;False;0
+Node;AmplifyShaderEditor.TemplateMultiPassMasterNode;260;3685.973,468.2288;Float;False;True;-1;2;UnityEditor.ShaderGraphUnlitGUI;0;13;AmplifyShaderPack/Omni Decal;2992e84f91cbeb14eab234972e07ea9d;True;Forward;0;1;Forward;8;False;False;False;False;False;False;False;False;False;False;False;False;True;0;False;;False;True;1;False;;False;False;False;False;False;False;False;False;False;True;False;255;False;;255;False;;255;False;;7;False;;1;False;;1;False;;1;False;;7;False;;1;False;;1;False;;1;False;;False;False;False;False;True;4;RenderPipeline=UniversalPipeline;RenderType=Transparent=RenderType;Queue=Transparent=Queue=0;UniversalMaterialType=Unlit;True;5;True;12;all;0;False;True;2;5;False;;10;False;;1;1;False;;10;False;;False;False;False;False;False;False;False;False;False;False;False;False;False;False;True;True;True;True;True;0;False;;False;False;False;False;False;False;False;True;False;255;False;;255;False;;255;False;;7;False;;1;False;;1;False;;1;False;;7;False;;1;False;;1;False;;1;False;;False;True;2;False;;True;7;False;;True;True;0;False;;0;False;;True;1;LightMode=UniversalForward;False;False;0;Hidden/InternalErrorShader;0;0;Standard;22;Surface;1;0;  Blend;0;0;Two Sided;2;0;Forward Only;0;0;Cast Shadows;0;0;  Use Shadow Threshold;0;0;Receive Shadows;1;0;GPU Instancing;1;0;LOD CrossFade;0;0;Built-in Fog;0;0;Meta Pass;0;0;Extra Pre Pass;0;0;Tessellation;0;0;  Phong;0;0;  Strength;0.5,False,;0;  Type;0;0;  Tess;16,False,;0;  Min;10,False,;0;  Max;25,False,;0;  Edge Length;16,False,;0;  Max Displacement;25,False,;0;Vertex Position,InvertActionOnDeselection;1;0;0;10;False;True;False;True;False;False;True;True;True;False;False;;False;0
 Node;AmplifyShaderEditor.TemplateMultiPassMasterNode;262;3685.973,468.2288;Float;False;False;-1;2;UnityEditor.ShaderGraphUnlitGUI;0;6;New Amplify Shader;2992e84f91cbeb14eab234972e07ea9d;True;DepthOnly;0;3;DepthOnly;0;False;False;False;False;False;False;False;False;False;False;False;False;True;0;False;;False;True;0;False;;False;False;False;False;False;False;False;False;False;True;False;255;False;;255;False;;255;False;;7;False;;1;False;;1;False;;1;False;;7;False;;1;False;;1;False;;1;False;;False;False;False;False;True;4;RenderPipeline=UniversalPipeline;RenderType=Opaque=RenderType;Queue=Geometry=Queue=0;UniversalMaterialType=Unlit;True;5;True;12;all;0;False;False;False;False;False;False;False;False;False;False;False;False;True;0;False;;False;False;False;True;False;False;False;False;0;False;;False;False;False;False;False;False;False;False;False;True;1;False;;False;False;True;1;LightMode=DepthOnly;False;False;0;Hidden/InternalErrorShader;0;0;Standard;0;False;0
 Node;AmplifyShaderEditor.TemplateMultiPassMasterNode;261;3685.973,468.2288;Float;False;False;-1;2;UnityEditor.ShaderGraphUnlitGUI;0;6;New Amplify Shader;2992e84f91cbeb14eab234972e07ea9d;True;ShadowCaster;0;2;ShadowCaster;0;False;False;False;False;False;False;False;False;False;False;False;False;True;0;False;;False;True;0;False;;False;False;False;False;False;False;False;False;False;True;False;255;False;;255;False;;255;False;;7;False;;1;False;;1;False;;1;False;;7;False;;1;False;;1;False;;1;False;;False;False;False;False;True;4;RenderPipeline=UniversalPipeline;RenderType=Opaque=RenderType;Queue=Geometry=Queue=0;UniversalMaterialType=Unlit;True;5;True;12;all;0;False;False;False;False;False;False;False;False;False;False;False;False;True;0;False;;False;False;False;True;False;False;False;False;0;False;;False;False;False;False;False;False;False;False;False;True;1;False;;True;3;False;;False;True;1;LightMode=ShadowCaster;False;False;0;Hidden/InternalErrorShader;0;0;Standard;0;False;0
 Node;AmplifyShaderEditor.TemplateMultiPassMasterNode;281;3685.973,518.2288;Float;False;False;-1;2;UnityEditor.ShaderGraphUnlitGUI;0;1;New Amplify Shader;2992e84f91cbeb14eab234972e07ea9d;True;Universal2D;0;5;Universal2D;0;False;False;False;False;False;False;False;False;False;False;False;False;True;0;False;;False;True;0;False;;False;False;False;False;False;False;False;False;False;True;False;0;False;;255;False;;255;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;False;False;False;False;True;4;RenderPipeline=UniversalPipeline;RenderType=Opaque=RenderType;Queue=Geometry=Queue=0;UniversalMaterialType=Unlit;True;5;True;12;all;0;False;True;1;1;False;;0;False;;0;1;False;;0;False;;False;False;False;False;False;False;False;False;False;False;False;False;False;False;True;True;True;True;True;0;False;;False;False;False;False;False;False;False;True;False;0;False;;255;False;;255;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;False;True;1;False;;True;3;False;;True;True;0;False;;0;False;;True;1;LightMode=Universal2D;False;False;0;;0;0;Standard;0;False;0
@@ -1679,4 +1719,4 @@ WireConnection;185;2;233;0
 WireConnection;260;2;185;0
 WireConnection;260;3;184;0
 ASEEND*/
-//CHKSM=E63423157A95138D6798A9BDD9136629ECDF725B
+//CHKSM=BD8988BBC0DE35754B252E746E384C35EA2E561C
