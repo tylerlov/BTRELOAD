@@ -25,8 +25,11 @@ public class PrefabGenerator : MonoBehaviour
         int i = 0;
         foreach (Transform child in parentObject.transform)
         {
-            GameObject newPrefabInstance = Instantiate(prefab, child.position,
-                useCustomRotation ? Quaternion.Euler(customRotation) : child.rotation);
+            GameObject newPrefabInstance = Instantiate(
+                prefab,
+                child.position,
+                useCustomRotation ? Quaternion.Euler(customRotation) : child.rotation
+            );
             generatedPrefabs[i] = newPrefabInstance;
 
             if (placePrefabsOnChildren)
@@ -48,7 +51,8 @@ public class PrefabGenerator : MonoBehaviour
         {
             foreach (GameObject prefab in generatedPrefabs)
             {
-                if (prefab != null) DestroyImmediate(prefab);
+                if (prefab != null)
+                    DestroyImmediate(prefab);
             }
         }
     }

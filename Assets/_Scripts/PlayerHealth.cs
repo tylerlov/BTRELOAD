@@ -1,16 +1,21 @@
-﻿using UnityEngine;
-using Chronos;
+﻿using System.Collections.Generic;
 using BehaviorDesigner.Runtime.Tactical;
+using Chronos;
 using MoreMountains.Feedbacks;
-using System.Collections.Generic;
+using UnityEngine;
 
 public class PlayerHealth : MonoBehaviour, IDamageable
 {
     public int startScore = 100;
-    
-    [SerializeField] private GameObject hitEffectPrefab;
-    [SerializeField] private int poolSize = 10;
-    [SerializeField] private GameObject hitFeedbackObject;
+
+    [SerializeField]
+    private GameObject hitEffectPrefab;
+
+    [SerializeField]
+    private int poolSize = 10;
+
+    [SerializeField]
+    private GameObject hitFeedbackObject;
 
     private List<GameObject> hitEffectsPool;
     public bool DodgeInvincibility { get; set; } = false;
@@ -25,7 +30,8 @@ public class PlayerHealth : MonoBehaviour, IDamageable
 
     public void Damage(float amount)
     {
-        if (DodgeInvincibility || isInvincible) return;
+        if (DodgeInvincibility || isInvincible)
+            return;
 
         int damageAmount = (int)amount;
         GameManager.instance.AddScore(-damageAmount);

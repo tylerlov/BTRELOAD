@@ -1,13 +1,18 @@
-using UnityEngine;
 using System.Collections.Generic;
+using UnityEngine;
 
 namespace OccaSoftware.BOP
 {
     public class ParticleSystemPooler : MonoBehaviour
     {
-        [SerializeField] private ParticleSystem particleSystemPrefab = null;
-        [SerializeField, Min(1)] private int initialCount = 10;
-        [SerializeField] private Vector3 storagePosition = new Vector3(1000, 1000, 1000);
+        [SerializeField]
+        private ParticleSystem particleSystemPrefab = null;
+
+        [SerializeField, Min(1)]
+        private int initialCount = 10;
+
+        [SerializeField]
+        private Vector3 storagePosition = new Vector3(1000, 1000, 1000);
 
         private List<ParticleSystem> availableParticleSystems;
         private List<ParticleSystem> activeParticleSystems;
@@ -25,7 +30,12 @@ namespace OccaSoftware.BOP
 
         private void CreateNewInstance()
         {
-            ParticleSystem newInstance = Instantiate(particleSystemPrefab, storagePosition, Quaternion.identity, transform);
+            ParticleSystem newInstance = Instantiate(
+                particleSystemPrefab,
+                storagePosition,
+                Quaternion.identity,
+                transform
+            );
             newInstance.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
             newInstance.gameObject.SetActive(false);
             availableParticleSystems.Add(newInstance);

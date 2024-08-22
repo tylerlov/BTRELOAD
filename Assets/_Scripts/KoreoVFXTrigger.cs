@@ -1,10 +1,11 @@
-using UnityEngine;
 using SonicBloom.Koreo;
+using UnityEngine;
 using UnityEngine.VFX;
 
 public class KoreoVFXTrigger : MonoBehaviour
 {
-    [SerializeField, EventID] private string eventID; // Event ID to listen for
+    [SerializeField, EventID]
+    private string eventID; // Event ID to listen for
     private VisualEffect vfxGraph; // Reference to the Visual Effect Graph component
 
     void Awake()
@@ -56,4 +57,3 @@ public class KoreoVFXTrigger : MonoBehaviour
         }
     }
 }
-

@@ -1,9 +1,9 @@
 using System.Collections;
 using System.Collections.Generic;
-using UnityEngine;
-using UnityEditor;
-using UltimateSpawner;
 using PathologicalGames;
+using UltimateSpawner;
+using UnityEditor;
+using UnityEngine;
 
 public class SpawnFromPool : MonoBehaviour
 {
@@ -21,9 +21,9 @@ public class SpawnFromPool : MonoBehaviour
         associatedPool = gameObject.GetComponent<SpawnPool>().poolName;
         enemies = PoolManager.Pools[associatedPool];
     }
+
     Object HandleSpawnerInstanitate(Object prefab, Vector3 position, Quaternion rotation)
     {
         return enemies.Spawn(prefab.name, position, rotation).gameObject;
     }
-
 }

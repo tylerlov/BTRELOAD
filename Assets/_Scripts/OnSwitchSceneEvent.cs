@@ -1,13 +1,14 @@
 using System.Collections;
 using System.Collections.Generic;
+using UltimateSpawner;
 using UnityEngine;
 using UnityEngine.Events;
-using UltimateSpawner;
 
 public class OnSwitchSceneEvent : MonoBehaviour
 {
-    [HideInInspector] public WaveSpawnController waveSpawnController;
-    
+    [HideInInspector]
+    public WaveSpawnController waveSpawnController;
+
     [System.Serializable]
     public class SwitchSceneEvent : UnityEvent { }
 

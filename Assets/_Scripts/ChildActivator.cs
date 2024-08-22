@@ -1,12 +1,13 @@
-using UnityEngine;
-using SensorToolkit;
 using System.Collections;
+using SensorToolkit;
+using UnityEngine;
 
 public class ChildActivator : MonoBehaviour
 {
     public bool isActive = true; // Public boolean to control activation
 
-    private void Awake() {
+    private void Awake()
+    {
         if (isActive)
         {
             SetChildrenActive(false);
@@ -15,7 +16,8 @@ public class ChildActivator : MonoBehaviour
 
     public void SetChildrenActive(bool isActive)
     {
-        if (!this.isActive) return; // Check if the script is active
+        if (!this.isActive)
+            return; // Check if the script is active
 
         foreach (Transform child in transform)
         {

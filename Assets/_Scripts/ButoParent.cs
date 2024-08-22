@@ -1,5 +1,5 @@
-using UnityEngine;
 using System.Collections;
+using UnityEngine;
 
 [ExecuteInEditMode] // This will ensure that the script also runs in the editor
 public class ButoParent : MonoBehaviour
@@ -35,6 +35,8 @@ public class ButoParent : MonoBehaviour
             yield return new WaitForSeconds(retryInterval);
         }
 
-        Debug.LogError($"No object with tag {parentTag} found after waiting for {maxWaitTime} seconds.");
+        Debug.LogError(
+            $"No object with tag {parentTag} found after waiting for {maxWaitTime} seconds."
+        );
     }
 }

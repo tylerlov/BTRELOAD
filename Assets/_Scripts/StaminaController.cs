@@ -1,30 +1,41 @@
 using System.Collections;
 using System.Collections.Generic;
-using UnityEngine;
-using UnityEngine.UI;
 using SonicBloom.Koreo;
+using UnityEngine;
 using UnityEngine.SceneManagement; // Import the Scene Management namespace
+using UnityEngine.UI;
 
 public class StaminaController : MonoBehaviour
 {
     [Header("Stamina Main Parameters")]
-
     [EventID]
     public string eventIDLocking;
 
     public float playerStamina = 100.0f;
-    [SerializeField] private float maxStamina = 100.0f;
-    [SerializeField] private float rewindCost = 25;
+
+    [SerializeField]
+    private float maxStamina = 100.0f;
+
+    [SerializeField]
+    private float rewindCost = 25;
     public bool hasRegenerated = true;
     public bool canRewind = true;
 
     [Header("Stamina Regen Parameters")]
-    [Range(0, 50)] [SerializeField] private float staminaDrain = 0.5f;
-    [Range(0, 50)] [SerializeField] private float staminaRegen = 0.5f;
+    [Range(0, 50)]
+    [SerializeField]
+    private float staminaDrain = 0.5f;
+
+    [Range(0, 50)]
+    [SerializeField]
+    private float staminaRegen = 0.5f;
 
     [Header("Stamina UI Elements")]
-    [SerializeField] private Image staminaProcessUI = null;
-    [SerializeField] private CanvasGroup sliderCanvasGroup = null;
+    [SerializeField]
+    private Image staminaProcessUI = null;
+
+    [SerializeField]
+    private CanvasGroup sliderCanvasGroup = null;
 
     public bool locking;
 
@@ -68,14 +79,14 @@ public class StaminaController : MonoBehaviour
             playerStamina += staminaRegen * Time.deltaTime;
             UpdateStamina(1);
 
-            if(playerStamina >= maxStamina)
+            if (playerStamina >= maxStamina)
             {
                 sliderCanvasGroup.alpha = 0;
                 hasRegenerated = true;
             }
         }
 
-        if(playerStamina < 5)
+        if (playerStamina < 5)
         {
             canRewind = false;
         }
@@ -84,9 +95,10 @@ public class StaminaController : MonoBehaviour
             canRewind = true;
         }
     }
+
     public void StaminaRewind()
     {
-        if(playerStamina >= (maxStamina * rewindCost / maxStamina))
+        if (playerStamina >= (maxStamina * rewindCost / maxStamina))
         {
             playerStamina -= rewindCost;
             UpdateStamina(1);
@@ -102,7 +114,6 @@ public class StaminaController : MonoBehaviour
                 playerStamina -= rewindCost;
                 UpdateStamina(1);
             }
-            
         }
     }
 
@@ -125,6 +136,4 @@ public class StaminaController : MonoBehaviour
         locking = false;
         canRewind = true;
     }
-
-
 }

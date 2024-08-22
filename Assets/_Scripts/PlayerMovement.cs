@@ -1,59 +1,87 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using UnityEngine;
-using PrimeTween;
-using Cinemachine;
-using UnityEngine.Rendering.PostProcessing;
-using UnityEngine.InputSystem;
 using System.Linq;
 using Chronos;
-using Lofelt.NiceVibrations;
-using SensorToolkit;
-using MoreMountains.Feedbacks;
+using Cinemachine;
 using FluffyUnderware.Curvy.Controllers;
+using Lofelt.NiceVibrations;
+using MoreMountains.Feedbacks;
+using PrimeTween;
+using SensorToolkit;
+using UnityEngine;
+using UnityEngine.InputSystem;
+using UnityEngine.Rendering.PostProcessing;
 
 public class PlayerMovement : MonoBehaviour
 {
-
     public Animator animator;
 
-
     [Header("Ground Detection")]
-    [SerializeField] private LayerMask groundLayer;
-    [SerializeField] private float raycastRange = 10f;
-    [SerializeField] private float raycastLength = 10f;
-    [SerializeField] private bool enableGroundDetection = true;
+    [SerializeField]
+    private LayerMask groundLayer;
+
+    [SerializeField]
+    private float raycastRange = 10f;
+
+    [SerializeField]
+    private float raycastLength = 10f;
+
+    [SerializeField]
+    private bool enableGroundDetection = true;
 
     [Header("Rotation")]
-    [SerializeField] private GameObject horizontalRotatePlatform;
-    [SerializeField] private GameObject enclosingSphere;
-    [SerializeField] private GameObject shooting;
-    [SerializeField] private float rotationCooldown = 0.2f; // New: Cooldown between rotations
-    [SerializeField] private float rotationDuration = 0.5f; // Increased duration for smoother rotation
+    [SerializeField]
+    private GameObject horizontalRotatePlatform;
+
+    [SerializeField]
+    private GameObject enclosingSphere;
+
+    [SerializeField]
+    private GameObject shooting;
+
+    [SerializeField]
+    private float rotationCooldown = 0.2f; // New: Cooldown between rotations
+
+    [SerializeField]
+    private float rotationDuration = 0.5f; // Increased duration for smoother rotation
 
     [Header("Ricochet Dodge")]
-    [SerializeField] private float dodgeDuration = 0.5f;
-    [SerializeField] private float dodgeCooldown = 1f;
-    [SerializeField] private float dodgeDistance = 5f;
-    [SerializeField] private GameObject ricochetBlast;
-    [SerializeField] private RangeSensor rangeSensor;
+    [SerializeField]
+    private float dodgeDuration = 0.5f;
+
+    [SerializeField]
+    private float dodgeCooldown = 1f;
+
+    [SerializeField]
+    private float dodgeDistance = 5f;
+
+    [SerializeField]
+    private GameObject ricochetBlast;
+
+    [SerializeField]
+    private RangeSensor rangeSensor;
 
     [Header("Look At Settings")]
-    [SerializeField] private GameObject lookAtTarget;
+    [SerializeField]
+    private GameObject lookAtTarget;
 
     [Header("Feedback Settings")]
-    [SerializeField] private GameObject ricochetFeedbackObject;
+    [SerializeField]
+    private GameObject ricochetFeedbackObject;
 
     [Header("Spline Controller")]
-    [SerializeField] private SplineController splineController;
+    [SerializeField]
+    private SplineController splineController;
 
     [Header("Camera")]
-    [SerializeField] private CinemachineVirtualCamera mainVirtualCamera;
+    [SerializeField]
+    private CinemachineVirtualCamera mainVirtualCamera;
     private CinemachineBrain cinemachineBrain;
     private Vector3 cameraPositionBeforeRotation;
 
-    [SerializeField] private ShooterMovement shooterMovement;
+    [SerializeField]
+    private ShooterMovement shooterMovement;
 
     #region Private Fields
 
@@ -153,7 +181,6 @@ public class PlayerMovement : MonoBehaviour
         DrawGroundDetectionRaycast();
     }
 
-
     private void CalculateHeightDifference()
     {
         if (rigidbody == null || GetComponent<BoxCollider>() == null)
@@ -179,7 +206,11 @@ public class PlayerMovement : MonoBehaviour
     private void LerpToTargetHeight()
     {
         // Determine the new position by interpolating towards the target height
-        Vector3 newPosition = new Vector3(transform.position.x, Mathf.Lerp(transform.position.y, targetHeight, Time.deltaTime * 5), transform.position.z);
+        Vector3 newPosition = new Vector3(
+            transform.position.x,
+            Mathf.Lerp(transform.position.y, targetHeight, Time.deltaTime * 5),
+            transform.position.z
+        );
         rigidbody.MovePosition(newPosition);
 
         // If the player is close enough to the target height, stop interpolating
@@ -206,7 +237,10 @@ public class PlayerMovement : MonoBehaviour
     private void RestrictToSphere()
     {
         Vector3 offset = transform.position - enclosingSphere.transform.position;
-        Vector3 clampedOffset = Vector3.ClampMagnitude(offset, enclosingSphere.transform.localScale.x / 2);
+        Vector3 clampedOffset = Vector3.ClampMagnitude(
+            offset,
+            enclosingSphere.transform.localScale.x / 2
+        );
         Vector3 finalPosition = enclosingSphere.transform.position + clampedOffset;
         transform.position = finalPosition;
     }
@@ -222,7 +256,12 @@ public class PlayerMovement : MonoBehaviour
             Tween.StopAll(transform);
 
             // Create a new rotation tween
-            Tween.Rotation(transform, Quaternion.Euler(transform.eulerAngles.x, targetYRotation, transform.eulerAngles.z), 0.3f, Ease.InOutQuad);
+            Tween.Rotation(
+                transform,
+                Quaternion.Euler(transform.eulerAngles.x, targetYRotation, transform.eulerAngles.z),
+                0.3f,
+                Ease.InOutQuad
+            );
         }
     }
 
@@ -242,7 +281,8 @@ public class PlayerMovement : MonoBehaviour
 
     public void RotateLeft()
     {
-        if (isRotating || Time.time - lastRotationTime < rotationCooldown) return;
+        if (isRotating || Time.time - lastRotationTime < rotationCooldown)
+            return;
 
         lastRotationTime = Time.time;
         isRotating = true;
@@ -251,7 +291,8 @@ public class PlayerMovement : MonoBehaviour
 
     public void RotateRight()
     {
-        if (isRotating || Time.time - lastRotationTime < rotationCooldown) return;
+        if (isRotating || Time.time - lastRotationTime < rotationCooldown)
+            return;
 
         lastRotationTime = Time.time;
         isRotating = true;
@@ -275,8 +316,15 @@ public class PlayerMovement : MonoBehaviour
 
         Tween.LocalPositionZ(shooting.transform, shootingZOffset * zMultiplier, 0.5f);
 
-        Tween.LocalRotation(horizontalRotatePlatform.transform, Quaternion.Euler(0, targetRotation, 0), 0.15f, Ease.InOutQuad)
-            .OnComplete(() => {
+        Tween
+            .LocalRotation(
+                horizontalRotatePlatform.transform,
+                Quaternion.Euler(0, targetRotation, 0),
+                0.15f,
+                Ease.InOutQuad
+            )
+            .OnComplete(() =>
+            {
                 isRotating = false;
             });
     }
@@ -285,12 +333,18 @@ public class PlayerMovement : MonoBehaviour
     {
         switch (facingDirection)
         {
-            case 1: return 1.8f;
-            case 2: return 2.8f;
-            case 3: return 1.8f;
-            case 0: return 1f;
-            default: 
-                Debug.LogWarning($"Unexpected playerFacingDirection: {facingDirection}. Defaulting to 1.");
+            case 1:
+                return 1.8f;
+            case 2:
+                return 2.8f;
+            case 3:
+                return 1.8f;
+            case 0:
+                return 1f;
+            default:
+                Debug.LogWarning(
+                    $"Unexpected playerFacingDirection: {facingDirection}. Defaulting to 1."
+                );
                 return 1f;
         }
     }
@@ -330,7 +384,11 @@ public class PlayerMovement : MonoBehaviour
         Vector3 startPosition = transform.position;
         while (elapsedTime < dodgeDuration)
         {
-            transform.position = Vector3.Lerp(startPosition, dodgePosition, elapsedTime / dodgeDuration);
+            transform.position = Vector3.Lerp(
+                startPosition,
+                dodgePosition,
+                elapsedTime / dodgeDuration
+            );
             elapsedTime += Time.deltaTime;
             yield return null;
         }
@@ -431,7 +489,11 @@ public class PlayerMovement : MonoBehaviour
             Vector3 lookPosition = lookAtTarget.transform.position - transform.position;
             lookPosition.y = 0;
             Quaternion rotation = Quaternion.LookRotation(lookPosition);
-            transform.rotation = Quaternion.Slerp(transform.rotation, rotation, Time.deltaTime * 340); // Using a constant lookSpeed of 340
+            transform.rotation = Quaternion.Slerp(
+                transform.rotation,
+                rotation,
+                Time.deltaTime * 340
+            ); // Using a constant lookSpeed of 340
         }
     }
 
@@ -440,7 +502,11 @@ public class PlayerMovement : MonoBehaviour
         if (transform.parent != null)
         {
             // Calculate the upright rotation relative to the parent's rotation
-            Quaternion targetRotation = Quaternion.Euler(0, transform.eulerAngles.y - transform.parent.eulerAngles.y, 0);
+            Quaternion targetRotation = Quaternion.Euler(
+                0,
+                transform.eulerAngles.y - transform.parent.eulerAngles.y,
+                0
+            );
             // Apply the calculated rotation to the GameObject
             transform.localRotation = targetRotation;
         }
@@ -456,10 +522,11 @@ public class PlayerMovement : MonoBehaviour
     {
         if (splineController != null)
         {
-            splineController.MovementDirection = splineController.MovementDirection == MovementDirection.Forward 
-                ? MovementDirection.Backward 
-                : MovementDirection.Forward;
-            
+            splineController.MovementDirection =
+                splineController.MovementDirection == MovementDirection.Forward
+                    ? MovementDirection.Backward
+                    : MovementDirection.Forward;
+
             // Perform the 180-degree rotation
             Rotate180();
         }
@@ -467,7 +534,8 @@ public class PlayerMovement : MonoBehaviour
 
     private void Rotate180()
     {
-        if (isRotating) return;
+        if (isRotating)
+            return;
 
         isRotating = true;
         float currentRotation = horizontalRotatePlatform.transform.localEulerAngles.y;
@@ -476,24 +544,36 @@ public class PlayerMovement : MonoBehaviour
         // Disable ShooterMovement and LookAtReversed during rotation
         ShooterMovement shooterMovement = shooting.GetComponent<ShooterMovement>();
         LookAtReversed lookAtReversed = shooting.GetComponent<LookAtReversed>();
-        if (shooterMovement) shooterMovement.enabled = false;
-        if (lookAtReversed) lookAtReversed.enabled = false;
+        if (shooterMovement)
+            shooterMovement.enabled = false;
+        if (lookAtReversed)
+            lookAtReversed.enabled = false;
 
         // Rotate the horizontalRotatePlatform
-        Tween.LocalRotation(horizontalRotatePlatform.transform, Quaternion.Euler(0, targetRotation, 0), rotationDuration, Ease.InOutQuad)
-            .OnComplete(() => {
+        Tween
+            .LocalRotation(
+                horizontalRotatePlatform.transform,
+                Quaternion.Euler(0, targetRotation, 0),
+                rotationDuration,
+                Ease.InOutQuad
+            )
+            .OnComplete(() =>
+            {
                 isRotating = false;
-                
+
                 // Re-enable ShooterMovement and LookAtReversed
-                if (shooterMovement) shooterMovement.enabled = true;
-                if (lookAtReversed) lookAtReversed.enabled = true;
+                if (shooterMovement)
+                    shooterMovement.enabled = true;
+                if (lookAtReversed)
+                    lookAtReversed.enabled = true;
 
                 // Update playerFacingDirection
                 playerFacingDirection = (playerFacingDirection + 2) % 4;
                 animator.SetInteger("PlayerDirection", playerFacingDirection);
 
                 // Call OnRotate180 on ShooterMovement
-                if (shooterMovement) shooterMovement.OnRotate180();
+                if (shooterMovement)
+                    shooterMovement.OnRotate180();
             });
     }
 
@@ -516,7 +596,10 @@ public class PlayerMovement : MonoBehaviour
             // Force update the virtual camera to prevent any sudden movements
             if (mainVirtualCamera != null)
             {
-                mainVirtualCamera.OnTargetObjectWarped(transform, transform.position - mainVirtualCamera.transform.position);
+                mainVirtualCamera.OnTargetObjectWarped(
+                    transform,
+                    transform.position - mainVirtualCamera.transform.position
+                );
             }
         }
     }

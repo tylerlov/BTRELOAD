@@ -1,7 +1,7 @@
+using FluffyUnderware.Curvy;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
-using FluffyUnderware.Curvy;
 
 public class ReloadScene : MonoBehaviour
 {
@@ -43,9 +43,8 @@ public class ReloadScene : MonoBehaviour
 
         // Get the name of the current active scene
         string currentSceneName = SceneManager.GetActiveScene().name;
-        
+
         // Load the scene in single mode, which unloads all other scenes and loads the specified scene
         SceneManager.LoadScene(currentSceneName, LoadSceneMode.Single);
     }
 }
-

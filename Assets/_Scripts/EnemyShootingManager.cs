@@ -1,24 +1,28 @@
-using UnityEngine;
 using System.Collections.Generic;
 using SonicBloom.Koreo;
+using UnityEngine;
 
 public class EnemyShootingManager : MonoBehaviour
 {
     public static EnemyShootingManager Instance { get; private set; }
 
     private List<StaticEnemyShooting> staticEnemyShootings = new List<StaticEnemyShooting>();
-    [SerializeField, EventID] private string eventID;
+
+    [SerializeField, EventID]
+    private string eventID;
     private int shootCounter = 0;
-    
+
     private void Awake()
     {
         if (Instance == null)
         {
             Instance = this;
-            DontDestroyOnLoad(gameObject); // Optional: Keep the manager across scenes
+            DontDestroyOnLoad(gameObject);
+            ConditionalDebug.Log("EnemyShootingManager initialized");
         }
         else
         {
+            ConditionalDebug.Log("Duplicate EnemyShootingManager found, destroying");
             Destroy(gameObject);
         }
     }
@@ -41,6 +45,11 @@ public class EnemyShootingManager : MonoBehaviour
         if (!staticEnemyShootings.Contains(shooting))
         {
             staticEnemyShootings.Add(shooting);
+            ConditionalDebug.Log($"Registered StaticEnemyShooting: {shooting.name}. Total count: {staticEnemyShootings.Count}");
+        }
+        else
+        {
+            ConditionalDebug.Log($"StaticEnemyShooting {shooting.name} already registered");
         }
     }
 
@@ -64,10 +73,23 @@ public class EnemyShootingManager : MonoBehaviour
     {
         if (Time.timeScale != 0f)
         {
+            ConditionalDebug.Log($"OnMusicalEnemyShoot triggered. Registered shootings: {staticEnemyShootings.Count}");
             foreach (var shooting in staticEnemyShootings)
             {
-                shooting.Shoot();
+                if (shooting != null)
+                {
+                    shooting.Shoot();
+                    ConditionalDebug.Log($"Shoot called on {shooting.name}");
+                }
+                else
+                {
+                    ConditionalDebug.LogWarning("Null StaticEnemyShooting found in list");
+                }
             }
+        }
+        else
+        {
+            ConditionalDebug.Log("OnMusicalEnemyShoot triggered, but Time.timeScale is 0");
         }
     }
 }

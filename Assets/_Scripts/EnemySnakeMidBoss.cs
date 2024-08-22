@@ -1,39 +1,73 @@
-using UnityEngine;
 using System.Collections;
-using FMODUnity;
-using Chronos;
-using BehaviorDesigner.Runtime.Tactical;
-using UnityEngine.Events; 
-using SonicBloom.Koreo;
 using System.Collections.Generic;
-using UnityEngine.VFX;
+using BehaviorDesigner.Runtime.Tactical;
+using Chronos;
+using FMODUnity;
+using SonicBloom.Koreo;
+using UnityEngine;
 using UnityEngine.Animations;
+using UnityEngine.Events;
+using UnityEngine.VFX;
 
 [RequireComponent(typeof(Timeline))]
 public class EnemySnakeMidBoss : BaseBehaviour, IDamageable, ILimbDamageReceiver
 {
-    
     // Serialized fields
-    [SerializeField] private string enemyType;
-    [SerializeField] private float startHealth = 100;
-    [SerializeField] private float currentHealth;
-    [SerializeField] private Animator animator; // Add this line
+    [SerializeField]
+    private string enemyType;
+
+    [SerializeField]
+    private float startHealth = 100;
+
+    [SerializeField]
+    private float currentHealth;
+
+    [SerializeField]
+    private Animator animator; // Add this line
+
     // Fields for shooting functionality
-    [SerializeField] private Transform projectileOrigin;
-    [SerializeField] private float shootSpeed = 20f;
-    [SerializeField] private float projectileLifetime = 5f;
-    [SerializeField] private float projectileScale = 1f;
-    [SerializeField] private Material alternativeProjectileMaterial;
-    [SerializeField] private float shootInterval = 2f;
+    [SerializeField]
+    private Transform projectileOrigin;
+
+    [SerializeField]
+    private float shootSpeed = 20f;
+
+    [SerializeField]
+    private float projectileLifetime = 5f;
+
+    [SerializeField]
+    private float projectileScale = 1f;
+
+    [SerializeField]
+    private Material alternativeProjectileMaterial;
+
+    [SerializeField]
+    private float shootInterval = 2f;
+
     [EventID]
-    [SerializeField] private string koreographyEventID; // Serialized field to set in Inspector
-    [SerializeField] private string projectileTimelineName;
-    [SerializeField] private VisualEffect vfxPrefab; // Keep this line as is
-    [SerializeField] private EventReference shootEventPath; // Updated to use EventReference
-    [SerializeField] private EventReference hitSoundEventPath;
-    [SerializeField] private EventReference deathSoundEventPath;
-    [SerializeField] private Renderer enemyRenderer; // New serialized field for the renderer
-    [SerializeField] private float flashIntensity = 2f; // Adjust in inspector
+    [SerializeField]
+    private string koreographyEventID; // Serialized field to set in Inspector
+
+    [SerializeField]
+    private string projectileTimelineName;
+
+    [SerializeField]
+    private VisualEffect vfxPrefab; // Keep this line as is
+
+    [SerializeField]
+    private EventReference shootEventPath; // Updated to use EventReference
+
+    [SerializeField]
+    private EventReference hitSoundEventPath;
+
+    [SerializeField]
+    private EventReference deathSoundEventPath;
+
+    [SerializeField]
+    private Renderer enemyRenderer; // New serialized field for the renderer
+
+    [SerializeField]
+    private float flashIntensity = 2f; // Adjust in inspector
 
     private Timeline myTime;
     private Clock clock;
@@ -106,7 +140,10 @@ public class EnemySnakeMidBoss : BaseBehaviour, IDamageable, ILimbDamageReceiver
         {
             if (Koreographer.Instance != null && !string.IsNullOrEmpty(koreographyEventID))
             {
-                Koreographer.Instance.UnregisterForEvents(koreographyEventID, OnShootSyncedWithMusic);
+                Koreographer.Instance.UnregisterForEvents(
+                    koreographyEventID,
+                    OnShootSyncedWithMusic
+                );
             }
         }
     }
@@ -118,7 +155,7 @@ public class EnemySnakeMidBoss : BaseBehaviour, IDamageable, ILimbDamageReceiver
         {
             StartCoroutine(TimedShooting()); // Start the timed shooting coroutine only if shootInterval is greater than zero
         }
-        
+
         // Initialize material and original power
         enemyMaterial = enemyRenderer.material;
         originalFinalPower = enemyMaterial.GetFloat("_FinalPower");
@@ -180,9 +217,11 @@ public class EnemySnakeMidBoss : BaseBehaviour, IDamageable, ILimbDamageReceiver
         float healthPercentage = (currentHealth / startHealth) * 100;
 
         // Check for specific health thresholds and trigger the animation
-        if (healthPercentage <= 75 && healthPercentage > 50 ||
-            healthPercentage <= 50 && healthPercentage > 25 ||
-            healthPercentage <= 25)
+        if (
+            healthPercentage <= 75 && healthPercentage > 50
+            || healthPercentage <= 50 && healthPercentage > 25
+            || healthPercentage <= 25
+        )
         {
             animator.SetTrigger("GetHitFront");
         }
@@ -221,7 +260,9 @@ public class EnemySnakeMidBoss : BaseBehaviour, IDamageable, ILimbDamageReceiver
         }
 
         Vector3 targetPosition = GameObject.FindGameObjectWithTag("Player").transform.position;
-        Quaternion rotationTowardsTarget = Quaternion.LookRotation(targetPosition - projectileOrigin.position);
+        Quaternion rotationTowardsTarget = Quaternion.LookRotation(
+            targetPosition - projectileOrigin.position
+        );
 
         ProjectileManager.Instance.ShootProjectileFromEnemy(
             projectileOrigin.position,
@@ -236,7 +277,6 @@ public class EnemySnakeMidBoss : BaseBehaviour, IDamageable, ILimbDamageReceiver
 
         FMODUnity.RuntimeManager.PlayOneShot(shootEventPath, projectileOrigin.position);
 
-
         // Handle VFX
         if (vfxPrefab != null)
         {
@@ -248,7 +288,6 @@ public class EnemySnakeMidBoss : BaseBehaviour, IDamageable, ILimbDamageReceiver
 
             StartCoroutine(DeactivateVFX(vfx));
         }
-
     }
 
     private IEnumerator DeactivateVFX(VisualEffect vfx)
@@ -300,7 +339,10 @@ public class EnemySnakeMidBoss : BaseBehaviour, IDamageable, ILimbDamageReceiver
             if (currentTimeScale < 1.0f) // Assuming slowdown corresponds to a lower than 1.0 time scale
             {
                 // Decrease pitch by 12 semitones (assuming pitch scale where 0.5 is one octave down)
-                FMODUnity.RuntimeManager.StudioSystem.setParameterByName("Pitch", originalPitch / 4);
+                FMODUnity.RuntimeManager.StudioSystem.setParameterByName(
+                    "Pitch",
+                    originalPitch / 4
+                );
             }
             else if (currentTimeScale == 1.0f) // Timeline returned to normal
             {

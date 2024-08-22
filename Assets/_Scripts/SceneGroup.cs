@@ -8,16 +8,17 @@ using UnityEditor;
 public class SceneGroup : ScriptableObject
 {
     public string areaName;
-    #if UNITY_EDITOR
+#if UNITY_EDITOR
     public SceneAsset[] sceneAssets; // Use in the editor for drag-and-drop
-    #endif
+#endif
     public SceneInfo[] scenes; // For runtime use
 
     // Call this method to update scene names based on SceneAssets
-    #if UNITY_EDITOR
+#if UNITY_EDITOR
     public void UpdateSceneNames()
     {
-        if (sceneAssets == null) return;
+        if (sceneAssets == null)
+            return;
 
         if (scenes == null || scenes.Length != sceneAssets.Length)
         {
@@ -47,7 +48,7 @@ public class SceneGroup : ScriptableObject
     {
         UpdateSceneNames();
     }
-    #endif
+#endif
 }
 
 [System.Serializable]

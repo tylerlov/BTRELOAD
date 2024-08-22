@@ -1,5 +1,5 @@
-using UnityEngine;
 using UltimateSpawner;
+using UnityEngine;
 
 public class WaveCustomEventSorter : MonoBehaviour
 {

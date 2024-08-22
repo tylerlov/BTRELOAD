@@ -1,5 +1,5 @@
-using UnityEngine;
 using PrimeTween;
+using UnityEngine;
 
 public class UILockOnEffect : MonoBehaviour
 {
@@ -24,7 +24,8 @@ public class UILockOnEffect : MonoBehaviour
     {
         // Update rotation angle
         rotationAngle += Time.deltaTime * 360f;
-        if (rotationAngle >= 360f) rotationAngle -= 360f;
+        if (rotationAngle >= 360f)
+            rotationAngle -= 360f;
     }
 
     private void LateUpdate()
@@ -45,8 +46,12 @@ public class UILockOnEffect : MonoBehaviour
         // Draw the wireframe box
         GUIUtility.RotateAroundPivot(rotationAngle, boxPos); // Start rotation
         GUI.color = textureColor;
-        GUI.DrawTexture(new Rect(boxPos.x - boxSize / 2, boxPos.y - boxSize / 2, boxSize, boxSize), wireframeBoxTexture,
-            ScaleMode.ScaleToFit, true);
+        GUI.DrawTexture(
+            new Rect(boxPos.x - boxSize / 2, boxPos.y - boxSize / 2, boxSize, boxSize),
+            wireframeBoxTexture,
+            ScaleMode.ScaleToFit,
+            true
+        );
         GUIUtility.RotateAroundPivot(-rotationAngle, boxPos); // End rotation
     }
 
@@ -62,8 +67,13 @@ public class UILockOnEffect : MonoBehaviour
         boxSizeTween.Stop();
 
         // Animate the box size from initialBoxSize to 0 over 0.6 seconds
-        boxSizeTween = Tween.Custom(this, initialBoxSize, 0f, 0.6f, 
-            (target, value) => target.boxSize = value);
+        boxSizeTween = Tween.Custom(
+            this,
+            initialBoxSize,
+            0f,
+            0.6f,
+            (target, value) => target.boxSize = value
+        );
     }
 
     private void OnDisable()

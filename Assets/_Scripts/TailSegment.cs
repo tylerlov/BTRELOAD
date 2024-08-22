@@ -34,7 +34,11 @@ public class TailSegment : MonoBehaviour
         // Optional: Make the segment look in the direction of movement
         if (velocity.magnitude > 0.01f)
         {
-            transform.rotation = Quaternion.Lerp(transform.rotation, Quaternion.LookRotation(velocity), followSpeed * Time.deltaTime);
+            transform.rotation = Quaternion.Lerp(
+                transform.rotation,
+                Quaternion.LookRotation(velocity),
+                followSpeed * Time.deltaTime
+            );
         }
     }
 }

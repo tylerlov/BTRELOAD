@@ -1,13 +1,10 @@
-﻿using UnityEngine;
-using Chronos;
+﻿using Chronos;
+using UnityEngine;
 
 public class BaseBehaviour : MonoBehaviour
 {
     public Timeline time
     {
-        get
-        {
-            return GetComponent<Timeline>();
-        }
+        get { return GetComponent<Timeline>(); }
     }
 }

@@ -1,5 +1,5 @@
-﻿using UnityEngine;
-using SonicBloom.Koreo;
+﻿using SonicBloom.Koreo;
+using UnityEngine;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -49,7 +49,7 @@ public class BackgroundFX : MonoBehaviour
     }
 
     void OnMusicalSkybox(KoreographyEvent evt)
-    {        
+    {
         if (Time.timeScale == 0 || !lockingFx)
         {
             return;
@@ -66,7 +66,8 @@ public class BackgroundFX : MonoBehaviour
         {
             Debug.LogError("Skybox material is null! Reinitializing...");
             InitializeSkyboxMaterial();
-            if (skyboxMaterial == null) return;
+            if (skyboxMaterial == null)
+                return;
         }
 
         string propertyName = GetSkyboxColorProperty();

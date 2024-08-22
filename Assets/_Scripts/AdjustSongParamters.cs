@@ -1,17 +1,19 @@
+using Cinemachine; // Ensure you have this namespace to access Cinemachine classes
+using FMODUnity;
 using UnityEngine;
 using UnityEngine.Events;
-using FMODUnity;
-using Cinemachine; // Ensure you have this namespace to access Cinemachine classes
 using UnityEngine.SceneManagement; // Required for listening to scene changes
 
 public class AdjustSongParameters : MonoBehaviour
 {
     [Header("Dependencies")]
-    [SerializeField] private SongArrangement _songArrangement;
+    [SerializeField]
+    private SongArrangement _songArrangement;
 
     [Space]
     public int currWaveCount;
     public int currentSection;
+
     [Space]
     private StudioEventEmitter musicPlayback;
 
@@ -22,7 +24,8 @@ public class AdjustSongParameters : MonoBehaviour
     private CinemachineStateDrivenCamera stateDrivenCamera; // Reference to the State Driven Camera
 
     [Header("Debug Info")]
-    [SerializeField] private string currentSectionName; // Add this field
+    [SerializeField]
+    private string currentSectionName; // Add this field
 
     private void OnEnable()
     {
@@ -117,12 +120,22 @@ public class AdjustSongParameters : MonoBehaviour
 
     public void changeSongSection()
     {
-        if (musicPlayback == null || _songArrangement == null || _songArrangement.sections == null || currentSection >= _songArrangement.sections.Length)
+        if (
+            musicPlayback == null
+            || _songArrangement == null
+            || _songArrangement.sections == null
+            || currentSection >= _songArrangement.sections.Length
+        )
         {
-            Debug.LogWarning("One or more references are null in changeSongSection, or currentSection is out of bounds.");
+            Debug.LogWarning(
+                "One or more references are null in changeSongSection, or currentSection is out of bounds."
+            );
             return;
         }
-        musicPlayback.EventInstance.setParameterByName("Sections", _songArrangement.sections[currentSection].section);
+        musicPlayback.EventInstance.setParameterByName(
+            "Sections",
+            _songArrangement.sections[currentSection].section
+        );
 
         currentSectionName = _songArrangement.sections[currentSection].name; // Update the section name
 

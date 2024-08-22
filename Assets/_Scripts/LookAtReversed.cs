@@ -15,6 +15,10 @@ public class LookAtReversed : MonoBehaviour
     {
         Vector3 directionToCamera = (target.position - transform.position).normalized;
         targetRotation = Quaternion.LookRotation(-directionToCamera);
-        transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, smoothSpeed * Time.deltaTime);
+        transform.rotation = Quaternion.Slerp(
+            transform.rotation,
+            targetRotation,
+            smoothSpeed * Time.deltaTime
+        );
     }
 }

@@ -1,6 +1,6 @@
-using UnityEngine;
 using FluffyUnderware.Curvy;
 using UnityEditor;
+using UnityEngine;
 
 [System.Serializable]
 public class BoneOffset
@@ -9,7 +9,6 @@ public class BoneOffset
     public Vector3 Offset;
     public Transform SplineNode; // This will refer to the associated spline node
 }
-
 
 public class UpdateSplineWithBones : MonoBehaviour
 {
@@ -34,7 +33,17 @@ public class UpdateSplineWithBones : MonoBehaviour
         {
             // Update the spline control points based on the current bone positions
             Transform cp = Spline.transform.GetChild(currentControlPoint);
-            Vector3 newPosition = new Vector3(BoneOffsets[currentControlPoint].Bone.position.x + xOffset + BoneOffsets[currentControlPoint].Offset.x, BoneOffsets[currentControlPoint].Bone.position.y + yOffset + BoneOffsets[currentControlPoint].Offset.y, BoneOffsets[currentControlPoint].Bone.position.z + zOffset + BoneOffsets[currentControlPoint].Offset.z);
+            Vector3 newPosition = new Vector3(
+                BoneOffsets[currentControlPoint].Bone.position.x
+                    + xOffset
+                    + BoneOffsets[currentControlPoint].Offset.x,
+                BoneOffsets[currentControlPoint].Bone.position.y
+                    + yOffset
+                    + BoneOffsets[currentControlPoint].Offset.y,
+                BoneOffsets[currentControlPoint].Bone.position.z
+                    + zOffset
+                    + BoneOffsets[currentControlPoint].Offset.z
+            );
 
             // Check constraints
             float x = ConstrainX ? cp.position.x : newPosition.x;
@@ -43,7 +52,6 @@ public class UpdateSplineWithBones : MonoBehaviour
 
             cp.position = new Vector3(x, y, z);
 
-
             // Increment the current control point and reset it if it reaches the end
             currentControlPoint++;
             if (currentControlPoint >= Spline.Count + 1)
@@ -51,70 +59,67 @@ public class UpdateSplineWithBones : MonoBehaviour
                 currentControlPoint = 0;
             }
         }
-        
-        Spline.Refresh();
 
+        Spline.Refresh();
     }
 
-public void GenerateSpline()
-{
-    // Get the bones from the SkinnedMeshRenderer
-    Transform[] bones = SkinnedMesh.bones;
-
-    // Create a new BoneOffset array with the same length as the bones array
-    BoneOffsets = new BoneOffset[bones.Length];
-
-    for (int i = 0; i < bones.Length; i++)
+    public void GenerateSpline()
     {
-        // Ensure there are enough control points in the spline
-        if (i >= Spline.ControlPointCount)
+        // Get the bones from the SkinnedMeshRenderer
+        Transform[] bones = SkinnedMesh.bones;
+
+        // Create a new BoneOffset array with the same length as the bones array
+        BoneOffsets = new BoneOffset[bones.Length];
+
+        for (int i = 0; i < bones.Length; i++)
         {
-            Spline.Add();
+            // Ensure there are enough control points in the spline
+            if (i >= Spline.ControlPointCount)
+            {
+                Spline.Add();
+            }
+
+            Transform cp = Spline.transform.GetChild(i);
+            cp.position = bones[i].position;
+
+            // Create a new BoneOffset for each bone
+            // and assign the spline control point to the SplineNode member
+            BoneOffsets[i] = new BoneOffset
+            {
+                Bone = bones[i],
+                Offset = Vector3.zero,
+                SplineNode = cp,
+            };
         }
 
-        Transform cp = Spline.transform.GetChild(i);
-        cp.position = bones[i].position;
-
-        // Create a new BoneOffset for each bone 
-        // and assign the spline control point to the SplineNode member
-        BoneOffsets[i] = new BoneOffset
-        {
-            Bone = bones[i],
-            Offset = Vector3.zero,
-            SplineNode = cp
-        };
+        //Spline.Refresh();
     }
 
-    //Spline.Refresh();
-}
-void OnDrawGizmosSelected()
-{
-    if (BoneOffsets != null)
+    void OnDrawGizmosSelected()
     {
-        foreach (var boneOffset in BoneOffsets)
+        if (BoneOffsets != null)
         {
-            if (boneOffset.Bone != null)
+            foreach (var boneOffset in BoneOffsets)
             {
-                Vector3 startPosition = boneOffset.Bone.position;
-                Vector3 endPosition = new Vector3(
-                    boneOffset.Bone.position.x + xOffset + boneOffset.Offset.x, 
-                    boneOffset.Bone.position.y + yOffset + boneOffset.Offset.y, 
-                    boneOffset.Bone.position.z + zOffset + boneOffset.Offset.z
-                );
+                if (boneOffset.Bone != null)
+                {
+                    Vector3 startPosition = boneOffset.Bone.position;
+                    Vector3 endPosition = new Vector3(
+                        boneOffset.Bone.position.x + xOffset + boneOffset.Offset.x,
+                        boneOffset.Bone.position.y + yOffset + boneOffset.Offset.y,
+                        boneOffset.Bone.position.z + zOffset + boneOffset.Offset.z
+                    );
 
-                // Set the Gizmo color to something noticeable, like cyan.
-                Gizmos.color = Color.cyan;
+                    // Set the Gizmo color to something noticeable, like cyan.
+                    Gizmos.color = Color.cyan;
 
-                // Draw a line from the bone's position to the new position (offset).
-                Gizmos.DrawLine(startPosition, endPosition);
+                    // Draw a line from the bone's position to the new position (offset).
+                    Gizmos.DrawLine(startPosition, endPosition);
 
-                // Draw a small sphere at the end for clarity.
-                Gizmos.DrawSphere(endPosition, 0.05f);
+                    // Draw a small sphere at the end for clarity.
+                    Gizmos.DrawSphere(endPosition, 0.05f);
+                }
             }
         }
     }
 }
-
-}
-
-

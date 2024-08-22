@@ -1,13 +1,14 @@
-using UnityEngine;
 using BehaviorDesigner.Runtime.Tactical;
 using PrimeTween; // Changed from DOTween to PrimeTween
+using UnityEngine;
 
 public class ColliderHitCallback : BaseBehaviour, IDamageable
 {
-    public GameObject bossObject; 
+    public GameObject bossObject;
     private ILimbDamageReceiver bossScript; // Keep the interface reference, but don't serialize it
 
-    [SerializeField] private GameObject lockedOnIndicator; // Add a reference to a locked-on indicator, such as a visual effect or model
+    [SerializeField]
+    private GameObject lockedOnIndicator; // Add a reference to a locked-on indicator, such as a visual effect or model
 
     public bool enableShakeOnDamage = true; // Public bool to control shake animation
 
@@ -18,7 +19,9 @@ public class ColliderHitCallback : BaseBehaviour, IDamageable
             bossScript = bossObject.GetComponent<ILimbDamageReceiver>();
             if (bossScript == null)
             {
-                Debug.LogWarning("The assigned GameObject does not have a component that implements ILimbDamageReceiver.");
+                Debug.LogWarning(
+                    "The assigned GameObject does not have a component that implements ILimbDamageReceiver."
+                );
             }
         }
         else
@@ -38,13 +41,16 @@ public class ColliderHitCallback : BaseBehaviour, IDamageable
         if (enableShakeOnDamage)
         {
             // Convert DOTween shake to PrimeTween shake
-            Tween.ShakeLocalPosition(transform, 
-                duration: 0.5f, 
-                strength: new Vector3(0.1f, 0.1f, 0.1f), 
-                frequency: 10, 
-                easeBetweenShakes: Ease.InOutQuad);
+            Tween.ShakeLocalPosition(
+                transform,
+                duration: 0.5f,
+                strength: new Vector3(0.1f, 0.1f, 0.1f),
+                frequency: 10,
+                easeBetweenShakes: Ease.InOutQuad
+            );
         }
     }
+
     public bool IsAlive()
     {
         // Implement logic to determine if the object is alive

@@ -7,7 +7,7 @@ public class TempoSpin : MonoBehaviour
     {
         X_Axis,
         Y_Axis,
-        Z_Axis
+        Z_Axis,
     }
 
     // Define an enum for rotation multipliers
@@ -20,7 +20,7 @@ public class TempoSpin : MonoBehaviour
         x16 = 16,
         x32 = 32,
         x64 = 64,
-        x128 = 128
+        x128 = 128,
     }
 
     [SerializeField]

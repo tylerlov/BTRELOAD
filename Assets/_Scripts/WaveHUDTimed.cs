@@ -1,7 +1,7 @@
 using System.Collections;
-using UnityEngine;
-using TMPro; // Changed from UnityEngine.UI to TMPro
 using Febucci.UI;
+using TMPro; // Changed from UnityEngine.UI to TMPro
+using UnityEngine;
 
 namespace UltimateSpawner.Demo
 {

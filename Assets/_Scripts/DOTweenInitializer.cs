@@ -3,8 +3,8 @@ using UnityEngine;
 
 public class DOTweenInitializer : MonoBehaviour
 {
-
     public bool active = false;
+
     void Awake()
     {
         // Set the maximum capacity for Tweeners and Sequences

@@ -1,7 +1,6 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-
 public class PersistentObject : MonoBehaviour
 {
     private static bool _isCreated = false;

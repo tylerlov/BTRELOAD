@@ -1,23 +1,25 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 using UnityEngine.UI;
-using TMPro;
 
-public class ChangeDynamicResolutionAuto : MonoBehaviour {
-
-    private enum RenderScaleMode {
+public class ChangeDynamicResolutionAuto : MonoBehaviour
+{
+    private enum RenderScaleMode
+    {
         DynamicResolution,
         RenderPipelineAsset,
     }
 
+    [SerializeField]
+    private TextMeshProUGUI screenText;
 
-    [SerializeField] private TextMeshProUGUI screenText;
-    [SerializeField] private RenderScaleMode renderScaleMode;
-
+    [SerializeField]
+    private RenderScaleMode renderScaleMode;
 
     private FrameTiming[] frameTimings = new FrameTiming[3];
 
@@ -31,55 +33,76 @@ public class ChangeDynamicResolutionAuto : MonoBehaviour {
     private UniversalRenderPipelineAsset universalRenderPipelineAsset;
     private float lastCalculateTime;
 
-    private void Awake() {
+    private void Awake()
+    {
         universalRenderPipelineAsset = (UniversalRenderPipelineAsset)QualitySettings.renderPipeline;
 
-        if (universalRenderPipelineAsset == null) {
+        if (universalRenderPipelineAsset == null)
+        {
             // No override for this Quality
-            universalRenderPipelineAsset = (UniversalRenderPipelineAsset)GraphicsSettings.defaultRenderPipeline;
+            universalRenderPipelineAsset = (UniversalRenderPipelineAsset)
+                GraphicsSettings.defaultRenderPipeline;
         }
     }
 
-    private void Update() {
+    private void Update()
+    {
         float oldRenderScale = renderScale;
 
         GetFrameTimings();
 
-        if (Input.GetKeyDown(KeyCode.U)) {
+        if (Input.GetKeyDown(KeyCode.U))
+        {
             renderScale = .1f;
         }
-        if (Input.GetKeyDown(KeyCode.I)) {
+        if (Input.GetKeyDown(KeyCode.I))
+        {
             renderScale = 1f;
         }
 
         TryCalculateResolutionBasedOnFPS();
 
-        if (renderScale != oldRenderScale) {
+        if (renderScale != oldRenderScale)
+        {
             ChangeRenderScale(renderScale);
         }
 
-        int rezWidth = (int)Mathf.Ceil(ScalableBufferManager.widthScaleFactor * renderScale * Screen.currentResolution.width);
-        int rezHeight = (int)Mathf.Ceil(ScalableBufferManager.heightScaleFactor * renderScale * Screen.currentResolution.height);
+        int rezWidth = (int)
+            Mathf.Ceil(
+                ScalableBufferManager.widthScaleFactor
+                    * renderScale
+                    * Screen.currentResolution.width
+            );
+        int rezHeight = (int)
+            Mathf.Ceil(
+                ScalableBufferManager.heightScaleFactor
+                    * renderScale
+                    * Screen.currentResolution.height
+            );
 
-        screenText.text = string.Format("Scale: {0:F3}\nResolution: {1}x{2}\nGPU: {3:F3} CPU: {4:F3}",
+        screenText.text = string.Format(
+            "Scale: {0:F3}\nResolution: {1}x{2}\nGPU: {3:F3} CPU: {4:F3}",
             renderScale,
             rezWidth,
             rezHeight,
             gpuFrameTime,
-            cpuFrameTime);
+            cpuFrameTime
+        );
     }
 
-    private void GetFrameTimings() {
+    private void GetFrameTimings()
+    {
         ++frameCount;
-        if (frameCount <= kNumFrameTimings) {
+        if (frameCount <= kNumFrameTimings)
+        {
             return;
         }
 
         FrameTimingManager.CaptureFrameTimings();
         FrameTimingManager.GetLatestTimings(kNumFrameTimings, frameTimings);
-        if (frameTimings.Length < kNumFrameTimings) {
-            Debug.LogFormat("Skipping frame {0}, didn't get enough frame timings.",
-                frameCount);
+        if (frameTimings.Length < kNumFrameTimings)
+        {
+            Debug.LogFormat("Skipping frame {0}, didn't get enough frame timings.", frameCount);
 
             return;
         }
@@ -88,10 +111,12 @@ public class ChangeDynamicResolutionAuto : MonoBehaviour {
         cpuFrameTime = (double)frameTimings[0].cpuFrameTime;
     }
 
-    private void TryCalculateResolutionBasedOnFPS() {
+    private void TryCalculateResolutionBasedOnFPS()
+    {
         float timeSinceLastCalculate = Time.realtimeSinceStartup - lastCalculateTime;
 
-        if (timeSinceLastCalculate < .2f) {
+        if (timeSinceLastCalculate < .2f)
+        {
             // Calculated not long ago, don't calculate again
             return;
         }
@@ -100,9 +125,12 @@ public class ChangeDynamicResolutionAuto : MonoBehaviour {
 
         float fps = Framerate.Instance.GetFPS();
 
-        if (fps < 60) {
+        if (fps < 60)
+        {
             renderScale -= .02f;
-        } else {
+        }
+        else
+        {
             renderScale += .02f;
         }
 
@@ -110,8 +138,10 @@ public class ChangeDynamicResolutionAuto : MonoBehaviour {
         renderScale = Mathf.Clamp(renderScale, renderScaleMin, 1f);
     }
 
-    private void ChangeRenderScale(float renderScale) {
-        switch (renderScaleMode) {
+    private void ChangeRenderScale(float renderScale)
+    {
+        switch (renderScaleMode)
+        {
             default:
             case RenderScaleMode.RenderPipelineAsset:
                 universalRenderPipelineAsset.renderScale = renderScale;
@@ -121,6 +151,4 @@ public class ChangeDynamicResolutionAuto : MonoBehaviour {
                 break;
         }
     }
-
-
 }

@@ -1,20 +1,31 @@
-using UnityEngine;
-using Pathfinding;
 using Chronos;
+using Pathfinding;
+using UnityEngine;
 
 namespace Pathfinding
 {
     public class CustomAIPathAlignedToSurface : AIPathAlignedToSurface
     {
         public Timeline clock; // Chronos local clock
-        
-        [SerializeField] private float pathUpdateInterval = 0.5f; // Time between path updates
-        [SerializeField] private float outOfBoundsThreshold = 10f; // Distance threshold to consider out of bounds
-        [SerializeField] private float recoveryCheckInterval = 1f; // Time between recovery checks
-        [SerializeField] private int maxRecoveryAttempts = 5; // Maximum number of recovery attempts before resetting
-        [SerializeField] private Vector3 resetPosition = Vector3.zero; // Position to reset to if recovery fails
-        [SerializeField] private float stuckDetectionTime = 3f; // Time to consider an enemy stuck
-        
+
+        [SerializeField]
+        private float pathUpdateInterval = 0.5f; // Time between path updates
+
+        [SerializeField]
+        private float outOfBoundsThreshold = 10f; // Distance threshold to consider out of bounds
+
+        [SerializeField]
+        private float recoveryCheckInterval = 1f; // Time between recovery checks
+
+        [SerializeField]
+        private int maxRecoveryAttempts = 5; // Maximum number of recovery attempts before resetting
+
+        [SerializeField]
+        private Vector3 resetPosition = Vector3.zero; // Position to reset to if recovery fails
+
+        [SerializeField]
+        private float stuckDetectionTime = 3f; // Time to consider an enemy stuck
+
         private float lastPathUpdateTime;
         private float lastRecoveryCheckTime;
         private Vector3 lastKnownGoodPosition;
@@ -65,7 +76,10 @@ namespace Pathfinding
         private void UpdateLastKnownGoodPosition()
         {
             // Use a non-allocating method to get the nearest node
-            var nearestNode = AstarPath.active.GetNearest(transform.position, NNConstraint.Walkable);
+            var nearestNode = AstarPath.active.GetNearest(
+                transform.position,
+                NNConstraint.Walkable
+            );
             if (nearestNode.node != null && nearestNode.node.Walkable)
             {
                 lastKnownGoodPosition = nearestNode.position;
@@ -97,7 +111,9 @@ namespace Pathfinding
         {
             if (Vector3.Distance(transform.position, lastKnownGoodPosition) > outOfBoundsThreshold)
             {
-                ConditionalDebug.LogWarning($"Enemy out of bounds. Attempting recovery. Current pos: {transform.position}, Last good pos: {lastKnownGoodPosition}");
+                ConditionalDebug.LogWarning(
+                    $"Enemy out of bounds. Attempting recovery. Current pos: {transform.position}, Last good pos: {lastKnownGoodPosition}"
+                );
                 StartRecovery();
             }
         }
@@ -109,7 +125,9 @@ namespace Pathfinding
 
             if (recoveryAttempts > maxRecoveryAttempts)
             {
-                ConditionalDebug.LogWarning("Max recovery attempts reached. Resetting to default position.");
+                ConditionalDebug.LogWarning(
+                    "Max recovery attempts reached. Resetting to default position."
+                );
                 ResetToDefaultPosition();
                 return;
             }
@@ -123,7 +141,9 @@ namespace Pathfinding
             }
             else
             {
-                ConditionalDebug.LogWarning("Failed to find valid recovery position. Resetting to default position.");
+                ConditionalDebug.LogWarning(
+                    "Failed to find valid recovery position. Resetting to default position."
+                );
                 ResetToDefaultPosition();
             }
         }
@@ -131,7 +151,10 @@ namespace Pathfinding
         private Vector3 FindSafePosition()
         {
             // Use a non-allocating method to get the nearest node
-            var nearestToDestination = AstarPath.active.GetNearest(destination, NNConstraint.Walkable);
+            var nearestToDestination = AstarPath.active.GetNearest(
+                destination,
+                NNConstraint.Walkable
+            );
             if (nearestToDestination.node != null && nearestToDestination.node.Walkable)
             {
                 return nearestToDestination.position;

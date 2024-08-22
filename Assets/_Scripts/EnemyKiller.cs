@@ -1,11 +1,10 @@
 using System.Collections;
 using System.Collections.Generic;
-using UnityEngine;
-using UnityEngine.UI; // Add this
-using UnityEngine.EventSystems; // Add this
 using System.Linq; // Add this for LINQ methods like OfType
 using BehaviorDesigner.Runtime.Tactical; // Add this to access IDamageable
-
+using UnityEngine;
+using UnityEngine.EventSystems; // Add this
+using UnityEngine.UI; // Add this
 
 public class EnemyKiller : MonoBehaviour, IPointerClickHandler // Implement the IPointerClickHandler interface
 {
@@ -18,9 +17,15 @@ public class EnemyKiller : MonoBehaviour, IPointerClickHandler // Implement the 
         EventTrigger eventTrigger = uiElement.AddComponent<EventTrigger>();
         EventTrigger.Entry entry = new EventTrigger.Entry();
         entry.eventID = EventTriggerType.PointerClick;
-        entry.callback.AddListener((data) => { OnPointerClick((PointerEventData)data); });
+        entry.callback.AddListener(
+            (data) =>
+            {
+                OnPointerClick((PointerEventData)data);
+            }
+        );
         eventTrigger.triggers.Add(entry);
     }
+
     public void OnPointerClick(PointerEventData eventData) // This function will be called when the UI element is clicked
     {
         KillAllEnemies();
@@ -31,7 +36,9 @@ public class EnemyKiller : MonoBehaviour, IPointerClickHandler // Implement the 
     public void KillAllEnemies()
     {
         // Find all game objects that implement the IDamageable interface
-        var damageables = UnityEngine.Object.FindObjectsOfType<MonoBehaviour>().OfType<IDamageable>();
+        var damageables = UnityEngine
+            .Object.FindObjectsOfType<MonoBehaviour>()
+            .OfType<IDamageable>();
 
         // Apply damage to each damageable object
         foreach (var damageable in damageables)
@@ -42,6 +49,7 @@ public class EnemyKiller : MonoBehaviour, IPointerClickHandler // Implement the 
             }
         }
     }
+
     public void CallDeathOnLayerObjects(int layer)
     {
         var gameObjects = FindObjectsOfType(typeof(GameObject)) as GameObject[];

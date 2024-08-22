@@ -1,34 +1,48 @@
-using UnityEngine;
 using System.Collections;
-using Chronos;
-using PathologicalGames;
 using BehaviorDesigner.Runtime.Tactical;
+using Chronos;
 using OccaSoftware.BOP;
+using PathologicalGames;
 using SonicBloom.Koreo;
+using UnityEngine;
 
 [RequireComponent(typeof(Timeline))]
 public abstract class EnemyBase : MonoBehaviour, IDamageable
 {
     #region Health and Type
-    [SerializeField] protected float startHealth = 100;
+    [SerializeField]
+    protected float startHealth = 100;
     protected float currentHealth;
-    [SerializeField] protected string enemyType;
+
+    [SerializeField]
+    protected string enemyType;
     #endregion
 
     #region GameObject References
-    [SerializeField] protected GameObject enemyModel;
-    [SerializeField] protected GameObject lockedOnIndicator;
-    [HideInInspector] public GameObject playerTarget;
+    [SerializeField]
+    protected GameObject enemyModel;
+
+    [SerializeField]
+    protected GameObject lockedOnIndicator;
+
+    [HideInInspector]
+    public GameObject playerTarget;
     #endregion
 
     #region Particle Systems
-    [SerializeField] protected Pooler deathParticles;
-    [SerializeField] protected Pooler birthParticles;
-    [SerializeField] protected Pooler lockOnDisabledParticles;
+    [SerializeField]
+    protected Pooler deathParticles;
+
+    [SerializeField]
+    protected Pooler birthParticles;
+
+    [SerializeField]
+    protected Pooler lockOnDisabledParticles;
     #endregion
 
     #region Koreographer
-    [SerializeField, EventID] protected string eventID;
+    [SerializeField, EventID]
+    protected string eventID;
     #endregion
 
     #region Pooling
@@ -71,9 +85,12 @@ public abstract class EnemyBase : MonoBehaviour, IDamageable
         playerTarget = GameObject.FindGameObjectWithTag("Player");
         enemyModel.SetActive(true);
         currentHealth = startHealth;
-        FMODUnity.RuntimeManager.PlayOneShotAttached("event:/Enemy/" + enemyType + "/Birth", gameObject);
+        FMODUnity.RuntimeManager.PlayOneShotAttached(
+            "event:/Enemy/" + enemyType + "/Birth",
+            gameObject
+        );
         clock = Timekeeper.instance.Clock("Test");
-        
+
         if (birthParticles != null)
         {
             birthParticles.GetFromPool(transform.position, Quaternion.identity);
@@ -89,7 +106,9 @@ public abstract class EnemyBase : MonoBehaviour, IDamageable
     {
         float previousHealth = currentHealth;
         currentHealth = Mathf.Max(currentHealth - amount, 0);
-        Debug.Log($"{gameObject.name} took {amount} damage. Health reduced from {previousHealth} to {currentHealth}");
+        Debug.Log(
+            $"{gameObject.name} took {amount} damage. Health reduced from {previousHealth} to {currentHealth}"
+        );
 
         if (currentHealth <= 0)
         {
@@ -103,7 +122,10 @@ public abstract class EnemyBase : MonoBehaviour, IDamageable
         ConditionalDebug.Log($"{enemyType} has died");
 
         deathParticles.GetFromPool(transform.position, Quaternion.identity);
-        FMODUnity.RuntimeManager.PlayOneShot("event:/Enemy/" + enemyType + "/Death", transform.position);
+        FMODUnity.RuntimeManager.PlayOneShot(
+            "event:/Enemy/" + enemyType + "/Death",
+            transform.position
+        );
 
         yield return new WaitForSeconds(0.5f);
         enemyModel.SetActive(false);

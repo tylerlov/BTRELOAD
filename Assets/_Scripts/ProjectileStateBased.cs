@@ -1,24 +1,24 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using UnityEngine;
-using UnityEngine.SceneManagement;
+using BehaviorDesigner.Runtime.Tactical;
+using BehaviorDesigner.Runtime.Tasks.Movement;
+using BehaviorDesigner.Runtime.Tasks.Unity.UnityGameObject;
 using Chronos;
 using DG.Tweening;
 using HohStudios.Tools.ObjectParticleSpawner;
-using BehaviorDesigner.Runtime.Tactical;
-using BehaviorDesigner.Runtime.Tasks.Unity.UnityGameObject;
 using SensorToolkit.Example;
-using BehaviorDesigner.Runtime.Tasks.Movement;
-using UnityEngine.VFX;
 using SickscoreGames;
 using SickscoreGames.HUDNavigationSystem;
 using Unity.Collections;
+using UnityEngine;
+using UnityEngine.SceneManagement;
+using UnityEngine.VFX;
 
 public enum ProjectilePoolType
 {
     StaticEnemy,
-    EnemyBasicSetup
+    EnemyBasicSetup,
     // Add more types as needed
 }
 
@@ -32,13 +32,20 @@ public abstract class ProjectileState
     }
 
     public virtual void FixedUpdate(float timeScale) { }
+
     public virtual void OnTriggerEnter(Collider other) { }
+
     public virtual void OnDeath() { }
+
     public virtual void OnStateEnter() { }
+
     public virtual void OnStateExit() { }
-    public virtual void Update() { 
+
+    public virtual void Update()
+    {
         ProjectileManager.Instance.PredictAndRotateProjectile(_projectile);
     }
+
     public virtual void CustomUpdate(float timeScale) { } // Added this line
 
     public ProjectileStateBased GetProjectile()
@@ -49,14 +56,15 @@ public abstract class ProjectileState
 
 public class EnemyShotState : ProjectileState
 {
-
-    public EnemyShotState(ProjectileStateBased projectile) : base(projectile)
+    public EnemyShotState(ProjectileStateBased projectile)
+        : base(projectile)
     {
         // Enemy Shot State initialization logic here...
         _projectile.currentTarget = GameObject.FindWithTag("Player Aim Target").transform;
-        _projectile.SetLifetime(10f);
+        // Remove the hard-coded lifetime setting
+        // _projectile.SetLifetime(10f);
 
-        _projectile.minTurnRadius = 5f;  // Reduced from 10f
+        _projectile.minTurnRadius = 5f; // Reduced from 10f
         _projectile.maxTurnRadius = 20f; // Reduced from 50f
         _projectile.approachAngle = UnityEngine.Random.Range(15f, 30f); // Reduced range
         _projectile.turnRate = 180f; // Increased turn rate for sharper turns
@@ -64,31 +72,41 @@ public class EnemyShotState : ProjectileState
 
     public override void OnTriggerEnter(Collider other)
     {
-          // Behavior for OnTriggerEnter in EnemyShotState
+        // Behavior for OnTriggerEnter in EnemyShotState
         if (other.gameObject.CompareTag("Player"))
         {
-
             IDamageable damageable = other.gameObject.GetComponent("PlayerHealth") as IDamageable;
             if (damageable != null)
             {
                 damageable.Damage(_projectile.damageAmount);
                 _projectile.projHitPlayer = true;
                 _projectile.Death();
-                ProjectileManager.Instance.PlayOneShotSound("event:/Projectile/Basic/Impact", _projectile.transform.position);
+                ProjectileManager.Instance.PlayOneShotSound(
+                    "event:/Projectile/Basic/Impact",
+                    _projectile.transform.position
+                );
             }
         }
         else
         {
-            ConditionalDebug.Log("Collided with an object " + other.gameObject + " at transform " + other.gameObject.transform + "and behaviour may not be expected");
+            ConditionalDebug.Log(
+                "Collided with an object "
+                    + other.gameObject
+                    + " at transform "
+                    + other.gameObject.transform
+                    + "and behaviour may not be expected"
+            );
         }
     }
 }
 
 public class PlayerLockedState : ProjectileState
 {
-    public PlayerLockedState(ProjectileStateBased projectile) : base(projectile)
+    public PlayerLockedState(ProjectileStateBased projectile)
+        : base(projectile)
     {
-        if (_projectile.isParried) return;
+        if (_projectile.isParried)
+            return;
 
         _projectile.SetLifetime(200f);
 
@@ -103,7 +121,9 @@ public class PlayerLockedState : ProjectileState
         if (ProjectileStateBased.shootingObject != null)
         {
             _projectile.transform.SetParent(ProjectileStateBased.shootingObject.transform, true);
-            Vector3 newPosition = ProjectileStateBased.shootingObject.transform.position + ProjectileStateBased.shootingObject.transform.forward * 2f;
+            Vector3 newPosition =
+                ProjectileStateBased.shootingObject.transform.position
+                + ProjectileStateBased.shootingObject.transform.forward * 2f;
             _projectile.transform.position = newPosition;
             _projectile.transform.rotation = ProjectileStateBased.shootingObject.transform.rotation;
 
@@ -115,7 +135,9 @@ public class PlayerLockedState : ProjectileState
         }
         else
         {
-            ConditionalDebug.LogError("Shooting not found. Make sure there is a GameObject tagged 'Shooting' in the scene.");
+            ConditionalDebug.LogError(
+                "Shooting not found. Make sure there is a GameObject tagged 'Shooting' in the scene."
+            );
         }
 
         _projectile.playerProjPath.enabled = true;
@@ -180,6 +202,7 @@ public class PlayerLockedState : ProjectileState
     {
         Debug.Log("Player Locked State Update is happening");
     }
+
     public void LaunchBack()
     {
         if (ProjectileStateBased.shootingObject != null)
@@ -195,17 +218,17 @@ public class PlayerLockedState : ProjectileState
             _projectile.homing = false;
 
             _projectile.transform.rotation = Quaternion.LookRotation(launchDirection);
-            
+
             // Set the velocity directly towards the launch direction
             _projectile.rb.velocity = launchDirection * _projectile.bulletSpeed;
 
             // Adjust the trail renderer duration
             if (_projectile.tRn != null)
             {
-                _projectile.tRn.DOTime(5, 2); 
+                _projectile.tRn.DOTime(5, 2);
             }
 
-            PlayerShotState newState = new PlayerShotState(_projectile);
+            PlayerShotState newState = new PlayerShotState(_projectile, 1f);
             _projectile.ChangeState(newState);
         }
         else
@@ -225,44 +248,180 @@ public class PlayerLockedState : ProjectileState
         _projectile.transform.LookAt(target);
 
         ConditionalDebug.Log("Launch at enemy successfully called on " + target);
-        
+
         _projectile.homing = true;
-        
-        PlayerShotState newState = new PlayerShotState(_projectile);
+
+        PlayerShotState newState = new PlayerShotState(_projectile, 1f);
         _projectile.ChangeState(newState);
     }
 }
 
 public class PlayerShotState : ProjectileState
 {
-    public PlayerShotState(ProjectileStateBased projectile) : base(projectile)
+    private const float CLOSE_PROXIMITY_THRESHOLD = 2f;
+    private const float MAX_PREDICTION_TIME = 2f;
+    private const float MIN_SPEED_MULTIPLIER = 1.2f;
+    private const float PARRIED_SPEED_MULTIPLIER = 1.5f;
+
+    public PlayerShotState(ProjectileStateBased projectile, float playerAccuracyModifier = 1f)
+        : base(projectile)
     {
-        projectile.bulletSpeed *= 3; 
-        
+        projectile.bulletSpeed *= MIN_SPEED_MULTIPLIER;
+
         if (projectile.isParried)
         {
-            projectile.bulletSpeed *= 4;
+            projectile.bulletSpeed *= PARRIED_SPEED_MULTIPLIER;
         }
         _projectile.SetLifetime(10f);
+        _projectile.isPlayerShot = true;
+        _projectile.initialPosition = _projectile.transform.position;
+        _projectile.initialDirection = _projectile.transform.forward;
+        _projectile.homing = true;
+        float finalAccuracy =
+            ProjectileManager.Instance.projectileAccuracy * playerAccuracyModifier;
+        _projectile.SetAccuracy(finalAccuracy);
+    }
+
+    public override void OnStateEnter()
+    {
+        base.OnStateEnter();
+    }
+
+    public override void CustomUpdate(float timeScale)
+    {
+        base.CustomUpdate(timeScale);
+
+        if (_projectile.currentTarget != null)
+        {
+            UpdateProjectileMovement(timeScale);
+        }
+        else
+        {
+            FindNewTarget();
+        }
+
+        CheckCollision();
+    }
+
+    private void UpdateProjectileMovement(float timeScale)
+    {
+        Vector3 targetPosition = _projectile.currentTarget.position;
+        Vector3 toTarget = targetPosition - _projectile.transform.position;
+        float distanceToTarget = toTarget.magnitude;
+
+        // Predict target's future position
+        Vector3 targetVelocity = ProjectileManager.Instance.CalculateTargetVelocity(
+            _projectile.currentTarget.gameObject
+        );
+        float predictionTime = Mathf.Min(
+            distanceToTarget / _projectile.bulletSpeed,
+            MAX_PREDICTION_TIME
+        );
+        Vector3 predictedPosition = targetPosition + targetVelocity * predictionTime;
+
+        Vector3 directionToTarget = (predictedPosition - _projectile.transform.position).normalized;
+
+        // Apply accuracy
+        float maxDeviationAngle = Mathf.Lerp(5f, 0f, _projectile.accuracy); // Max 5 degree deviation at 0 accuracy
+        Vector3 randomDeviation = UnityEngine.Random.insideUnitSphere * maxDeviationAngle;
+        directionToTarget = Quaternion.Euler(randomDeviation) * directionToTarget;
+
+        // Adjust rotation towards the target
+        Quaternion targetRotation = Quaternion.LookRotation(directionToTarget);
+        _projectile.transform.rotation = Quaternion.RotateTowards(
+            _projectile.transform.rotation,
+            targetRotation,
+            _projectile.turnRate * timeScale * Time.deltaTime
+        );
+
+        // Move the projectile
+        _projectile.rb.velocity = _projectile.transform.forward * _projectile.bulletSpeed;
+
+        // If very close to the target, ensure a hit
+        if (distanceToTarget <= CLOSE_PROXIMITY_THRESHOLD)
+        {
+            EnsureHit();
+        }
+    }
+
+    private void FindNewTarget()
+    {
+        Transform nearestEnemy = ProjectileManager.Instance.FindNearestEnemy(
+            _projectile.transform.position
+        );
+        if (nearestEnemy != null)
+        {
+            _projectile.currentTarget = nearestEnemy;
+        }
+        else
+        {
+            // If no target found, maintain current direction
+            _projectile.rb.velocity = _projectile.transform.forward * _projectile.bulletSpeed;
+        }
+    }
+
+    private void EnsureHit()
+    {
+        if (_projectile.currentTarget != null)
+        {
+            _projectile.transform.position = _projectile.currentTarget.position;
+            _projectile.rb.velocity = Vector3.zero;
+
+            // Trigger hit detection
+            Collider targetCollider = _projectile.currentTarget.GetComponent<Collider>();
+            if (targetCollider != null)
+            {
+                OnTriggerEnter(targetCollider);
+            }
+        }
+    }
+
+    private void CheckCollision()
+    {
+        float radius = 0.1f; // Adjust based on projectile size
+        RaycastHit hit;
+        if (
+            Physics.SphereCast(
+                _projectile.transform.position,
+                radius,
+                _projectile.transform.forward,
+                out hit,
+                _projectile.bulletSpeed * Time.deltaTime
+            )
+        )
+        {
+            OnTriggerEnter(hit.collider);
+        }
     }
 
     public override void OnTriggerEnter(Collider other)
     {
         if (other.gameObject.CompareTag("Enemy"))
         {
-            IDamageable damageable;
-            if ((damageable = other.gameObject.GetComponent(typeof(IDamageable)) as IDamageable) != null)
+            IDamageable damageable = other.gameObject.GetComponent<IDamageable>();
+            if (damageable != null)
             {
                 damageable.Damage(_projectile.damageAmount);
-                ConditionalDebug.Log("Projectile collided with " + other.gameObject + " and they should be taking damage");
+                _projectile.hasHitTarget = true;
+                ConditionalDebug.Log(
+                    $"Player projectile hit enemy: {other.gameObject.name}. Distance: {_projectile.distanceTraveled}, Time: {_projectile.timeAlive}"
+                );
                 _projectile.Death();
-                // Notify ProjectileManager that an enemy has been hit
                 ProjectileManager.Instance.NotifyEnemyHit(other.gameObject, _projectile);
-                // Assuming Crosshair instance is accessible
                 Crosshair.Instance.RemoveLockedEnemy(other.transform);
             }
         }
-        // Additional conditions can be added here
+        else
+        {
+            ConditionalDebug.Log(
+                $"Player projectile hit non-enemy object: {other.gameObject.name}. Distance: {_projectile.distanceTraveled}, Time: {_projectile.timeAlive}"
+            );
+        }
+        GameManager.instance.LogProjectileHit(
+            _projectile.isPlayerShot,
+            other.gameObject.CompareTag("Enemy"),
+            other.gameObject.tag
+        );
     }
 }
 
@@ -279,23 +438,38 @@ public class ProjectileStateBased : MonoBehaviour
     #endregion
 
     #region Component References
-    [HideInInspector] public Rigidbody rb;
-    [HideInInspector] public TrailRenderer tRn;
-    [HideInInspector] public LineRenderer lRn;
-    [HideInInspector] public Timeline TLine;
+    [HideInInspector]
+    public Rigidbody rb;
+
+    [HideInInspector]
+    public TrailRenderer tRn;
+
+    [HideInInspector]
+    public LineRenderer lRn;
+
+    [HideInInspector]
+    public Timeline TLine;
     #endregion
 
     #region State Variables
     [Header("State")]
     public string projectileType;
-    [HideInInspector] public string _currentTag;
-    [HideInInspector] public bool collectable;
-    [HideInInspector] public bool homing;
+
+    [HideInInspector]
+    public string _currentTag;
+
+    [HideInInspector]
+    public bool collectable;
+
+    [HideInInspector]
+    public bool homing;
     private bool activeLine = false;
     private bool disableOnProjMove;
     internal bool shotAtEnemy;
     internal bool projHitPlayer = false;
-    [HideInInspector] public bool lifetimeExtended = false;
+
+    [HideInInspector]
+    public bool lifetimeExtended = false;
     #endregion
 
     #region Movement Parameters
@@ -304,10 +478,12 @@ public class ProjectileStateBased : MonoBehaviour
     public float bulletSpeedMultiplier = 4f;
     public float _rotateSpeed = 95;
     public float slowSpeed;
-    public float turnRate = 5f;
+    public float turnRate = 360f; // Degrees per second
     public float maxRotateSpeed = 180;
     public float maxDistance = 100f;
-    [HideInInspector] public float initialSpeed;
+
+    [HideInInspector]
+    public float initialSpeed;
     #endregion
 
     #region Targeting and Prediction
@@ -316,7 +492,8 @@ public class ProjectileStateBased : MonoBehaviour
     public float _maxDistancePredict = 100;
     public float _minDistancePredict = 5;
     public float _maxTimePrediction = 5;
-    public Vector3 _standardPrediction, _deviatedPrediction;
+    public Vector3 _standardPrediction,
+        _deviatedPrediction;
     public Vector3 predictedPosition { get; set; }
     #endregion
 
@@ -345,7 +522,9 @@ public class ProjectileStateBased : MonoBehaviour
     #region Visual Effects
     [Header("Visual Effects")]
     public Renderer modelRenderer;
-    [HideInInspector] public Material myMaterial;
+
+    [HideInInspector]
+    public Material myMaterial;
     public Color lockedProjectileColor;
     private Color originalProjectileColor;
     public TrailRenderer playerProjPath;
@@ -401,11 +580,21 @@ public class ProjectileStateBased : MonoBehaviour
     internal static GameObject shootingObject;
 
     private static readonly int BaseColorProperty = Shader.PropertyToID("_BaseColor");
-    private static readonly int DissolveCutoutProperty = Shader.PropertyToID("_AdvancedDissolveCutoutStandardClip");
+    private static readonly int DissolveCutoutProperty = Shader.PropertyToID(
+        "_AdvancedDissolveCutoutStandardClip"
+    );
     private MaterialPropertyBlock propBlock;
 
     private Transform cachedTransform;
     private Rigidbody cachedRigidbody;
+
+    // Add these fields to the ProjectileStateBased class
+    public bool isPlayerShot = false;
+    public Vector3 initialPosition;
+    public Vector3 initialDirection;
+    public float distanceTraveled = 0f;
+    public float timeAlive = 0f;
+    public bool hasHitTarget = false;
 
     private void Awake()
     {
@@ -413,7 +602,7 @@ public class ProjectileStateBased : MonoBehaviour
         cachedRigidbody = GetComponent<Rigidbody>();
         tRn = GetComponent<TrailRenderer>();
         TLine = GetComponent<Timeline>();
-        
+
         _currentTag = gameObject.tag;
         myMaterial = modelRenderer.material;
         originalProjectileColor = myMaterial.color;
@@ -447,12 +636,11 @@ public class ProjectileStateBased : MonoBehaviour
         else
         {
             modelRenderer.material = myMaterial;
-            myMaterial.SetColor("_BaseColor",originalProjectileColor);
+            myMaterial.SetColor("_BaseColor", originalProjectileColor);
         }
 
         ChangeState(new EnemyShotState(this));
 
-        lifetime = 10f;
         disableOnProjMove = false;
 
         transform.GetChild(0).gameObject.SetActive(false);
@@ -483,7 +671,6 @@ public class ProjectileStateBased : MonoBehaviour
         tRn = GetComponent<TrailRenderer>();
         playerProjPath.enabled = false;
 
-
         _currentTag = gameObject.tag;
     }
 
@@ -497,22 +684,25 @@ public class ProjectileStateBased : MonoBehaviour
         if (homing && currentTarget != null)
         {
             Vector3 directionToTarget = (predictedPosition - cachedTransform.position).normalized;
-            float distance = Vector3.Distance(cachedTransform.position, predictedPosition);
-            
-            // Apply accuracy to rotation
-            float accuracyAdjustedRotateSpeed = Mathf.Lerp(_rotateSpeed * 0.5f, maxRotateSpeed, accuracy);
-            float dynamicRotateSpeed = Mathf.Lerp(accuracyAdjustedRotateSpeed, _rotateSpeed, distance / maxDistance);
-            
-            Quaternion targetRotation = Quaternion.LookRotation(directionToTarget);
-            cachedTransform.rotation = Quaternion.RotateTowards(cachedTransform.rotation, targetRotation, dynamicRotateSpeed * timeScale * Time.deltaTime);
 
-            // Apply accuracy to velocity only if the Rigidbody is not kinematic
+            // Apply accuracy
+            if (accuracy < 1f)
+            {
+                float maxDeviationAngle = Mathf.Lerp(30f, 0f, accuracy); // Max 30 degree deviation at 0 accuracy
+                Vector3 randomDeviation = UnityEngine.Random.insideUnitSphere * maxDeviationAngle;
+                directionToTarget = Quaternion.Euler(randomDeviation) * directionToTarget;
+            }
+
+            Quaternion targetRotation = Quaternion.LookRotation(directionToTarget);
+            cachedTransform.rotation = Quaternion.RotateTowards(
+                cachedTransform.rotation,
+                targetRotation,
+                turnRate * timeScale * Time.deltaTime
+            );
+
             if (cachedRigidbody != null && !cachedRigidbody.isKinematic)
             {
-                Vector3 desiredVelocity = cachedTransform.forward * bulletSpeed;
-                Vector3 velocityAdjustment = (desiredVelocity - cachedRigidbody.velocity) * accuracy;
-                cachedRigidbody.velocity += velocityAdjustment * timeScale * Time.deltaTime;
-                cachedRigidbody.velocity = Vector3.ClampMagnitude(cachedRigidbody.velocity, bulletSpeed);
+                cachedRigidbody.velocity = cachedTransform.forward * bulletSpeed;
             }
         }
 
@@ -522,6 +712,12 @@ public class ProjectileStateBased : MonoBehaviour
         {
             Death();
         }
+
+        UpdateTrackingInfo();
+
+        ConditionalDebug.Log(
+            $"Projectile ID: {GetInstanceID()}, Position: {transform.position}, Velocity: {rb.velocity.magnitude}, Target: {(currentTarget != null ? currentTarget.name : "None")}, Lifetime: {lifetime}"
+        );
     }
 
     private void OnTriggerEnter(Collider other)
@@ -535,28 +731,32 @@ public class ProjectileStateBased : MonoBehaviour
     public void Death()
     {
         // Log the debug message with lifetime and hit status
-        ConditionalDebug.Log($"Death called on projectile. Lifetime remaining: {lifetime}. Hit Player: {projHitPlayer}");
+        ConditionalDebug.Log(
+            $"Death called on projectile. Lifetime remaining: {lifetime}. Hit Player: {projHitPlayer}"
+        );
 
-        // Check if the Rigidbody is not null and not kinematic before trying to set velocities
-        if (cachedRigidbody != null && !cachedRigidbody.isKinematic)
+        if (isPlayerShot && !hasHitTarget)
+        {
+            GameManager.instance.LogProjectileExpired(isPlayerShot);
+        }
+
+        // Ensure the projectile is unregistered and returned to the pool
+        ProjectileManager.Instance.UnregisterProjectile(this);
+        ProjectileManager.Instance.ReturnProjectileToPool(this);
+
+        // Stop any ongoing movement or rotation
+        if (cachedRigidbody != null)
         {
             cachedRigidbody.velocity = Vector3.zero;
             cachedRigidbody.angularVelocity = Vector3.zero;
-        }
-
-        // Set the Rigidbody to kinematic to prevent further physics interactions
-        if (cachedRigidbody != null)
-        {
             cachedRigidbody.isKinematic = true;
         }
 
-        // Stop any ongoing movement or rotation
-        cachedTransform.DOKill(); // This stops any DOTween animations on the transform
+        cachedTransform.DOKill();
 
         // Disable any scripts that might be moving the projectile
         this.enabled = false;
 
-        // Stop the lifetime coroutine if it's running.
         ProjectileManager.Instance.PlayDeathEffect(cachedTransform.position);
 
         if (playerProjPath != null)
@@ -564,25 +764,19 @@ public class ProjectileStateBased : MonoBehaviour
             playerProjPath.enabled = false;
         }
 
-        // Proceed with DOTween animation if lifetime has expired
+        // Perform dissolve effect
         if (myMaterial != null && myMaterial.HasProperty("_AdvancedDissolveCutoutStandardClip"))
         {
-            // Changed the duration from 1f to 0.1f for a much quicker dissolve effect
-            myMaterial.DOFloat(0.05f, "_AdvancedDissolveCutoutStandardClip", 0.1f).OnComplete(() =>
-            {
-                // This code will execute after the DOTween animation completes.
-                // Now it's safe to recycle the projectile.
-                ProjectileManager.Instance.ReturnProjectileToPool(this);
-            });
+            myMaterial
+                .DOFloat(0.05f, "_AdvancedDissolveCutoutStandardClip", 0.1f)
+                .OnComplete(() => {
+                    gameObject.SetActive(false);
+                });
         }
         else
         {
-            // Ensure the projectile is returned to the pool even if the material does not have the required property.
-            ProjectileManager.Instance.ReturnProjectileToPool(this);
+            gameObject.SetActive(false);
         }
-
-        // Ensure the projectile is unregistered
-        ProjectileManager.Instance.UnregisterProjectile(this);
     }
 
     public Vector3 CalculateTargetVelocity(GameObject target)
@@ -615,8 +809,9 @@ public class ProjectileStateBased : MonoBehaviour
     public void SetHomingTarget(Transform target)
     {
         currentTarget = target;
-        EnableHoming(true); 
+        EnableHoming(true);
     }
+
     // Enable or disable homing
     public void EnableHoming(bool enable)
     {
@@ -635,13 +830,21 @@ public class ProjectileStateBased : MonoBehaviour
         {
             currentState.FixedUpdate(timeScale);
 
-            if (homing && currentTarget != null && cachedRigidbody != null && !cachedRigidbody.isKinematic)
+            if (
+                homing
+                && currentTarget != null
+                && cachedRigidbody != null
+                && !cachedRigidbody.isKinematic
+            )
             {
                 Vector3 targetPosition = ApplyInaccuracy(currentTarget.position);
                 Vector3 directionToTarget = (targetPosition - cachedTransform.position).normalized;
 
-                cachedTransform.rotation = Quaternion.RotateTowards(cachedTransform.rotation, 
-                    Quaternion.LookRotation(directionToTarget), turnRate * deltaTime);
+                cachedTransform.rotation = Quaternion.RotateTowards(
+                    cachedTransform.rotation,
+                    Quaternion.LookRotation(directionToTarget),
+                    turnRate * deltaTime
+                );
 
                 cachedRigidbody.velocity = cachedTransform.forward * bulletSpeed;
             }
@@ -656,7 +859,8 @@ public class ProjectileStateBased : MonoBehaviour
 
     private Vector3 ApplyInaccuracy(Vector3 targetPosition)
     {
-        if (accuracy >= 1f) return targetPosition; // Perfect accuracy, no deviation
+        if (accuracy >= 1f)
+            return targetPosition; // Perfect accuracy, no deviation
 
         float inaccuracyRadius = Mathf.Lerp(maxInaccuracyRadius, minInaccuracyRadius, accuracy);
         Vector3 randomOffset = UnityEngine.Random.insideUnitSphere * inaccuracyRadius;
@@ -665,7 +869,7 @@ public class ProjectileStateBased : MonoBehaviour
 
     public void SetClock(string clockKey)
     {
-        //Not affecting local clock but this doesnt seem to matter? 
+        //Not affecting local clock but this doesnt seem to matter?
         //May not need all components on here like i think
 
         if (TLine != null)
@@ -698,7 +902,7 @@ public class ProjectileStateBased : MonoBehaviour
             Gizmos.DrawSphere(predictedPosition, 0.5f);
         }
     }
-    
+
     public void OnPlayerRicochetDodge()
     {
         // Check if the current state is EnemyShotState before applying changes
@@ -726,6 +930,15 @@ public class ProjectileStateBased : MonoBehaviour
         accuracy = Mathf.Clamp01(newAccuracy);
     }
 
+    public void UpdateTrackingInfo()
+    {
+        if (isPlayerShot && !hasHitTarget)
+        {
+            distanceTraveled += Vector3.Distance(cachedTransform.position, initialPosition);
+            initialPosition = cachedTransform.position;
+            timeAlive += Time.deltaTime;
+        }
+    }
 
     public void ResetForPool()
     {

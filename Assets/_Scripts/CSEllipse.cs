@@ -1,6 +1,6 @@
-using UnityEngine;
 using FluffyUnderware.Curvy;
 using FluffyUnderware.DevTools;
+using UnityEngine;
 
 namespace FluffyUnderware.Curvy.Shapes
 {

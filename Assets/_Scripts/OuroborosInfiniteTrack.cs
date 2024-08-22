@@ -2,68 +2,106 @@
 // Modified from ToolBuddy
 // =====================================================================
 
-using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Chronos;
+using Deform;
+using FluffyUnderware.Curvy.Controllers;
 using FluffyUnderware.Curvy.Generator;
 using FluffyUnderware.Curvy.Generator.Modules;
-using FluffyUnderware.Curvy.Controllers;
 using FluffyUnderware.Curvy.Shapes;
 using FluffyUnderware.DevTools;
 using OccaSoftware.BOP;
+using UnityEngine;
 using UnityEngine.UI;
-using Chronos; 
-using Deform;
 
 namespace FluffyUnderware.Curvy.Controllers
 {
-    public class OuroborosInfiniteTrack : MonoBehaviour  
-    { [Header("Track Settings")]
+    public class OuroborosInfiniteTrack : MonoBehaviour
+    {
+        [Header("Track Settings")]
         public CurvySpline TrackSpline;
         private SplineController Controller;
         public Material RoadMaterial;
 
         [Header("Curvation Settings")]
-        [Positive] public float CurvationX = 10;
-        [Positive] public float CurvationY = 10;
+        [Positive]
+        public float CurvationX = 10;
+
+        [Positive]
+        public float CurvationY = 10;
 
         [Header("Control Point Settings")]
-        [Positive] public float CPStepSize = 20;
-        [Positive] public int HeadCP = 3;
-        [Positive] public int TailCP = 2;
+        [Positive]
+        public float CPStepSize = 20;
+
+        [Positive]
+        public int HeadCP = 3;
+
+        [Positive]
+        public int TailCP = 2;
 
         [Header("Section Settings")]
-        [DevTools.Min(3)] public int Sections = 6;
-        [DevTools.Min(1)] public int SectionCPCount = 2;
+        [DevTools.Min(3)]
+        public int Sections = 6;
+
+        [DevTools.Min(1)]
+        public int SectionCPCount = 2;
 
         [Header("Offset Settings")]
         public float YOffset = 0;
 
         [Header("Ellipse Settings")]
-        [SerializeField] private float ellipseRadiusX = 20;
-        [SerializeField] private float ellipseRadiusY = 10;
+        [SerializeField]
+        private float ellipseRadiusX = 20;
+
+        [SerializeField]
+        private float ellipseRadiusY = 10;
 
         [Header("Pooling Settings")]
-        [SerializeField] private OccaSoftware.BOP.ParticleSystemPooler particleSystemPooler;
-        [SerializeField] private OccaSoftware.BOP.Pooler prefabPooler;
-        [SerializeField] private int prefabsPerSection = 5;
-        [SerializeField] private float prefabScale = 1f;
-        [SerializeField] private int maxActivePrefabs = 50;
+        [SerializeField]
+        private OccaSoftware.BOP.ParticleSystemPooler particleSystemPooler;
+
+        [SerializeField]
+        private OccaSoftware.BOP.Pooler prefabPooler;
+
+        [SerializeField]
+        private int prefabsPerSection = 5;
+
+        [SerializeField]
+        private float prefabScale = 1f;
+
+        [SerializeField]
+        private int maxActivePrefabs = 50;
         private List<GameObject> activePrefabs = new List<GameObject>();
         private List<List<GameObject>> prefabsBySection = new List<List<GameObject>>();
-        [SerializeField] private List<GameObject> despawnedPrefabs = new List<GameObject>();
+
+        [SerializeField]
+        private List<GameObject> despawnedPrefabs = new List<GameObject>();
 
         [Header("Prefab Rotation Adjustments")]
-        [SerializeField] private float minRandomXRotationSubtract = 80f;
-        [SerializeField] private float maxRandomXRotationSubtract = 101f;
-        [SerializeField] private float minRandomYRotation = -30f;
-        [SerializeField] private float maxRandomYRotation = 31f;
-        [SerializeField] private float minRandomZRotation = -30f;
-        [SerializeField] private float maxRandomZRotation = 31f;
+        [SerializeField]
+        private float minRandomXRotationSubtract = 80f;
+
+        [SerializeField]
+        private float maxRandomXRotationSubtract = 101f;
+
+        [SerializeField]
+        private float minRandomYRotation = -30f;
+
+        [SerializeField]
+        private float maxRandomYRotation = 31f;
+
+        [SerializeField]
+        private float minRandomZRotation = -30f;
+
+        [SerializeField]
+        private float maxRandomZRotation = 31f;
 
         [Header("Deformer Settings")]
-        [SerializeField] private GameObject deformerPrefab; // Changed to GameObject
+        [SerializeField]
+        private GameObject deformerPrefab; // Changed to GameObject
         private List<Deformer> cachedDeformers = new List<Deformer>(); // New list to cache Deformers
 
         private int mInitState = 0;
@@ -99,12 +137,16 @@ namespace FluffyUnderware.Curvy.Controllers
                 }
                 else
                 {
-                    ConditionalDebug.LogError("SplineController component not found on the PlayerPlane object.");
+                    ConditionalDebug.LogError(
+                        "SplineController component not found on the PlayerPlane object."
+                    );
                 }
             }
             else
             {
-                ConditionalDebug.LogError("GameObject with tag 'PlayerPlane' not found in the scene.");
+                ConditionalDebug.LogError(
+                    "GameObject with tag 'PlayerPlane' not found in the scene."
+                );
             }
         }
 
@@ -136,7 +178,9 @@ namespace FluffyUnderware.Curvy.Controllers
                 FindAndAssignController();
                 if (Controller == null)
                 {
-                    ConditionalDebug.LogError("Failed to find and assign the SplineController. Setup cannot continue.");
+                    ConditionalDebug.LogError(
+                        "Failed to find and assign the SplineController. Setup cannot continue."
+                    );
                     yield break;
                 }
             }
@@ -171,14 +215,22 @@ namespace FluffyUnderware.Curvy.Controllers
 
             // let all generators do their extrusion
             for (int i = 0; i < Sections; i++)
-                StartCoroutine(updateSectionGenerator(mGenerators[i], i * SectionCPCount + TailCP, (i + 1) * SectionCPCount + TailCP));
+                StartCoroutine(
+                    updateSectionGenerator(
+                        mGenerators[i],
+                        i * SectionCPCount + TailCP,
+                        (i + 1) * SectionCPCount + TailCP
+                    )
+                );
 
             AddDeformableComponents();
 
             mInitState = 2;
             mUpdateIn = SectionCPCount;
             // Placement of the controller
-            Controller.AbsolutePosition = TrackSpline.ControlPointsList[TailCP + ControllerPlacementOffset].Distance;
+            Controller.AbsolutePosition = TrackSpline
+                .ControlPointsList[TailCP + ControllerPlacementOffset]
+                .Distance;
         }
 
         // build a generator
@@ -258,7 +310,9 @@ namespace FluffyUnderware.Curvy.Controllers
                 }
                 else
                 {
-                    ConditionalDebug.LogWarning("Prefab does not have an Instance component, cannot despawn: " + prefab.name);
+                    ConditionalDebug.LogWarning(
+                        "Prefab does not have an Instance component, cannot despawn: " + prefab.name
+                    );
                 }
             }
 
@@ -285,7 +339,10 @@ namespace FluffyUnderware.Curvy.Controllers
             // Set Track segment we want to use
             InputSplinePath path = gen.FindModules<InputSplinePath>(true)[0];
 
-            path.SetRange(TrackSpline.ControlPointsList[startCP], TrackSpline.ControlPointsList[endCP]);
+            path.SetRange(
+                TrackSpline.ControlPointsList[startCP],
+                TrackSpline.ControlPointsList[endCP]
+            );
 
             // Set UV-Offset to match
             BuildVolumeMesh vol = gen.FindModules<BuildVolumeMesh>(false)[0];
@@ -319,8 +376,13 @@ namespace FluffyUnderware.Curvy.Controllers
         // add more CP's, rotating path by random angles
         void addTrackCP()
         {
-            Vector3 p = TrackSpline.ControlPointsList[TrackSpline.ControlPointCount - 1].transform.localPosition;
-            Vector3 position = TrackSpline.transform.localToWorldMatrix.MultiplyPoint3x4(p + mDir * CPStepSize);
+            Vector3 p = TrackSpline
+                .ControlPointsList[TrackSpline.ControlPointCount - 1]
+                .transform
+                .localPosition;
+            Vector3 position = TrackSpline.transform.localToWorldMatrix.MultiplyPoint3x4(
+                p + mDir * CPStepSize
+            );
 
             float rndX = Random.value * CurvationX * DTUtility.RandomSign();
             float rndY = Random.value * CurvationY * DTUtility.RandomSign();
@@ -337,7 +399,9 @@ namespace FluffyUnderware.Curvy.Controllers
         {
             if (sectionIndex < 0 || sectionIndex >= prefabsBySection.Count)
             {
-                ConditionalDebug.LogError($"Section index {sectionIndex} is out of range. Prefabs cannot be placed.");
+                ConditionalDebug.LogError(
+                    $"Section index {sectionIndex} is out of range. Prefabs cannot be placed."
+                );
                 return;
             }
 
@@ -355,20 +419,39 @@ namespace FluffyUnderware.Curvy.Controllers
                     Vector3 potentialPosition = spline.InterpolateByDistance(t * spline.Length); // Convert to world position
 
                     // Check if this position is far enough from all previously placed prefabs
-                    bool tooClose = placedPositions.Any(p => Vector3.Distance(spline.InterpolateByDistance(p * spline.Length), potentialPosition) < minDistanceApart);
+                    bool tooClose = placedPositions.Any(p =>
+                        Vector3.Distance(
+                            spline.InterpolateByDistance(p * spline.Length),
+                            potentialPosition
+                        ) < minDistanceApart
+                    );
 
                     if (!tooClose)
                     {
                         Quaternion rotation = spline.GetOrientationFast(t); // Get rotation at position t
 
                         // Apply random rotation adjustments
-                        float randomXRotationSubtract = Random.Range(minRandomXRotationSubtract, maxRandomXRotationSubtract);
-                        float randomYRotation = Random.Range(minRandomYRotation, maxRandomYRotation);
-                        float randomZRotation = Random.Range(minRandomZRotation, maxRandomZRotation);
-                        Quaternion rotationAdjustment = Quaternion.Euler(-randomXRotationSubtract, randomYRotation, randomZRotation);
+                        float randomXRotationSubtract = Random.Range(
+                            minRandomXRotationSubtract,
+                            maxRandomXRotationSubtract
+                        );
+                        float randomYRotation = Random.Range(
+                            minRandomYRotation,
+                            maxRandomYRotation
+                        );
+                        float randomZRotation = Random.Range(
+                            minRandomZRotation,
+                            maxRandomZRotation
+                        );
+                        Quaternion rotationAdjustment = Quaternion.Euler(
+                            -randomXRotationSubtract,
+                            randomYRotation,
+                            randomZRotation
+                        );
                         rotation *= rotationAdjustment;
 
-                        Vector3 sideDirection = (Random.value > 0.5f) ? Vector3.right : Vector3.left;
+                        Vector3 sideDirection =
+                            (Random.value > 0.5f) ? Vector3.right : Vector3.left;
                         Vector3 offsetDirection = rotation * sideDirection;
 
                         float sideOffset = Random.Range(7f, 12f) * ((Random.value > 0.5f) ? 1 : -1);
@@ -377,7 +460,11 @@ namespace FluffyUnderware.Curvy.Controllers
                         GameObject prefabInstance = prefabPooler.GetFromPool();
                         prefabInstance.transform.position = finalPosition;
                         prefabInstance.transform.rotation = rotation;
-                        prefabInstance.transform.localScale = new Vector3(prefabScale, prefabScale, prefabScale);
+                        prefabInstance.transform.localScale = new Vector3(
+                            prefabScale,
+                            prefabScale,
+                            prefabScale
+                        );
 
                         // Set the prefab instance as a child of the GameObject this script is attached to
                         prefabInstance.transform.SetParent(this.transform, true);
@@ -447,7 +534,8 @@ namespace FluffyUnderware.Curvy.Controllers
                     {
                         if (meshResource != null && !meshResource.GetComponent<Deformable>())
                         {
-                            Deformable deformable = meshResource.gameObject.AddComponent<Deformable>();
+                            Deformable deformable =
+                                meshResource.gameObject.AddComponent<Deformable>();
                             deformable.UpdateMode = UpdateMode.Auto;
                             deformable.NormalsRecalculation = NormalsRecalculation.Auto;
                             deformable.BoundsRecalculation = BoundsRecalculation.Auto;
@@ -462,7 +550,9 @@ namespace FluffyUnderware.Curvy.Controllers
                             }
                             else
                             {
-                                Debug.LogWarning("Deformer prefab is not assigned in the inspector.");
+                                Debug.LogWarning(
+                                    "Deformer prefab is not assigned in the inspector."
+                                );
                             }
                         }
                     }
@@ -477,7 +567,7 @@ namespace FluffyUnderware.Curvy.Controllers
             {
                 cachedDeformers.Clear();
                 cachedDeformers.AddRange(deformerPrefab.GetComponents<Deformer>());
-                
+
                 if (cachedDeformers.Count == 0)
                 {
                     Debug.LogWarning("No Deformer components found on the assigned prefab.");
@@ -490,4 +580,3 @@ namespace FluffyUnderware.Curvy.Controllers
         }
     }
 }
-

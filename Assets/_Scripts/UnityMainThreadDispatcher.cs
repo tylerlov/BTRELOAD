@@ -1,7 +1,7 @@
-using UnityEngine;
-using System.Collections.Generic;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
+using UnityEngine;
 
 public class UnityMainThreadDispatcher : MonoBehaviour
 {
@@ -25,7 +25,7 @@ public class UnityMainThreadDispatcher : MonoBehaviour
 
     private void Update()
     {
-        lock(_executionQueue)
+        lock (_executionQueue)
         {
             while (_executionQueue.Count > 0)
             {
@@ -36,7 +36,7 @@ public class UnityMainThreadDispatcher : MonoBehaviour
 
     public void Enqueue(Action action)
     {
-        lock(_executionQueue)
+        lock (_executionQueue)
         {
             _executionQueue.Enqueue(action);
         }

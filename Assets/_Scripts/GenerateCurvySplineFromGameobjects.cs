@@ -1,7 +1,7 @@
-using UnityEngine;
-using FluffyUnderware.Curvy;
 using System.Collections.Generic;
+using FluffyUnderware.Curvy;
 using UnityEditor;
+using UnityEngine;
 
 public class GenerateCurvySplineFromGameobjects : MonoBehaviour
 {

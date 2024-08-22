@@ -1,43 +1,70 @@
-using UnityEngine;
+using System;
 using System.Collections;
+using BehaviorDesigner.Runtime.Tactical;
+using Chronos;
+using DG.Tweening;
+using FMOD.Studio;
+using FMODUnity;
+using OccaSoftware.BOP;
 using Pathfinding;
 using Pathfinding.Examples;
-using SonicBloom.Koreo;
-using DG.Tweening;
-using FMODUnity;
-using FMOD.Studio;
-using BehaviorDesigner.Runtime.Tactical;
-using PathologicalGames;
-using Chronos;
-using UltimateSpawner.Spawning;
-using System;
 using Pathfinding.RVO;
-using OccaSoftware.BOP;
+using PathologicalGames;
+using SonicBloom.Koreo;
+using UltimateSpawner.Spawning;
+using UnityEngine;
 
-[RequireComponent(typeof(Timeline))] 
+[RequireComponent(typeof(Timeline))]
 public class EnemyBasicSetup : BaseBehaviour, IDamageable, IAttackAgent
 {
     private float currentHealth;
+
     // Serialized fields
-    [SerializeField] private string enemyType;
-    [SerializeField, EventID] private string eventID;
-    [SerializeField] private float startHealth = 100;
-    [SerializeField] private float repeatAttackDelay;
+    [SerializeField]
+    private string enemyType;
+
+    [SerializeField, EventID]
+    private string eventID;
+
+    [SerializeField]
+    private float startHealth = 100;
+
+    [SerializeField]
+    private float repeatAttackDelay;
+
     [Space]
-    [SerializeField] private GameObject enemyModel;
-    [SerializeField] private Pooler birthParticles;
-    [SerializeField] private Pooler deathParticles;
-    [SerializeField] private Pooler lockOnDisabledParticles; // Reference to the Pooler for the particle effect
+    [SerializeField]
+    private GameObject enemyModel;
 
-    [SerializeField] private GameObject lockedonAnim;
-    [SerializeField] private ParticleSystem trails;
-    [SerializeField] private float shootSpeed; // Default value, adjust in Inspector
-    [SerializeField] private float projectileLifetime = 5f; // Default value, adjust in Inspector
-    [SerializeField] private float projectileScale = 1f; // Default value, adjust in Inspector
-    [SerializeField] private Material alternativeProjectileMaterial; // New field to specify an alternative material
-    [SerializeField] private EnemyBasicDamagablePart[] damageableParts; // Array of damageable parts
+    [SerializeField]
+    private Pooler birthParticles;
 
-    [SerializeField] private float partDamageAmount = 10f; // New field for part damage
+    [SerializeField]
+    private Pooler deathParticles;
+
+    [SerializeField]
+    private Pooler lockOnDisabledParticles; // Reference to the Pooler for the particle effect
+
+    [SerializeField]
+    private GameObject lockedonAnim;
+
+    [SerializeField]
+    private ParticleSystem trails;
+
+    [SerializeField]
+    private float shootSpeed; // Default value, adjust in Inspector
+
+    [SerializeField]
+    private float projectileLifetime = 5f; // Default value, adjust in Inspector
+
+    [SerializeField]
+    private float projectileScale = 1f; // Default value, adjust in Inspector
+
+    [SerializeField]
+    private Material alternativeProjectileMaterial; // New field to specify an alternative material
+
+    [SerializeField]
+    private EnemyBasicDamagablePart[] damageableParts; // Array of damageable parts
 
     public int hitsToKillPart = 3; // Number of hits required to destroy a damageable part
 
@@ -174,7 +201,7 @@ public class EnemyBasicSetup : BaseBehaviour, IDamageable, IAttackAgent
     {
         isLockedOn = status;
         UpdateLockOnVisuals();
-        
+
         // Inform GameManager of the lock state change for the main enemy
         if (GameManager.instance != null)
         {
@@ -229,7 +256,7 @@ public class EnemyBasicSetup : BaseBehaviour, IDamageable, IAttackAgent
     private StudioEventEmitter FindMusicPlaybackEmitter()
     {
         StudioEventEmitter[] emitters = FindObjectsOfType<StudioEventEmitter>();
-                
+
         foreach (var emitter in emitters)
         {
             if (emitter.gameObject.name == "FMOD Music")
@@ -237,8 +264,10 @@ public class EnemyBasicSetup : BaseBehaviour, IDamageable, IAttackAgent
                 return emitter;
             }
         }
-        
-        ConditionalDebug.LogError($"FMOD Studio Event Emitter with name FMOD Music not found in the scene.");
+
+        ConditionalDebug.LogError(
+            $"FMOD Studio Event Emitter with name FMOD Music not found in the scene."
+        );
         return null;
     }
 
@@ -261,7 +290,10 @@ public class EnemyBasicSetup : BaseBehaviour, IDamageable, IAttackAgent
         ConditionalDebug.Log("Enemy has died");
 
         deathParticles.GetFromPool(cachedTransform.position, Quaternion.identity);
-        FMODUnity.RuntimeManager.PlayOneShot("event:/Enemy/" + enemyType + "/Death", cachedTransform.position);
+        FMODUnity.RuntimeManager.PlayOneShot(
+            "event:/Enemy/" + enemyType + "/Death",
+            cachedTransform.position
+        );
 
         yield return StartCoroutine(GameManager.instance.RewindTime(-1f, 0.5f, 0f));
 
@@ -283,7 +315,7 @@ public class EnemyBasicSetup : BaseBehaviour, IDamageable, IAttackAgent
         }
 
         UpdateShootDirection();
-        
+
         ProjectileManager.Instance.ShootProjectileFromEnemy(
             cachedTransform.position,
             cachedShootRotation,
@@ -299,10 +331,10 @@ public class EnemyBasicSetup : BaseBehaviour, IDamageable, IAttackAgent
 
     private bool CanShoot()
     {
-        return Time.timeScale != 0f && 
-               CanAttack() && 
-               playerTarget != null && 
-               playerTarget.activeInHierarchy;
+        return Time.timeScale != 0f
+            && CanAttack()
+            && playerTarget != null
+            && playerTarget.activeInHierarchy;
     }
 
     private void UpdateShootDirection()
@@ -325,12 +357,6 @@ public class EnemyBasicSetup : BaseBehaviour, IDamageable, IAttackAgent
                 }
             }
         }
-    }
-
-    // New method to get the part damage amount
-    public float GetPartDamageAmount()
-    {
-        return partDamageAmount;
     }
 
     public bool IsLockedOn()

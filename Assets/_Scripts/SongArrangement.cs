@@ -1,6 +1,10 @@
 using UnityEngine;
 
-[CreateAssetMenu(fileName = "SongArrangement", menuName = "ScriptableObjects/Song Arrangement", order = 2)]
+[CreateAssetMenu(
+    fileName = "SongArrangement",
+    menuName = "ScriptableObjects/Song Arrangement",
+    order = 2
+)]
 public class SongArrangement : ScriptableObject
 {
     [System.Serializable]

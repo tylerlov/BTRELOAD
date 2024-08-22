@@ -1,12 +1,15 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using System.Collections;
 
 public class MainMenuSwitchScene : MonoBehaviour
 {
-    [SerializeField] private GameObject objectToDisable;
-    [SerializeField] private float minimumLoadTime = 0.5f; // Minimum time to show transition
-    
+    [SerializeField]
+    private GameObject objectToDisable;
+
+    [SerializeField]
+    private float minimumLoadTime = 0.5f; // Minimum time to show transition
+
     private static MainMenuSwitchScene instance;
 
     private void Awake()
@@ -36,7 +39,8 @@ public class MainMenuSwitchScene : MonoBehaviour
     private IEnumerator LoadSceneAsync(string sceneName)
     {
         // Disable the specified object
-        if (objectToDisable != null) objectToDisable.SetActive(false);
+        if (objectToDisable != null)
+            objectToDisable.SetActive(false);
 
         // Unload all loaded assets
         Resources.UnloadUnusedAssets();

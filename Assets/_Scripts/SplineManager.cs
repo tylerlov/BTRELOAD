@@ -1,9 +1,9 @@
 using System.Collections;
 using System.Collections.Generic;
-using UnityEngine;
+using Dreamteck.Splines;
 using FluffyUnderware.Curvy;
 using FluffyUnderware.Curvy.Controllers;
-using Dreamteck.Splines;
+using UnityEngine;
 using UnityEngine.Serialization;
 
 public class SplineManager : MonoBehaviour
@@ -12,7 +12,7 @@ public class SplineManager : MonoBehaviour
     {
         Clamp,
         Loop,
-        PingPong
+        PingPong,
     }
 
     [System.Serializable]
@@ -25,12 +25,15 @@ public class SplineManager : MonoBehaviour
     }
 
     private SplineController splineController;
-    [SerializeField] GameObject SplineContainer; // Renamed from Splines
+
+    [SerializeField]
+    GameObject SplineContainer; // Renamed from Splines
     private GameObject shooting;
     public List<SplineData> splineDatas;
     int currSpline;
 
-    [SerializeField] private float speedMultiplier = 1.0f; // Add this field to adjust speed globally
+    [SerializeField]
+    private float speedMultiplier = 1.0f; // Add this field to adjust speed globally
     private bool isSplineNeeded => splineDatas.Count > 0; // Dynamically determine if spline is needed
 
     private bool canIncrement = true;
@@ -80,9 +83,11 @@ public class SplineManager : MonoBehaviour
             splineController.Spline = data.Spline.GetComponent<CurvySpline>();
             splineController.Speed = data.BaseSpeed * speedMultiplier; // Apply multiplier
             splineController.Clamping = data.Clamping;
-            
+
             // Set the movement direction based on the Reverse attribute
-            splineController.MovementDirection = data.Reverse ? MovementDirection.Backward : MovementDirection.Forward;
+            splineController.MovementDirection = data.Reverse
+                ? MovementDirection.Backward
+                : MovementDirection.Forward;
         }
     }
 
@@ -93,7 +98,9 @@ public class SplineManager : MonoBehaviour
             float currentTime = Time.time;
             if (currentTime - lastSwitchTime < MIN_SWITCH_INTERVAL)
             {
-                Debug.LogWarning($"Spline switch attempted too soon. Time since last switch: {currentTime - lastSwitchTime}");
+                Debug.LogWarning(
+                    $"Spline switch attempted too soon. Time since last switch: {currentTime - lastSwitchTime}"
+                );
                 return;
             }
 
@@ -101,7 +108,9 @@ public class SplineManager : MonoBehaviour
             SetSplineDataAttributes(currSpline);
             splineSwitchCounter++;
             lastSwitchTime = currentTime;
-            Debug.Log($"Spline Incremented. Current spline: {currSpline}, Total switches: {splineSwitchCounter}, Time: {currentTime}");
+            Debug.Log(
+                $"Spline Incremented. Current spline: {currSpline}, Total switches: {splineSwitchCounter}, Time: {currentTime}"
+            );
         }
         else
         {
@@ -111,10 +120,14 @@ public class SplineManager : MonoBehaviour
 
     public void IncrementSpline()
     {
-        Debug.Log($"IncrementSpline called from:\n{UnityEngine.StackTraceUtility.ExtractStackTrace()}");
-        if (!canIncrement) 
+        Debug.Log(
+            $"IncrementSpline called from:\n{UnityEngine.StackTraceUtility.ExtractStackTrace()}"
+        );
+        if (!canIncrement)
         {
-            Debug.Log($"Increment attempted during cooldown, ignoring. Time since last increment: {Time.time - lastSwitchTime}");
+            Debug.Log(
+                $"Increment attempted during cooldown, ignoring. Time since last increment: {Time.time - lastSwitchTime}"
+            );
             return;
         }
 
@@ -138,11 +151,15 @@ public class SplineManager : MonoBehaviour
             float timer = 0f;
             while (timer < waitTime)
             {
-                shooting.transform.localPosition = new Vector3(0, 0, shooting.transform.localPosition.z);
+                shooting.transform.localPosition = new Vector3(
+                    0,
+                    0,
+                    shooting.transform.localPosition.z
+                );
                 timer += Time.deltaTime;
                 yield return null;
             }
-            
+
             // Perform the second increment after the lock period
             PerformSplineIncrement();
         }

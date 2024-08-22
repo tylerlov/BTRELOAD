@@ -25,4 +25,3 @@ public class SceneLoadActivationController : MonoBehaviour
         SceneManager.sceneLoaded -= OnSceneLoaded;
     }
 }
-

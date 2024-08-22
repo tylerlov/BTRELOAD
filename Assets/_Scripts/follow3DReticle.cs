@@ -21,7 +21,10 @@ public class follow3DReticle : MonoBehaviour
     // LateUpdate is called after all Update functions have been called
     void LateUpdate()
     {
-        Vector2 screenPoint = RectTransformUtility.WorldToScreenPoint(Camera.main, reticle.position);
+        Vector2 screenPoint = RectTransformUtility.WorldToScreenPoint(
+            Camera.main,
+            reticle.position
+        );
 
         // Adjust for canvas scaling
         float scaleFactor = canvasScaler.scaleFactor;

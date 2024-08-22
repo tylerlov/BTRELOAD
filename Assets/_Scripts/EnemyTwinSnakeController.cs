@@ -1,6 +1,6 @@
-using UnityEngine;
-using Chronos; // Chronos namespace for time control
 using System.Collections;
+using Chronos; // Chronos namespace for time control
+using UnityEngine;
 
 public class EnemyTwinSnakeController : MonoBehaviour
 {
@@ -55,8 +55,12 @@ public class EnemyTwinSnakeController : MonoBehaviour
         while (true)
         {
             // Determine which snake is currently set to shoot
-            EnemyTwinSnakeBoss shootingSnake = isShootingSnake1 ? snake1.GetComponent<EnemyTwinSnakeBoss>() : snake2.GetComponent<EnemyTwinSnakeBoss>();
-            EnemyTwinSnakeBoss otherSnake = isShootingSnake1 ? snake2.GetComponent<EnemyTwinSnakeBoss>() : snake1.GetComponent<EnemyTwinSnakeBoss>();
+            EnemyTwinSnakeBoss shootingSnake = isShootingSnake1
+                ? snake1.GetComponent<EnemyTwinSnakeBoss>()
+                : snake2.GetComponent<EnemyTwinSnakeBoss>();
+            EnemyTwinSnakeBoss otherSnake = isShootingSnake1
+                ? snake2.GetComponent<EnemyTwinSnakeBoss>()
+                : snake1.GetComponent<EnemyTwinSnakeBoss>();
 
             // Check if the current shooting snake has a Koreographer event ID assigned
             if (!shootingSnake.HasShootEventID())
@@ -94,7 +98,6 @@ public class EnemyTwinSnakeController : MonoBehaviour
             SetClockDirection(globalClock2, Snake2Time);
             previousSnake2Time = Snake2Time;
         }
-
     }
 
     private void OnSnakeDamage(int snakeNumber)
@@ -116,7 +119,7 @@ public class EnemyTwinSnakeController : MonoBehaviour
         clock.localTimeScale = timeScale;
     }
 
-     private void SetClockDirection(Clock clock, bool forward)
+    private void SetClockDirection(Clock clock, bool forward)
     {
         clock.localTimeScale = forward ? 1 : -1;
     }

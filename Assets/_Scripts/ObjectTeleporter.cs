@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
-using UnityEngine;
 using DG.Tweening;
+using UnityEngine;
 
 [Serializable]
 public class ChildObjectMaterial
@@ -41,7 +41,8 @@ public class ObjectTeleporter : MonoBehaviour
     public float dissolveEndValue = 1f;
 
     private List<ChildObjectMaterial> childObjectsMaterials = new List<ChildObjectMaterial>();
-    private Dictionary<GameObject, ChildObjectMaterial> materialLookup = new Dictionary<GameObject, ChildObjectMaterial>();
+    private Dictionary<GameObject, ChildObjectMaterial> materialLookup =
+        new Dictionary<GameObject, ChildObjectMaterial>();
 
     private static readonly Vector3 DissolveVectorStart = new Vector3(0, 0, 0);
     private static readonly Vector3 DissolveVectorEnd = new Vector3(0, 1, 0);
@@ -75,7 +76,10 @@ public class ObjectTeleporter : MonoBehaviour
                 {
                     UpdateDissolveEffect(com, dissolveProgress);
                 }
-                else if (dissolveProgress >= 1f && com.ChildObject.transform.position != com.TeleportLocation)
+                else if (
+                    dissolveProgress >= 1f
+                    && com.ChildObject.transform.position != com.TeleportLocation
+                )
                 {
                     com.ChildObject.transform.position = com.TeleportLocation;
                     com.IsDissolving = false;
@@ -101,7 +105,11 @@ public class ObjectTeleporter : MonoBehaviour
             SkinnedMeshRenderer renderer = child.GetChild(0).GetComponent<SkinnedMeshRenderer>();
             if (renderer != null)
             {
-                var com = new ChildObjectMaterial(child.gameObject, renderer.sharedMaterial, child.position);
+                var com = new ChildObjectMaterial(
+                    child.gameObject,
+                    renderer.sharedMaterial,
+                    child.position
+                );
                 childObjectsMaterials.Add(com);
                 materialLookup[child.gameObject] = com;
             }

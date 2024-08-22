@@ -2,16 +2,25 @@ using UnityEngine;
 
 public class DottedLine : MonoBehaviour
 {
-    [SerializeField] private LineRenderer lineRenderer;
-    [SerializeField] private LayerMask groundLayer;
-    [SerializeField] private int numberOfDots = 20;
-    [SerializeField] private float dotSpacing = 1.0f;
+    [SerializeField]
+    private LineRenderer lineRenderer;
+
+    [SerializeField]
+    private LayerMask groundLayer;
+
+    [SerializeField]
+    private int numberOfDots = 20;
+
+    [SerializeField]
+    private float dotSpacing = 1.0f;
 
     private void Awake()
     {
         if (lineRenderer == null)
         {
-            Debug.LogWarning("DottedLine: Line Renderer not assigned, Adding and Using default Line Renderer.");
+            Debug.LogWarning(
+                "DottedLine: Line Renderer not assigned, Adding and Using default Line Renderer."
+            );
             CreateDefaultLineRenderer();
         }
     }

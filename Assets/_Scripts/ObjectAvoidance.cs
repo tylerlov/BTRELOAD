@@ -1,5 +1,5 @@
-using UnityEngine;
 using SensorToolkit; // Ensure you have this namespace to access Sensor Toolkit components
+using UnityEngine;
 
 public class ObjectAvoidance : MonoBehaviour
 {
@@ -30,12 +30,16 @@ public class ObjectAvoidance : MonoBehaviour
         if (rangeSensor != null && objectToMove != null)
         {
             // Check if the sensor detects any GameObjects on the 'Ground' layer
-            isGroundDetected = rangeSensor.DetectedObjects.Exists(obj => obj != null && obj.layer == LayerMask.NameToLayer("Ground"));
+            isGroundDetected = rangeSensor.DetectedObjects.Exists(obj =>
+                obj != null && obj.layer == LayerMask.NameToLayer("Ground")
+            );
 
             if (isGroundDetected)
             {
                 // Find the direction opposite to the detected ground object
-                Vector3 directionToGround = rangeSensor.DetectedObjects[0].transform.position - objectToMove.transform.position;
+                Vector3 directionToGround =
+                    rangeSensor.DetectedObjects[0].transform.position
+                    - objectToMove.transform.position;
                 Vector3 moveDirection = -directionToGround.normalized;
 
                 // Apply axis-specific movement restrictions
@@ -58,7 +62,8 @@ public class ObjectAvoidance : MonoBehaviour
                 );
 
                 // Lerp back to the original position on the enabled axes
-                objectToMove.transform.position += directionBack.normalized * moveSpeed * Time.deltaTime;
+                objectToMove.transform.position +=
+                    directionBack.normalized * moveSpeed * Time.deltaTime;
             }
         }
     }

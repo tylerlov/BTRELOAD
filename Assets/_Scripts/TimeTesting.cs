@@ -1,11 +1,11 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
-using UnityEngine;
 using Chronos;
-using UnityEngine.Events;
-using SonicBloom.Koreo;
 using FMODUnity;
-using System;
+using SonicBloom.Koreo;
+using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.InputSystem;
 
 public class TimeTesting : MonoBehaviour
@@ -21,10 +21,9 @@ public class TimeTesting : MonoBehaviour
     {
         Koreographer.Instance.RegisterForEvents(eventIDHalftime, UpdateTime);
     }
-    private void Update()
-    {
-        
-    }
+
+    private void Update() { }
+
     void UpdateTime(KoreographyEvent evt)
     {
         if (Time.timeScale != 0f && Keyboard.current[Key.H].wasPressedThisFrame)
@@ -32,6 +31,7 @@ public class TimeTesting : MonoBehaviour
             StartCoroutine(onMusicalHalftime());
         }
     }
+
     private IEnumerator onMusicalHalftime()
     {
         Debug.Log("Half time!");
@@ -44,5 +44,4 @@ public class TimeTesting : MonoBehaviour
         musicPlayback.EventInstance.setPitch(1);
         musicPlayback.EventInstance.setParameterByName("Slow", 0f);
     }
-
 }

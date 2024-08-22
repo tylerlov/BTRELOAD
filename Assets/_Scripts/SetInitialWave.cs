@@ -1,12 +1,13 @@
 using System;
 using System.Collections;
+using UltimateSpawner;
 using UnityEngine;
 using UnityEngine.Events;
-using UltimateSpawner;
 
 public class InitializeWave : MonoBehaviour
 {
-    [HideInInspector] public WaveSpawnController waveSpawnController;
+    [HideInInspector]
+    public WaveSpawnController waveSpawnController;
     public int startWave = 99; // Set this to the wave number you want to start at
 
     void Start()

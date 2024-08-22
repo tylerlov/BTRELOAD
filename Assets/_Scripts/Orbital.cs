@@ -1,5 +1,5 @@
-using UnityEngine;
 using Chronos;
+using UnityEngine;
 
 [RequireComponent(typeof(Timeline))]
 public class Orbital : MonoBehaviour
@@ -30,7 +30,8 @@ public class Orbital : MonoBehaviour
 
     private void SetOrbitPosition(float angle)
     {
-        if (transform.parent == null) return;
+        if (transform.parent == null)
+            return;
 
         // Calculate the new position in parent's local space
         Vector3 offset = new Vector3(
@@ -40,7 +41,11 @@ public class Orbital : MonoBehaviour
         );
 
         // Rotate the offset around the parent's local rotation axis
-        offset = Quaternion.AngleAxis(Vector3.SignedAngle(Vector3.forward, rotationAxis, Vector3.up), rotationAxis) * offset;
+        offset =
+            Quaternion.AngleAxis(
+                Vector3.SignedAngle(Vector3.forward, rotationAxis, Vector3.up),
+                rotationAxis
+            ) * offset;
 
         // Set the new local position
         transform.localPosition = originalLocalPosition + offset;
@@ -48,13 +53,17 @@ public class Orbital : MonoBehaviour
         // Optionally, make the object face the direction of movement
         if (orbitSpeed != 0)
         {
-            transform.localRotation = Quaternion.LookRotation(offset.normalized, transform.parent.TransformDirection(rotationAxis));
+            transform.localRotation = Quaternion.LookRotation(
+                offset.normalized,
+                transform.parent.TransformDirection(rotationAxis)
+            );
         }
     }
 
     private void OnDrawGizmos()
     {
-        if (transform.parent == null) return;
+        if (transform.parent == null)
+            return;
 
         // Calculate the world space center and axis
         Vector3 worldCenter = transform.parent.TransformPoint(originalLocalPosition);
@@ -70,14 +79,21 @@ public class Orbital : MonoBehaviour
 
         // Draw the radius
         Gizmos.color = Color.red;
-        Vector3 radiusEnd = worldCenter + Quaternion.AngleAxis(Vector3.SignedAngle(Vector3.forward, worldAxis, Vector3.up), Vector3.up) * Vector3.forward * orbitRadius;
+        Vector3 radiusEnd =
+            worldCenter
+            + Quaternion.AngleAxis(
+                Vector3.SignedAngle(Vector3.forward, worldAxis, Vector3.up),
+                Vector3.up
+            )
+                * Vector3.forward
+                * orbitRadius;
         Gizmos.DrawLine(worldCenter, radiusEnd);
 
         // Draw the orbit height
         Gizmos.color = Color.green;
         Vector3 heightVector = Vector3.Project(worldAxis, Vector3.up).normalized * orbitHeight;
         Gizmos.DrawLine(worldCenter, worldCenter + heightVector);
-        
+
         // Draw the elevated orbit path
         Gizmos.color = Color.cyan;
         DrawCircle(worldCenter + heightVector, worldAxis, orbitRadius, 32);

@@ -1,13 +1,14 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using System.Collections;
 
 public class SceneSwitchCleanup : MonoBehaviour
 {
     private const string ReticleName = "Reticle";
     private const string JoostManName = "JoostMan 3";
-    
-    [SerializeField] private float searchDelay = 0.5f;
+
+    [SerializeField]
+    private float searchDelay = 0.5f;
 
     void OnEnable()
     {
@@ -61,14 +62,16 @@ public class SceneSwitchCleanup : MonoBehaviour
 
     private GameObject FindRecursively(GameObject obj, string name)
     {
-        if (obj.name == name) return obj;
-        
+        if (obj.name == name)
+            return obj;
+
         foreach (Transform child in obj.transform)
         {
             GameObject found = FindRecursively(child.gameObject, name);
-            if (found != null) return found;
+            if (found != null)
+                return found;
         }
-        
+
         return null;
     }
 }

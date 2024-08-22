@@ -1,11 +1,13 @@
-using UnityEngine;
 using Cinemachine;
+using UnityEngine;
 using UnityEngine.UI;
 
 public class FOVAdjuster : MonoBehaviour
 {
     private CinemachineVirtualCamera cinemachineCamera;
-    [SerializeField] private Slider fovSlider;
+
+    [SerializeField]
+    private Slider fovSlider;
 
     void Start()
     {

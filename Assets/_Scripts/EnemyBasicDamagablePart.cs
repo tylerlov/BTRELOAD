@@ -1,19 +1,27 @@
-using UnityEngine;
-using OccaSoftware.BOP;
+using System;
 using BehaviorDesigner.Runtime.Tactical;
-
+using OccaSoftware.BOP;
+using UnityEngine;
 
 [RequireComponent(typeof(Collider))]
 public class EnemyBasicDamagablePart : MonoBehaviour, IDamageable
 {
     public EnemyBasicSetup mainEnemyScript;
-    [SerializeField] private GameObject lockOnAnim;
-    [SerializeField] private Pooler lockOnDisabledParticles;
-    [SerializeField] private Pooler deathParticles;
+
+    [SerializeField]
+    private GameObject lockOnAnim;
+
+    [SerializeField]
+    private Pooler lockOnDisabledParticles;
+
+    [SerializeField]
+    private Pooler deathParticles;
 
     private int hitsTaken = 0;
     private Collider partCollider;
     private bool isLockedOn = false;
+
+    public event Action OnPartDestroyed;
 
     private void Awake()
     {
@@ -25,8 +33,7 @@ public class EnemyBasicDamagablePart : MonoBehaviour, IDamageable
     {
         if (mainEnemyScript != null)
         {
-            float partDamage = mainEnemyScript.GetPartDamageAmount();
-            mainEnemyScript.Damage(partDamage);
+            mainEnemyScript.Damage(amount);
             hitsTaken++;
             CheckForDeath();
         }
@@ -47,13 +54,7 @@ public class EnemyBasicDamagablePart : MonoBehaviour, IDamageable
         {
             deathParticles.GetFromPool(transform.position, Quaternion.identity);
         }
-
-        if (mainEnemyScript != null)
-        {
-            float partDamage = mainEnemyScript.GetPartDamageAmount();
-            mainEnemyScript.Damage(partDamage);
-        }
-
+        OnPartDestroyed?.Invoke();
         gameObject.SetActive(false);
     }
 

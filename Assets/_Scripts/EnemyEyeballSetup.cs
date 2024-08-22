@@ -1,34 +1,48 @@
-using UnityEngine;
 using System.Collections;
-using Chronos;
-using PathologicalGames;
 using BehaviorDesigner.Runtime.Tactical;
+using Chronos;
 using OccaSoftware.BOP;
+using PathologicalGames;
 using SonicBloom.Koreo;
+using UnityEngine;
 
 [RequireComponent(typeof(Timeline))]
 public class EnemyEyeballSetup : MonoBehaviour, IDamageable
 {
     #region Health and Type
-    [SerializeField] protected float startHealth = 100;
+    [SerializeField]
+    protected float startHealth = 100;
     protected float currentHealth;
-    [SerializeField] protected string enemyType;
+
+    [SerializeField]
+    protected string enemyType;
     #endregion
 
     #region GameObject References
-    [SerializeField] protected GameObject enemyModel;
-    [SerializeField] protected GameObject lockedOnIndicator;
-    [HideInInspector] public GameObject playerTarget;
+    [SerializeField]
+    protected GameObject enemyModel;
+
+    [SerializeField]
+    protected GameObject lockedOnIndicator;
+
+    [HideInInspector]
+    public GameObject playerTarget;
     #endregion
 
     #region Particle Systems
-    [SerializeField] protected Pooler deathParticles;
-    [SerializeField] protected Pooler birthParticles;
-    [SerializeField] protected Pooler lockOnDisabledParticles;
+    [SerializeField]
+    protected Pooler deathParticles;
+
+    [SerializeField]
+    protected Pooler birthParticles;
+
+    [SerializeField]
+    protected Pooler lockOnDisabledParticles;
     #endregion
 
     #region Koreographer
-    [SerializeField, EventID] protected string eventID;
+    [SerializeField, EventID]
+    protected string eventID;
     #endregion
 
     #region Pooling
@@ -42,12 +56,23 @@ public class EnemyEyeballSetup : MonoBehaviour, IDamageable
     #endregion
 
     #region Shooting
-    [SerializeField] private float minShootDelay = 1f;
-    [SerializeField] private float maxShootDelay = 3f;
-    [SerializeField] private float shootSpeed = 10f;
-    [SerializeField] private float projectileLifetime = 5f;
-    [SerializeField] private float projectileScale = 1f;
-    [SerializeField] private Material projectileMaterial;
+    [SerializeField]
+    private float minShootDelay = 1f;
+
+    [SerializeField]
+    private float maxShootDelay = 3f;
+
+    [SerializeField]
+    private float shootSpeed = 10f;
+
+    [SerializeField]
+    private float projectileLifetime = 5f;
+
+    [SerializeField]
+    private float projectileScale = 1f;
+
+    [SerializeField]
+    private Material projectileMaterial;
     private float nextShootTime;
     #endregion
 
@@ -85,9 +110,12 @@ public class EnemyEyeballSetup : MonoBehaviour, IDamageable
         playerTarget = GameObject.FindGameObjectWithTag("Player");
         enemyModel.SetActive(true);
         currentHealth = startHealth;
-        FMODUnity.RuntimeManager.PlayOneShotAttached("event:/Enemy/" + enemyType + "/Birth", gameObject);
+        FMODUnity.RuntimeManager.PlayOneShotAttached(
+            "event:/Enemy/" + enemyType + "/Birth",
+            gameObject
+        );
         clock = Timekeeper.instance.Clock("Test");
-        
+
         if (birthParticles != null)
         {
             birthParticles.GetFromPool(transform.position, Quaternion.identity);
@@ -103,11 +131,15 @@ public class EnemyEyeballSetup : MonoBehaviour, IDamageable
     {
         float previousHealth = currentHealth;
         currentHealth = Mathf.Max(currentHealth - amount, 0);
-        ConditionalDebug.Log($"{gameObject.name} took {amount} damage. Health reduced from {previousHealth} to {currentHealth}");
+        ConditionalDebug.Log(
+            $"{gameObject.name} took {amount} damage. Health reduced from {previousHealth} to {currentHealth}"
+        );
 
         if (currentHealth <= 0)
         {
-            ConditionalDebug.Log($"{gameObject.name} health reached 0 or below, initiating Death coroutine");
+            ConditionalDebug.Log(
+                $"{gameObject.name} health reached 0 or below, initiating Death coroutine"
+            );
             StartCoroutine(Death());
         }
     }
@@ -117,7 +149,10 @@ public class EnemyEyeballSetup : MonoBehaviour, IDamageable
         ConditionalDebug.Log($"{enemyType} has died");
 
         deathParticles.GetFromPool(transform.position, Quaternion.identity);
-        FMODUnity.RuntimeManager.PlayOneShot("event:/Enemy/" + enemyType + "/Death", transform.position);
+        FMODUnity.RuntimeManager.PlayOneShot(
+            "event:/Enemy/" + enemyType + "/Death",
+            transform.position
+        );
 
         yield return new WaitForSeconds(0.5f);
         enemyModel.SetActive(false);
@@ -136,7 +171,10 @@ public class EnemyEyeballSetup : MonoBehaviour, IDamageable
 
         if (status)
         {
-            FMODUnity.RuntimeManager.PlayOneShotAttached("event:/Enemy/" + enemyType + "/Locked", gameObject);
+            FMODUnity.RuntimeManager.PlayOneShotAttached(
+                "event:/Enemy/" + enemyType + "/Locked",
+                gameObject
+            );
         }
         else if (lockOnDisabledParticles != null)
         {
@@ -162,17 +200,23 @@ public class EnemyEyeballSetup : MonoBehaviour, IDamageable
         ConditionalDebug.Log($"[{gameObject.name}] Attempting to shoot at time: {Time.time}");
         if (playerTarget == null)
         {
-            ConditionalDebug.LogWarning($"[{gameObject.name}] Player target is null. Cannot shoot.");
+            ConditionalDebug.LogWarning(
+                $"[{gameObject.name}] Player target is null. Cannot shoot."
+            );
             SetNextShootTime();
             return;
         }
 
-        Vector3 directionToPlayer = (playerTarget.transform.position - transform.position).normalized;
+        Vector3 directionToPlayer = (
+            playerTarget.transform.position - transform.position
+        ).normalized;
         Quaternion rotationToPlayer = Quaternion.LookRotation(directionToPlayer);
 
         bool shotRequested = ProjectileManager.Instance.RequestEnemyShot(() =>
         {
-            ConditionalDebug.Log($"[{gameObject.name}] Shot request approved. Shooting projectile.");
+            ConditionalDebug.Log(
+                $"[{gameObject.name}] Shot request approved. Shooting projectile."
+            );
             ProjectileManager.Instance.ShootProjectileFromEnemy(
                 transform.position,
                 rotationToPlayer,
@@ -186,7 +230,10 @@ public class EnemyEyeballSetup : MonoBehaviour, IDamageable
             );
 
             // Play shooting sound
-            FMODUnity.RuntimeManager.PlayOneShotAttached("event:/Enemy/" + enemyType + "/Shoot", gameObject);
+            FMODUnity.RuntimeManager.PlayOneShotAttached(
+                "event:/Enemy/" + enemyType + "/Shoot",
+                gameObject
+            );
         });
 
         if (shotRequested)

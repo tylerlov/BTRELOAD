@@ -1,62 +1,99 @@
-using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Chronos;
+using FluffyUnderware.Curvy.Controllers;
 using FluffyUnderware.Curvy.Generator;
 using FluffyUnderware.Curvy.Generator.Modules;
-using FluffyUnderware.Curvy.Controllers;
 using FluffyUnderware.Curvy.Shapes;
 using FluffyUnderware.DevTools;
 using OccaSoftware.BOP;
+using UnityEngine;
 using UnityEngine.UI;
-using Chronos; 
 
 namespace FluffyUnderware.Curvy.Examples
 {
-    public class OuroBossInfiniteTrack : MonoBehaviour  
-    { [Header("Track Settings")]
+    public class OuroBossInfiniteTrack : MonoBehaviour
+    {
+        [Header("Track Settings")]
         public CurvySpline TrackSpline;
         public CurvyController Controller;
         public Material RoadMaterial;
         public CurvySpline ReferenceSpline;
 
         [Header("Curvation Settings")]
-        [Positive] public float CurvationX = 10;
-        [Positive] public float CurvationY = 10;
+        [Positive]
+        public float CurvationX = 10;
+
+        [Positive]
+        public float CurvationY = 10;
 
         [Header("Control Point Settings")]
-        [Positive] public float CPStepSize = 20;
-        [Positive] public int HeadCP = 3;
-        [Positive] public int TailCP = 2;
+        [Positive]
+        public float CPStepSize = 20;
+
+        [Positive]
+        public int HeadCP = 3;
+
+        [Positive]
+        public int TailCP = 2;
 
         [Header("Section Settings")]
-        [DevTools.Min(3)] public int Sections = 6;
-        [DevTools.Min(1)] public int SectionCPCount = 2;
+        [DevTools.Min(3)]
+        public int Sections = 6;
+
+        [DevTools.Min(1)]
+        public int SectionCPCount = 2;
 
         [Header("Offset Settings")]
         public float YOffset = 0;
 
         [Header("Ellipse Settings")]
-        [SerializeField] private float ellipseRadiusX = 20;
-        [SerializeField] private float ellipseRadiusY = 10;
+        [SerializeField]
+        private float ellipseRadiusX = 20;
+
+        [SerializeField]
+        private float ellipseRadiusY = 10;
 
         [Header("Pooling Settings")]
-        [SerializeField] private OccaSoftware.BOP.ParticleSystemPooler particleSystemPooler;
-        [SerializeField] private OccaSoftware.BOP.Pooler prefabPooler;
-        [SerializeField] private int prefabsPerSection = 5;
-        [SerializeField] private float prefabScale = 1f;
-        [SerializeField] private int maxActivePrefabs = 50;
+        [SerializeField]
+        private OccaSoftware.BOP.ParticleSystemPooler particleSystemPooler;
+
+        [SerializeField]
+        private OccaSoftware.BOP.Pooler prefabPooler;
+
+        [SerializeField]
+        private int prefabsPerSection = 5;
+
+        [SerializeField]
+        private float prefabScale = 1f;
+
+        [SerializeField]
+        private int maxActivePrefabs = 50;
         private List<GameObject> activePrefabs = new List<GameObject>();
         private List<List<GameObject>> prefabsBySection = new List<List<GameObject>>();
-        [SerializeField] private List<GameObject> despawnedPrefabs = new List<GameObject>();
+
+        [SerializeField]
+        private List<GameObject> despawnedPrefabs = new List<GameObject>();
 
         [Header("Prefab Rotation Adjustments")]
-        [SerializeField] private float minRandomXRotationSubtract = 80f;
-        [SerializeField] private float maxRandomXRotationSubtract = 101f;
-        [SerializeField] private float minRandomYRotation = -30f;
-        [SerializeField] private float maxRandomYRotation = 31f;
-        [SerializeField] private float minRandomZRotation = -30f;
-        [SerializeField] private float maxRandomZRotation = 31f;
+        [SerializeField]
+        private float minRandomXRotationSubtract = 80f;
+
+        [SerializeField]
+        private float maxRandomXRotationSubtract = 101f;
+
+        [SerializeField]
+        private float minRandomYRotation = -30f;
+
+        [SerializeField]
+        private float maxRandomYRotation = 31f;
+
+        [SerializeField]
+        private float minRandomZRotation = -30f;
+
+        [SerializeField]
+        private float maxRandomZRotation = 31f;
 
         private int mInitState = 0;
         private bool mUpdateSpline;
@@ -76,7 +113,8 @@ namespace FluffyUnderware.Curvy.Examples
 
         public void Generate()
         {
-            if (isGenerated) return; // Skip if already generated
+            if (isGenerated)
+                return; // Skip if already generated
 
             // Your generation logic here (you can modularize the existing setup logic)
             StartCoroutine(setup());
@@ -92,7 +130,8 @@ namespace FluffyUnderware.Curvy.Examples
             TrackSpline.Clear(); // Assuming this method clears the spline
             foreach (var prefab in activePrefabs)
             {
-                if (prefab != null) DestroyImmediate(prefab);
+                if (prefab != null)
+                    DestroyImmediate(prefab);
             }
             activePrefabs.Clear();
 
@@ -100,14 +139,16 @@ namespace FluffyUnderware.Curvy.Examples
             {
                 foreach (var prefab in section)
                 {
-                    if (prefab != null) DestroyImmediate(prefab);
+                    if (prefab != null)
+                        DestroyImmediate(prefab);
                 }
                 section.Clear();
             }
 
             foreach (var prefab in despawnedPrefabs)
             {
-                if (prefab != null) DestroyImmediate(prefab);
+                if (prefab != null)
+                    DestroyImmediate(prefab);
             }
             despawnedPrefabs.Clear();
 
@@ -115,7 +156,8 @@ namespace FluffyUnderware.Curvy.Examples
             {
                 foreach (var generator in mGenerators)
                 {
-                    if (generator != null) DestroyImmediate(generator.gameObject);
+                    if (generator != null)
+                        DestroyImmediate(generator.gameObject);
                 }
                 mGenerators = null;
             }
@@ -170,12 +212,20 @@ namespace FluffyUnderware.Curvy.Examples
 
             // let all generators do their extrusion
             for (int i = 0; i < Sections; i++)
-                StartCoroutine(updateSectionGenerator(mGenerators[i], i * SectionCPCount + TailCP, (i + 1) * SectionCPCount + TailCP));
+                StartCoroutine(
+                    updateSectionGenerator(
+                        mGenerators[i],
+                        i * SectionCPCount + TailCP,
+                        (i + 1) * SectionCPCount + TailCP
+                    )
+                );
 
             mInitState = 2;
             mUpdateIn = SectionCPCount;
             // Placement of the controller
-            Controller.AbsolutePosition = TrackSpline.ControlPointsList[TailCP + ControllerPlacementOffset].Distance;
+            Controller.AbsolutePosition = TrackSpline
+                .ControlPointsList[TailCP + ControllerPlacementOffset]
+                .Distance;
 
             yield return new WaitUntil(() => TrackSpline.IsInitialized);
 
@@ -190,44 +240,44 @@ namespace FluffyUnderware.Curvy.Examples
             }
         }
 
-// build a generator
-CurvyGenerator buildGenerator()
-{
-    // Create the Curvy Generator
-    CurvyGenerator gen = CurvyGenerator.Create();
-    gen.AutoRefresh = false;
-    // Create Modules
-    InputSplinePath path = gen.AddModule<InputSplinePath>();
-    InputSplineShape shape = gen.AddModule<InputSplineShape>();
-    BuildShapeExtrusion extrude = gen.AddModule<BuildShapeExtrusion>();
-    BuildVolumeMesh vol = gen.AddModule<BuildVolumeMesh>();
-    CreateMesh msh = gen.AddModule<CreateMesh>();
-    // Create Links between modules
-    path.OutputByName["Path"].LinkTo(extrude.InputByName["Path"]);
-    shape.OutputByName["Shape"].LinkTo(extrude.InputByName["Cross"]);
-    extrude.OutputByName["Volume"].LinkTo(vol.InputByName["Volume"]);
-    vol.OutputByName["VMesh"].LinkTo(msh.InputByName["VMesh"]);
-    // Set module properties
-    path.Spline = TrackSpline;
-    path.UseCache = true;
-    // Assuming CSEllipse exists and can be used similarly to CSRectangle
-    CSEllipse ellipseShape = shape.SetManagedShape<CSEllipse>();
-    ellipseShape.RadiusX = ellipseRadiusX; // Use the field value
-    ellipseShape.RadiusY = ellipseRadiusY; // Use the field value
-    ellipseShape.YOffset = YOffset; // Use the YOffset defined in the inspector
-    extrude.Optimize = false;
+        // build a generator
+        CurvyGenerator buildGenerator()
+        {
+            // Create the Curvy Generator
+            CurvyGenerator gen = CurvyGenerator.Create();
+            gen.AutoRefresh = false;
+            // Create Modules
+            InputSplinePath path = gen.AddModule<InputSplinePath>();
+            InputSplineShape shape = gen.AddModule<InputSplineShape>();
+            BuildShapeExtrusion extrude = gen.AddModule<BuildShapeExtrusion>();
+            BuildVolumeMesh vol = gen.AddModule<BuildVolumeMesh>();
+            CreateMesh msh = gen.AddModule<CreateMesh>();
+            // Create Links between modules
+            path.OutputByName["Path"].LinkTo(extrude.InputByName["Path"]);
+            shape.OutputByName["Shape"].LinkTo(extrude.InputByName["Cross"]);
+            extrude.OutputByName["Volume"].LinkTo(vol.InputByName["Volume"]);
+            vol.OutputByName["VMesh"].LinkTo(msh.InputByName["VMesh"]);
+            // Set module properties
+            path.Spline = TrackSpline;
+            path.UseCache = true;
+            // Assuming CSEllipse exists and can be used similarly to CSRectangle
+            CSEllipse ellipseShape = shape.SetManagedShape<CSEllipse>();
+            ellipseShape.RadiusX = ellipseRadiusX; // Use the field value
+            ellipseShape.RadiusY = ellipseRadiusY; // Use the field value
+            ellipseShape.YOffset = YOffset; // Use the YOffset defined in the inspector
+            extrude.Optimize = false;
 #pragma warning disable 618
-    extrude.CrossHardEdges = true; // You might want to set this to false for a smoother snake body
+            extrude.CrossHardEdges = true; // You might want to set this to false for a smoother snake body
 #pragma warning restore 618
-    vol.Split = false;
-    vol.SetMaterial(0, RoadMaterial); // Ensure your RoadMaterial has a snake-like texture
-    vol.MaterialSettings[0].SwapUV = true;
+            vol.Split = false;
+            vol.SetMaterial(0, RoadMaterial); // Ensure your RoadMaterial has a snake-like texture
+            vol.MaterialSettings[0].SwapUV = true;
 
-    msh.Collider = CGColliderEnum.Mesh;
-    gen.gameObject.layer = LayerMask.NameToLayer("Ground");
+            msh.Collider = CGColliderEnum.Mesh;
+            gen.gameObject.layer = LayerMask.NameToLayer("Ground");
 
-    return gen;
-}
+            return gen;
+        }
 
         // advance the track
         void advanceTrack()
@@ -267,7 +317,9 @@ CurvyGenerator buildGenerator()
                 }
                 else
                 {
-                    Debug.LogWarning("Prefab does not have an Instance component, cannot despawn: " + prefab.name);
+                    Debug.LogWarning(
+                        "Prefab does not have an Instance component, cannot despawn: " + prefab.name
+                    );
                 }
             }
 
@@ -294,7 +346,10 @@ CurvyGenerator buildGenerator()
             // Set Track segment we want to use
             InputSplinePath path = gen.FindModules<InputSplinePath>(true)[0];
 
-            path.SetRange(TrackSpline.ControlPointsList[startCP], TrackSpline.ControlPointsList[endCP]);
+            path.SetRange(
+                TrackSpline.ControlPointsList[startCP],
+                TrackSpline.ControlPointsList[endCP]
+            );
 
             // Set UV-Offset to match
             BuildVolumeMesh vol = gen.FindModules<BuildVolumeMesh>(false)[0];
@@ -352,12 +407,16 @@ CurvyGenerator buildGenerator()
 
                 Vector3 referencePosition = ReferenceSpline.InterpolateByDistance(nextCPDistance);
                 Vector3 tangent = ReferenceSpline.GetTangentByDistance(nextCPDistance).normalized;
-                Vector3 offsetDirection = Vector3.Cross(tangent, Vector3.up).normalized * Random.Range(-CurvationX, CurvationX);
+                Vector3 offsetDirection =
+                    Vector3.Cross(tangent, Vector3.up).normalized
+                    * Random.Range(-CurvationX, CurvationX);
                 Vector3 finalPosition = referencePosition + offsetDirection;
 
                 if (TrackSpline.transform.parent != null)
                 {
-                    finalPosition = TrackSpline.transform.parent.InverseTransformPoint(finalPosition);
+                    finalPosition = TrackSpline.transform.parent.InverseTransformPoint(
+                        finalPosition
+                    );
                 }
 
                 TrackSpline.InsertAfter(null, finalPosition, true);
@@ -374,12 +433,16 @@ CurvyGenerator buildGenerator()
 
                 Vector3 referencePosition = ReferenceSpline.InterpolateByDistance(nextCPDistance);
                 Vector3 tangent = ReferenceSpline.GetTangentByDistance(nextCPDistance).normalized;
-                Vector3 offsetDirection = Vector3.Cross(tangent, Vector3.up).normalized * Random.Range(-CurvationX, CurvationX);
+                Vector3 offsetDirection =
+                    Vector3.Cross(tangent, Vector3.up).normalized
+                    * Random.Range(-CurvationX, CurvationX);
                 Vector3 finalPosition = referencePosition + offsetDirection;
 
                 if (TrackSpline.transform.parent != null)
                 {
-                    finalPosition = TrackSpline.transform.parent.InverseTransformPoint(finalPosition);
+                    finalPosition = TrackSpline.transform.parent.InverseTransformPoint(
+                        finalPosition
+                    );
                 }
 
                 TrackSpline.InsertAfter(null, finalPosition, true);
@@ -393,7 +456,9 @@ CurvyGenerator buildGenerator()
         {
             if (sectionIndex < 0 || sectionIndex >= prefabsBySection.Count)
             {
-                Debug.LogError($"Section index {sectionIndex} is out of range. Prefabs cannot be placed.");
+                Debug.LogError(
+                    $"Section index {sectionIndex} is out of range. Prefabs cannot be placed."
+                );
                 return;
             }
 
@@ -411,20 +476,39 @@ CurvyGenerator buildGenerator()
                     Vector3 potentialPosition = spline.InterpolateByDistance(t * spline.Length); // Convert to world position
 
                     // Check if this position is far enough from all previously placed prefabs
-                    bool tooClose = placedPositions.Any(p => Vector3.Distance(spline.InterpolateByDistance(p * spline.Length), potentialPosition) < minDistanceApart);
+                    bool tooClose = placedPositions.Any(p =>
+                        Vector3.Distance(
+                            spline.InterpolateByDistance(p * spline.Length),
+                            potentialPosition
+                        ) < minDistanceApart
+                    );
 
                     if (!tooClose)
                     {
                         Quaternion rotation = spline.GetOrientationFast(t); // Get rotation at position t
 
                         // Apply random rotation adjustments
-                        float randomXRotationSubtract = Random.Range(minRandomXRotationSubtract, maxRandomXRotationSubtract);
-                        float randomYRotation = Random.Range(minRandomYRotation, maxRandomYRotation);
-                        float randomZRotation = Random.Range(minRandomZRotation, maxRandomZRotation);
-                        Quaternion rotationAdjustment = Quaternion.Euler(-randomXRotationSubtract, randomYRotation, randomZRotation);
+                        float randomXRotationSubtract = Random.Range(
+                            minRandomXRotationSubtract,
+                            maxRandomXRotationSubtract
+                        );
+                        float randomYRotation = Random.Range(
+                            minRandomYRotation,
+                            maxRandomYRotation
+                        );
+                        float randomZRotation = Random.Range(
+                            minRandomZRotation,
+                            maxRandomZRotation
+                        );
+                        Quaternion rotationAdjustment = Quaternion.Euler(
+                            -randomXRotationSubtract,
+                            randomYRotation,
+                            randomZRotation
+                        );
                         rotation *= rotationAdjustment;
 
-                        Vector3 sideDirection = (Random.value > 0.5f) ? Vector3.right : Vector3.left;
+                        Vector3 sideDirection =
+                            (Random.value > 0.5f) ? Vector3.right : Vector3.left;
                         Vector3 offsetDirection = rotation * sideDirection;
 
                         float sideOffset = Random.Range(7f, 12f) * ((Random.value > 0.5f) ? 1 : -1);
@@ -433,7 +517,11 @@ CurvyGenerator buildGenerator()
                         GameObject prefabInstance = prefabPooler.GetFromPool();
                         prefabInstance.transform.position = finalPosition;
                         prefabInstance.transform.rotation = rotation;
-                        prefabInstance.transform.localScale = new Vector3(prefabScale, prefabScale, prefabScale);
+                        prefabInstance.transform.localScale = new Vector3(
+                            prefabScale,
+                            prefabScale,
+                            prefabScale
+                        );
 
                         prefabsBySection[sectionIndex].Add(prefabInstance);
                         activePrefabs.Add(prefabInstance);
@@ -470,6 +558,5 @@ CurvyGenerator buildGenerator()
         {
             despawnedPrefabs.Clear();
         }
-
     }
 }

@@ -1,19 +1,22 @@
 using System.Collections;
 using System.Collections.Generic;
+using DG.Tweening;
+using SonicBloom.Koreo;
 using UnityEngine;
 using UnityEngine.Events;
-using SonicBloom.Koreo;
-using DG.Tweening;
 using UnityEngine.SceneManagement; // Include the SceneManager namespace
 
 public class KoreographerSpinEvent : MonoBehaviour
 {
     [EventID]
     public string koreoEventID = "Perc Half Half Half"; // Default Koreo Event ID
+
     [SerializeField]
     private RotationAxis rotationAxis = RotationAxis.Z; // Default Rotation Axis
+
     [SerializeField]
     private RotationAmount rotationAmount = RotationAmount.TwoHundredFiftySixth; // Default Rotation Amount
+
     [SerializeField]
     private float spinTime = 0.01f; // Default Spin Time
 
@@ -23,7 +26,7 @@ public class KoreographerSpinEvent : MonoBehaviour
     {
         X,
         Y,
-        Z
+        Z,
     }
 
     public enum RotationAmount
@@ -38,7 +41,7 @@ public class KoreographerSpinEvent : MonoBehaviour
         OneHundredTwentyEighth,
         TwoHundredFiftySixth,
         FiveHundredTwelfth,
-        OneThousandTwentyFourth
+        OneThousandTwentyFourth,
     }
 
     private void OnEnable()
@@ -72,7 +75,8 @@ public class KoreographerSpinEvent : MonoBehaviour
 
     private void OnKoreoEvent(KoreographyEvent koreoEvent)
     {
-        if (this == null || gameObject == null) return; // Check if the object is destroyed
+        if (this == null || gameObject == null)
+            return; // Check if the object is destroyed
 
         float spinAmount = 360f;
 
@@ -110,7 +114,9 @@ public class KoreographerSpinEvent : MonoBehaviour
                 break;
         }
 
-        transform.DOLocalRotate(rotationVector * spinAmount, spinTime , RotateMode.LocalAxisAdd).SetEase(Ease.OutSine);
+        transform
+            .DOLocalRotate(rotationVector * spinAmount, spinTime, RotateMode.LocalAxisAdd)
+            .SetEase(Ease.OutSine);
     }
 
     private void SetRotationVector()

@@ -7,14 +7,18 @@ using UnityEngine.Rendering.Universal;
 
 public class CinemachineCameraSwitching : MonoBehaviour
 {
-
-    [SerializeField] private Volume v1;
+    [SerializeField]
+    private Volume v1;
     private Animator animator;
     private bool mainCamera;
     public GameObject reticle;
-    [SerializeField] private GameObject playerBody;
 
-    [SerializeField] private UnityEvent playerFacingForward;
+    [SerializeField]
+    private GameObject playerBody;
+
+    [SerializeField]
+    private UnityEvent playerFacingForward;
+
     //private MotionBlur mb;
 
     private void Awake()
@@ -26,7 +30,7 @@ public class CinemachineCameraSwitching : MonoBehaviour
 
     public void SetMainCamera()
     {
-        if (mainCamera == false) 
+        if (mainCamera == false)
         {
             animator.Play("Main Camera");
             playerBody.SetActive(true);
@@ -41,6 +45,7 @@ public class CinemachineCameraSwitching : MonoBehaviour
             ConditionalDebug.Log("Set Main Camera when not needed");
         }
     }
+
     public void SwitchToTransitionCamera()
     {
         //currently using main camera
@@ -50,7 +55,6 @@ public class CinemachineCameraSwitching : MonoBehaviour
             reticle.SetActive(false);
             playerBody.SetActive(false);
             //mb.active = false;
-
         }
         else
         {

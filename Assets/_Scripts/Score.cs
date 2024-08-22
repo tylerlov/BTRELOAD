@@ -1,9 +1,9 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.Text;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
-using TMPro;
-using System.Text;
 
 public class Score : MonoBehaviour
 {
@@ -31,8 +31,10 @@ public class Score : MonoBehaviour
         get => _currLocks;
         set
         {
-            if (!enableProjectileLocks || projectiles == null) return;
-            if (_currLocks == value) return;
+            if (!enableProjectileLocks || projectiles == null)
+                return;
+            if (_currLocks == value)
+                return;
             if (value > _currLocks && _currLocks < projLockUI.Count)
             {
                 projLockUI[_currLocks].gameObject.SetActive(true);
@@ -50,8 +52,10 @@ public class Score : MonoBehaviour
         get => _currEnemyLocks;
         set
         {
-            if (!enableEnemyLocks || enemies == null) return;
-            if (_currEnemyLocks == value) return;
+            if (!enableEnemyLocks || enemies == null)
+                return;
+            if (_currEnemyLocks == value)
+                return;
             if (value > _currEnemyLocks && _currEnemyLocks < enemyLockUI.Count)
             {
                 enemyLockUI[_currEnemyLocks].gameObject.SetActive(true);
@@ -68,7 +72,7 @@ public class Score : MonoBehaviour
     private Crosshair playerCrosshair;
     private StringBuilder stringBuilder = new StringBuilder();
 
-    public TMP_Text scoreAddedText;    // Reference to the score added UI element
+    public TMP_Text scoreAddedText; // Reference to the score added UI element
     public TMP_Text scoreSubtractedText; // Reference to the score subtracted UI element
     private int previousScore = 0;
     private int reportedDamage = 0; // New variable to track reported damage
@@ -105,7 +109,7 @@ public class Score : MonoBehaviour
         }
 
         previousScore = GameManager.instance.Score;
-        
+
         // Ensure both text elements are initially inactive
         scoreAddedText.gameObject.SetActive(false);
         scoreSubtractedText.gameObject.SetActive(false);
@@ -144,7 +148,7 @@ public class Score : MonoBehaviour
         if (currentScore != previousScore)
         {
             int scoreDifference = currentScore - previousScore;
-            
+
             if (reportedDamage > 0)
             {
                 // Show the reported damage
@@ -156,14 +160,15 @@ public class Score : MonoBehaviour
                 ShowScoreChange(scoreDifference);
             }
             // We don't show anything for -1 (timer decrement) or positive changes
-            
+
             previousScore = currentScore;
         }
     }
 
     private void ShowScoreChange(int change)
     {
-        if (change == 0) return;
+        if (change == 0)
+            return;
 
         TMP_Text textToShow = change > 0 ? scoreAddedText : scoreSubtractedText;
         textToShow.text = change > 0 ? $"+{change}" : $"{change}";
@@ -175,7 +180,12 @@ public class Score : MonoBehaviour
     private IEnumerator FadeScoreChange(TMP_Text textElement)
     {
         textElement.gameObject.SetActive(true);
-        textElement.color = new Color(textElement.color.r, textElement.color.g, textElement.color.b, 1f);
+        textElement.color = new Color(
+            textElement.color.r,
+            textElement.color.g,
+            textElement.color.b,
+            1f
+        );
 
         float duration = 0.5f;
         float elapsedTime = 0f;
@@ -184,7 +194,12 @@ public class Score : MonoBehaviour
         {
             elapsedTime += Time.deltaTime;
             float alpha = Mathf.Lerp(1f, 0f, elapsedTime / duration);
-            textElement.color = new Color(textElement.color.r, textElement.color.g, textElement.color.b, alpha);
+            textElement.color = new Color(
+                textElement.color.r,
+                textElement.color.g,
+                textElement.color.b,
+                alpha
+            );
             yield return null;
         }
 
@@ -195,5 +210,10 @@ public class Score : MonoBehaviour
     public void ReportDamage(int damage)
     {
         reportedDamage = damage;
+    }
+
+    public void ShowSectionTransitionBoost(int boostAmount)
+    {
+        ShowScoreChange(boostAmount);
     }
 }

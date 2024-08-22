@@ -1,6 +1,6 @@
-using Chronos;
 using System.Collections;
 using System.Collections.Generic;
+using Chronos;
 using UnityEngine;
 
 public class RotateRing : MonoBehaviour
@@ -18,7 +18,6 @@ public class RotateRing : MonoBehaviour
     {
         trs = transform;
         clock = GetComponent<Clock>();
-
     }
 
     // Update is called once per frame
@@ -57,7 +56,7 @@ public class RotateRing : MonoBehaviour
 
     public void randomSpeeds()
     {
-        speed = new Vector3(Random.Range(-10,10), Random.Range(-10, 10), Random.Range(-10, 10));
+        speed = new Vector3(Random.Range(-10, 10), Random.Range(-10, 10), Random.Range(-10, 10));
     }
 
     public void setRunningSpeed()

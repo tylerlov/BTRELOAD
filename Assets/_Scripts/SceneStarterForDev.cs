@@ -3,8 +3,10 @@ using UnityEngine;
 public class SceneStarterForDev : MonoBehaviour
 {
     // References to the components
-    [SerializeField] public CinemachineCameraSwitching cinemachineCameraSwitching;
+    [SerializeField]
+    public CinemachineCameraSwitching cinemachineCameraSwitching;
     private GameManager gameManager;
+
     // Start is called before the first frame update
     void Start()
     {

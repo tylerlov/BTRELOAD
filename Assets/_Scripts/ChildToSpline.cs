@@ -1,5 +1,5 @@
-using UnityEngine;
 using FluffyUnderware.Curvy;
+using UnityEngine;
 
 public class ChildToSpline : MonoBehaviour
 {

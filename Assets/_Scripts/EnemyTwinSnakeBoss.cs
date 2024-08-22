@@ -1,11 +1,11 @@
 using System.Collections;
 using System.Collections.Generic;
-using UnityEngine;
-using FMODUnity;
-using Chronos;
 using BehaviorDesigner.Runtime.Tactical;
-using UnityEngine.Events;
+using Chronos;
+using FMODUnity;
 using SonicBloom.Koreo;
+using UnityEngine;
+using UnityEngine.Events;
 
 [System.Serializable]
 public class SnakeData
@@ -22,31 +22,50 @@ public class SnakeData
 public class EnemyTwinSnakeBoss : MonoBehaviour, ILimbDamageReceiver
 {
     [Header("Snake Data")]
-    [SerializeField] private SnakeData[] snakes = new SnakeData[2];
+    [SerializeField]
+    private SnakeData[] snakes = new SnakeData[2];
 
     // Basic Enemy Information
     [Header("Basic Enemy Information")]
-    [SerializeField] private string enemyType;
-    [SerializeField] private float startHealth = 100;
+    [SerializeField]
+    private string enemyType;
+
+    [SerializeField]
+    private float startHealth = 100;
 
     // Shooting Functionality
     [Header("Shooting Functionality")]
-    [SerializeField] private float shootSpeed = 20f;
-    [SerializeField] private float projectileLifetime = 5f;
-    [SerializeField] private float projectileScale = 1f;
-    [SerializeField] private Material alternativeProjectileMaterial;
-    [SerializeField] private float noKoreoShootInterval = 2f;
+    [SerializeField]
+    private float shootSpeed = 20f;
+
+    [SerializeField]
+    private float projectileLifetime = 5f;
+
+    [SerializeField]
+    private float projectileScale = 1f;
+
+    [SerializeField]
+    private Material alternativeProjectileMaterial;
+
+    [SerializeField]
+    private float noKoreoShootInterval = 2f;
     public float shootDelay = 0.5f;
 
     // Animation Triggers
     [Header("Animation Triggers")]
-    [SerializeField] private string attackLeftCondition = "Attack Left";
-    [SerializeField] private string attackRightCondition = "Attack Right";
+    [SerializeField]
+    private string attackLeftCondition = "Attack Left";
+
+    [SerializeField]
+    private string attackRightCondition = "Attack Right";
 
     // Koreographer Shooting
     [Header("Koreographer Shooting")]
-    [SerializeField] private string[] shootEventIDs = new string[1];
-    [EventID] public string activeShootEventID;
+    [SerializeField]
+    private string[] shootEventIDs = new string[1];
+
+    [EventID]
+    public string activeShootEventID;
 
     private Clock[] clocks = new Clock[2];
 
@@ -162,7 +181,8 @@ public class EnemyTwinSnakeBoss : MonoBehaviour, ILimbDamageReceiver
 
     private int DetermineTargetSnake()
     {
-        if (crosshair == null) return -1;
+        if (crosshair == null)
+            return -1;
 
         Vector3 aimPoint = crosshair.RaycastTarget();
         float closestDistance = float.MaxValue;
@@ -309,7 +329,7 @@ public class EnemyTwinSnakeBoss : MonoBehaviour, ILimbDamageReceiver
     private IEnumerator DelayedShoot(int snakeIndex)
     {
         ConditionalDebug.Log($"DelayedShoot started for snake {snakeIndex}");
-        
+
         // Set the appropriate attack condition based on the snake index
         string attackCondition = (snakeIndex == 0) ? attackLeftCondition : attackRightCondition;
         snakes[snakeIndex].animator.SetBool(attackCondition, true);
@@ -329,7 +349,9 @@ public class EnemyTwinSnakeBoss : MonoBehaviour, ILimbDamageReceiver
         if (playerTarget != null && playerTarget.activeInHierarchy)
         {
             Vector3 targetPosition = playerTarget.transform.position;
-            Quaternion rotationTowardsTarget = Quaternion.LookRotation(targetPosition - snakes[snakeIndex].projectileOrigin.position);
+            Quaternion rotationTowardsTarget = Quaternion.LookRotation(
+                targetPosition - snakes[snakeIndex].projectileOrigin.position
+            );
 
             // Use ProjectileManager to shoot
             projectileManager.ShootProjectileFromEnemy(
@@ -359,7 +381,9 @@ public class EnemyTwinSnakeBoss : MonoBehaviour, ILimbDamageReceiver
 
     private void ShootProjectileAlternating()
     {
-        ConditionalDebug.Log($"ShootProjectileAlternating called for snake {currentShootingSnakeIndex}");
+        ConditionalDebug.Log(
+            $"ShootProjectileAlternating called for snake {currentShootingSnakeIndex}"
+        );
         StartCoroutine(DelayedShoot(currentShootingSnakeIndex));
         currentShootingSnakeIndex = (currentShootingSnakeIndex + 1) % snakes.Length;
     }
@@ -368,11 +392,16 @@ public class EnemyTwinSnakeBoss : MonoBehaviour, ILimbDamageReceiver
     {
         snakes[snakeIndex].animator.SetTrigger("Die");
 
-        yield return new WaitUntil(() => snakes[snakeIndex].animator.GetCurrentAnimatorStateInfo(0).IsName("Death"));
+        yield return new WaitUntil(
+            () => snakes[snakeIndex].animator.GetCurrentAnimatorStateInfo(0).IsName("Death")
+        );
         float animationLength = snakes[snakeIndex].animator.GetCurrentAnimatorStateInfo(0).length;
         yield return new WaitForSeconds(animationLength);
 
-        FMODUnity.RuntimeManager.PlayOneShot("event:/Enemy/" + enemyType + "/Death", snakes[snakeIndex].snakeObject.transform.position);
+        FMODUnity.RuntimeManager.PlayOneShot(
+            "event:/Enemy/" + enemyType + "/Death",
+            snakes[snakeIndex].snakeObject.transform.position
+        );
 
         if (!IsAlive())
         {

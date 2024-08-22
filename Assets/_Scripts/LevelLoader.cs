@@ -1,12 +1,11 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
-using UnityEngine;
 using SonicBloom.Koreo;
+using UnityEngine;
 using UnityEngine.SceneManagement;
 
 public class LevelLoader : MonoBehaviour
 {
-
     [EventID]
     public string eventID;
 
@@ -30,6 +29,7 @@ public class LevelLoader : MonoBehaviour
             StartCoroutine(LoadLevel(SceneManager.GetActiveScene().buildIndex + 1));
         }
     }
+
     public void RestartLevel(KoreographyEvent evt)
     {
         if (Time.timeScale != 0f && Input.GetKey(restartLevelButton))
@@ -49,6 +49,5 @@ public class LevelLoader : MonoBehaviour
         yield return new WaitForSeconds(transitionTime);
 
         asyncScene.allowSceneActivation = true;
-
     }
 }

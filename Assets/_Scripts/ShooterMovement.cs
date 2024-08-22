@@ -1,12 +1,12 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
-using UnityEngine;
-using DG.Tweening;
+using Chronos;
 using Cinemachine;
+using DG.Tweening;
+using UnityEngine;
+using UnityEngine.InputSystem;
 //using MoreMountains.Feedbacks;
 using UnityEngine.Rendering.PostProcessing;
-using UnityEngine.InputSystem;
-using Chronos;
 
 public class ShooterMovement : MonoBehaviour
 {
@@ -16,7 +16,7 @@ public class ShooterMovement : MonoBehaviour
     private DefaultControls playerInputActions;
     private Vector2 inputVector;
 
-    private Timeline timeline; 
+    private Timeline timeline;
 
     public GameObject objectToRotate;
 
@@ -90,15 +90,16 @@ public class ShooterMovement : MonoBehaviour
 
     void ClampPosition()
     {
-        if (!enableClamping) return; // Skip clamping if enableClamping is false
+        if (!enableClamping)
+            return; // Skip clamping if enableClamping is false
 
         Vector3 pos = transform.localPosition;
 
         // Adjust the min and max values for x to allow more horizontal movement
         float minX = -30f; // Increased from -22f
-        float maxX = 30f;  // Increased from 22f
-        float minY = -12f; 
-        float maxY = 15f; 
+        float maxX = 30f; // Increased from 22f
+        float minY = -12f;
+        float maxY = 15f;
 
         pos.x = Mathf.Clamp(pos.x, minX, maxX);
         pos.y = Mathf.Clamp(pos.y, minY, maxY);
@@ -150,7 +151,7 @@ public class ShooterMovement : MonoBehaviour
     {
         // Reset the reticle position to center
         ResetToCenter();
-        
+
         // Reset any rotation on the objectToRotate
         if (objectToRotate != null)
         {

@@ -17,7 +17,7 @@ public class FollowExactPosition : MonoBehaviour
     private void Awake()
     {
         thisTransform = transform;
-        
+
         if (targetToFollow != null)
         {
             targetTransform = targetToFollow.transform;
@@ -33,7 +33,8 @@ public class FollowExactPosition : MonoBehaviour
         if (targetTransform != null)
         {
             // Directly set the position with offset
-            thisTransform.position = targetTransform.position + targetTransform.TransformDirection(positionOffset);
+            thisTransform.position =
+                targetTransform.position + targetTransform.TransformDirection(positionOffset);
 
             if (matchRotation)
             {
@@ -53,7 +54,9 @@ public class FollowExactPosition : MonoBehaviour
         if (targetToFollow != null)
         {
             Gizmos.color = Color.yellow;
-            Vector3 offsetPosition = targetToFollow.transform.position + targetToFollow.transform.TransformDirection(positionOffset);
+            Vector3 offsetPosition =
+                targetToFollow.transform.position
+                + targetToFollow.transform.TransformDirection(positionOffset);
             Gizmos.DrawLine(targetToFollow.transform.position, offsetPosition);
             Gizmos.DrawWireSphere(offsetPosition, 0.1f);
         }

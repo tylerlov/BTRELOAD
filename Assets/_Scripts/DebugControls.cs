@@ -1,12 +1,12 @@
 using System.Collections;
 using System.Collections.Generic;
-using UnityEngine;
-using UnityEngine.UI;
-using UnityEngine.EventSystems;
 using System.Linq;
 using BehaviorDesigner.Runtime.Tactical;
+using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 public class DebugControls : MonoBehaviour, IPointerClickHandler
 {
@@ -18,7 +18,10 @@ public class DebugControls : MonoBehaviour, IPointerClickHandler
     private void Awake()
     {
         // Initialize the InputAction for the 'N' key
-        debugNextSceneAction = new InputAction(type: InputActionType.Button, binding: "<Keyboard>/n");
+        debugNextSceneAction = new InputAction(
+            type: InputActionType.Button,
+            binding: "<Keyboard>/n"
+        );
         debugNextSceneAction.performed += ctx => OnDebugNextScene();
         debugNextSceneAction.Enable();
     }
@@ -37,7 +40,8 @@ public class DebugControls : MonoBehaviour, IPointerClickHandler
 
     private void OnDebugNextScene()
     {
-        if (isSceneTransitioning) return; // Prevent multiple scene transitions
+        if (isSceneTransitioning)
+            return; // Prevent multiple scene transitions
 
         isSceneTransitioning = true; // Set the flag to true to indicate a scene transition is in progress
 
@@ -49,7 +53,6 @@ public class DebugControls : MonoBehaviour, IPointerClickHandler
         if (gameManager != null)
         {
             gameManager.HandleDebugSceneTransition();
-
         }
 
         // Subscribe to the sceneLoaded event to reset the flag after the scene is loaded
@@ -74,7 +77,9 @@ public class DebugControls : MonoBehaviour, IPointerClickHandler
     public void KillAllEnemies()
     {
         // Find all game objects that implement the IDamageable interface
-        var damageables = UnityEngine.Object.FindObjectsOfType<MonoBehaviour>().OfType<IDamageable>();
+        var damageables = UnityEngine
+            .Object.FindObjectsOfType<MonoBehaviour>()
+            .OfType<IDamageable>();
 
         // Apply damage to each damageable object
         foreach (var damageable in damageables)
@@ -116,7 +121,9 @@ public class DebugControls : MonoBehaviour, IPointerClickHandler
     private void FindUIElement()
     {
         // Find the UI element named "Score" on the "UI" layer
-        uiElement = GameObject.FindObjectsOfType<GameObject>().FirstOrDefault(go => go.name == "Score" && go.layer == LayerMask.NameToLayer("UI"));
+        uiElement = GameObject
+            .FindObjectsOfType<GameObject>()
+            .FirstOrDefault(go => go.name == "Score" && go.layer == LayerMask.NameToLayer("UI"));
         if (uiElement == null)
         {
             Debug.LogError("UI element named 'Score' not found on the 'UI' layer.");
@@ -130,7 +137,12 @@ public class DebugControls : MonoBehaviour, IPointerClickHandler
             EventTrigger eventTrigger = uiElement.AddComponent<EventTrigger>();
             EventTrigger.Entry entry = new EventTrigger.Entry();
             entry.eventID = EventTriggerType.PointerClick;
-            entry.callback.AddListener((data) => { OnPointerClick((PointerEventData)data); });
+            entry.callback.AddListener(
+                (data) =>
+                {
+                    OnPointerClick((PointerEventData)data);
+                }
+            );
             eventTrigger.triggers.Add(entry);
         }
         else

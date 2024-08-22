@@ -1,7 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
-using UnityEngine;
 using PrimeTween; // Import PrimeTween namespace
+using UnityEngine;
 
 public class LookAtGameObject : MonoBehaviour
 {
@@ -32,7 +32,9 @@ public class LookAtGameObject : MonoBehaviour
 
             // Rotate this GameObject to look at the player with an offset using PrimeTween
             Vector3 targetPosition = player.transform.position + offset;
-            Quaternion targetRotation = Quaternion.LookRotation(targetPosition - transform.position);
+            Quaternion targetRotation = Quaternion.LookRotation(
+                targetPosition - transform.position
+            );
             lookAtTween = Tween.Rotation(transform, targetRotation, rotationSpeed);
         }
     }

@@ -263,6 +263,17 @@ public partial class @DefaultControls: IInputActionCollection2, IDisposable
                     ""action"": ""ReverseDirection"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""afb87614-bfbc-486d-9ef7-abcd4beea35f"",
+                    ""path"": ""<Keyboard>/#(S)"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Keyboard;Mouse"",
+                    ""action"": ""ReverseDirection"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
                 }
             ]
         },

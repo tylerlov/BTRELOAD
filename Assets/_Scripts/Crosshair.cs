@@ -1,28 +1,37 @@
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using Chronos;
+using DG.Tweening;
+using FluffyUnderware.Curvy.Controllers;
+using FMODUnity;
+using MoreMountains.Feedbacks;
+using SonicBloom.Koreo;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
-using SonicBloom.Koreo;
-using MoreMountains.Feedbacks;
-using FluffyUnderware.Curvy.Controllers;
-using Chronos;
-using FMODUnity;
 using UnityEngine.VFX;
-using DG.Tweening;
-using System;
-using System.Collections;
-using System.Collections.Generic;
 
 public class Crosshair : MonoBehaviour
 {
     public static Crosshair Instance { get; private set; }
 
     [Header("Core References")]
-    [SerializeField] private GameObject Player;
-    [SerializeField] private GameObject LineToTarget;
-    [SerializeField] private GameObject RaySpawn;
-    [SerializeField] private GameObject RaySpawnEnemyLocking;
-    [SerializeField] private GameObject Reticle;
+    [SerializeField]
+    private GameObject Player;
+
+    [SerializeField]
+    private GameObject LineToTarget;
+
+    [SerializeField]
+    private GameObject RaySpawn;
+
+    [SerializeField]
+    private GameObject RaySpawnEnemyLocking;
+
+    [SerializeField]
+    private GameObject Reticle;
 
     [Header("Locking and Targeting")]
     public int Locks;
@@ -31,19 +40,28 @@ public class Crosshair : MonoBehaviour
     public bool triggeredLockFire;
     public int maxLockedEnemyTargets = 3;
     public int maxTargets = 6;
-    [SerializeField] private int range = 300;
+
+    [SerializeField]
+    private int range = 300;
     public float bulletLockInterval = 0.1f;
     public float enemyLockInterval = 0.2f;
 
     [Header("Raycast Settings")]
     public Vector3 bulletLockBoxSize = new Vector3(1, 1, 1);
     public bool showRaycastGizmo = true;
-    [SerializeField] private LayerMask groundMask;
+
+    [SerializeField]
+    private LayerMask groundMask;
 
     [Header("Lock-On Visuals")]
-    [SerializeField] private GameObject lockOnPrefab;
-    [SerializeField] private float initialScale = 1f;
-    [SerializeField] private float initialTransparency = 0.5f;
+    [SerializeField]
+    private GameObject lockOnPrefab;
+
+    [SerializeField]
+    private float initialScale = 1f;
+
+    [SerializeField]
+    private float initialTransparency = 0.5f;
 
     [Header("Feedback and Effects")]
     public MMF_Player lockFeedback;
@@ -57,25 +75,47 @@ public class Crosshair : MonoBehaviour
     public GameObject BonusDamage;
 
     [Header("Time Control")]
-    [SerializeField] private float rewindTimeScale = -2f;
-    [SerializeField] private float rewindDuration = 1f;
-    [SerializeField] private float returnToNormalDuration = 0.25f;
-    [SerializeField] private float slowTimeScale = 0.5f;
-    [SerializeField] private float slowTimeDuration = 5f;
-    [SerializeField] private float rewindCooldown = 0.5f;
-    [SerializeField] private float maxRewindDuration = 1f;
+    [SerializeField]
+    private float rewindTimeScale = -2f;
+
+    [SerializeField]
+    private float rewindDuration = 1f;
+
+    [SerializeField]
+    private float returnToNormalDuration = 0.25f;
+
+    [SerializeField]
+    private float slowTimeScale = 0.5f;
+
+    [SerializeField]
+    private float slowTimeDuration = 5f;
+
+    [SerializeField]
+    private float rewindCooldown = 0.5f;
+
+    [SerializeField]
+    private float maxRewindDuration = 1f;
 
     [Header("FMOD Events")]
-    [SerializeField] private EventReference firingBlastsEvent;
-    [SerializeField] private EventReference randomShootingEvent;
-    [SerializeField] private EventReference shootTagEvent;
+    [SerializeField]
+    private EventReference firingBlastsEvent;
+
+    [SerializeField]
+    private EventReference randomShootingEvent;
+
+    [SerializeField]
+    private EventReference shootTagEvent;
 
     [Header("Projectile Launch")]
-    [SerializeField] private float launchDelay = 0.1f;
+    [SerializeField]
+    private float launchDelay = 0.1f;
 
     [Header("Koreography Events")]
-    [EventID] public string eventIDShooting;
-    [EventID] public string eventIDRewindTime;
+    [EventID]
+    public string eventIDShooting;
+
+    [EventID]
+    public string eventIDRewindTime;
 
     [Header("Targets")]
     public List<Transform> projectileTargetList = new List<Transform>();
@@ -96,15 +136,19 @@ public class Crosshair : MonoBehaviour
     private Transform canvas;
     private UILockOnEffect uiLockOnEffect;
 
-    private RaycastHit hit, hitEnemy;
-    private RaycastHit[] lockHits = new RaycastHit[10], lockEnemyHits = new RaycastHit[10];
+    private RaycastHit hit,
+        hitEnemy;
+    private RaycastHit[] lockHits = new RaycastHit[10],
+        lockEnemyHits = new RaycastHit[10];
 
-    private bool stereoVibrateSwitch, collectHealthMode;
+    private bool stereoVibrateSwitch,
+        collectHealthMode;
 
     public event Action<float> OnRewindStart;
     public event Action OnRewindEnd;
 
-    private float lastBulletTime, lastEnemyTime;
+    private float lastBulletTime,
+        lastEnemyTime;
     private int enemyTargetListIndex;
 
     private bool isQuickTap;
@@ -112,7 +156,8 @@ public class Crosshair : MonoBehaviour
     private const float tapThreshold = 0.1f;
 
     private float lastRewindTime = 0f;
-    private bool delayLoop = false, rewindTriggedStillPressed = false;
+    private bool delayLoop = false,
+        rewindTriggedStillPressed = false;
 
     private void Awake()
     {
@@ -142,7 +187,9 @@ public class Crosshair : MonoBehaviour
         {
             musicPlayback = musicGameObject.GetComponent<StudioEventEmitter>();
             if (musicPlayback == null)
-                Debug.LogError("StudioEventEmitter component not found on 'FMOD Music' GameObject.");
+                Debug.LogError(
+                    "StudioEventEmitter component not found on 'FMOD Music' GameObject."
+                );
         }
         else
             Debug.LogError("GameObject with name 'FMOD Music' not found in the scene.");
@@ -217,11 +264,19 @@ public class Crosshair : MonoBehaviour
         }
     }
 
-    private bool CheckLockProjectilesButtonDown() => playerInputActions.Player.LockProjectiles.triggered;
-    private bool CheckLockProjectilesButtonUp() => !playerInputActions.Player.LockProjectiles.IsPressed();
-    private bool CheckLockProjectiles() => playerInputActions.Player.LockProjectiles.ReadValue<float>() > 0;
+    private bool CheckLockProjectilesButtonDown() =>
+        playerInputActions.Player.LockProjectiles.triggered;
+
+    private bool CheckLockProjectilesButtonUp() =>
+        !playerInputActions.Player.LockProjectiles.IsPressed();
+
+    private bool CheckLockProjectiles() =>
+        playerInputActions.Player.LockProjectiles.ReadValue<float>() > 0;
+
     private bool CheckLockEnemies() => playerInputActions.Player.LockEnemies.ReadValue<float>() > 0;
+
     private bool CheckRewindToBeat() => playerInputActions.Player.RewindTime.ReadValue<float>() > 0;
+
     private bool CheckSlowToBeat() => playerInputActions.Player.SlowTime.ReadValue<float>() > 0;
 
     private void HandleRewindToBeat()
@@ -235,7 +290,8 @@ public class Crosshair : MonoBehaviour
 
     private IEnumerator RewindToBeat()
     {
-        if (delayLoop) yield break;
+        if (delayLoop)
+            yield break;
 
         delayLoop = true;
         ActivateRewindEffects(true);
@@ -251,10 +307,12 @@ public class Crosshair : MonoBehaviour
         splineControl.Speed = -rewindSpeed; // Negative for reverse movement
         OnRewindStart?.Invoke(rewindTimeScale);
         rewindFeedback.PlayFeedbacks();
-        
+
         JPGEffectController.Instance.SetJPGIntensity(0.7f, 0.5f);
 
-        yield return StartCoroutine(GameManager.instance.RewindTime(rewindTimeScale, rewindDuration, returnToNormalDuration));
+        yield return StartCoroutine(
+            GameManager.instance.RewindTime(rewindTimeScale, rewindDuration, returnToNormalDuration)
+        );
 
         // Reset after rewind
         splineControl.RelativePosition = newPosition; // Set to the new position after rewind
@@ -295,52 +353,56 @@ public class Crosshair : MonoBehaviour
             StartCoroutine(SlowToBeat());
     }
 
+    private IEnumerator SlowToBeat()
+    {
+        if (delayLoop)
+            yield break;
+        delayLoop = true;
 
-private IEnumerator SlowToBeat()
-{
-    if (delayLoop) yield break;
-    delayLoop = true;
+        slowTime.enabled = true;
+        ActivateRewindEffects(true);
 
-    slowTime.enabled = true;
-    ActivateRewindEffects(true);
+        float startPosition = splineControl.RelativePosition;
+        float originalSpeed = splineControl.Speed;
+        float slowedSpeed = originalSpeed * slowTimeScale;
 
-    float startPosition = splineControl.RelativePosition;
-    float originalSpeed = splineControl.Speed;
-    float slowedSpeed = originalSpeed * slowTimeScale;
+        // Apply slow motion effects
+        splineControl.Speed = slowedSpeed;
+        OnRewindStart?.Invoke(slowTimeScale);
+        rewindFeedback.PlayFeedbacks();
+        JPGEffectController.Instance.SetJPGIntensity(0.7f, 0.5f);
 
-    // Apply slow motion effects
-    splineControl.Speed = slowedSpeed;
-    OnRewindStart?.Invoke(slowTimeScale);
-    rewindFeedback.PlayFeedbacks();
-    JPGEffectController.Instance.SetJPGIntensity(0.7f, 0.5f);
+        yield return StartCoroutine(
+            GameManager.instance.RewindTime(slowTimeScale, slowTimeDuration, returnToNormalDuration)
+        );
 
-    yield return StartCoroutine(GameManager.instance.RewindTime(slowTimeScale, slowTimeDuration, returnToNormalDuration));
+        // Calculate new position based on slowed speed and duration
+        float distanceTraveled = slowedSpeed * slowTimeDuration;
+        float newPosition = Mathf.Clamp01(startPosition + distanceTraveled);
 
-    // Calculate new position based on slowed speed and duration
-    float distanceTraveled = slowedSpeed * slowTimeDuration;
-    float newPosition = Mathf.Clamp01(startPosition + distanceTraveled);
+        // Reset after slow motion
+        splineControl.RelativePosition = newPosition;
+        splineControl.Speed = originalSpeed;
+        pMove.UpdateAnimation();
+        splineControl.MovementDirection = MovementDirection.Forward;
 
-    // Reset after slow motion
-    splineControl.RelativePosition = newPosition;
-    splineControl.Speed = originalSpeed;
-    pMove.UpdateAnimation();
-    splineControl.MovementDirection = MovementDirection.Forward;
+        JPGEffectController.Instance.SetJPGIntensity(0f, 0.5f);
+        DeactivateRewindEffects();
+        OnRewindEnd?.Invoke();
 
-    JPGEffectController.Instance.SetJPGIntensity(0f, 0.5f);
-    DeactivateRewindEffects();
-    OnRewindEnd?.Invoke();
-
-    slowTime.enabled = false;
-    delayLoop = false;
-}
+        slowTime.enabled = false;
+        delayLoop = false;
+    }
 
     public void OnLock()
     {
-        if (!IsTimeToLockBullet()) return;
+        if (!IsTimeToLockBullet())
+            return;
 
         foreach (var hit in PerformBulletLockBoxCast())
         {
-            if (!IsValidBulletHit(hit)) continue;
+            if (!IsValidBulletHit(hit))
+                continue;
 
             UpdateLastBulletLockTime();
             if (isQuickTap)
@@ -358,12 +420,21 @@ private IEnumerator SlowToBeat()
     private RaycastHit[] PerformBulletLockBoxCast()
     {
         RaycastHit[] hits = new RaycastHit[10];
-        int hitsCount = Physics.BoxCastNonAlloc(RaySpawn.transform.position, bulletLockBoxSize / 2, RaySpawn.transform.forward, hits, RaySpawn.transform.rotation, range);
+        int hitsCount = Physics.BoxCastNonAlloc(
+            RaySpawn.transform.position,
+            bulletLockBoxSize / 2,
+            RaySpawn.transform.forward,
+            hits,
+            RaySpawn.transform.rotation,
+            range
+        );
         Array.Resize(ref hits, hitsCount);
         return hits;
     }
 
-    private bool IsValidBulletHit(RaycastHit hit) => hit.collider != null && (hit.collider.CompareTag("Bullet") || hit.collider.CompareTag("LaunchableBullet"));
+    private bool IsValidBulletHit(RaycastHit hit) =>
+        hit.collider != null
+        && (hit.collider.CompareTag("Bullet") || hit.collider.CompareTag("LaunchableBullet"));
 
     private void UpdateLastBulletLockTime() => lastBulletTime = Time.time;
 
@@ -376,7 +447,9 @@ private IEnumerator SlowToBeat()
             return true;
         }
         else if (!collectHealthMode && staminaController.canRewind && CheckLockProjectiles())
+        {
             return TryAddBulletToLockList(hit, hitPSB);
+        }
         return false;
     }
 
@@ -392,7 +465,11 @@ private IEnumerator SlowToBeat()
 
     private bool TryAddBulletToLockList(RaycastHit hit, ProjectileStateBased hitPSB)
     {
-        if (!projectileTargetList.Contains(hit.transform) && hitPSB && hitPSB.GetCurrentStateType() == typeof(EnemyShotState))
+        if (
+            !projectileTargetList.Contains(hit.transform)
+            && hitPSB
+            && hitPSB.GetCurrentStateType() == typeof(EnemyShotState)
+        )
         {
             if (LockedList.Count < maxTargets && projectileTargetList.Count < maxTargets)
             {
@@ -419,16 +496,19 @@ private IEnumerator SlowToBeat()
 
     public void OnLockEnemy()
     {
-        if (!IsTimeToLockEnemy()) return;
+        if (!IsTimeToLockEnemy())
+            return;
 
         foreach (var hit in PerformEnemyLockBoxCast())
         {
-            if (!IsValidEnemyHit(hit)) continue;
+            if (!IsValidEnemyHit(hit))
+                continue;
 
             UpdateLastEnemyLockTime();
             hitEnemy = hit;
 
-            if (!ShouldLockOntoEnemy()) continue;
+            if (!ShouldLockOntoEnemy())
+                continue;
 
             Transform enemyTransform = GetEnemyTransform(hit);
             if (enemyTransform != null && !enemyTargetList.Contains(enemyTransform))
@@ -443,20 +523,31 @@ private IEnumerator SlowToBeat()
 
     private RaycastHit[] PerformEnemyLockBoxCast()
     {
-        int combinedLayerMask = (1 << LayerMask.NameToLayer("Enemy")) | (1 << LayerMask.NameToLayer("Ground"));
+        int combinedLayerMask =
+            (1 << LayerMask.NameToLayer("Enemy")) | (1 << LayerMask.NameToLayer("Ground"));
         RaycastHit[] hits = new RaycastHit[10];
-        Physics.BoxCastNonAlloc(RaySpawn.transform.position, RaySpawnEnemyLocking.transform.lossyScale / 8, RaySpawnEnemyLocking.transform.forward, hits, RaySpawnEnemyLocking.transform.rotation, range, combinedLayerMask);
+        Physics.BoxCastNonAlloc(
+            RaySpawn.transform.position,
+            RaySpawnEnemyLocking.transform.lossyScale / 8,
+            RaySpawnEnemyLocking.transform.forward,
+            hits,
+            RaySpawnEnemyLocking.transform.rotation,
+            range,
+            combinedLayerMask
+        );
         return hits;
     }
 
-    private bool IsValidEnemyHit(RaycastHit hit) => hit.collider != null && hit.collider.CompareTag("Enemy") && CheckLockProjectiles();
+    private bool IsValidEnemyHit(RaycastHit hit) =>
+        hit.collider != null && hit.collider.CompareTag("Enemy") && CheckLockProjectiles();
 
     private bool ShouldLockOntoEnemy() => CheckLockEnemies();
 
     private Transform GetEnemyTransform(RaycastHit hit)
     {
         EnemyBasicSetup enemySetup = hit.collider.GetComponentInParent<EnemyBasicSetup>();
-        EnemyBasicDamagablePart damagablePart = hit.collider.GetComponent<EnemyBasicDamagablePart>();
+        EnemyBasicDamagablePart damagablePart =
+            hit.collider.GetComponent<EnemyBasicDamagablePart>();
 
         if (enemySetup != null)
         {
@@ -507,7 +598,9 @@ private IEnumerator SlowToBeat()
         {
             var target = projectileTargetList[0];
             target.transform.GetChild(0).gameObject.SetActive(true);
-            target.GetComponent<ProjectileStateBased>().ChangeState(new PlayerLockedState(target.GetComponent<ProjectileStateBased>()));
+            target
+                .GetComponent<ProjectileStateBased>()
+                .ChangeState(new PlayerLockedState(target.GetComponent<ProjectileStateBased>()));
             LockedList.Add(target);
             StartCoroutine(LockVibrate());
             lockFeedback.PlayFeedbacks();
@@ -541,16 +634,22 @@ private IEnumerator SlowToBeat()
                 spriteRenderer.DOFade(1f, 0.5f);
             }
 
-            lockOnInstance.transform.DOScale(Vector3.zero, 1f).OnComplete(() => Destroy(lockOnInstance));
+            lockOnInstance
+                .transform.DOScale(Vector3.zero, 1f)
+                .OnComplete(() => Destroy(lockOnInstance));
         }
     }
 
     private void OnMusicalShoot(KoreographyEvent evt)
     {
-        if ((!CheckLockProjectiles() || triggeredLockFire) && LockedList.Count > 0 && Time.timeScale != 0f)
+        if (
+            (!CheckLockProjectiles() || triggeredLockFire)
+            && LockedList.Count > 0
+            && Time.timeScale != 0f
+        )
         {
             List<PlayerLockedState> projectilesToLaunch = PrepareProjectilesToLaunch();
-            
+
             if (projectilesToLaunch.Count > 0)
                 StartCoroutine(LaunchProjectilesWithDelay(projectilesToLaunch));
             else
@@ -567,10 +666,12 @@ private IEnumerator SlowToBeat()
 
         for (int i = LockedList.Count - 1; i >= 0; i--)
         {
-            if (LockedList[i] == null) continue;
+            if (LockedList[i] == null)
+                continue;
 
             ProjectileStateBased projectile = LockedList[i].GetComponent<ProjectileStateBased>();
-            if (projectile == null) continue;
+            if (projectile == null)
+                continue;
 
             if (!(projectile.GetCurrentState() is PlayerLockedState))
                 projectile.ChangeState(new PlayerLockedState(projectile));
@@ -580,7 +681,11 @@ private IEnumerator SlowToBeat()
             {
                 if (enemyTargetList.Count > 0)
                 {
-                    enemyTargetListIndex = Mathf.Clamp(enemyTargetListIndex, 1, enemyTargetList.Count);
+                    enemyTargetListIndex = Mathf.Clamp(
+                        enemyTargetListIndex,
+                        1,
+                        enemyTargetList.Count
+                    );
                     Transform currEnemyTarg = enemyTargetList[enemyTargetListIndex - 1];
 
                     if (currEnemyTarg != null && currEnemyTarg.gameObject.activeSelf)
@@ -608,7 +713,7 @@ private IEnumerator SlowToBeat()
         StartCoroutine(ShootVibrate());
         shootFeedback.PlayFeedbacks();
         PlayRandomShooting();
-        
+
         locking = true;
         GameManager.instance.AddShotTally(1);
         Locks--;
@@ -676,8 +781,11 @@ private IEnumerator SlowToBeat()
         yield return new WaitForSeconds(.1f);
     }
 
-    private void PlayRandomLocking() => FMODUnity.RuntimeManager.PlayOneShot("event:/Player/Locking");
+    private void PlayRandomLocking() =>
+        FMODUnity.RuntimeManager.PlayOneShot("event:/Player/Locking");
+
     private void PlayRandomShooting() => RuntimeManager.PlayOneShot(randomShootingEvent);
+
     private void PlayRandomShootTag() => RuntimeManager.PlayOneShot(shootTagEvent);
 
     private void UpdateTime(KoreographyEvent evt)
@@ -691,11 +799,23 @@ private IEnumerator SlowToBeat()
         if (Time.timeScale != 0f && CheckRewindToBeat())
         {
             rewindFeedback.PlayFeedbacks();
-            StartCoroutine(GameManager.instance.RewindTime(rewindTimeScale, rewindDuration, returnToNormalDuration));
+            StartCoroutine(
+                GameManager.instance.RewindTime(
+                    rewindTimeScale,
+                    rewindDuration,
+                    returnToNormalDuration
+                )
+            );
         }
         if (Time.timeScale != 0f && CheckSlowToBeat())
         {
-            StartCoroutine(GameManager.instance.RewindTime(slowTimeScale, slowTimeDuration, returnToNormalDuration));
+            StartCoroutine(
+                GameManager.instance.RewindTime(
+                    slowTimeScale,
+                    slowTimeDuration,
+                    returnToNormalDuration
+                )
+            );
         }
         if (CheckRewindToBeat() && rewindTriggedStillPressed)
         {
@@ -708,7 +828,7 @@ private IEnumerator SlowToBeat()
         if (triggeredLockFire && !CheckLockProjectiles())
             triggeredLockFire = false;
     }
-    
+
     public void ReleasePlayerLocks()
     {
         ClearLockedTargets();
@@ -734,7 +854,14 @@ private IEnumerator SlowToBeat()
 
     public Vector3 RaycastTarget()
     {
-        if (Physics.Raycast(RaySpawn.transform.position, RaySpawn.transform.forward, out RaycastHit hit, range))
+        if (
+            Physics.Raycast(
+                RaySpawn.transform.position,
+                RaySpawn.transform.forward,
+                out RaycastHit hit,
+                range
+            )
+        )
             return hit.point;
         else
             return new Ray(RaySpawn.transform.position, RaySpawn.transform.forward).GetPoint(range);
@@ -745,9 +872,16 @@ private IEnumerator SlowToBeat()
         if (showRaycastGizmo && RaySpawn != null)
         {
             Gizmos.color = Color.red;
-            Matrix4x4 rotationMatrix = Matrix4x4.TRS(RaySpawn.transform.position, RaySpawn.transform.rotation, Vector3.one);
+            Matrix4x4 rotationMatrix = Matrix4x4.TRS(
+                RaySpawn.transform.position,
+                RaySpawn.transform.rotation,
+                Vector3.one
+            );
             Gizmos.matrix = rotationMatrix;
-            Gizmos.DrawWireCube(Vector3.forward * range * 0.5f, new Vector3(bulletLockBoxSize.x, bulletLockBoxSize.y, range));
+            Gizmos.DrawWireCube(
+                Vector3.forward * range * 0.5f,
+                new Vector3(bulletLockBoxSize.x, bulletLockBoxSize.y, range)
+            );
         }
     }
 

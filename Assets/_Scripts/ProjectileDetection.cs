@@ -1,6 +1,6 @@
-using UnityEngine;
 using System.Collections;
 using FMODUnity;
+using UnityEngine;
 
 public class ProjectileDetection : MonoBehaviour
 {
@@ -67,9 +67,12 @@ public class ProjectileDetection : MonoBehaviour
         Vector3 directionToProjectile = (projectilePosition - transform.position).normalized;
         float angle = Vector3.SignedAngle(Vector3.forward, directionToProjectile, Vector3.up);
 
-        if (angle >= -45f && angle < 45f) return 0; // Up
-        if (angle >= 45f && angle < 135f) return 2; // Right
-        if (angle >= 135f || angle < -135f) return 1; // Down
+        if (angle >= -45f && angle < 45f)
+            return 0; // Up
+        if (angle >= 45f && angle < 135f)
+            return 2; // Right
+        if (angle >= 135f || angle < -135f)
+            return 1; // Down
         return 3; // Left
     }
 
@@ -83,7 +86,8 @@ public class ProjectileDetection : MonoBehaviour
         {
             float t = elapsedTime / spriteVisibilityDuration;
             float currentScale = Mathf.Lerp(1f, maxScaleFactor, t);
-            directionArrows[arrowIndex].transform.localScale = originalScales[arrowIndex] * currentScale;
+            directionArrows[arrowIndex].transform.localScale =
+                originalScales[arrowIndex] * currentScale;
 
             elapsedTime += Time.deltaTime;
             yield return null;
@@ -98,7 +102,9 @@ public class ProjectileDetection : MonoBehaviour
         if (!detectionSoundEvent.IsNull)
         {
             detectionSoundInstance = FMODUnity.RuntimeManager.CreateInstance(detectionSoundEvent);
-            detectionSoundInstance.set3DAttributes(FMODUnity.RuntimeUtils.To3DAttributes(transform.position));
+            detectionSoundInstance.set3DAttributes(
+                FMODUnity.RuntimeUtils.To3DAttributes(transform.position)
+            );
             detectionSoundInstance.start();
         }
         else

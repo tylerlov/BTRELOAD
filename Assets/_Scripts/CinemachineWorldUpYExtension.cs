@@ -1,11 +1,13 @@
-using UnityEngine;
 using Cinemachine;
+using UnityEngine;
 
 [SaveDuringPlay]
 [AddComponentMenu("Cinemachine/WorldUpY Extension")]
 public class CinemachineWorldUpYExtension : CinemachineExtension
 {
-    [Tooltip("Distance from screen edge to maintain target (in viewport space, 0 is edge, 0.5 is center)")]
+    [Tooltip(
+        "Distance from screen edge to maintain target (in viewport space, 0 is edge, 0.5 is center)"
+    )]
     [Range(0f, 0.5f)]
     public float borderBuffer = 0.05f;
 
@@ -29,7 +31,8 @@ public class CinemachineWorldUpYExtension : CinemachineExtension
         CinemachineVirtualCameraBase vcam,
         CinemachineCore.Stage stage,
         ref CameraState state,
-        float deltaTime)
+        float deltaTime
+    )
     {
         if (stage == CinemachineCore.Stage.Finalize)
         {
@@ -46,11 +49,16 @@ public class CinemachineWorldUpYExtension : CinemachineExtension
             float upDot = Vector3.Dot(directionToTarget, cameraUp);
 
             // Clamp the target position to the screen border
-            float clampedRightDot = Mathf.Clamp(rightDot, -0.5f + borderBuffer, 0.5f - borderBuffer);
+            float clampedRightDot = Mathf.Clamp(
+                rightDot,
+                -0.5f + borderBuffer,
+                0.5f - borderBuffer
+            );
             float clampedUpDot = Mathf.Clamp(upDot, -0.5f + borderBuffer, 0.5f - borderBuffer);
 
             // Calculate the adjusted forward direction
-            Vector3 adjustedForward = cameraForward + clampedRightDot * cameraRight + clampedUpDot * cameraUp;
+            Vector3 adjustedForward =
+                cameraForward + clampedRightDot * cameraRight + clampedUpDot * cameraUp;
             adjustedForward.Normalize();
 
             // Apply camera tilt
@@ -70,10 +78,15 @@ public class CinemachineWorldUpYExtension : CinemachineExtension
             Quaternion targetRotation = Quaternion.LookRotation(adjustedForward, up);
 
             // Limit rotation change to prevent sudden flips
-            Quaternion limitedRotation = Quaternion.RotateTowards(lastRotation, targetRotation, maxRotationDelta);
+            Quaternion limitedRotation = Quaternion.RotateTowards(
+                lastRotation,
+                targetRotation,
+                maxRotationDelta
+            );
 
             // Apply the new rotation
-            state.OrientationCorrection = Quaternion.Inverse(state.FinalOrientation) * limitedRotation;
+            state.OrientationCorrection =
+                Quaternion.Inverse(state.FinalOrientation) * limitedRotation;
 
             // Store the new rotation for the next frame
             lastRotation = limitedRotation;
@@ -82,7 +95,15 @@ public class CinemachineWorldUpYExtension : CinemachineExtension
 
     private Vector3 GetClosestWorldAxis(Vector3 direction)
     {
-        Vector3[] worldAxes = { Vector3.up, Vector3.down, Vector3.right, Vector3.left, Vector3.forward, Vector3.back };
+        Vector3[] worldAxes =
+        {
+            Vector3.up,
+            Vector3.down,
+            Vector3.right,
+            Vector3.left,
+            Vector3.forward,
+            Vector3.back,
+        };
         Vector3 closestAxis = Vector3.up;
         float closestAngle = float.MaxValue;
 
