@@ -74,6 +74,15 @@ public class ProjectileManager : MonoBehaviour
     private int initialLockedFXPoolSize = 10;
     private Queue<VisualEffect> lockedFXPool = new Queue<VisualEffect>();
 
+    private Dictionary<int, Material> materialLookup = new Dictionary<int, Material>();
+
+    private Dictionary<Transform, Vector3> cachedEnemyPositions = new Dictionary<Transform, Vector3>();
+    private float enemyPositionUpdateInterval = 0.5f;
+    private float lastEnemyPositionUpdateTime;
+
+    private Dictionary<ProjectileStateBased, float> lastPredictionTimes = new Dictionary<ProjectileStateBased, float>();
+    private float predictionUpdateInterval = 0.1f;
+
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -85,7 +94,7 @@ public class ProjectileManager : MonoBehaviour
         Instance = this;
 
         // Initialize collections
-        projectileIds = new NativeList<int>(100, Allocator.Persistent);
+        projectileIds = new NativeList<int>(Allocator.Persistent);
         projectileLifetimes = new NativeHashMap<int, float>(100, Allocator.Persistent);
         projectileLookup = new Dictionary<int, ProjectileStateBased>();
 
@@ -117,16 +126,6 @@ public class ProjectileManager : MonoBehaviour
         }
     }
 
-    public void ReturnRadarSymbolToPool(GameObject radarSymbol)
-    {
-        radarSymbol.SetActive(false);
-        radarSymbol.transform.SetParent(transform); // Reset parent to ProjectileManager
-        if (!radarSymbolPool.Contains(radarSymbol))
-        {
-            radarSymbolPool.Enqueue(radarSymbol);
-        }
-    }
-
     public GameObject GetRadarSymbolFromPool()
     {
         if (radarSymbolPool.Count > 0)
@@ -135,7 +134,14 @@ public class ProjectileManager : MonoBehaviour
             radarSymbol.SetActive(true);
             return radarSymbol;
         }
-        return null; // Return null if no symbols are available
+        return null;
+    }
+
+    public void ReturnRadarSymbolToPool(GameObject radarSymbol)
+    {
+        radarSymbol.SetActive(false);
+        radarSymbol.transform.SetParent(transform);
+        radarSymbolPool.Enqueue(radarSymbol);
     }
 
     // This method will be called every time a scene is loaded
@@ -241,6 +247,25 @@ public class ProjectileManager : MonoBehaviour
         );
     }
 
+    private int RegisterMaterial(Material material)
+    {
+        if (material == null)
+            return -1;
+        int id = material.GetInstanceID();
+        if (!materialLookup.ContainsKey(id))
+        {
+            materialLookup[id] = material;
+        }
+        return id;
+    }
+
+    private Material GetMaterialById(int materialId)
+    {
+        return materialId != -1 && materialLookup.TryGetValue(materialId, out Material material)
+            ? material
+            : null;
+    }
+
     [BurstCompile]
     private struct UpdateProjectilesJob : IJobParallelFor
     {
@@ -277,49 +302,109 @@ public class ProjectileManager : MonoBehaviour
         float globalTimeScale = timekeeper.Clock("Test").localTimeScale;
         float deltaTime = Time.deltaTime;
 
-        var projectilesToRemove = new List<int>();
+        int projectileCount = projectileIds.Length;
+        if (projectileCount == 0) return;
 
-        for (int i = 0; i < projectileIds.Length; i++)
+        const int batchSize = 64;
+        for (int i = 0; i < projectileCount; i += batchSize)
         {
-            int projectileId = projectileIds[i];
-            if (projectileLookup.TryGetValue(projectileId, out ProjectileStateBased projectile))
-            {
-                projectile.CustomUpdate(globalTimeScale);
-
-                projectile.lifetime -= deltaTime * globalTimeScale;
-                if (projectile.lifetime <= 0)
-                {
-                    projectile.Death();
-                    projectilesToRemove.Add(projectileId);
-                }
-                else
-                {
-                    projectileLifetimes[projectileId] = projectile.lifetime;
-                }
-            }
-            else
-            {
-                projectilesToRemove.Add(projectileId);
-            }
-        }
-
-        // Remove projectiles after the loop
-        for (int i = projectileIds.Length - 1; i >= 0; i--)
-        {
-            if (projectilesToRemove.Contains(projectileIds[i]))
-            {
-                projectileIds.RemoveAt(i);
-            }
-        }
-
-        foreach (int idToRemove in projectilesToRemove)
-        {
-            projectileLifetimes.Remove(idToRemove);
-            projectileLookup.Remove(idToRemove);
+            int currentBatchSize = Math.Min(batchSize, projectileCount - i);
+            UpdateProjectileBatch(i, currentBatchSize, globalTimeScale, deltaTime);
         }
 
         ProcessProjectileRequests();
         CheckAndReplenishPool();
+    }
+
+    private void UpdateProjectileBatch(int startIndex, int batchSize, float globalTimeScale, float deltaTime)
+    {
+        var projectilesToRemove = new NativeList<int>(batchSize, Allocator.TempJob);
+
+        for (int i = startIndex; i < startIndex + batchSize && i < projectileIds.Length; i++)
+        {
+            int projectileId = projectileIds[i];
+            
+            if (projectileLifetimes.TryGetValue(projectileId, out float lifetime))
+            {
+                lifetime -= deltaTime * globalTimeScale;
+
+                if (lifetime <= 0)
+                {
+                    projectilesToRemove.Add(projectileId);
+                    if (projectileLookup.TryGetValue(projectileId, out ProjectileStateBased projectile))
+                    {
+                        projectile.Death();
+                    }
+                }
+                else
+                {
+                    projectileLifetimes[projectileId] = lifetime;
+                    if (projectileLookup.TryGetValue(projectileId, out ProjectileStateBased projectile))
+                    {
+                        projectile.CustomUpdate(globalTimeScale);
+                    }
+                }
+            }
+            else
+            {
+                // Handle the case where the projectile ID exists in projectileIds but not in projectileLifetimes
+                projectilesToRemove.Add(projectileId);
+                ConditionalDebug.LogWarning($"Projectile ID {projectileId} not found in projectileLifetimes. Removing.");
+            }
+        }
+
+        if (projectilesToRemove.Length > 0)
+        {
+            RemoveProjectiles(projectilesToRemove);
+        }
+
+        projectilesToRemove.Dispose();
+    }
+
+    [BurstCompile]
+    private struct RemoveProjectilesJob : IJob
+    {
+        public NativeList<int> ProjectileIds;
+        public NativeHashMap<int, float> ProjectileLifetimes;
+        [ReadOnly] public NativeArray<int> ProjectilesToRemove;
+
+        public void Execute()
+        {
+            for (int i = ProjectileIds.Length - 1; i >= 0; i--)
+            {
+                int currentId = ProjectileIds[i];
+                if (ProjectilesToRemove.BinarySearch(currentId) >= 0)
+                {
+                    ProjectileIds.RemoveAtSwapBack(i);
+                    ProjectileLifetimes.Remove(currentId);
+                }
+            }
+        }
+    }
+
+    private void RemoveProjectiles(NativeList<int> projectilesToRemove)
+    {
+        projectilesToRemove.Sort();
+
+        var sortedProjectilesToRemove = new NativeArray<int>(projectilesToRemove.AsArray(), Allocator.TempJob);
+
+        var job = new RemoveProjectilesJob
+        {
+            ProjectileIds = projectileIds,
+            ProjectileLifetimes = projectileLifetimes,
+            ProjectilesToRemove = sortedProjectilesToRemove
+        };
+
+        JobHandle jobHandle = job.Schedule();
+        jobHandle.Complete();
+
+        // Remove from projectileLookup (can't be done in the job as it's not a native collection)
+        for (int i = 0; i < sortedProjectilesToRemove.Length; i++)
+        {
+            projectileLookup.Remove(sortedProjectilesToRemove[i]);
+        }
+
+        sortedProjectilesToRemove.Dispose();
     }
 
     [BurstCompile]
@@ -500,72 +585,81 @@ public class ProjectileManager : MonoBehaviour
         {
             if (projectilePool.Count == 0)
             {
-                Debug.LogWarning(
-                    "[ProjectileManager] No projectile available in pool, skipping shot."
-                );
+                Debug.LogWarning("[ProjectileManager] No projectile available in pool, skipping shot.");
                 return;
             }
 
             ProjectileStateBased projectile = projectilePool.Dequeue();
-            projectile.transform.SetParent(transform);
-            projectile.transform.position = position;
-            projectile.transform.rotation = rotation;
-            projectile.gameObject.SetActive(true);
-            projectile.transform.localScale = Vector3.one * uniformScale; // Set the scale of the projectile
-
-            // Check if the Enemy Shot FX prefab is assigned before instantiating
-            if (enemyShotFXPrefab != null)
-            {
-                GameObject enemyShotFX = Instantiate(enemyShotFXPrefab, projectile.transform);
-                enemyShotFX.transform.localPosition = Vector3.zero; // Center it on the projectile
-                enemyShotFX.transform.localScale = Vector3.one * uniformScale; // Set the scale of the FX to match the projectile
-                SetChildrenScale(enemyShotFX, Vector3.one * uniformScale); // Recursively set scale for all children
-                enemyShotFX.SetActive(true);
-            }
-
-            if (radarSymbolPool.Count > 0)
-            {
-                GameObject radarSymbol = GetRadarSymbolFromPool();
-                radarSymbol.transform.SetParent(projectile.transform);
-                radarSymbol.transform.localPosition = Vector3.zero; // Center it on the projectile
-                radarSymbol.SetActive(true);
-            }
-
-            projectile.rb.isKinematic = false;
-            projectile.rb.velocity = rotation * Vector3.forward * speed;
-            projectile.bulletSpeed = speed;
-            projectile.SetLifetime(lifetime);
-            projectile.EnableHoming(enableHoming);
-
-            if (material != null && projectile.modelRenderer.material != material)
-            {
-                projectile.modelRenderer.material = material;
-                projectile.modelRenderer.material.color = material.color;
-            }
-
-            if (!string.IsNullOrEmpty(clockKey))
-            {
-                projectile.SetClock(clockKey);
-            }
-
-            projectile.initialSpeed = speed;
-
-            // Set the accuracy for this specific projectile
-            projectile.SetAccuracy(accuracy);
-
-            RegisterProjectile(projectile);
-
-            lastCreatedProjectile = projectile; // Store the last created projectile
+            SetupProjectile(projectile, position, rotation, speed, lifetime, uniformScale, enableHoming, material, clockKey, accuracy);
+            
+            lastCreatedProjectile = projectile;
         });
 
         if (!shotRequested)
         {
-            ConditionalDebug.Log(
-                "[ProjectileManager] Enemy shot request denied due to rate limiting."
-            );
+            ConditionalDebug.Log("[ProjectileManager] Enemy shot request denied due to rate limiting.");
         }
 
         return lastCreatedProjectile;
+    }
+
+    private void SetupProjectile(
+        ProjectileStateBased projectile,
+        Vector3 position,
+        Quaternion rotation,
+        float speed,
+        float lifetime,
+        float uniformScale,
+        bool enableHoming,
+        Material material,
+        string clockKey,
+        float accuracy
+    )
+    {
+        projectile.transform.SetParent(transform);
+        projectile.transform.position = position;
+        projectile.transform.rotation = rotation;
+        projectile.gameObject.SetActive(true);
+        projectile.transform.localScale = Vector3.one * uniformScale;
+
+        if (enemyShotFXPrefab != null)
+        {
+            GameObject enemyShotFX = Instantiate(enemyShotFXPrefab, projectile.transform);
+            enemyShotFX.transform.localPosition = Vector3.zero;
+            enemyShotFX.transform.localScale = Vector3.one * uniformScale;
+            SetChildrenScale(enemyShotFX, Vector3.one * uniformScale);
+            enemyShotFX.SetActive(true);
+        }
+
+        GameObject radarSymbol = GetRadarSymbolFromPool();
+        if (radarSymbol != null)
+        {
+            radarSymbol.transform.SetParent(projectile.transform);
+            radarSymbol.transform.localPosition = Vector3.zero;
+            radarSymbol.SetActive(true);
+        }
+
+        projectile.rb.isKinematic = false;
+        projectile.rb.velocity = rotation * Vector3.forward * speed;
+        projectile.bulletSpeed = speed;
+        projectile.SetLifetime(lifetime);
+        projectile.EnableHoming(enableHoming);
+
+        if (material != null && projectile.modelRenderer.material != material)
+        {
+            projectile.modelRenderer.material = material;
+            projectile.modelRenderer.material.color = material.color;
+        }
+
+        if (!string.IsNullOrEmpty(clockKey))
+        {
+            projectile.SetClock(clockKey);
+        }
+
+        projectile.initialSpeed = speed;
+        projectile.SetAccuracy(accuracy);
+
+        RegisterProjectile(projectile);
     }
 
     private void SetChildrenScale(GameObject parent, Vector3 scale)
@@ -713,26 +807,41 @@ public class ProjectileManager : MonoBehaviour
         }
     }
 
+    private void UpdateEnemyPositions()
+    {
+        if (Time.time - lastEnemyPositionUpdateTime < enemyPositionUpdateInterval)
+            return;
+
+        cachedEnemyPositions.Clear();
+        GameObject[] enemies = GameObject.FindGameObjectsWithTag("Enemy");
+        foreach (GameObject enemy in enemies)
+        {
+            cachedEnemyPositions[enemy.transform] = enemy.transform.position;
+        }
+        lastEnemyPositionUpdateTime = Time.time;
+    }
+
     public void PredictAndRotateProjectile(ProjectileStateBased projectile)
     {
         if (projectile.currentTarget == null)
             return;
 
-        Vector3 targetVelocity = CalculateTargetVelocity(projectile.currentTarget.gameObject);
-        Vector3 toTarget = projectile.currentTarget.position - projectile.transform.position;
-        float distanceToTarget = toTarget.magnitude;
-        float projectileSpeed = projectile.bulletSpeed;
+        if (!lastPredictionTimes.TryGetValue(projectile, out float lastPredictionTime) || Time.time - lastPredictionTime >= predictionUpdateInterval)
+        {
+            Vector3 targetVelocity = CalculateTargetVelocity(projectile.currentTarget.gameObject);
+            Vector3 toTarget = projectile.currentTarget.position - projectile.transform.position;
+            float distanceToTarget = toTarget.magnitude;
+            float projectileSpeed = projectile.bulletSpeed;
 
-        float predictionTime = distanceToTarget / projectileSpeed;
-        Vector3 predictedPosition =
-            projectile.currentTarget.position + targetVelocity * predictionTime;
+            float predictionTime = distanceToTarget / projectileSpeed;
+            Vector3 predictedPosition = projectile.currentTarget.position + targetVelocity * predictionTime;
 
-        // Apply some randomness to the prediction based on accuracy
-        float randomFactor = Mathf.Lerp(0.2f, 0f, projectile.accuracy);
-        predictedPosition +=
-            UnityEngine.Random.insideUnitSphere * (distanceToTarget * randomFactor);
+            float randomFactor = Mathf.Lerp(0.2f, 0f, projectile.accuracy);
+            predictedPosition += UnityEngine.Random.insideUnitSphere * (distanceToTarget * randomFactor);
 
-        projectile.predictedPosition = predictedPosition;
+            projectile.predictedPosition = predictedPosition;
+            lastPredictionTimes[projectile] = Time.time;
+        }
     }
 
     public Vector3 CalculateTargetVelocity(GameObject target)
@@ -754,17 +863,18 @@ public class ProjectileManager : MonoBehaviour
 
     public Transform FindNearestEnemy(Vector3 position)
     {
-        GameObject[] enemies = GameObject.FindGameObjectsWithTag("Enemy");
+        UpdateEnemyPositions();
+
         Transform nearestEnemy = null;
         float nearestDistance = float.MaxValue;
 
-        foreach (GameObject enemy in enemies)
+        foreach (var kvp in cachedEnemyPositions)
         {
-            float distance = Vector3.Distance(position, enemy.transform.position);
+            float distance = Vector3.Distance(position, kvp.Value);
             if (distance < nearestDistance)
             {
                 nearestDistance = distance;
-                nearestEnemy = enemy.transform;
+                nearestEnemy = kvp.Key;
             }
         }
 
@@ -867,39 +977,18 @@ public class ProjectileManager : MonoBehaviour
         lockedFXPool.Enqueue(effect);
     }
 
-    private Dictionary<int, Material> materialLookup = new Dictionary<int, Material>();
-
-    private int RegisterMaterial(Material material)
-    {
-        if (material == null)
-            return -1;
-        int id = material.GetInstanceID();
-        if (!materialLookup.ContainsKey(id))
-        {
-            materialLookup[id] = material;
-        }
-        return id;
-    }
-
-    private Material GetMaterialById(int materialId)
-    {
-        return materialId != -1 && materialLookup.TryGetValue(materialId, out Material material)
-            ? material
-            : null;
-    }
-
     private void CheckAndReplenishPool()
-{
-    if (projectilePool.Count < initialPoolSize / 2)
     {
-        int toAdd = initialPoolSize - projectilePool.Count;
-        for (int i = 0; i < toAdd; i++)
+        if (projectilePool.Count < initialPoolSize / 2)
         {
-            ProjectileStateBased proj = Instantiate(projectilePrefab, transform);
-            proj.gameObject.SetActive(false);
-            projectilePool.Enqueue(proj);
+            int toAdd = initialPoolSize - projectilePool.Count;
+            for (int i = 0; i < toAdd; i++)
+            {
+                ProjectileStateBased proj = Instantiate(projectilePrefab, transform);
+                proj.gameObject.SetActive(false);
+                projectilePool.Enqueue(proj);
+            }
+            ConditionalDebug.Log($"Replenished projectile pool. New size: {projectilePool.Count}");
         }
-        ConditionalDebug.Log($"Replenished projectile pool. New size: {projectilePool.Count}");
     }
-}
 }

@@ -46,7 +46,7 @@ public abstract class ProjectileState
         ProjectileManager.Instance.PredictAndRotateProjectile(_projectile);
     }
 
-    public virtual void CustomUpdate(float timeScale) { } // Added this line
+    public virtual void CustomUpdate(float timeScale) { }
 
     public ProjectileStateBased GetProjectile()
     {
