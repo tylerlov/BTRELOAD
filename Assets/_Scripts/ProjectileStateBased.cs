@@ -15,6 +15,31 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.VFX;
 
+public struct ProjectileVector3
+{
+    public float x, y, z;
+
+    public ProjectileVector3(float x, float y, float z)
+    {
+        this.x = x;
+        this.y = y;
+        this.z = z;
+    }
+
+    public static implicit operator Vector3(ProjectileVector3 pv) => new Vector3(pv.x, pv.y, pv.z);
+    public static implicit operator ProjectileVector3(Vector3 v) => new ProjectileVector3(v.x, v.y, v.z);
+
+    public static ProjectileVector3 zero => new ProjectileVector3(0, 0, 0);
+
+    public static float Distance(ProjectileVector3 a, ProjectileVector3 b)
+    {
+        float dx = a.x - b.x;
+        float dy = a.y - b.y;
+        float dz = a.z - b.z;
+        return Mathf.Sqrt(dx * dx + dy * dy + dz * dz);
+    }
+}
+
 public enum ProjectilePoolType
 {
     StaticEnemy,
@@ -305,11 +330,22 @@ public class PlayerShotState : ProjectileState
 
     private void UpdateProjectileMovement(float timeScale)
     {
-        Vector3 targetPosition = _projectile.currentTarget.position;
-        Vector3 toTarget = targetPosition - _projectile.transform.position;
-        float distanceToTarget = toTarget.magnitude;
+        if (_projectile.currentTarget == null) return;
 
-        // Predict target's future position
+        ProjectileVector3 targetPosition = _projectile.currentTarget.position;
+        ProjectileVector3 toTarget = new ProjectileVector3(
+            targetPosition.x - _projectile.transform.position.x,
+            targetPosition.y - _projectile.transform.position.y,
+            targetPosition.z - _projectile.transform.position.z
+        );
+        float distanceToTarget = ProjectileVector3.Distance(targetPosition, (ProjectileVector3)_projectile.transform.position);
+
+        if (distanceToTarget <= CLOSE_PROXIMITY_THRESHOLD)
+        {
+            EnsureHit();
+            return;
+        }
+
         Vector3 targetVelocity = ProjectileManager.Instance.CalculateTargetVelocity(
             _projectile.currentTarget.gameObject
         );
@@ -317,31 +353,31 @@ public class PlayerShotState : ProjectileState
             distanceToTarget / _projectile.bulletSpeed,
             MAX_PREDICTION_TIME
         );
-        Vector3 predictedPosition = targetPosition + targetVelocity * predictionTime;
+        _projectile.predictedPosition = new ProjectileVector3(
+            targetPosition.x + targetVelocity.x * predictionTime,
+            targetPosition.y + targetVelocity.y * predictionTime,
+            targetPosition.z + targetVelocity.z * predictionTime
+        );
 
-        Vector3 directionToTarget = (predictedPosition - _projectile.transform.position).normalized;
+        Vector3 directionToTarget = ((Vector3)_projectile.predictedPosition - _projectile.transform.position).normalized;
 
         // Apply accuracy
-        float maxDeviationAngle = Mathf.Lerp(5f, 0f, _projectile.accuracy); // Max 5 degree deviation at 0 accuracy
-        Vector3 randomDeviation = UnityEngine.Random.insideUnitSphere * maxDeviationAngle;
-        directionToTarget = Quaternion.Euler(randomDeviation) * directionToTarget;
+        if (_projectile.accuracy < 1f)
+        {
+            float maxDeviationAngle = Mathf.Lerp(5f, 0f, _projectile.accuracy);
+            Vector3 randomDeviation = UnityEngine.Random.insideUnitSphere * maxDeviationAngle;
+            directionToTarget = Quaternion.Euler(randomDeviation) * directionToTarget;
+        }
 
         // Adjust rotation towards the target
-        Quaternion targetRotation = Quaternion.LookRotation(directionToTarget);
         _projectile.transform.rotation = Quaternion.RotateTowards(
             _projectile.transform.rotation,
-            targetRotation,
+            Quaternion.LookRotation(directionToTarget),
             _projectile.turnRate * timeScale * Time.deltaTime
         );
 
         // Move the projectile
         _projectile.rb.velocity = _projectile.transform.forward * _projectile.bulletSpeed;
-
-        // If very close to the target, ensure a hit
-        if (distanceToTarget <= CLOSE_PROXIMITY_THRESHOLD)
-        {
-            EnsureHit();
-        }
     }
 
     private void FindNewTarget()
@@ -378,19 +414,12 @@ public class PlayerShotState : ProjectileState
 
     private void CheckCollision()
     {
-        float radius = 0.1f; // Adjust based on projectile size
-        RaycastHit hit;
-        if (
-            Physics.SphereCast(
-                _projectile.transform.position,
-                radius,
-                _projectile.transform.forward,
-                out hit,
-                _projectile.bulletSpeed * Time.deltaTime
-            )
-        )
+        int layerMask = LayerMask.GetMask("Enemy", "Environment");
+        Collider[] hitColliders = Physics.OverlapSphere(_projectile.transform.position, 0.1f, layerMask);
+        
+        if (hitColliders.Length > 0)
         {
-            OnTriggerEnter(hit.collider);
+            OnTriggerEnter(hitColliders[0]);
         }
     }
 
@@ -492,9 +521,9 @@ public class ProjectileStateBased : MonoBehaviour
     public float _maxDistancePredict = 100;
     public float _minDistancePredict = 5;
     public float _maxTimePrediction = 5;
-    public Vector3 _standardPrediction,
+    public ProjectileVector3 _standardPrediction,
         _deviatedPrediction;
-    public Vector3 predictedPosition { get; set; }
+    public ProjectileVector3 predictedPosition { get; set; }
     #endregion
 
     #region Combat Parameters
@@ -590,8 +619,8 @@ public class ProjectileStateBased : MonoBehaviour
 
     // Add these fields to the ProjectileStateBased class
     public bool isPlayerShot = false;
-    public Vector3 initialPosition;
-    public Vector3 initialDirection;
+    public ProjectileVector3 initialPosition;
+    public ProjectileVector3 initialDirection;
     public float distanceTraveled = 0f;
     public float timeAlive = 0f;
     public bool hasHitTarget = false;
@@ -934,7 +963,7 @@ public class ProjectileStateBased : MonoBehaviour
     {
         if (isPlayerShot && !hasHitTarget)
         {
-            distanceTraveled += Vector3.Distance(cachedTransform.position, initialPosition);
+            distanceTraveled += ProjectileVector3.Distance((ProjectileVector3)cachedTransform.position, initialPosition);
             initialPosition = cachedTransform.position;
             timeAlive += Time.deltaTime;
         }

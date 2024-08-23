@@ -1,4 +1,3 @@
-using Chronos;
 using UnityEngine;
 
 public class StaticEnemyShooting : MonoBehaviour
@@ -10,7 +9,6 @@ public class StaticEnemyShooting : MonoBehaviour
     [SerializeField] private Material alternativeProjectileMaterial;
     [SerializeField] private Transform target;
 
-    private Timeline myTime;
     private Vector3 directionToTarget;
     private Transform cachedTransform;
     private float lastShootTime = 0f;
@@ -18,7 +16,6 @@ public class StaticEnemyShooting : MonoBehaviour
 
     void Awake()
     {
-        myTime = GetComponent<Timeline>();
         cachedTransform = transform;
         UpdateDirectionToTarget();
     }
@@ -35,19 +32,20 @@ public class StaticEnemyShooting : MonoBehaviour
 
     public void Shoot()
     {
-        if (this == null || !gameObject.activeInHierarchy)
+        if (this == null || !gameObject.activeInHierarchy || EnemyShootingManager.Instance == null)
         {
             return;
         }
 
-        if (Time.time - lastShootTime < minTimeBetweenShots)
+        float currentTime = EnemyShootingManager.Instance.GetCurrentTime();
+        if (currentTime - lastShootTime < minTimeBetweenShots)
         {
-            ConditionalDebug.Log($"[StaticEnemyShooting] Skipped shot due to rapid firing at {Time.time}");
+            ConditionalDebug.Log($"[StaticEnemyShooting] Skipped shot due to rapid firing at {currentTime}");
             return;
         }
 
         PerformShoot();
-        lastShootTime = Time.time;
+        lastShootTime = currentTime;
     }
 
     private void PerformShoot()
@@ -67,7 +65,7 @@ public class StaticEnemyShooting : MonoBehaviour
             false,
             alternativeProjectileMaterial
         );
-        ConditionalDebug.Log($"[StaticEnemyShooting] Projectile fired from {gameObject.name} at {Time.time}. Position: {cachedTransform.position}, Direction: {directionToTarget}");
+        ConditionalDebug.Log($"[StaticEnemyShooting] Projectile fired from {gameObject.name} at {EnemyShootingManager.Instance.GetCurrentTime()}. Position: {cachedTransform.position}, Direction: {directionToTarget}");
     }
 
     public void UpdateDirectionToTarget()

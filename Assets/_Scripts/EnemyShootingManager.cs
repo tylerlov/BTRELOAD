@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using SonicBloom.Koreo;
 using UnityEngine;
+using Chronos;
 
 public class EnemyShootingManager : MonoBehaviour
 {
@@ -12,12 +13,15 @@ public class EnemyShootingManager : MonoBehaviour
     private string eventID;
     private int shootCounter = 0;
 
+    private Timeline managerTimeline;
+
     private void Awake()
     {
         if (Instance == null)
         {
             Instance = this;
             DontDestroyOnLoad(gameObject);
+            managerTimeline = GetComponent<Timeline>();
             ConditionalDebug.Log("EnemyShootingManager initialized");
         }
         else
@@ -69,9 +73,14 @@ public class EnemyShootingManager : MonoBehaviour
         }
     }
 
+    public float GetCurrentTime()
+    {
+        return managerTimeline != null ? managerTimeline.time : Time.time;
+    }
+
     private void OnMusicalEnemyShoot(KoreographyEvent evt)
     {
-        if (Time.timeScale != 0f)
+        if (managerTimeline != null && managerTimeline.timeScale != 0f)
         {
             ConditionalDebug.Log($"OnMusicalEnemyShoot triggered. Registered shootings: {staticEnemyShootings.Count}");
             foreach (var shooting in staticEnemyShootings)
@@ -89,7 +98,7 @@ public class EnemyShootingManager : MonoBehaviour
         }
         else
         {
-            ConditionalDebug.Log("OnMusicalEnemyShoot triggered, but Time.timeScale is 0");
+            ConditionalDebug.Log("OnMusicalEnemyShoot triggered, but managerTimeline is null or its timeScale is 0");
         }
     }
 }
