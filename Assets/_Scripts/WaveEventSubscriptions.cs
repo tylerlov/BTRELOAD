@@ -7,6 +7,7 @@ public class WaveEventSubscriptions : MonoBehaviour
 {
     [SerializeField] private UnityEvent onWaveStarted;
     [SerializeField] private UnityEvent onWaveEnded;
+    [SerializeField] private SplineManager splineManager;
 
     private WaveSpawnController waveSpawnController;
     private GameManager gameManager;
@@ -46,6 +47,12 @@ public class WaveEventSubscriptions : MonoBehaviour
         if (crosshair == null)
         {
             Debug.LogError("Crosshair not found in the scene!");
+        }
+
+        splineManager = FindObjectOfType<SplineManager>();
+        if (splineManager == null)
+        {
+            Debug.LogError("SplineManager not found in the scene!");
         }
 
         if (waveSpawnController != null)
@@ -116,6 +123,12 @@ public class WaveEventSubscriptions : MonoBehaviour
             crosshair.OnNewWaveOrAreaTransition();
         }
 
+        // Increment spline at the start of a wave
+        if (splineManager != null)
+        {
+            splineManager.IncrementSpline();
+        }
+
         // Invoke the UnityEvent
         onWaveStarted?.Invoke();
     }
@@ -132,6 +145,12 @@ public class WaveEventSubscriptions : MonoBehaviour
         if (shooterMovement != null)
         {
             shooterMovement.SetClamping(false);
+        }
+
+        // Increment spline at the end of a wave
+        if (splineManager != null)
+        {
+            splineManager.IncrementSpline();
         }
 
         // Invoke the UnityEvent

@@ -54,6 +54,7 @@ public class GameManager : MonoBehaviour
     public EnemyShootingManager enemyShootingManager;
     public StudioEventEmitter musicPlayback;
 
+
     [Header("Debug Info")]
     [SerializeField]
     private string currentSectionName;
@@ -161,6 +162,7 @@ public class GameManager : MonoBehaviour
     private FMOD.Studio.EventInstance musicEventInstance;
     private Score scoreUI;
     private DebugSettings debugSettings;
+    private SplineManager splineManager;
     #endregion
 
     private const int SECTION_TRANSITION_SCORE_BOOST = 200;
@@ -247,6 +249,11 @@ public class GameManager : MonoBehaviour
     {
         SceneManager.sceneLoaded -= OnSceneLoaded;
         SceneManager.sceneLoaded -= InitializeListenersAndComponents;
+
+        if (splineManager != null)
+        {
+            splineManager.OnFinalSplineReached -= HandleFinalSplineReached;
+        }
     }
 
     private async void Start()
@@ -261,6 +268,17 @@ public class GameManager : MonoBehaviour
 
         scoreUI = FindObjectOfType<Score>();
         InitializeDebugTimeScale();
+
+        if (splineManager == null)
+        {
+            splineManager = FindObjectOfType<SplineManager>();
+            if (splineManager == null)
+            {
+                Debug.LogError("SplineManager not found in the scene!");
+            }
+        }
+
+        splineManager.OnFinalSplineReached += HandleFinalSplineReached;
     }
 
     private void Update()
@@ -363,7 +381,6 @@ public class GameManager : MonoBehaviour
 
                 InitializeCameraSwitching();
                 InitializeCrosshair();
-                InitializeSplineManager();
                 InitializeShooterMovement();
 
                 stateDrivenCamera = FindObjectOfType<CinemachineStateDrivenCamera>();
@@ -376,43 +393,6 @@ public class GameManager : MonoBehaviour
 
                 StartingTransition.Invoke();
             });
-    }
-
-    private void InitializeSplineManager()
-    {
-        var splineManager = FindObjectOfType<SplineManager>();
-        if (splineManager != null)
-        {
-            if (transCamOn != null)
-                transCamOn.AddListener(splineManager.IncrementSpline);
-            if (transCamOff != null)
-                transCamOff.AddListener(splineManager.IncrementSpline);
-        }
-        else
-        {
-            ConditionalDebug.LogWarning(
-                "SplineManager component not found in the scene. It may be loaded later."
-            );
-        }
-    }
-
-    public void InitializeCurrentSceneIndex()
-    {
-        string currentSceneName = SceneManager.GetActiveScene().name;
-        for (int i = 0; i < currentGroup.scenes.Length; i++)
-        {
-            if (currentGroup.scenes[i].sceneName == currentSceneName)
-            {
-                currentScene = i;
-                currentSongSection = 0; // Assuming we start at the first section
-                return;
-            }
-        }
-        ConditionalDebug.LogWarning(
-            $"Current scene '{currentSceneName}' not found in Ouroboros asset. Defaulting to first scene."
-        );
-        currentScene = 0;
-        currentSongSection = 0;
     }
 
     private void InitializeCameraSwitching()
@@ -527,15 +507,6 @@ public class GameManager : MonoBehaviour
         GlobalVolumeManager.Instance.TransitionEffectOut(1.5f);
 
         InitializeListenersAndComponents(scene, mode);
-
-        StartCoroutine(InitializeSplineManagerDelayed());
-    }
-
-    private IEnumerator InitializeSplineManagerDelayed()
-    {
-        yield return null; // Wait for one frame to ensure all objects are initialized
-
-        InitializeSplineManager();
     }
 
     public async void ChangeToNextScene()
@@ -1187,4 +1158,10 @@ public class GameManager : MonoBehaviour
     }
     return string.Empty; // Return empty if not valid
 }
+
+private void HandleFinalSplineReached()
+    {
+        Debug.Log("Final spline reached. Transitioning to next scene.");
+        ChangeToNextScene();
+    }
 }

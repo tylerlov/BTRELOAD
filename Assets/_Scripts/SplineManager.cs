@@ -43,6 +43,9 @@ public class SplineManager : MonoBehaviour
     private float lastSwitchTime = 0f; // Add this line
     private const float MIN_SWITCH_INTERVAL = 0.5f; // Add this line
 
+    public delegate void FinalSplineReachedHandler();
+    public event FinalSplineReachedHandler OnFinalSplineReached;
+
     void Awake()
     {
         // Find the PlayerPlane and get its SplineController
@@ -111,6 +114,12 @@ public class SplineManager : MonoBehaviour
             Debug.Log(
                 $"Spline Incremented. Current spline: {currSpline}, Total switches: {splineSwitchCounter}, Time: {currentTime}"
             );
+
+            // Check if we've reached the final spline
+            if (currSpline == splineDatas.Count - 1)
+            {
+                OnFinalSplineReached?.Invoke();
+            }
         }
         else
         {
@@ -120,20 +129,14 @@ public class SplineManager : MonoBehaviour
 
     public void IncrementSpline()
     {
-        Debug.Log(
-            $"IncrementSpline called from:\n{UnityEngine.StackTraceUtility.ExtractStackTrace()}"
-        );
+        Debug.Log($"IncrementSpline called from:\n{UnityEngine.StackTraceUtility.ExtractStackTrace()}");
         if (!canIncrement)
         {
-            Debug.Log(
-                $"Increment attempted during cooldown, ignoring. Time since last increment: {Time.time - lastSwitchTime}"
-            );
+            Debug.Log($"Increment attempted during cooldown, ignoring. Time since last increment: {Time.time - lastSwitchTime}");
             return;
         }
 
-        Debug.Log($"IncrementSpline called. Current spline before increment: {currSpline}");
         PerformSplineIncrement();
-        StartCoroutine(lockShooter(2f));
         StartCoroutine(IncrementCooldown());
     }
 
@@ -144,28 +147,8 @@ public class SplineManager : MonoBehaviour
         canIncrement = true;
     }
 
-    IEnumerator lockShooter(float waitTime)
-    {
-        if (shooting != null)
-        {
-            float timer = 0f;
-            while (timer < waitTime)
-            {
-                shooting.transform.localPosition = new Vector3(
-                    0,
-                    0,
-                    shooting.transform.localPosition.z
-                );
-                timer += Time.deltaTime;
-                yield return null;
-            }
+    // Remove the lockShooter coroutine as it's no longer needed
+    // Mayu need to bring this back, but for now, it's not needed
 
-            // Perform the second increment after the lock period
-            PerformSplineIncrement();
-        }
-        else
-        {
-            Debug.LogWarning("Shooting object is null, cannot lock shooter.");
-        }
-    }
+    // ... (keep other existing methods)
 }

@@ -81,12 +81,15 @@ public class DebugControls : MonoBehaviour, IPointerClickHandler
             .Object.FindObjectsOfType<MonoBehaviour>()
             .OfType<IDamageable>();
 
+        int killedEnemies = 0;
+
         // Apply damage to each damageable object
         foreach (var damageable in damageables)
         {
             if (damageable.IsAlive())
             {
                 damageable.Damage(100); // Assuming you want to apply a damage of 100
+                killedEnemies++;
             }
         }
 
@@ -99,6 +102,13 @@ public class DebugControls : MonoBehaviour, IPointerClickHandler
 
         // Clear all projectiles from the ProjectileManager
         ProjectileManager.Instance.ClearAllProjectiles();
+
+        // Add 1000 to the score if any enemies were killed
+        if (killedEnemies > 0 && gameManager != null)
+        {
+            gameManager.AddScore(1000);
+            Debug.Log("Debug: Added 1000 to score for killing all enemies");
+        }
     }
 
     public void CallDeathOnLayerObjects(int layer)
