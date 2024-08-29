@@ -41,7 +41,10 @@ public class PlacePrefabsOnMesh : MonoBehaviour
         {
             Vector3 randomPosition = GetRandomPositionOnMesh();
             GameObject prefab = prefabs[Random.Range(0, prefabs.Length)];
-            GameObject instance = PrefabUtility.InstantiatePrefab(prefab, transform) as GameObject;
+            
+            // Replace PrefabUtility.InstantiatePrefab with Instantiate
+            GameObject instance = Instantiate(prefab, transform);
+            
             instance.transform.position = transform.TransformPoint(randomPosition);
             
             // Calculate normal at the random position

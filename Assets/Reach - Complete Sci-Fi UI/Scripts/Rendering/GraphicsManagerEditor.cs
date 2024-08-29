@@ -21,16 +21,41 @@ namespace Michsky.UI.Reach
 
         public override void OnInspectorGUI()
         {
+            // Update the serializedObject
+            serializedObject.Update();
+
             var resolutionDropdown = serializedObject.FindProperty("resolutionDropdown");
+            var windowModeSelector = serializedObject.FindProperty("windowModeSelector");
+            var vSyncSwitch = serializedObject.FindProperty("vSyncSwitch"); // Add this line
 
-            var initializeResolutions = serializedObject.FindProperty("initializeResolutions");
+            // Header
+            if (customSkin != null)
+            {
+                ReachUIEditorHandler.DrawHeader(customSkin, "Header_Resources", 6);
+            }
+            else
+            {
+                EditorGUILayout.LabelField("Resources", EditorStyles.boldLabel);
+            }
 
-            ReachUIEditorHandler.DrawHeader(customSkin, "Header_Resources", 6);
-            ReachUIEditorHandler.DrawPropertyCW(resolutionDropdown, customSkin, "Resolution Dropdown", 132);
+            // Resolution Dropdown
+            EditorGUILayout.PropertyField(resolutionDropdown, new GUIContent("Resolution Dropdown"));
 
-            ReachUIEditorHandler.DrawHeader(customSkin, "Header_Settings", 10);
-            initializeResolutions.boolValue = ReachUIEditorHandler.DrawToggle(initializeResolutions.boolValue, customSkin, "Initialize Resolutions");
+            // Window Mode Selector
+            EditorGUILayout.PropertyField(windowModeSelector, new GUIContent("Window Mode Selector"));
 
+            // VSync Switch
+            EditorGUILayout.PropertyField(vSyncSwitch, new GUIContent("VSync Switch")); // Add this line
+
+            // Texture Quality Selector
+            var textureQualitySelector = serializedObject.FindProperty("textureQualitySelector");
+            EditorGUILayout.PropertyField(textureQualitySelector, new GUIContent("Texture Quality Selector"));
+
+            // Anisotropic Filtering Selector
+            var anisotropicFilteringSelector = serializedObject.FindProperty("anisotropicFilteringSelector");
+            EditorGUILayout.PropertyField(anisotropicFilteringSelector, new GUIContent("Anisotropic Filtering Selector"));
+
+            // Apply changes
             serializedObject.ApplyModifiedProperties();
         }
     }

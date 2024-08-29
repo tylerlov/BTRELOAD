@@ -1,6 +1,7 @@
 using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using FMODUnity; // Add this import
 
 public class MainMenuSwitchScene : MonoBehaviour
 {
@@ -12,6 +13,8 @@ public class MainMenuSwitchScene : MonoBehaviour
 
     private static MainMenuSwitchScene instance;
 
+    private StudioEventEmitter fmodEventEmitter; // Add this field
+
     private void Awake()
     {
         if (instance == null)
@@ -22,6 +25,12 @@ public class MainMenuSwitchScene : MonoBehaviour
         else
         {
             Destroy(gameObject);
+        }
+        
+        // If this is the instance we're keeping, find the FMOD emitter
+        if (instance == this)
+        {
+            fmodEventEmitter = GetComponent<StudioEventEmitter>();
         }
     }
 
@@ -41,6 +50,13 @@ public class MainMenuSwitchScene : MonoBehaviour
         // Disable the specified object
         if (objectToDisable != null)
             objectToDisable.SetActive(false);
+
+        // Stop and destroy the FMOD event emitter
+        if (fmodEventEmitter != null)
+        {
+            fmodEventEmitter.Stop();
+            Destroy(fmodEventEmitter);
+        }
 
         // Unload all loaded assets
         Resources.UnloadUnusedAssets();

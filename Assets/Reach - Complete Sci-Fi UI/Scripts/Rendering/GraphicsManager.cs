@@ -1,147 +1,226 @@
 using System.Reflection;
 using UnityEngine;
+using System.Linq;
 
 namespace Michsky.UI.Reach
 {
+    [DefaultExecutionOrder(-100)]
+    [DisallowMultipleComponent]
     public class GraphicsManager : MonoBehaviour
     {
-        // Static Instance
-        public static GraphicsManager instance;
-
-        // Resources
         [SerializeField] private Dropdown resolutionDropdown;
+        [SerializeField] private HorizontalSelector windowModeSelector;
+        [SerializeField] private SwitchManager vSyncSwitch; // Add this line
+        [SerializeField] private HorizontalSelector textureQualitySelector;
+        [SerializeField] private HorizontalSelector anisotropicFilteringSelector;
 
-        // Settings
-        [SerializeField] private bool initializeResolutions = true;
-
-        // Helpers
-        Resolution[] resolutions;
-
-        public enum TextureOption { FullRes, HalfRes, QuarterRes, EighthResh }
-        public enum AnisotropicOption { None, PerTexture, ForcedOn }
-
-        void Awake()
+        private void OnEnable()
         {
-            instance = this;
+            InitializeUI();
+        }
 
-            if (initializeResolutions && resolutionDropdown != null)
+        private void InitializeUI()
+        {
+            if (GraphicsCore.instance == null)
             {
-                InitializeResolutions();
+                Debug.LogWarning("GraphicsCore instance is not available. Ensure it's properly initialized.");
+                return;
+            }
+
+            InitializeResolutionDropdown();
+            InitializeWindowModeSelector();
+            InitializeVSyncSwitch(); // Add this line
+            InitializeTextureQualitySelector();
+            InitializeAnisotropicFilteringSelector();
+        }
+
+        private void InitializeResolutionDropdown()
+        {
+            if (resolutionDropdown == null)
+            {
+                Debug.LogWarning("Resolution Dropdown is not assigned");
+                return;
+            }
+
+            Resolution[] resolutions = GraphicsCore.instance.GetResolutions();
+            int currentIndex = GraphicsCore.instance.CurrentResolutionIndex;
+
+            resolutionDropdown.items.Clear();
+            foreach (var resolution in resolutions)
+            {
+                resolutionDropdown.CreateNewItem($"{resolution.width}x{resolution.height}", false);
+            }
+
+            resolutionDropdown.Initialize();
+
+            if (currentIndex >= 0 && currentIndex < resolutionDropdown.items.Count)
+            {
+                resolutionDropdown.SetDropdownIndex(currentIndex);
+            }
+            else
+            {
+                Debug.LogWarning("Invalid CurrentResolutionIndex");
             }
         }
 
-        public void InitializeResolutions()
+        private void InitializeWindowModeSelector()
         {
-            resolutions = Screen.resolutions;
-            resolutionDropdown.items.Clear();
-
-            int currentResolutionIndex = 0;
-
-            for (int i = 0; i < resolutions.Length; i++)
+            if (windowModeSelector == null)
             {
-                int index = i;
-                string option = resolutions[i].width + "x" + resolutions[i].height;
-
-                resolutionDropdown.CreateNewItem(option, false);
-                resolutionDropdown.items[i].onItemSelection.AddListener(delegate { SetResolution(index); });
-
-#if UNITY_2022_2_OR_NEWER
-#if !UNITY_EDITOR
-                if (resolutions[i].refreshRateRatio.numerator != Screen.currentResolution.refreshRateRatio.numerator) { resolutionDropdown.items[i].isInvisible = true; }
-#endif
-                if (resolutions[i].width == Screen.currentResolution.width
-                    && resolutions[i].height == Screen.currentResolution.height
-                    && resolutions[i].refreshRateRatio.numerator == Screen.currentResolution.refreshRateRatio.numerator)
-                {
-                    currentResolutionIndex = index;
-                }
-#else
-#if !UNITY_EDITOR
-                if (resolutions[i].refreshRate != Screen.currentResolution.refreshRate) { resolutionDropdown.items[i].isInvisible = true; }
-#endif
-                if (resolutions[i].width == Screen.currentResolution.width
-                    && resolutions[i].height == Screen.currentResolution.height
-                    && resolutions[i].refreshRate == Screen.currentResolution.refreshRate)
-                {
-                    currentResolutionIndex = index;
-                }
-#endif
+                Debug.LogWarning("Window Mode Selector is not assigned");
+                return;
             }
 
-            resolutionDropdown.selectedItemIndex = currentResolutionIndex;
-            resolutionDropdown.Initialize();
+            FullScreenMode[] windowModes = GraphicsCore.instance.GetWindowModes();
+            int currentIndex = GraphicsCore.instance.CurrentWindowModeIndex;
+
+            windowModeSelector.items.Clear();
+            foreach (var mode in windowModes)
+            {
+                windowModeSelector.CreateNewItem(mode.ToString());
+            }
+
+            windowModeSelector.defaultIndex = currentIndex;
+            windowModeSelector.InitializeSelector();
+            windowModeSelector.onValueChanged.AddListener(SetWindowMode);
+        }
+
+        private void InitializeVSyncSwitch()
+        {
+            if (vSyncSwitch == null)
+            {
+                Debug.LogWarning("VSync Switch is not assigned");
+                return;
+            }
+
+            vSyncSwitch.isOn = GraphicsCore.instance.IsVSyncEnabled();
+            vSyncSwitch.onValueChanged.AddListener(SetVSync);
+        }
+
+        private void InitializeTextureQualitySelector()
+        {
+            if (textureQualitySelector == null)
+            {
+                Debug.LogWarning("Texture Quality Selector is not assigned");
+                return;
+            }
+
+            textureQualitySelector.items.Clear();
+            foreach (GraphicsCore.TextureOption option in System.Enum.GetValues(typeof(GraphicsCore.TextureOption)))
+            {
+                textureQualitySelector.CreateNewItem(option.ToString());
+            }
+
+            textureQualitySelector.defaultIndex = (int)GraphicsCore.instance.CurrentTextureQuality;
+            textureQualitySelector.InitializeSelector();
+            textureQualitySelector.onValueChanged.AddListener(SetTextureQuality);
+        }
+
+        private void InitializeAnisotropicFilteringSelector()
+        {
+            if (anisotropicFilteringSelector == null)
+            {
+                Debug.LogWarning("Anisotropic Filtering Selector is not assigned");
+                return;
+            }
+
+            anisotropicFilteringSelector.items.Clear();
+            foreach (GraphicsCore.AnisotropicOption option in System.Enum.GetValues(typeof(GraphicsCore.AnisotropicOption)))
+            {
+                anisotropicFilteringSelector.CreateNewItem(option.ToString());
+            }
+
+            anisotropicFilteringSelector.defaultIndex = (int)GraphicsCore.instance.CurrentAnisotropicFiltering;
+            anisotropicFilteringSelector.InitializeSelector();
+            anisotropicFilteringSelector.onValueChanged.AddListener(SetAnisotropicFiltering);
         }
 
         public void SetResolution(int resolutionIndex)
         {
-#if !UNITY_EDITOR
-            Screen.SetResolution(resolutions[resolutionIndex].width, resolutions[resolutionIndex].height, Screen.fullScreen);
-#endif
+            if (GraphicsCore.instance != null)
+            {
+                GraphicsCore.instance.SetResolution(resolutionIndex);
+            }
+        }
+
+        public void SetWindowMode(int windowModeIndex)
+        {
+            if (GraphicsCore.instance != null)
+            {
+                GraphicsCore.instance.SetWindowMode(windowModeIndex);
+            }
         }
 
         public void SetVSync(bool value)
         {
-            if (value == true) { QualitySettings.vSyncCount = 2; }
-            else { QualitySettings.vSyncCount = 0; }
+            if (GraphicsCore.instance != null)
+            {
+                GraphicsCore.instance.SetVSync(value);
+            }
         }
 
         public void SetFrameRate(int value)
         {
-            Application.targetFrameRate = value;
+            if (GraphicsCore.instance != null)
+            {
+                GraphicsCore.instance.SetFrameRate(value);
+            }
         }
 
         public void SetWindowFullscreen()
         {
-            Screen.fullScreen = true;
-            Screen.fullScreenMode = FullScreenMode.ExclusiveFullScreen;
+            if (GraphicsCore.instance != null)
+            {
+                GraphicsCore.instance.SetWindowFullscreen();
+            }
         }
 
         public void SetWindowBorderless()
         {
-            Screen.fullScreenMode = FullScreenMode.FullScreenWindow;
+            if (GraphicsCore.instance != null)
+            {
+                GraphicsCore.instance.SetWindowBorderless();
+            }
         }
 
         public void SetWindowWindowed()
         {
-            Screen.fullScreen = false;
-            Screen.fullScreenMode = FullScreenMode.Windowed;
+            if (GraphicsCore.instance != null)
+            {
+                GraphicsCore.instance.SetWindowWindowed();
+            }
         }
 
-        public void SetTextureQuality(TextureOption option)
+        public void SetTextureQuality(GraphicsCore.TextureOption option)
         {
-#if UNITY_2022_2_OR_NEWER
-            if (option == TextureOption.FullRes) { QualitySettings.globalTextureMipmapLimit = 0; }
-            else if (option == TextureOption.HalfRes) { QualitySettings.globalTextureMipmapLimit = 1; }
-            else if (option == TextureOption.QuarterRes) { QualitySettings.globalTextureMipmapLimit = 2; }
-            else if (option == TextureOption.EighthResh) { QualitySettings.globalTextureMipmapLimit = 3; }
-#else
-            if (option == TextureOption.FullRes) { QualitySettings.masterTextureLimit = 0; }
-            else if (option == TextureOption.HalfRes) { QualitySettings.masterTextureLimit = 1; }
-            else if (option == TextureOption.QuarterRes) { QualitySettings.masterTextureLimit = 2; }
-            else if (option == TextureOption.EighthResh) { QualitySettings.masterTextureLimit = 3; }
-#endif
+            if (GraphicsCore.instance != null)
+            {
+                GraphicsCore.instance.SetTextureQuality(option);
+            }
         }
 
         public void SetTextureQuality(int index)
         {
-            if (index == 0) { SetTextureQuality(TextureOption.FullRes); }
-            else if (index == 1) { SetTextureQuality(TextureOption.HalfRes); }
-            else if (index == 2) { SetTextureQuality(TextureOption.QuarterRes); }
-            else if (index == 3) { SetTextureQuality(TextureOption.EighthResh); }
+            if (GraphicsCore.instance != null)
+            {
+                GraphicsCore.instance.SetTextureQuality((GraphicsCore.TextureOption)index);
+            }
         }
 
-        public void SetAnisotropicFiltering(AnisotropicOption option)
+        public void SetAnisotropicFiltering(GraphicsCore.AnisotropicOption option)
         {
-            if (option == AnisotropicOption.ForcedOn) { QualitySettings.anisotropicFiltering = AnisotropicFiltering.ForceEnable; }
-            else if (option == AnisotropicOption.PerTexture) { QualitySettings.anisotropicFiltering = AnisotropicFiltering.Enable; }
-            else if (option == AnisotropicOption.None) { QualitySettings.anisotropicFiltering = AnisotropicFiltering.Disable; }
+            if (GraphicsCore.instance != null)
+            {
+                GraphicsCore.instance.SetAnisotropicFiltering(option);
+            }
         }
 
         public void SetAnisotropicFiltering(int index)
         {
-            if (index == 2) { SetAnisotropicFiltering(AnisotropicOption.ForcedOn); }
-            else if (index == 1) { SetAnisotropicFiltering(AnisotropicOption.PerTexture); }
-            else if (index == 0) { SetAnisotropicFiltering(AnisotropicOption.None); }
+            if (GraphicsCore.instance != null)
+            {
+                GraphicsCore.instance.SetAnisotropicFiltering((GraphicsCore.AnisotropicOption)index);
+            }
         }
     }
 }

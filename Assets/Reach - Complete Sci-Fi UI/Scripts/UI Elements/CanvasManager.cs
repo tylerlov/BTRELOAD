@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
+using System.Collections.Generic;
 
 namespace Michsky.UI.Reach
 {
@@ -7,12 +8,31 @@ namespace Michsky.UI.Reach
     [RequireComponent(typeof(CanvasScaler))]
     public class CanvasManager : MonoBehaviour
     {
-        CanvasScaler canvasScaler;
+        [SerializeField] private List<Canvas> additionalCanvases = new List<Canvas>();
+        private List<CanvasScaler> canvasScalers = new List<CanvasScaler>();
+
+        private void Awake()
+        {
+            // Add the main canvas scaler
+            canvasScalers.Add(GetComponent<CanvasScaler>());
+
+            // Add additional canvas scalers
+            foreach (var canvas in additionalCanvases)
+            {
+                var scaler = canvas.GetComponent<CanvasScaler>();
+                if (scaler != null)
+                {
+                    canvasScalers.Add(scaler);
+                }
+            }
+        }
 
         public void SetScale(int scale = 1080)
         {
-            if (canvasScaler == null) { canvasScaler = gameObject.GetComponent<CanvasScaler>(); }
-            canvasScaler.referenceResolution = new Vector2(canvasScaler.referenceResolution.x, scale);
+            foreach (var scaler in canvasScalers)
+            {
+                scaler.referenceResolution = new Vector2(scaler.referenceResolution.x, scale);
+            }
         }
     }
 }

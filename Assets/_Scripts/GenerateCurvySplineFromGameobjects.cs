@@ -1,28 +1,11 @@
 using System.Collections.Generic;
 using FluffyUnderware.Curvy;
-using UnityEditor;
 using UnityEngine;
 
 public class GenerateCurvySplineFromGameobjects : MonoBehaviour
 {
     public GameObject sourceObject;
     private CurvySpline generatedSpline;
-
-    [CustomEditor(typeof(GenerateCurvySplineFromGameobjects))]
-    public class GenerateCurvySplineFromGameobjectsEditor : Editor
-    {
-        public override void OnInspectorGUI()
-        {
-            DrawDefaultInspector();
-
-            GenerateCurvySplineFromGameobjects script = (GenerateCurvySplineFromGameobjects)target;
-
-            if (GUILayout.Button("Generate Curvy Spline"))
-            {
-                script.GenerateSpline();
-            }
-        }
-    }
 
     public void GenerateSpline()
     {
@@ -32,17 +15,14 @@ public class GenerateCurvySplineFromGameobjects : MonoBehaviour
             return;
         }
 
-        Undo.RecordObject(this, "Generate Curvy Spline");
-
         // Remove existing spline if any
         if (generatedSpline != null)
         {
-            Undo.DestroyObjectImmediate(generatedSpline.gameObject);
+            DestroyImmediate(generatedSpline.gameObject);
         }
 
         // Create new spline
         GameObject splineObject = new GameObject("Generated Curvy Spline");
-        Undo.RegisterCreatedObjectUndo(splineObject, "Generate Curvy Spline");
         generatedSpline = splineObject.AddComponent<CurvySpline>();
 
         // Collect all child positions
@@ -53,7 +33,6 @@ public class GenerateCurvySplineFromGameobjects : MonoBehaviour
         foreach (Vector3 position in positions)
         {
             CurvySplineSegment segment = generatedSpline.Add();
-            Undo.RecordObject(segment.transform, "Set Segment Position");
             segment.transform.position = position;
         }
 
