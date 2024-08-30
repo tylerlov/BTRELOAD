@@ -796,6 +796,7 @@ public class ProjectileManager : MonoBehaviour
         }
     }
 
+
     public void ReRegisterEnemiesAndProjectiles()
     {
         // Clear existing projectiles and reinitialize pools

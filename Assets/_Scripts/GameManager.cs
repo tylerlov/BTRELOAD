@@ -1035,6 +1035,11 @@ public class GameManager : MonoBehaviour
         float returnToNormalDuration = 0.25f
     )
     {
+        if (QuickTimeEventManager.Instance != null && QuickTimeEventManager.Instance.IsQTEActive)
+        {
+            // Don't start rewind if QTE is active
+            return;
+        }
         StartCoroutine(RewindTime(rewindTimeScale, rewindDuration, returnToNormalDuration));
     }
 

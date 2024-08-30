@@ -107,6 +107,42 @@ public partial class @DefaultControls: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Up"",
+                    ""type"": ""Button"",
+                    ""id"": ""10343071-2dad-4b82-9dfa-17f1c781f8fd"",
+                    ""expectedControlType"": ""Button"",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Down"",
+                    ""type"": ""Button"",
+                    ""id"": ""77a1e972-b0ce-4b15-b613-54ce2d62374c"",
+                    ""expectedControlType"": ""Button"",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Left"",
+                    ""type"": ""Button"",
+                    ""id"": ""f62aff89-d502-4347-acd5-e88ac4672b29"",
+                    ""expectedControlType"": ""Button"",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Right"",
+                    ""type"": ""Button"",
+                    ""id"": ""35e97b87-23e3-428a-b199-a4ba7e0657b9"",
+                    ""expectedControlType"": ""Button"",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
                 }
             ],
             ""bindings"": [
@@ -272,6 +308,50 @@ public partial class @DefaultControls: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""groups"": ""Keyboard;Mouse"",
                     ""action"": ""ReverseDirection"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""fd5e2d80-6e3e-426e-978a-66cc6e6dabc4"",
+                    ""path"": ""<Gamepad>/dpad/up"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Controller"",
+                    ""action"": ""Up"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""93567e5f-9838-4a8c-9496-deac350609e4"",
+                    ""path"": ""<Gamepad>/dpad/down"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Controller"",
+                    ""action"": ""Down"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""d60f8447-d94d-4825-9629-fccddad3ac0a"",
+                    ""path"": ""<Gamepad>/dpad/left"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Controller"",
+                    ""action"": ""Left"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""9e782cb2-9964-4055-86df-25b5348ba4b3"",
+                    ""path"": ""<Gamepad>/dpad/right"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Controller"",
+                    ""action"": ""Right"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 }
@@ -841,6 +921,10 @@ public partial class @DefaultControls: IInputActionCollection2, IDisposable
         m_Player_SlowTime = m_Player.FindAction("Slow Time", throwIfNotFound: true);
         m_Player_Dodge = m_Player.FindAction("Dodge", throwIfNotFound: true);
         m_Player_ReverseDirection = m_Player.FindAction("ReverseDirection", throwIfNotFound: true);
+        m_Player_Up = m_Player.FindAction("Up", throwIfNotFound: true);
+        m_Player_Down = m_Player.FindAction("Down", throwIfNotFound: true);
+        m_Player_Left = m_Player.FindAction("Left", throwIfNotFound: true);
+        m_Player_Right = m_Player.FindAction("Right", throwIfNotFound: true);
         // UI
         m_UI = asset.FindActionMap("UI", throwIfNotFound: true);
         m_UI_Navigate = m_UI.FindAction("Navigate", throwIfNotFound: true);
@@ -923,6 +1007,10 @@ public partial class @DefaultControls: IInputActionCollection2, IDisposable
     private readonly InputAction m_Player_SlowTime;
     private readonly InputAction m_Player_Dodge;
     private readonly InputAction m_Player_ReverseDirection;
+    private readonly InputAction m_Player_Up;
+    private readonly InputAction m_Player_Down;
+    private readonly InputAction m_Player_Left;
+    private readonly InputAction m_Player_Right;
     public struct PlayerActions
     {
         private @DefaultControls m_Wrapper;
@@ -936,6 +1024,10 @@ public partial class @DefaultControls: IInputActionCollection2, IDisposable
         public InputAction @SlowTime => m_Wrapper.m_Player_SlowTime;
         public InputAction @Dodge => m_Wrapper.m_Player_Dodge;
         public InputAction @ReverseDirection => m_Wrapper.m_Player_ReverseDirection;
+        public InputAction @Up => m_Wrapper.m_Player_Up;
+        public InputAction @Down => m_Wrapper.m_Player_Down;
+        public InputAction @Left => m_Wrapper.m_Player_Left;
+        public InputAction @Right => m_Wrapper.m_Player_Right;
         public InputActionMap Get() { return m_Wrapper.m_Player; }
         public void Enable() { Get().Enable(); }
         public void Disable() { Get().Disable(); }
@@ -972,6 +1064,18 @@ public partial class @DefaultControls: IInputActionCollection2, IDisposable
             @ReverseDirection.started += instance.OnReverseDirection;
             @ReverseDirection.performed += instance.OnReverseDirection;
             @ReverseDirection.canceled += instance.OnReverseDirection;
+            @Up.started += instance.OnUp;
+            @Up.performed += instance.OnUp;
+            @Up.canceled += instance.OnUp;
+            @Down.started += instance.OnDown;
+            @Down.performed += instance.OnDown;
+            @Down.canceled += instance.OnDown;
+            @Left.started += instance.OnLeft;
+            @Left.performed += instance.OnLeft;
+            @Left.canceled += instance.OnLeft;
+            @Right.started += instance.OnRight;
+            @Right.performed += instance.OnRight;
+            @Right.canceled += instance.OnRight;
         }
 
         private void UnregisterCallbacks(IPlayerActions instance)
@@ -1003,6 +1107,18 @@ public partial class @DefaultControls: IInputActionCollection2, IDisposable
             @ReverseDirection.started -= instance.OnReverseDirection;
             @ReverseDirection.performed -= instance.OnReverseDirection;
             @ReverseDirection.canceled -= instance.OnReverseDirection;
+            @Up.started -= instance.OnUp;
+            @Up.performed -= instance.OnUp;
+            @Up.canceled -= instance.OnUp;
+            @Down.started -= instance.OnDown;
+            @Down.performed -= instance.OnDown;
+            @Down.canceled -= instance.OnDown;
+            @Left.started -= instance.OnLeft;
+            @Left.performed -= instance.OnLeft;
+            @Left.canceled -= instance.OnLeft;
+            @Right.started -= instance.OnRight;
+            @Right.performed -= instance.OnRight;
+            @Right.canceled -= instance.OnRight;
         }
 
         public void RemoveCallbacks(IPlayerActions instance)
@@ -1176,6 +1292,10 @@ public partial class @DefaultControls: IInputActionCollection2, IDisposable
         void OnSlowTime(InputAction.CallbackContext context);
         void OnDodge(InputAction.CallbackContext context);
         void OnReverseDirection(InputAction.CallbackContext context);
+        void OnUp(InputAction.CallbackContext context);
+        void OnDown(InputAction.CallbackContext context);
+        void OnLeft(InputAction.CallbackContext context);
+        void OnRight(InputAction.CallbackContext context);
     }
     public interface IUIActions
     {

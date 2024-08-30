@@ -430,7 +430,7 @@ public class PlayerShotState : ProjectileState
             IDamageable damageable = other.gameObject.GetComponent<IDamageable>();
             if (damageable != null)
             {
-                damageable.Damage(_projectile.damageAmount);
+                _projectile.ApplyDamage(damageable); // Use the new method to apply damage
                 _projectile.hasHitTarget = true;
                 ConditionalDebug.Log(
                     $"Player projectile hit enemy: {other.gameObject.name}. Distance: {_projectile.distanceTraveled}, Time: {_projectile.timeAlive}"
@@ -529,6 +529,7 @@ public class ProjectileStateBased : MonoBehaviour
     #region Combat Parameters
     [Header("Combat")]
     public float damageAmount = 10f;
+    private float damageMultiplier = 1f;
     public float lifetime;
     private float originalLifetime;
     #endregion
@@ -1013,5 +1014,16 @@ public class ProjectileStateBased : MonoBehaviour
         }
 
         accuracy = 1f;
+    }
+    public void SetDamageMultiplier(float multiplier)
+    {
+        damageMultiplier = multiplier;
+    }
+
+    // Modify the method that applies damage to use the multiplier
+    public void ApplyDamage(IDamageable target)
+    {
+        float finalDamage = damageAmount * damageMultiplier;
+        target.Damage(finalDamage);
     }
 }
