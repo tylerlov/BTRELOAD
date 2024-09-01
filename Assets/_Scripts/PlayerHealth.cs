@@ -22,6 +22,15 @@ public class PlayerHealth : MonoBehaviour, IDamageable
 
     private bool isInvincible = false;
 
+    private float health;
+    private float maxHealth; // New variable to store the original health value
+
+    public PlayerHealth(float initialHealth)
+    {
+        health = initialHealth;
+        maxHealth = initialHealth; // Store the initial health as the max health
+    }
+
     private void Start()
     {
         InitializeHitEffectsPool();
@@ -48,7 +57,6 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     private void GameOver()
     {
         Debug.Log("Game Over!");
-        gameObject.SetActive(false);
         GameManager.instance.HandlePlayerDeath();
     }
 
@@ -110,5 +118,10 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         {
             GameManager.instance.SetScore(999999);
         }
+    }
+
+    public void ResetHealth()
+    {
+        health = maxHealth; // Reset health to its original value
     }
 }

@@ -28,11 +28,18 @@ public class DebugControls : MonoBehaviour, IPointerClickHandler
 
         // Initialize the InputAction for the 'K' key to kill the player
         debugKillPlayerAction = new InputAction(
+            name: "DebugKillPlayer",
             type: InputActionType.Button,
             binding: "<Keyboard>/k"
         );
-        debugKillPlayerAction.performed += ctx => OnDebugKillPlayer();
+        debugKillPlayerAction.performed += ctx => 
+        {
+            Debug.Log("Debug kill player action performed");
+            OnDebugKillPlayer();
+        };
         debugKillPlayerAction.Enable();
+
+        Debug.Log("DebugControls Awake completed, actions set up");
     }
 
     private void Start()
@@ -79,18 +86,22 @@ public class DebugControls : MonoBehaviour, IPointerClickHandler
 
     private void OnDebugKillPlayer()
     {
-        Debug.Log("Debug: Initiating player death");
-        PlayerHealth playerHealth = FindObjectOfType<PlayerHealth>();
-        if (playerHealth != null)
+
+        if (GameManager.instance == null)
         {
-            // Set the player's health to 0 and trigger the death sequence
-            GameManager.instance.SetScore(0);
-            playerHealth.Damage(1); // This will trigger the GameOver method in PlayerHealth
+            Debug.LogError("GameManager instance is null. Cannot initiate player death.");
+            return;
         }
-        else
+
+        PlayerHealth playerHealth = FindObjectOfType<PlayerHealth>();
+        if (playerHealth == null)
         {
             Debug.LogError("PlayerHealth component not found in the scene.");
+            return;
         }
+
+        playerHealth.Damage(9999999);
+
     }
 
     public void OnPointerClick(PointerEventData eventData)

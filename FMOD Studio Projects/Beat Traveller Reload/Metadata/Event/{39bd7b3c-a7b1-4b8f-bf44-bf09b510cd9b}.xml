@@ -357,7 +357,7 @@
 	</object>
 	<object class="SingleSound" id="{1733ed79-631f-4ea5-b462-54be693d032f}">
 		<property name="start">
-			<value>80</value>
+			<value>79.534883720930239</value>
 		</property>
 		<property name="length">
 			<value>5.579870202252831</value>
@@ -607,7 +607,7 @@
 	</object>
 	<object class="SingleSound" id="{0ae2c94a-3fe8-4d14-ac93-5e64af0b6f1a}">
 		<property name="start">
-			<value>80</value>
+			<value>79.534883720930239</value>
 		</property>
 		<property name="length">
 			<value>5.579870202252831</value>
@@ -1883,13 +1883,10 @@
 	</object>
 	<object class="LoopRegion" id="{c008cd37-f7b2-4c16-a81a-6c59c8653880}">
 		<property name="position">
-			<value>80</value>
+			<value>79.534883720930239</value>
 		</property>
 		<property name="length">
 			<value>5.5798702022528319</value>
-		</property>
-		<property name="quantizationInterval">
-			<value>6</value>
 		</property>
 		<property name="name">
 			<value>Death</value>

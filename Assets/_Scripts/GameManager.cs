@@ -12,6 +12,8 @@ using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using UnityEngine.InputSystem;
+using Michsky.UI.Reach;
 
 public static class AsyncOperationExtensions
 {
@@ -53,7 +55,6 @@ public class GameManager : MonoBehaviour
     public SceneGroup currentGroup;
     public EnemyShootingManager enemyShootingManager;
     public StudioEventEmitter musicPlayback;
-
 
     [Header("Debug Info")]
     [SerializeField]
@@ -107,6 +108,8 @@ public class GameManager : MonoBehaviour
 
     public int totalPlayerProjectilesShot = 0;
     public int playerProjectileHits = 0;
+
+    [SerializeField] private PauseMenuManager pauseMenuManager;
 
     public int currentScene
     {
@@ -769,7 +772,7 @@ public class GameManager : MonoBehaviour
         if (isPlayerDead) return; // Prevent multiple calls
 
         isPlayerDead = true;
-        Debug.Log("Player has died. Transitioning to death state.");
+        Debug.Log("Player has died. Pausing game and showing menu.");
 
         // Stop all ongoing actions or coroutines if necessary
         StopAllCoroutines();
@@ -780,12 +783,13 @@ public class GameManager : MonoBehaviour
         // Disable player controls or any ongoing gameplay elements
         DisableGameplayElements();
 
-        // Show death UI or trigger death sequence
-        ShowDeathUI();
+        // Clean up all projectiles
+        ClearAllProjectiles();
 
-        // You might want to add a delay before allowing restart or showing options
-        StartCoroutine(DelayedDeathSequence());
+        // Animate the pause menu on death
+        pauseMenuManager.AnimatePauseMenu();
     }
+
 
     private void DisableGameplayElements()
     {
@@ -800,47 +804,55 @@ public class GameManager : MonoBehaviour
         // Disable any other gameplay systems that should stop on death
     }
 
-    private void ShowDeathUI()
-    {
-        // Implement this method to show your death UI
-        // This could be a "Game Over" screen, restart button, etc.
-        Debug.Log("Showing Death UI");
-        // Example: deathUIPanel.SetActive(true);
-    }
 
     private IEnumerator DelayedDeathSequence()
     {
         yield return new WaitForSeconds(2f); // Adjust timing as needed
-
-        // Show options to restart, quit, etc.
-        ShowDeathOptions();
     }
 
-    private void ShowDeathOptions()
-    {
-        // Implement this method to show restart/quit options
-        Debug.Log("Showing Death Options");
-        // Example: deathOptionsPanel.SetActive(true);
-    }
-
-    public void RestartGame()
+    public async void RestartGame()
     {
         isPlayerDead = false;
-        // Reset game state, player health, score, etc.
-        ResetGameState();
-        // Reload the current scene or first scene
-        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+        pauseMenuManager.AnimatePauseMenu();
+
+        // Unload all additive scenes
+        await UnloadAllAdditiveScenes();
+
+        // Load the first additive scene
+        await LoadFirstAdditiveSceneAsync();
+
+        // Initialize the game for the new scene
+        InitializeNextSceneValues();
+        UpdateSceneAttributes();
+        ApplyMusicChanges();
+
+        // Re-enable gameplay elements
+        EnableGameplayElements();
     }
 
-    private void ResetGameState()
+    private async Task UnloadAllAdditiveScenes()
     {
-        Score = 0;
-        ShotTally = 0;
-        totalPlayerProjectilesShot = 0;
-        playerProjectileHits = 0;
-        CurrentSceneWaveCount = 0;
-        TotalWaveCount = 0;
-        // Reset any other necessary game state variables
+        int sceneCount = SceneManager.sceneCount;
+        for (int i = 0; i < sceneCount; i++)
+        {
+            Scene scene = SceneManager.GetSceneAt(i);
+            if (scene != SceneManager.GetActiveScene() && scene.name != baseSceneName)
+            {
+                await SceneManager.UnloadSceneAsync(scene);
+            }
+        }
+    }
+
+    private void EnableGameplayElements()
+    {
+        // Re-enable player movement, shooting, etc.
+        if (playerMovement != null)
+            playerMovement.enabled = true;
+
+        // Re-enable any other gameplay systems that were disabled on death
+        // For example:
+        // EnemySpawner.Instance.StartSpawning();
+        // ... other re-enable logic as needed ...
     }
 
     public void changeSongSection()
