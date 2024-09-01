@@ -63,7 +63,7 @@ namespace OccaSoftware.BOP
         }
         
 
-        internal void ReturnToPool(Instance instance)
+        public void ReturnToPool(Instance instance)
         {
             pool[instance.GetIndex()].SetInactive(storagePosition);
         }

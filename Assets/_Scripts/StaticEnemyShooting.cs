@@ -3,13 +3,12 @@ using UnityEngine;
 public class StaticEnemyShooting : MonoBehaviour
 {
     [SerializeField] private string enemyType;
-    [SerializeField] private float shootSpeed = 20f;
-    [SerializeField] private float projectileLifetime = 5f;
+    [SerializeField] private float shootSpeed = 25f;
+    [SerializeField] private float projectileLifetime = 3f;
     [SerializeField] private float projectileScale = 1f;
     [SerializeField] private Material alternativeProjectileMaterial;
     [SerializeField] private Transform target;
 
-    private Vector3 directionToTarget;
     private Transform cachedTransform;
     private float lastShootTime = 0f;
     [SerializeField] private float minTimeBetweenShots = 0.1f;
@@ -17,7 +16,7 @@ public class StaticEnemyShooting : MonoBehaviour
     void Awake()
     {
         cachedTransform = transform;
-        UpdateDirectionToTarget();
+        // Remove the UpdateDirectionToTarget() call as it's no longer needed
     }
 
     public void OnEnable()
@@ -58,18 +57,15 @@ public class StaticEnemyShooting : MonoBehaviour
 
         ProjectileManager.Instance.ShootProjectile(
             cachedTransform.position,
-            Quaternion.LookRotation(directionToTarget),
+            Quaternion.LookRotation(Vector3.up), // Change this to shoot upward
             shootSpeed,
             projectileLifetime,
             projectileScale,
             false,
             alternativeProjectileMaterial
         );
-        ConditionalDebug.Log($"[StaticEnemyShooting] Projectile fired from {gameObject.name} at {EnemyShootingManager.Instance.GetCurrentTime()}. Position: {cachedTransform.position}, Direction: {directionToTarget}");
+        ConditionalDebug.Log($"[StaticEnemyShooting] Projectile fired from {gameObject.name} at {EnemyShootingManager.Instance.GetCurrentTime()}. Position: {cachedTransform.position}, Direction: Up");
     }
 
-    public void UpdateDirectionToTarget()
-    {
-        directionToTarget = target != null ? (target.position - cachedTransform.position).normalized : cachedTransform.forward;
-    }
+    // Remove the UpdateDirectionToTarget() method as it's no longer needed
 }

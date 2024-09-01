@@ -405,53 +405,36 @@ namespace FluffyUnderware.Curvy.Controllers
                 return;
             }
 
-            List<float> placedPositions = new List<float>(); // Track placed positions along the spline as normalized values (0 to 1)
-            float minDistanceApart = 3f; // Minimum distance between prefabs in world units
+            List<float> placedPositions = new List<float>();
+            float minDistanceApart = 3f;
+            float sectionStartT = (float)sectionIndex / Sections;
+            float sectionEndT = (float)(sectionIndex + 1) / Sections;
 
             for (int i = 0; i < prefabsPerSection; i++)
             {
                 bool placed = false;
                 int attempts = 0;
-                while (!placed && attempts < 100) // Prevent infinite loop
+                while (!placed && attempts < 100)
                 {
                     attempts++;
-                    float t = Random.Range(0f, 1f); // Random position along the spline as a normalized value
-                    Vector3 potentialPosition = spline.InterpolateByDistance(t * spline.Length); // Convert to world position
+                    float t = Mathf.Lerp(sectionStartT, sectionEndT, Random.value);
+                    Vector3 potentialPosition = spline.Interpolate(t);
 
-                    // Check if this position is far enough from all previously placed prefabs
                     bool tooClose = placedPositions.Any(p =>
-                        Vector3.Distance(
-                            spline.InterpolateByDistance(p * spline.Length),
-                            potentialPosition
-                        ) < minDistanceApart
+                        Vector3.Distance(spline.Interpolate(p), potentialPosition) < minDistanceApart
                     );
 
                     if (!tooClose)
                     {
-                        Quaternion rotation = spline.GetOrientationFast(t); // Get rotation at position t
+                        Quaternion rotation = spline.GetOrientationFast(t);
 
-                        // Apply random rotation adjustments
-                        float randomXRotationSubtract = Random.Range(
-                            minRandomXRotationSubtract,
-                            maxRandomXRotationSubtract
-                        );
-                        float randomYRotation = Random.Range(
-                            minRandomYRotation,
-                            maxRandomYRotation
-                        );
-                        float randomZRotation = Random.Range(
-                            minRandomZRotation,
-                            maxRandomZRotation
-                        );
-                        Quaternion rotationAdjustment = Quaternion.Euler(
-                            -randomXRotationSubtract,
-                            randomYRotation,
-                            randomZRotation
-                        );
+                        float randomXRotationSubtract = Random.Range(minRandomXRotationSubtract, maxRandomXRotationSubtract);
+                        float randomYRotation = Random.Range(minRandomYRotation, maxRandomYRotation);
+                        float randomZRotation = Random.Range(minRandomZRotation, maxRandomZRotation);
+                        Quaternion rotationAdjustment = Quaternion.Euler(-randomXRotationSubtract, randomYRotation, randomZRotation);
                         rotation *= rotationAdjustment;
 
-                        Vector3 sideDirection =
-                            (Random.value > 0.5f) ? Vector3.right : Vector3.left;
+                        Vector3 sideDirection = (Random.value > 0.5f) ? Vector3.right : Vector3.left;
                         Vector3 offsetDirection = rotation * sideDirection;
 
                         float sideOffset = Random.Range(7f, 12f) * ((Random.value > 0.5f) ? 1 : -1);
@@ -460,19 +443,14 @@ namespace FluffyUnderware.Curvy.Controllers
                         GameObject prefabInstance = prefabPooler.GetFromPool();
                         prefabInstance.transform.position = finalPosition;
                         prefabInstance.transform.rotation = rotation;
-                        prefabInstance.transform.localScale = new Vector3(
-                            prefabScale,
-                            prefabScale,
-                            prefabScale
-                        );
+                        prefabInstance.transform.localScale = Vector3.one * prefabScale;
 
-                        // Set the prefab instance as a child of the GameObject this script is attached to
                         prefabInstance.transform.SetParent(this.transform, true);
 
                         prefabsBySection[sectionIndex].Add(prefabInstance);
                         activePrefabs.Add(prefabInstance);
 
-                        placedPositions.Add(t); // Remember this position as a normalized value
+                        placedPositions.Add(t);
                         placed = true;
                     }
                 }

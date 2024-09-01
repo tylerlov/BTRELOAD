@@ -4,6 +4,8 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using UnityEngine.InputSystem;
+using FMODUnity;
+using FMOD.Studio;
 
 public class QuickTimeEventManager : MonoBehaviour
 {
@@ -12,6 +14,8 @@ public class QuickTimeEventManager : MonoBehaviour
     [SerializeField] private GameObject qtePanel;
     [SerializeField] private TextMeshProUGUI qteText;
     [SerializeField] private float qteDisplayTime = 0.5f; // Increased to 0.5 seconds
+    [SerializeField] private EventReference successSoundEvent;
+    [SerializeField] private EventReference failureSoundEvent;
 
     private string[] directions = { "↑", "→", "↓", "←" };
     private char[] currentSequence;
@@ -88,14 +92,17 @@ public class QuickTimeEventManager : MonoBehaviour
                 if (currentIndex >= currentSequence.Length)
                 {
                     Debug.Log("QTE Completed Successfully");
-                    OnQteComplete?.Invoke(true);
+                    EndQTE(true);
                     break;
                 }
             }
             yield return null;
         }
 
-        EndQTE();
+        if (isQteActive)
+        {
+            EndQTE(false);
+        }
     }
 
     private bool CheckInput()
@@ -119,10 +126,23 @@ public class QuickTimeEventManager : MonoBehaviour
             inputCorrect = true;
         }
 
+        if (inputCorrect)
+        {
+            RuntimeManager.PlayOneShot(successSoundEvent);
+        }
+        else if (playerInputActions.Player.Up.WasPressedThisFrame() ||
+                 playerInputActions.Player.Right.WasPressedThisFrame() ||
+                 playerInputActions.Player.Down.WasPressedThisFrame() ||
+                 playerInputActions.Player.Left.WasPressedThisFrame())
+        {
+            RuntimeManager.PlayOneShot(failureSoundEvent);
+            EndQTE(false);
+        }
+
         return inputCorrect;
     }
 
-    public void EndQTE()
+    public void EndQTE(bool success = false)
     {
         if (qteCoroutine != null)
         {
@@ -131,10 +151,10 @@ public class QuickTimeEventManager : MonoBehaviour
         }
         if (isQteActive)
         {
-            Debug.Log("QTE Failed (Timed Out)");
+            Debug.Log(success ? "QTE Completed Successfully" : "QTE Failed");
             isQteActive = false;
             qtePanel.SetActive(false);
-            OnQteComplete?.Invoke(false);
+            OnQteComplete?.Invoke(success);
         }
     }
 }

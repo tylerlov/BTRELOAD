@@ -785,7 +785,7 @@ public class ProjectileStateBased : MonoBehaviour
         cachedTransform.DOKill();
 
         // Disable any scripts that might be moving the projectile
-        this.enabled = false;
+       // this.enabled = false;
 
         ProjectileManager.Instance.PlayDeathEffect(cachedTransform.position);
 

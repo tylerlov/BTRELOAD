@@ -49,7 +49,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     {
         Debug.Log("Game Over!");
         gameObject.SetActive(false);
-        // Add any additional game over logic here
+        GameManager.instance.HandlePlayerDeath();
     }
 
     private void InitializeHitEffectsPool()

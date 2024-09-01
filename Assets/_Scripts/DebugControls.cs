@@ -14,6 +14,7 @@ public class DebugControls : MonoBehaviour, IPointerClickHandler
     private GameObject uiElement;
     private InputAction debugNextSceneAction;
     private bool isSceneTransitioning = false; // Flag to prevent multiple scene transitions
+    private InputAction debugKillPlayerAction;
 
     private void Awake()
     {
@@ -24,6 +25,14 @@ public class DebugControls : MonoBehaviour, IPointerClickHandler
         );
         debugNextSceneAction.performed += ctx => OnDebugNextScene();
         debugNextSceneAction.Enable();
+
+        // Initialize the InputAction for the 'K' key to kill the player
+        debugKillPlayerAction = new InputAction(
+            type: InputActionType.Button,
+            binding: "<Keyboard>/k"
+        );
+        debugKillPlayerAction.performed += ctx => OnDebugKillPlayer();
+        debugKillPlayerAction.Enable();
     }
 
     private void Start()
@@ -35,6 +44,7 @@ public class DebugControls : MonoBehaviour, IPointerClickHandler
     {
         // Disable the InputActions when the object is destroyed
         debugNextSceneAction.Disable();
+        debugKillPlayerAction.Disable();
         SceneManager.sceneLoaded -= OnSceneLoaded; // Unsubscribe from the event
     }
 
@@ -65,6 +75,22 @@ public class DebugControls : MonoBehaviour, IPointerClickHandler
         InitializeComponents();
         isSceneTransitioning = false; // Reset the flag
         SceneManager.sceneLoaded -= OnSceneLoaded; // Unsubscribe from the event
+    }
+
+    private void OnDebugKillPlayer()
+    {
+        Debug.Log("Debug: Initiating player death");
+        PlayerHealth playerHealth = FindObjectOfType<PlayerHealth>();
+        if (playerHealth != null)
+        {
+            // Set the player's health to 0 and trigger the death sequence
+            GameManager.instance.SetScore(0);
+            playerHealth.Damage(1); // This will trigger the GameOver method in PlayerHealth
+        }
+        else
+        {
+            Debug.LogError("PlayerHealth component not found in the scene.");
+        }
     }
 
     public void OnPointerClick(PointerEventData eventData)

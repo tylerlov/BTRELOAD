@@ -95,6 +95,10 @@ public class GameManager : MonoBehaviour
 
     [SerializeField]
     private string globalClockName = "Test"; // Allow setting the clock name in the inspector
+
+    [Header("Death State")]
+    [SerializeField]
+    private string deathMusicSectionName = "Death";
     #endregion
 
     #region Properties
@@ -163,6 +167,7 @@ public class GameManager : MonoBehaviour
     private Score scoreUI;
     private DebugSettings debugSettings;
     private SplineManager splineManager;
+    private bool isPlayerDead = false;
     #endregion
 
     private const int SECTION_TRANSITION_SCORE_BOOST = 200;
@@ -757,6 +762,85 @@ public class GameManager : MonoBehaviour
         {
             ConditionalDebug.LogError("ProjectileManager instance not found.");
         }
+    }
+
+    public void HandlePlayerDeath()
+    {
+        if (isPlayerDead) return; // Prevent multiple calls
+
+        isPlayerDead = true;
+        Debug.Log("Player has died. Transitioning to death state.");
+
+        // Stop all ongoing actions or coroutines if necessary
+        StopAllCoroutines();
+
+        // Transition to death music section using the existing method
+        ChangeMusicSectionByName(deathMusicSectionName);
+
+        // Disable player controls or any ongoing gameplay elements
+        DisableGameplayElements();
+
+        // Show death UI or trigger death sequence
+        ShowDeathUI();
+
+        // You might want to add a delay before allowing restart or showing options
+        StartCoroutine(DelayedDeathSequence());
+    }
+
+    private void DisableGameplayElements()
+    {
+        // Disable player movement, shooting, etc.
+        if (playerMovement != null)
+            playerMovement.enabled = false;
+
+        // Disable enemy spawning or clear existing enemies
+        KillAllEnemies();
+        KillAllProjectiles();
+
+        // Disable any other gameplay systems that should stop on death
+    }
+
+    private void ShowDeathUI()
+    {
+        // Implement this method to show your death UI
+        // This could be a "Game Over" screen, restart button, etc.
+        Debug.Log("Showing Death UI");
+        // Example: deathUIPanel.SetActive(true);
+    }
+
+    private IEnumerator DelayedDeathSequence()
+    {
+        yield return new WaitForSeconds(2f); // Adjust timing as needed
+
+        // Show options to restart, quit, etc.
+        ShowDeathOptions();
+    }
+
+    private void ShowDeathOptions()
+    {
+        // Implement this method to show restart/quit options
+        Debug.Log("Showing Death Options");
+        // Example: deathOptionsPanel.SetActive(true);
+    }
+
+    public void RestartGame()
+    {
+        isPlayerDead = false;
+        // Reset game state, player health, score, etc.
+        ResetGameState();
+        // Reload the current scene or first scene
+        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+    }
+
+    private void ResetGameState()
+    {
+        Score = 0;
+        ShotTally = 0;
+        totalPlayerProjectilesShot = 0;
+        playerProjectileHits = 0;
+        CurrentSceneWaveCount = 0;
+        TotalWaveCount = 0;
+        // Reset any other necessary game state variables
     }
 
     public void changeSongSection()

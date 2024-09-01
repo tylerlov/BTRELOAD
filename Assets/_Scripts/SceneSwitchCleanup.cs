@@ -10,6 +10,8 @@ public class SceneSwitchCleanup : MonoBehaviour
     [SerializeField]
     private float searchDelay = 0.5f;
 
+    private CinemachineCameraSwitching cameraSwitching;
+
     void OnEnable()
     {
         SceneManager.sceneLoaded += OnSceneLoaded;
@@ -31,6 +33,17 @@ public class SceneSwitchCleanup : MonoBehaviour
 
         ActivateGameObject(ReticleName);
         ActivateGameObject(JoostManName);
+
+        // Find and set the main camera
+        cameraSwitching = FindObjectOfType<CinemachineCameraSwitching>();
+        if (cameraSwitching != null)
+        {
+            cameraSwitching.SetMainCamera();
+        }
+        else
+        {
+            Debug.LogWarning("CinemachineCameraSwitching component not found in the scene.");
+        }
     }
 
     private void ActivateGameObject(string objectName)

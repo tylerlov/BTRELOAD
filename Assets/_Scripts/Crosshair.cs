@@ -241,7 +241,6 @@ public class Crosshair : MonoBehaviour
         if (!playerInputActions.Player.LockProjectiles.IsPressed())
         {
             lastLockReleaseTime = Time.time;
-            Debug.Log($"Lock projectiles button released at {lastLockReleaseTime}");
             return true;
         }
         return false;
