@@ -69,7 +69,6 @@ public class Score : MonoBehaviour
     }
 
     private PlayerHealth playerHealth;
-    private Crosshair playerCrosshair;
     private StringBuilder stringBuilder = new StringBuilder();
 
     public TMP_Text scoreAddedText; // Reference to the score added UI element
@@ -88,7 +87,6 @@ public class Score : MonoBehaviour
 
         // Ensure components are found after new assignment
         playerHealth = player.GetComponent<PlayerHealth>();
-        playerCrosshair = playerShooting.GetComponent<Crosshair>();
 
         if (projectiles != null)
         {
@@ -119,8 +117,8 @@ public class Score : MonoBehaviour
     {
         float health = playerHealth.getCurrentHealth();
         int score = ScoreManager.Instance.Score;
-        int playerLocks = Mathf.FloorToInt(playerCrosshair.returnLocks());
-        int enemyLocks = Mathf.FloorToInt(playerCrosshair.returnEnemyLocks());
+        int playerLocks = Mathf.FloorToInt(PlayerLocking.Instance.returnLocks());
+        int enemyLocks = Mathf.FloorToInt(PlayerLocking.Instance.returnEnemyLocks());
 
         stringBuilder.Clear();
         stringBuilder.Append(score);

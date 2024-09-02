@@ -13,7 +13,6 @@ public class WaveEventSubscriptions : MonoBehaviour
     private CinemachineCameraSwitching cameraSwitching;
     private FmodOneshots fmodOneShots;
     private ShooterMovement shooterMovement;
-    private Crosshair crosshair;
 
     void Start()
     {
@@ -41,11 +40,6 @@ public class WaveEventSubscriptions : MonoBehaviour
         cameraSwitching = FindActiveInstance<CinemachineCameraSwitching>();
         fmodOneShots = FindActiveInstance<FmodOneshots>();
         shooterMovement = FindActiveInstance<ShooterMovement>();
-        crosshair = FindObjectOfType<Crosshair>();
-        if (crosshair == null)
-        {
-            Debug.LogError("Crosshair not found in the scene!");
-        }
 
         splineManager = FindObjectOfType<SplineManager>();
         if (splineManager == null)
@@ -113,11 +107,7 @@ public class WaveEventSubscriptions : MonoBehaviour
             shooterMovement.SetClamping(true);
         }
 
-        // Clear locks when a new wave starts
-        if (crosshair != null)
-        {
-            crosshair.OnNewWaveOrAreaTransition();
-        }
+        PlayerLocking.Instance.OnNewWaveOrAreaTransition();
 
         // Increment spline at the start of a wave
         if (splineManager != null)

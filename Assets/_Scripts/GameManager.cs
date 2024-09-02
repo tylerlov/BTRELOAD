@@ -166,15 +166,7 @@ private async void Start()
 
     private void InitializeCrosshair()
     {
-        var crosshair = FindObjectOfType<Crosshair>();
-        if (crosshair != null)
-        {
-            transCamOn.AddListener(crosshair.ReleasePlayerLocks);
-        }
-        else
-        {
-            Debug.LogError("Crosshair component not found in the scene.");
-        }
+            transCamOn.AddListener(PlayerLocking.Instance.ReleasePlayerLocks);
     }
 
     private void InitializeShooterMovement()

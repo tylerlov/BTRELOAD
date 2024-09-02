@@ -1,0 +1,468 @@
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using BehaviorDesigner.Runtime.Tactical;
+using BehaviorDesigner.Runtime.Tasks.Movement;
+using BehaviorDesigner.Runtime.Tasks.Unity.UnityGameObject;
+using Chronos;
+using DG.Tweening;
+using HohStudios.Tools.ObjectParticleSpawner;
+using SensorToolkit.Example;
+using SickscoreGames;
+using SickscoreGames.HUDNavigationSystem;
+using Unity.Collections;
+using UnityEngine;
+using UnityEngine.SceneManagement;
+using UnityEngine.VFX;
+
+public enum ProjectilePoolType
+{
+    // Add your pool types here, for example:
+    Standard,
+    Homing,
+    Explosive
+}
+
+// Define ProjectileVector3 if it's not defined elsewhere
+[System.Serializable]
+public struct ProjectileVector3
+{
+    public float x;
+    public float y;
+    public float z;
+
+    public ProjectileVector3(float x, float y, float z)
+    {
+        this.x = x;
+        this.y = y;
+        this.z = z;
+    }
+
+    public static implicit operator Vector3(ProjectileVector3 pv3) => new Vector3(pv3.x, pv3.y, pv3.z);
+    public static implicit operator ProjectileVector3(Vector3 v3) => new ProjectileVector3(v3.x, v3.y, v3.z);
+
+    public static float Distance(ProjectileVector3 a, ProjectileVector3 b)
+    {
+        return Vector3.Distance((Vector3)a, (Vector3)b);
+    }
+}
+
+public class ProjectileStateBased : MonoBehaviour
+{
+    private const string FIRST_TIME_ENABLED_KEY = "FIRST_TIME_ENABLED_KEY";
+
+    // Existing fields and properties
+    public bool targetLocking;
+    public ProjectilePoolType poolType;
+    public bool isParried = false;
+
+    [HideInInspector] public Rigidbody rb;
+    [HideInInspector] public TrailRenderer tRn;
+    [HideInInspector] public LineRenderer lRn;
+    [HideInInspector] public Timeline TLine;
+
+    [Header("State")]
+    public string projectileType;
+    [HideInInspector] public string _currentTag;
+    [HideInInspector] public bool collectable;
+    [HideInInspector] public bool homing;
+    private bool activeLine = false;
+    private bool disableOnProjMove;
+    internal bool shotAtEnemy;
+    internal bool projHitPlayer = false;
+    [HideInInspector] public bool lifetimeExtended = false;
+
+    [Header("Movement")]
+    public float bulletSpeed;
+    public float bulletSpeedMultiplier = 4f;
+    public float _rotateSpeed = 95;
+    public float slowSpeed;
+    public float turnRate = 360f;
+    public float maxRotateSpeed = 180;
+    public float maxDistance = 100f;
+    [HideInInspector] public float initialSpeed;
+
+    [Header("Targeting and Prediction")]
+    public Transform currentTarget;
+    public float _maxDistancePredict = 100;
+    public float _minDistancePredict = 5;
+    public float _maxTimePrediction = 5;
+    public ProjectileVector3 _standardPrediction, _deviatedPrediction;
+    public ProjectileVector3 predictedPosition { get; set; }
+
+    [Header("Combat")]
+    public float damageAmount = 10f;
+    public float damageMultiplier = 1f;
+    public float lifetime;
+    private float originalLifetime;
+
+    [Header("Accuracy and Approach")]
+    [Range(0f, 1f)] public float accuracy = 1f;
+    public float maxInaccuracyRadius = 5f;
+    public float minInaccuracyRadius = 0.1f;
+    public float minTurnRadius = 10f;
+    public float maxTurnRadius = 50f;
+    public float approachAngle = 45f;
+    public float closeProximityThreshold = 2f;
+    public float smoothApproachFactor = 0.1f;
+    public float minDistanceToTarget = 0.1f;
+    public float maxRotationSpeed = 360f;
+
+    [Header("Visual Effects")]
+    public Renderer modelRenderer;
+    [HideInInspector] public Material myMaterial;
+    public Color lockedProjectileColor;
+    private Color originalProjectileColor;
+    public TrailRenderer playerProjPath;
+    public Material lockedStateMaterial;
+    public VisualEffect currentLockedFX;
+
+    // New fields for refactored functionality
+    private ProjectileState currentState;
+    private ProjectileMovement _movement;
+    private ProjectileCombat _combat;
+    private ProjectileVisualEffects _visualEffects;
+
+    public ProjectileVector3 initialPosition;
+    public ProjectileVector3 initialDirection;
+    public float distanceTraveled = 0f;
+    public float timeAlive = 0f;
+    public bool hasHitTarget = false;
+    public bool isPlayerShot = false;
+
+    internal Vector3 _previousPosition;
+    internal static GameObject shootingObject;
+
+    private static readonly int BaseColorProperty = Shader.PropertyToID("_BaseColor");
+    private static readonly int DissolveCutoutProperty = Shader.PropertyToID("_AdvancedDissolveCutoutStandardClip");
+    private MaterialPropertyBlock propBlock;
+
+    private Transform cachedTransform;
+    private Rigidbody cachedRigidbody;
+
+    private void Awake()
+    {
+        cachedTransform = transform;
+        cachedRigidbody = GetComponent<Rigidbody>();
+        rb = cachedRigidbody; // Assign rb here
+        tRn = GetComponent<TrailRenderer>();
+        TLine = GetComponent<Timeline>();
+
+        _currentTag = gameObject.tag;
+        myMaterial = modelRenderer.material;
+        originalProjectileColor = myMaterial.color;
+        initialSpeed = bulletSpeed;
+
+        if (shootingObject == null)
+        {
+            shootingObject = GameObject.FindGameObjectWithTag("Shooting");
+        }
+
+        propBlock = new MaterialPropertyBlock();
+
+        // New initializations for refactored classes
+        _movement = new ProjectileMovement(this);
+        _combat = new ProjectileCombat(this);
+        _visualEffects = new ProjectileVisualEffects(this);
+    }
+
+    void OnEnable()
+    {
+        lifetimeExtended = false;
+        projHitPlayer = false;
+
+        if (gameObject.tag == "LaunchableBulletLocked")
+        {
+            gameObject.tag = "LaunchableBullet";
+        }
+
+        if (PlayerPrefs.GetInt(FIRST_TIME_ENABLED_KEY, 0) == 0)
+        {
+            ConditionalDebug.Log("First Time Enabled");
+            PlayerPrefs.SetInt(FIRST_TIME_ENABLED_KEY, 1);
+        }
+        else
+        {
+            modelRenderer.material = myMaterial;
+            myMaterial.SetColor("_BaseColor", originalProjectileColor);
+        }
+
+        ChangeState(new EnemyShotState(this));
+
+        disableOnProjMove = false;
+
+        transform.GetChild(0).gameObject.SetActive(false);
+
+        _currentTag = gameObject.tag;
+
+        // Remove any existing LockedFX
+        if (currentLockedFX != null)
+        {
+            ProjectileEffectManager.Instance.ReturnLockedFXToPool(currentLockedFX);
+            currentLockedFX = null;
+        }
+    }
+
+       private void OnDisable()
+    {
+        if (ProjectileManager.Instance != null)
+        {
+            ProjectileManager.Instance.UnregisterProjectile(this);
+        }
+    }
+
+   private void Start()
+    {
+        rb = gameObject.GetComponent<Rigidbody>();
+        TLine = gameObject.GetComponent<Timeline>();
+        TLine.rewindable = true;
+        tRn = GetComponent<TrailRenderer>();
+        playerProjPath.enabled = false;
+
+        _currentTag = gameObject.tag;
+    }
+
+    public void CustomUpdate(float timeScale)
+    {
+        currentState?.CustomUpdate(timeScale);
+
+        UpdatePredictedPosition();
+
+        lifetime -= Time.deltaTime * timeScale;
+        if (lifetime <= 0)
+        {
+            Death();
+        }
+
+        UpdateTrackingInfo();
+
+        ConditionalDebug.Log(
+            $"Projectile ID: {GetInstanceID()}, Position: {transform.position}, Velocity: {rb.velocity.magnitude}, Target: {(currentTarget != null ? currentTarget.name : "None")}, Lifetime: {lifetime}"
+        );
+    }
+
+    private void OnTriggerEnter(Collider other)
+    {
+        currentState?.OnTriggerEnter(other);
+    }
+
+    public void Death()
+    {
+        ConditionalDebug.Log(
+            $"Death called on projectile. Lifetime remaining: {lifetime}. Hit Player: {projHitPlayer}"
+        );
+
+        if (isPlayerShot && !hasHitTarget)
+        {
+            GameManager.Instance.LogProjectileExpired(isPlayerShot);
+        }
+
+        ProjectileManager.Instance.UnregisterProjectile(this);
+        ProjectilePool.Instance.ReturnProjectileToPool(this);
+
+        if (rb != null)
+        {
+            rb.velocity = Vector3.zero;
+            rb.angularVelocity = Vector3.zero;
+            rb.isKinematic = true;
+        }
+
+        transform.DOKill();
+
+        _visualEffects.PlayDeathEffect();
+    }
+
+    public Vector3 CalculateTargetVelocity(GameObject target)
+    {
+        return _movement.CalculateTargetVelocity(target);
+    }
+
+    public void SetLifetime(float seconds)
+    {
+        lifetime = seconds;
+        originalLifetime = seconds;
+    }
+
+    public void ResetLifetime()
+    {
+        lifetime = originalLifetime;
+    }
+
+    public void SetHomingTarget(Transform target)
+    {
+        currentTarget = target;
+        EnableHoming(true);
+    }
+
+    public void EnableHoming(bool enable)
+    {
+        homing = enable;
+    }
+
+    public float maxTurnRate = 360f;
+
+    void FixedUpdate()
+    {
+        float timeScale = TLine.timeScale;
+        float deltaTime = Time.fixedDeltaTime * timeScale;
+
+        currentState?.FixedUpdate(timeScale);
+        _movement.UpdateMovement(timeScale);
+
+        lifetime -= deltaTime;
+        if (lifetime <= 0)
+        {
+            Death();
+        }
+    }
+
+    public void SetClock(string clockKey)
+    {
+        if (TLine != null)
+        {
+            TLine.globalClockKey = clockKey;
+            Debug.Log($"SetClock: Timeline's globalClockKey set to '{clockKey}'.");
+        }
+        else
+        {
+            Debug.LogWarning("SetClock: Timeline component not found on this projectile.");
+        }
+    }
+
+    void OnDrawGizmosSelected()
+    {
+        if (homing && currentTarget != null)
+        {
+            // Draw a line from the projectile to the current target
+            Gizmos.color = Color.red;
+            Gizmos.DrawLine(cachedTransform.position, currentTarget.position);
+
+            // Draw a line from the projectile to the predicted position
+            Gizmos.color = Color.blue;
+            Gizmos.DrawLine(cachedTransform.position, predictedPosition);
+
+            // Draw spheres at the current target and predicted positions
+            Gizmos.color = Color.red;
+            Gizmos.DrawSphere(currentTarget.position, 0.5f);
+            Gizmos.color = Color.blue;
+            Gizmos.DrawSphere(predictedPosition, 0.5f);
+        }
+    }
+
+    public void OnPlayerRicochetDodge()
+    {
+        _movement.OnPlayerRicochetDodge();
+    }
+
+    public void SetAccuracy(float newAccuracy)
+    {
+        accuracy = Mathf.Clamp01(newAccuracy);
+    }
+
+    public void UpdateTrackingInfo()
+    {
+        if (isPlayerShot && !hasHitTarget)
+        {
+            distanceTraveled += ProjectileVector3.Distance((ProjectileVector3)cachedTransform.position, initialPosition);
+            initialPosition = cachedTransform.position;
+            timeAlive += Time.deltaTime;
+        }
+    }
+
+    public void ResetForPool()
+    {
+        if (cachedRigidbody != null)
+        {
+            cachedRigidbody.isKinematic = false;
+            cachedRigidbody.velocity = Vector3.zero;
+            cachedRigidbody.angularVelocity = Vector3.zero;
+        }
+
+        this.enabled = true;
+
+        ParticleSystem[] particleSystems = GetComponentsInChildren<ParticleSystem>();
+        foreach (ParticleSystem ps in particleSystems)
+        {
+            ps.Stop();
+            ps.Clear();
+        }
+
+        homing = false;
+        currentTarget = null;
+        lifetimeExtended = false;
+        projHitPlayer = false;
+        bulletSpeed = initialSpeed;
+
+        ChangeState(new EnemyShotState(this));
+
+        if (currentLockedFX != null)
+        {
+            ProjectileEffectManager.Instance.ReturnLockedFXToPool(currentLockedFX);
+            currentLockedFX = null;
+        }
+
+        if (playerProjPath != null)
+        {
+            playerProjPath.enabled = false;
+        }
+
+        if (modelRenderer != null && myMaterial != null)
+        {
+            modelRenderer.material = myMaterial;
+            myMaterial.SetColor("_BaseColor", originalProjectileColor);
+        }
+
+        accuracy = 1f;
+    }
+
+    public void SetDamageMultiplier(float multiplier)
+    {
+        _combat.SetDamageMultiplier(multiplier);
+    }
+
+    public void ApplyDamage(IDamageable target)
+    {
+        _combat.ApplyDamage(target);
+    }
+
+    public void ChangeState(ProjectileState newState)
+    {
+        currentState?.OnStateExit();
+        currentState = newState;
+        currentState.OnStateEnter();
+    }
+
+    public ProjectileState GetCurrentState()
+    {
+        return currentState;
+    }
+
+    public Type GetCurrentStateType()
+    {
+        if (currentState != null)
+        {
+            ConditionalDebug.Log("Current state type: " + currentState.GetType().ToString());
+            return currentState.GetType();
+        }
+        else
+        {
+            ConditionalDebug.Log("Current state is null");
+            return null;
+        }
+    }
+
+    public void UpdatePredictedPosition()
+    {
+        if (currentTarget == null) return;
+
+        Vector3 targetVelocity = CalculateTargetVelocity(currentTarget.gameObject);
+        float distanceToTarget = Vector3.Distance(transform.position, currentTarget.position);
+        float predictionTime = Mathf.Min(distanceToTarget / bulletSpeed, _maxTimePrediction);
+
+        predictedPosition = new ProjectileVector3(
+            currentTarget.position.x + targetVelocity.x * predictionTime,
+            currentTarget.position.y + targetVelocity.y * predictionTime,
+            currentTarget.position.z + targetVelocity.z * predictionTime
+        );
+    }
+}

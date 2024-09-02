@@ -26,7 +26,6 @@ public class ProjectileManager : MonoBehaviour
 
     [SerializeField] private Timekeeper timekeeper;
     private Dictionary<GameObject, Vector3> lastPositions = new Dictionary<GameObject, Vector3>();
-    private Crosshair crosshair;
 
     private GameObject playerGameObject;
 
@@ -85,12 +84,6 @@ public class ProjectileManager : MonoBehaviour
         if (timekeeper == null)
         {
             ConditionalDebug.LogWarning("Timekeeper not found in the scene.");
-        }
-
-        crosshair = FindObjectOfType<Crosshair>();
-        if (crosshair == null)
-        {
-            ConditionalDebug.LogWarning("Crosshair not found in the scene.");
         }
 
         ClearNativeArray(projectileIds);
@@ -457,14 +450,7 @@ public ProjectileStateBased ShootProjectileFromEnemy(
     {
         if (projectile.GetCurrentState() is PlayerShotState)
         {
-            if (crosshair != null)
-            {
-                crosshair.RemoveLockedEnemy(enemy.transform);
-            }
-            else
-            {
-                ConditionalDebug.LogError("Crosshair reference is not set in ProjectileManager.");
-            }
+                PlayerLocking.Instance.RemoveLockedEnemy(enemy.transform);          
         }
     }
 

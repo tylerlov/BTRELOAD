@@ -80,9 +80,6 @@ public class EnemyTwinSnakeBoss : MonoBehaviour, ILimbDamageReceiver
     private int currentShootingSnakeIndex = 0;
 
     private ProjectileManager projectileManager;
-
-    private Crosshair crosshair;
-
     private GameObject playerTarget;
 
     [Header("Eye Colliders")]
@@ -128,13 +125,6 @@ public class EnemyTwinSnakeBoss : MonoBehaviour, ILimbDamageReceiver
             ConditionalDebug.LogError("ProjectileManager not found!");
         }
 
-        // Find and store the Crosshair reference
-        crosshair = FindObjectOfType<Crosshair>();
-        if (crosshair == null)
-        {
-            ConditionalDebug.LogError("Crosshair not found!");
-        }
-
         // Initialize clocks
         for (int i = 0; i < snakes.Length; i++)
         {
@@ -142,11 +132,11 @@ public class EnemyTwinSnakeBoss : MonoBehaviour, ILimbDamageReceiver
         }
 
         // Subscribe to rewind events
-        if (crosshair != null)
+/*         if (crosshair != null)
         {
             crosshair.OnRewindStart += HandleRewindStart;
             crosshair.OnRewindEnd += HandleRewindEnd;
-        }
+        } */
 
         playerTarget = GameObject.FindGameObjectWithTag("Player");
     }
@@ -154,11 +144,11 @@ public class EnemyTwinSnakeBoss : MonoBehaviour, ILimbDamageReceiver
     private void OnDestroy()
     {
         // Unsubscribe from rewind events
-        if (crosshair != null)
+       /*  if (crosshair != null)
         {
             crosshair.OnRewindStart -= HandleRewindStart;
             crosshair.OnRewindEnd -= HandleRewindEnd;
-        }
+        } */
     }
 
     private void HandleRewindStart(float timeScale)
@@ -181,10 +171,8 @@ public class EnemyTwinSnakeBoss : MonoBehaviour, ILimbDamageReceiver
 
     private int DetermineTargetSnake()
     {
-        if (crosshair == null)
-            return -1;
 
-        Vector3 aimPoint = crosshair.RaycastTarget();
+        Vector3 aimPoint = PlayerLocking.Instance.RaycastTarget();
         float closestDistance = float.MaxValue;
         int closestSnakeIndex = -1;
 
