@@ -316,7 +316,7 @@ public class Crosshair : MonoBehaviour
 
     private void HandleCollectHealthMode(RaycastHit hit)
     {
-        GameManager.instance.AddScore(100);
+        ScoreManager.Instance.AddScore(100);
         StartCoroutine(LockVibrate());
         lockFeedback.PlayFeedbacks();
         PlayRandomLocking();
@@ -568,10 +568,10 @@ public class Crosshair : MonoBehaviour
 
     private void ResetMusicState()
     {
-        if (GameManager.instance != null && GameManager.instance.musicPlayback != null)
+        if (GameManager.Instance != null && MusicManager.Instance.musicPlayback != null)
         {
             Debug.Log("Resetting music state");
-            GameManager.instance.musicPlayback.EventInstance.setParameterByName("Rewind", 0f);
+            MusicManager.Instance.musicPlayback.EventInstance.setParameterByName("Rewind", 0f);
             // Add any other music-related parameters that need to be reset
         }
     }
@@ -672,7 +672,7 @@ public class Crosshair : MonoBehaviour
         JPGEffectController.Instance.SetJPGIntensity(0.7f, 0.5f);
 
         yield return StartCoroutine(
-            GameManager.instance.RewindTime(slowTimeScale, slowTimeDuration, returnToNormalDuration)
+            TimeManager.Instance.RewindTime(slowTimeScale, slowTimeDuration, returnToNormalDuration)
         );
 
         // Calculate new position based on slowed speed and duration
@@ -728,7 +728,7 @@ public class Crosshair : MonoBehaviour
         JPGEffectController.Instance.SetJPGIntensity(0.7f, 0.5f);
 
         yield return StartCoroutine(
-            GameManager.instance.RewindTime(rewindTimeScale, rewindDuration, returnToNormalDuration)
+            TimeManager.Instance.RewindTime(rewindTimeScale, rewindDuration, returnToNormalDuration)
         );
 
         // Reset after rewind

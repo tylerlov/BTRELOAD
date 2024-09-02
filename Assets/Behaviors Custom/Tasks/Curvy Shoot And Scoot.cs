@@ -45,22 +45,15 @@ namespace BehaviorDesigner.Runtime.Tactical.Tasks
         private SharedFloat speedMultiplier = 0.1f;
         private bool isMovingForward = true;
 
-        private GameManager gameManager;
-
         public override void OnAwake()
         {
             base.OnAwake();
             agentTransform = transform;
-            gameManager = GameManager.instance;
         }
 
         public override void OnStart()
         {
-            if (gameManager == null)
-            {
-                Debug.LogError("CurvyShootAndScoot: GameManager instance not found.");
-                return;
-            }
+
 
             // Find the player
             GameObject player = GameObject.FindGameObjectWithTag(targetTag.Value);

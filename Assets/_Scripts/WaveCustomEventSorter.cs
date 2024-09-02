@@ -24,14 +24,7 @@ public class WaveCustomEventSorter : MonoBehaviour
         switch (eventName)
         {
             case "Switch Scene":
-                if (GameManager.instance != null)
-                {
-                    GameManager.instance.ChangeSceneWithTransitionToNext();
-                }
-                else
-                {
-                    Debug.LogError("GameManager instance not found.");
-                }
+                    SceneManagerBTR.Instance.ChangeSceneWithTransitionToNext();
                 break;
             // Add more cases here for other custom events
             default:

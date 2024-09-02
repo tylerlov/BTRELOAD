@@ -10,11 +10,11 @@ using UnityEngine.UI;
 
 public class DebugControls : MonoBehaviour, IPointerClickHandler
 {
-    private GameManager gameManager;
     private GameObject uiElement;
     private InputAction debugNextSceneAction;
     private bool isSceneTransitioning = false; // Flag to prevent multiple scene transitions
     private InputAction debugKillPlayerAction;
+    private InputAction debugKillAllEnemiesAction;
 
     private void Awake()
     {
@@ -39,6 +39,19 @@ public class DebugControls : MonoBehaviour, IPointerClickHandler
         };
         debugKillPlayerAction.Enable();
 
+        // Initialize the InputAction for the '0' key to kill all enemies
+        debugKillAllEnemiesAction = new InputAction(
+            name: "DebugKillAllEnemies",
+            type: InputActionType.Button,
+            binding: "<Keyboard>/0"
+        );
+        debugKillAllEnemiesAction.performed += ctx => 
+        {
+            Debug.Log("Debug kill all enemies action performed");
+            KillAllEnemies();
+        };
+        debugKillAllEnemiesAction.Enable();
+
         Debug.Log("DebugControls Awake completed, actions set up");
     }
 
@@ -52,6 +65,7 @@ public class DebugControls : MonoBehaviour, IPointerClickHandler
         // Disable the InputActions when the object is destroyed
         debugNextSceneAction.Disable();
         debugKillPlayerAction.Disable();
+        debugKillAllEnemiesAction.Disable();
         SceneManager.sceneLoaded -= OnSceneLoaded; // Unsubscribe from the event
     }
 
@@ -62,15 +76,11 @@ public class DebugControls : MonoBehaviour, IPointerClickHandler
 
         isSceneTransitioning = true; // Set the flag to true to indicate a scene transition is in progress
 
-        if (gameManager != null)
-        {
-            gameManager.DebugMoveToNextScene();
-        }
+            GameManager.Instance.DebugMoveToNextScene();
 
-        if (gameManager != null)
-        {
-            gameManager.HandleDebugSceneTransition();
-        }
+
+            GameManager.Instance.HandleDebugSceneTransition();
+
 
         // Subscribe to the sceneLoaded event to reset the flag after the scene is loaded
         SceneManager.sceneLoaded += OnSceneLoaded;
@@ -87,7 +97,7 @@ public class DebugControls : MonoBehaviour, IPointerClickHandler
     private void OnDebugKillPlayer()
     {
 
-        if (GameManager.instance == null)
+        if (GameManager.Instance == null)
         {
             Debug.LogError("GameManager instance is null. Cannot initiate player death.");
             return;
@@ -141,9 +151,9 @@ public class DebugControls : MonoBehaviour, IPointerClickHandler
         ProjectileManager.Instance.ClearAllProjectiles();
 
         // Add 1000 to the score if any enemies were killed
-        if (killedEnemies > 0 && gameManager != null)
+        if (killedEnemies > 0 && ScoreManager.Instance != null)
         {
-            gameManager.AddScore(1000);
+            ScoreManager.Instance.AddScore(1000);
             Debug.Log("Debug: Added 1000 to score for killing all enemies");
         }
     }
@@ -206,20 +216,7 @@ public class DebugControls : MonoBehaviour, IPointerClickHandler
 
     private void InitializeComponents()
     {
-        // Get the GameManager component on the same GameObject
-        gameManager = GetComponent<GameManager>();
-        if (gameManager == null)
-        {
-            Debug.LogError("GameManager component not found on the same GameObject.");
-        }
-
-        gameManager = GameManager.instance;
-        if (gameManager == null)
-        {
-            Debug.LogError("Gmae Manager component not found in the scene.");
-        }
-
-        // Find the UI element named "Score"
+      // Find the UI element named "Score"
         FindUIElement();
 
         // Add Event Trigger to the UI element

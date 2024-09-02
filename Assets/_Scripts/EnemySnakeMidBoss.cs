@@ -8,6 +8,8 @@ using UnityEngine;
 using UnityEngine.Animations;
 using UnityEngine.Events;
 using UnityEngine.VFX;
+using System.Threading.Tasks;
+
 
 [RequireComponent(typeof(Timeline))]
 public class EnemySnakeMidBoss : BaseBehaviour, IDamageable, ILimbDamageReceiver
@@ -299,7 +301,7 @@ public class EnemySnakeMidBoss : BaseBehaviour, IDamageable, ILimbDamageReceiver
         ReturnVFXToPool(vfx); // Return the VFX to the pool.
     }
 
-    private IEnumerator Death()
+private IEnumerator Death()
     {
         animator.SetTrigger("Die"); // Trigger the death animation
 
@@ -315,12 +317,15 @@ public class EnemySnakeMidBoss : BaseBehaviour, IDamageable, ILimbDamageReceiver
 
         // Additional cleanup or state management here, if necessary
 
-        // Option 1: Await the scene change (recommended)
-        yield return GameManager.instance.ChangeSceneWithTransitionToNext();
-
-        // Option 2: Explicitly ignore the returned Task
-        // _ = GameManager.instance.ChangeSceneWithTransitionToNext();
+        // Call the async method to change the scene
+        _ = ChangeSceneAsync();
     }
+
+    private async Task ChangeSceneAsync()
+    {
+        await SceneManagerBTR.Instance.ChangeSceneWithTransitionToNextAsync();
+    }
+
 
     private void Update()
     {

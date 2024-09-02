@@ -182,7 +182,7 @@ public class PlayerLockedState : ProjectileState
         }
 
         // Get and play the LockedFX VFX Graph effect from the pool
-        _projectile.currentLockedFX = ProjectileManager.Instance.GetLockedFXFromPool();
+        _projectile.currentLockedFX = ProjectileEffectManager.Instance.GetLockedFXFromPool();
         if (_projectile.currentLockedFX != null)
         {
             _projectile.currentLockedFX.transform.SetParent(_projectile.transform);
@@ -213,7 +213,7 @@ public class PlayerLockedState : ProjectileState
         // Return the LockedFX to the pool
         if (_projectile.currentLockedFX != null)
         {
-            ProjectileManager.Instance.ReturnLockedFXToPool(_projectile.currentLockedFX);
+            ProjectileEffectManager.Instance.ReturnLockedFXToPool(_projectile.currentLockedFX);
             _projectile.currentLockedFX = null;
         }
     }
@@ -446,7 +446,7 @@ public class PlayerShotState : ProjectileState
                 $"Player projectile hit non-enemy object: {other.gameObject.name}. Distance: {_projectile.distanceTraveled}, Time: {_projectile.timeAlive}"
             );
         }
-        GameManager.instance.LogProjectileHit(
+        GameManager.Instance.LogProjectileHit(
             _projectile.isPlayerShot,
             other.gameObject.CompareTag("Enemy"),
             other.gameObject.tag
@@ -680,7 +680,7 @@ public class ProjectileStateBased : MonoBehaviour
         // Remove any existing LockedFX
         if (currentLockedFX != null)
         {
-            ProjectileManager.Instance.ReturnLockedFXToPool(currentLockedFX);
+            ProjectileEffectManager.Instance.ReturnLockedFXToPool(currentLockedFX);
             currentLockedFX = null;
         }
     }
@@ -767,12 +767,12 @@ public class ProjectileStateBased : MonoBehaviour
 
         if (isPlayerShot && !hasHitTarget)
         {
-            GameManager.instance.LogProjectileExpired(isPlayerShot);
+            GameManager.Instance.LogProjectileExpired(isPlayerShot);
         }
 
         // Ensure the projectile is unregistered and returned to the pool
         ProjectileManager.Instance.UnregisterProjectile(this);
-        ProjectileManager.Instance.ReturnProjectileToPool(this);
+        ProjectilePool.Instance.ReturnProjectileToPool(this);
 
         // Stop any ongoing movement or rotation
         if (cachedRigidbody != null)
@@ -787,7 +787,7 @@ public class ProjectileStateBased : MonoBehaviour
         // Disable any scripts that might be moving the projectile
        // this.enabled = false;
 
-        ProjectileManager.Instance.PlayDeathEffect(cachedTransform.position);
+        ProjectileEffectManager.Instance.PlayDeathEffect(cachedTransform.position);
 
         if (playerProjPath != null)
         {
@@ -998,7 +998,7 @@ public class ProjectileStateBased : MonoBehaviour
 
         if (currentLockedFX != null)
         {
-            ProjectileManager.Instance.ReturnLockedFXToPool(currentLockedFX);
+            ProjectileEffectManager.Instance.ReturnLockedFXToPool(currentLockedFX);
             currentLockedFX = null;
         }
 

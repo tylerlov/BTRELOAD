@@ -5,17 +5,14 @@ public class SceneStarterForDev : MonoBehaviour
     // References to the components
     [SerializeField]
     public CinemachineCameraSwitching cinemachineCameraSwitching;
-    private GameManager gameManager;
 
     // Start is called before the first frame update
     void Start()
     {
-        // Find the active AdjustSongParameters component
-        gameManager = GameManager.instance;
         cinemachineCameraSwitching = FindObjectOfType<CinemachineCameraSwitching>(true);
 
         // Ensure references are assigned        if (adjustSongParameters == null || cinemachineCameraSwitching == null)
-        if (gameManager == null || cinemachineCameraSwitching == null)
+        if (cinemachineCameraSwitching == null)
         {
             Debug.LogError("References to GameManager or CinemachineCameraSwitching are not set.");
             return;
@@ -28,7 +25,7 @@ public class SceneStarterForDev : MonoBehaviour
     // Method to be called when the wave starts
     void OnWaveStarted()
     {
-        gameManager.updateStatus();
+        SceneManagerBTR.Instance.updateStatus("wavestart");
         cinemachineCameraSwitching.SetMainCamera();
     }
 }

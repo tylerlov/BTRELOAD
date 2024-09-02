@@ -201,12 +201,8 @@ public class EnemyBasicSetup : BaseBehaviour, IDamageable, IAttackAgent
     {
         isLockedOn = status;
         UpdateLockOnVisuals();
+            GameManager.Instance.SetEnemyLockState(cachedTransform, status);
 
-        // Inform GameManager of the lock state change for the main enemy
-        if (GameManager.instance != null)
-        {
-            GameManager.instance.SetEnemyLockState(cachedTransform, status);
-        }
     }
 
     // Keep this method for GameManager compatibility
@@ -295,7 +291,7 @@ public class EnemyBasicSetup : BaseBehaviour, IDamageable, IAttackAgent
             cachedTransform.position
         );
 
-        yield return StartCoroutine(GameManager.instance.RewindTime(-1f, 0.5f, 0f));
+        yield return StartCoroutine(TimeManager.Instance.RewindTime(-1f, 0.5f, 0f));
 
         yield return new WaitForSeconds(0.5f);
         enemyModel.SetActive(false);

@@ -10,7 +10,6 @@ public class WaveEventSubscriptions : MonoBehaviour
     [SerializeField] private SplineManager splineManager;
 
     private WaveSpawnController waveSpawnController;
-    private GameManager gameManager;
     private CinemachineCameraSwitching cameraSwitching;
     private FmodOneshots fmodOneShots;
     private ShooterMovement shooterMovement;
@@ -39,7 +38,6 @@ public class WaveEventSubscriptions : MonoBehaviour
     {
         // Attempt to find and subscribe to active instances of each component
         waveSpawnController = FindActiveInstance<WaveSpawnController>();
-        gameManager = GameManager.instance;
         cameraSwitching = FindActiveInstance<CinemachineCameraSwitching>();
         fmodOneShots = FindActiveInstance<FmodOneshots>();
         shooterMovement = FindActiveInstance<ShooterMovement>();
@@ -97,10 +95,8 @@ public class WaveEventSubscriptions : MonoBehaviour
     private void OnWaveStarted()
     {
         Debug.Log("Wave Started!");
-        if (gameManager != null)
-        {
-            gameManager.updateStatus();
-        }
+        SceneManagerBTR.Instance.updateStatus("wavestart");
+
         
         if (cameraSwitching != null)
         {
@@ -136,11 +132,8 @@ public class WaveEventSubscriptions : MonoBehaviour
     private void OnWaveEnded()
     {
         Debug.Log("Wave Ended!");
-        if (gameManager != null)
-        {
-            gameManager.waveCounterAdd();
-            gameManager.updateStatus();
-        }
+        ScoreManager.Instance.waveCounterAdd();
+        SceneManagerBTR.Instance.updateStatus("waveend");
 
         if (shooterMovement != null)
         {
@@ -160,9 +153,6 @@ public class WaveEventSubscriptions : MonoBehaviour
     // New method to handle enemy spawning
     private void OnEnemySpawned(Transform enemyTransform)
     {
-        if (gameManager != null)
-        {
-            gameManager.RegisterEnemy(enemyTransform);
-        }
+        GameManager.Instance.RegisterEnemy(enemyTransform);
     }
 }

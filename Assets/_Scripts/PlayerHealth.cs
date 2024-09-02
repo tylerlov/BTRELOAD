@@ -43,12 +43,12 @@ public class PlayerHealth : MonoBehaviour, IDamageable
             return;
 
         int damageAmount = (int)amount;
-        GameManager.instance.AddScore(-damageAmount);
-        GameManager.instance.ReportDamage(damageAmount); // New method to report damage
+        ScoreManager.Instance.AddScore(-damageAmount);
+        ScoreManager.Instance.ReportDamage(damageAmount); // New method to report damage
         SpawnHitEffect();
         PlayHitFeedback();
 
-        if (GameManager.instance.Score <= 0)
+        if (ScoreManager.Instance.Score <= 0)
         {
             GameOver();
         }
@@ -57,7 +57,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     private void GameOver()
     {
         Debug.Log("Game Over!");
-        GameManager.instance.HandlePlayerDeath();
+        GameManager.Instance.HandlePlayerDeath();
     }
 
     private void InitializeHitEffectsPool()
@@ -101,13 +101,13 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         effect.SetActive(false);
     }
 
-    public bool IsAlive() => GameManager.instance.Score > 0;
+    public bool IsAlive() => ScoreManager.Instance.Score > 0;
 
-    public float getCurrentHealth() => GameManager.instance.Score;
+    public float getCurrentHealth() => ScoreManager.Instance.Score;
 
     public void ResetScore()
     {
-        GameManager.instance.SetScore(startScore);
+        ScoreManager.Instance.SetScore(startScore);
         gameObject.SetActive(true);
     }
 
@@ -116,7 +116,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         isInvincible = value;
         if (isInvincible)
         {
-            GameManager.instance.SetScore(999999);
+            ScoreManager.Instance.SetScore(999999);
         }
     }
 

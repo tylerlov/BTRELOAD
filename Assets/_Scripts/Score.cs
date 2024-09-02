@@ -108,7 +108,7 @@ public class Score : MonoBehaviour
             }
         }
 
-        previousScore = GameManager.instance.Score;
+        previousScore = ScoreManager.Instance.Score;
 
         // Ensure both text elements are initially inactive
         scoreAddedText.gameObject.SetActive(false);
@@ -118,7 +118,7 @@ public class Score : MonoBehaviour
     void Update()
     {
         float health = playerHealth.getCurrentHealth();
-        int score = GameManager.instance.Score;
+        int score = ScoreManager.Instance.Score;
         int playerLocks = Mathf.FloorToInt(playerCrosshair.returnLocks());
         int enemyLocks = Mathf.FloorToInt(playerCrosshair.returnEnemyLocks());
 
@@ -144,7 +144,7 @@ public class Score : MonoBehaviour
             currEnemyLocks = Mathf.Min(enemyLocks, enemyLockUI.Count);
         }
 
-        int currentScore = GameManager.instance.Score;
+        int currentScore = ScoreManager.Instance.Score;
         if (currentScore != previousScore)
         {
             int scoreDifference = currentScore - previousScore;
