@@ -15,7 +15,10 @@ using UnityEngine.Rendering.PostProcessing;
 
 public class PlayerMovement : MonoBehaviour
 {
-    public Animator animator;
+    public static PlayerMovement Instance { get; private set; }
+
+    [SerializeField]
+    private Animator animator;
 
     [Header("Ground Detection")]
     [SerializeField]
@@ -59,9 +62,6 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField]
     private GameObject ricochetBlast;
 
-    [SerializeField]
-    private RangeSensor rangeSensor;
-
     [Header("Look At Settings")]
     [SerializeField]
     private GameObject lookAtTarget;
@@ -85,7 +85,7 @@ public class PlayerMovement : MonoBehaviour
 
     #region Private Fields
 
-    new private Rigidbody rigidbody;
+    private Rigidbody rigidbody;
     private DefaultControls playerInputActions;
     private PlayerHealth playerHealth;
     private float currentYRotation;
@@ -105,25 +105,39 @@ public class PlayerMovement : MonoBehaviour
     private float rotationDebounceTime = 0.1f; // 200 milliseconds debounce period
     private float lastRotationTime;
 
+    private RangeSensor rangeSensor;
+
     #endregion
 
     private void Awake()
     {
+        if (Instance == null)
+        {
+            Instance = this;
+            DontDestroyOnLoad(gameObject);
+        }
+        else
+        {
+            Destroy(gameObject);
+            return;
+        }
+
         playerInputActions = new DefaultControls();
         playerInputActions.Player.Enable();
-
-        // Bind the new input action for reversing direction
         playerInputActions.Player.ReverseDirection.performed += OnReverseDirection;
 
         rigidbody = GetComponent<Rigidbody>();
         rigidbody.constraints = RigidbodyConstraints.FreezeRotationY | rigidbody.constraints;
 
-        // Capture the RangeSensor component
         rangeSensor = GetComponent<RangeSensor>();
         if (rangeSensor == null)
         {
             Debug.LogError("RangeSensor component not found on the player!");
         }
+
+        playerHealth = GetComponent<PlayerHealth>();
+        timeline = GetComponent<Timeline>();
+        cinemachineBrain = Camera.main.GetComponent<CinemachineBrain>();
     }
 
     private void OnDestroy()
@@ -134,20 +148,11 @@ public class PlayerMovement : MonoBehaviour
 
     private void Start()
     {
-        playerHealth = GetComponent<PlayerHealth>();
-        timeline = GetComponent<Timeline>();
-
         playerFacingDirection = 0;
         animator.SetInteger("PlayerDirection", playerFacingDirection);
 
         startingPosition = transform.localPosition;
         shootingZOffset = shooting.transform.localPosition.z;
-
-        cinemachineBrain = Camera.main.GetComponent<CinemachineBrain>();
-        if (cinemachineBrain == null)
-        {
-            Debug.LogError("CinemachineBrain not found on main camera!");
-        }
     }
 
     private void Update()

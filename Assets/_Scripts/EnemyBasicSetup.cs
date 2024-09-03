@@ -309,7 +309,7 @@ public class EnemyBasicSetup : BaseBehaviour, IDamageable, IAttackAgent
 
         UpdateShootDirection();
 
-        ProjectileManager.Instance.ShootProjectileFromEnemy(
+        ProjectileSpawner.Instance.ShootProjectileFromEnemy(
             cachedTransform.position,
             cachedShootRotation,
             shootSpeed,

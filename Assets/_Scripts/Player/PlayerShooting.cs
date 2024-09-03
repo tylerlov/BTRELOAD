@@ -23,6 +23,12 @@ public class PlayerShooting : MonoBehaviour
     private float lastFireTime;
     #endregion
 
+    #region Object Pooling
+    [Header("Object Pooling")]
+    [SerializeField] private int lockOnEffectPoolSize = 10;
+    private Queue<GameObject> lockOnEffectPool;
+    #endregion
+
     private void Awake()
     {
         if (Instance == null)
@@ -38,6 +44,18 @@ public class PlayerShooting : MonoBehaviour
 
         playerLocking = GetComponent<PlayerLocking>();
         crosshairCore = GetComponent<CrosshairCore>();
+        InitializeLockOnEffectPool();
+    }
+
+    private void InitializeLockOnEffectPool()
+    {
+        lockOnEffectPool = new Queue<GameObject>();
+        for (int i = 0; i < lockOnEffectPoolSize; i++)
+        {
+            GameObject lockOnEffect = Instantiate(crosshairCore.lockOnPrefab, crosshairCore.Reticle.transform);
+            lockOnEffect.SetActive(false);
+            lockOnEffectPool.Enqueue(lockOnEffect);
+        }
     }
 
     public void HandleShootingEffects()
@@ -96,9 +114,9 @@ public class PlayerShooting : MonoBehaviour
 
     public void AnimateLockOnEffect()
     {
-        if (crosshairCore.lockOnPrefab != null)
+        if (crosshairCore.lockOnPrefab != null && lockOnEffectPool.Count > 0)
         {
-            GameObject lockOnInstance = Instantiate(crosshairCore.lockOnPrefab, crosshairCore.Reticle.transform);
+            GameObject lockOnInstance = lockOnEffectPool.Dequeue();
             lockOnInstance.SetActive(true);
             lockOnInstance.transform.localPosition = Vector3.zero;
             lockOnInstance.transform.localScale = Vector3.one * crosshairCore.initialScale;
@@ -113,9 +131,11 @@ public class PlayerShooting : MonoBehaviour
                 spriteRenderer.DOFade(1f, 0.5f);
             }
 
-            lockOnInstance
-                .transform.DOScale(Vector3.zero, 1f)
-                .OnComplete(() => Destroy(lockOnInstance));
+            lockOnInstance.transform.DOScale(Vector3.zero, 1f)
+                .OnComplete(() => {
+                    lockOnInstance.SetActive(false);
+                    lockOnEffectPool.Enqueue(lockOnInstance);
+                });
         }
     }
 }

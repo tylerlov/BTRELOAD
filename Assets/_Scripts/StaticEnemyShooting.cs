@@ -55,7 +55,7 @@ public class StaticEnemyShooting : MonoBehaviour
             return;
         }
 
-        ProjectileManager.Instance.ShootProjectile(
+        ProjectileSpawner.Instance.ShootProjectile(
             cachedTransform.position,
             Quaternion.LookRotation(Vector3.up), // Change this to shoot upward
             shootSpeed,
@@ -64,7 +64,6 @@ public class StaticEnemyShooting : MonoBehaviour
             false,
             alternativeProjectileMaterial
         );
-        ConditionalDebug.Log($"[StaticEnemyShooting] Projectile fired from {gameObject.name} at {EnemyShootingManager.Instance.GetCurrentTime()}. Position: {cachedTransform.position}, Direction: Up");
     }
 
     // Remove the UpdateDirectionToTarget() method as it's no longer needed

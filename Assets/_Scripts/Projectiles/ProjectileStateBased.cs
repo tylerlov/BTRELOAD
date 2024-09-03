@@ -140,6 +140,14 @@ public class ProjectileStateBased : MonoBehaviour
     private Transform cachedTransform;
     private Rigidbody cachedRigidbody;
 
+    public static int EnemyLayerMask { get; private set; }
+
+    public float maxSpeed = 50f; 
+
+    public float initialLifetime;
+
+    private Vector3 _lastTargetPosition;
+
     private void Awake()
     {
         cachedTransform = transform;
@@ -152,6 +160,7 @@ public class ProjectileStateBased : MonoBehaviour
         myMaterial = modelRenderer.material;
         originalProjectileColor = myMaterial.color;
         initialSpeed = bulletSpeed;
+        initialLifetime = lifetime;
 
         if (shootingObject == null)
         {
@@ -164,6 +173,8 @@ public class ProjectileStateBased : MonoBehaviour
         _movement = new ProjectileMovement(this);
         _combat = new ProjectileCombat(this);
         _visualEffects = new ProjectileVisualEffects(this);
+
+        EnemyLayerMask = 1 << LayerMask.NameToLayer("Enemy");
     }
 
     void OnEnable()
@@ -220,6 +231,7 @@ public class ProjectileStateBased : MonoBehaviour
         playerProjPath.enabled = false;
 
         _currentTag = gameObject.tag;
+        _lastTargetPosition = currentTarget != null ? currentTarget.position : Vector3.zero;
     }
 
     public void CustomUpdate(float timeScale)
@@ -228,17 +240,42 @@ public class ProjectileStateBased : MonoBehaviour
 
         UpdatePredictedPosition();
 
-        lifetime -= Time.deltaTime * timeScale;
-        if (lifetime <= 0)
+        if (!isPlayerShot || (isPlayerShot && currentState is PlayerShotState))
         {
-            Death();
+            lifetime -= Time.deltaTime * timeScale;
+            if (lifetime <= 0)
+            {
+                if (isPlayerShot && currentTarget != null)
+                {
+                    EnsureHit();
+                }
+                else
+                {
+                    Death();
+                }
+            }
         }
 
         UpdateTrackingInfo();
+    }
 
-        ConditionalDebug.Log(
-            $"Projectile ID: {GetInstanceID()}, Position: {transform.position}, Velocity: {rb.velocity.magnitude}, Target: {(currentTarget != null ? currentTarget.name : "None")}, Lifetime: {lifetime}"
-        );
+    private void EnsureHit()
+    {
+        if (currentTarget != null)
+        {
+            transform.position = currentTarget.position;
+            rb.velocity = Vector3.zero;
+
+            Collider targetCollider = currentTarget.GetComponent<Collider>();
+            if (targetCollider != null)
+            {
+                OnTriggerEnter(targetCollider);
+            }
+        }
+        else
+        {
+            Death();
+        }
     }
 
     private void OnTriggerEnter(Collider other)
@@ -248,14 +285,14 @@ public class ProjectileStateBased : MonoBehaviour
 
     public void Death()
     {
+        if (isPlayerShot && !hasHitTarget)
+        {
+            LogProjectileMiss();
+        }
+
         ConditionalDebug.Log(
             $"Death called on projectile. Lifetime remaining: {lifetime}. Hit Player: {projHitPlayer}"
         );
-
-        if (isPlayerShot && !hasHitTarget)
-        {
-            GameManager.Instance.LogProjectileExpired(isPlayerShot);
-        }
 
         ProjectileManager.Instance.UnregisterProjectile(this);
         ProjectilePool.Instance.ReturnProjectileToPool(this);
@@ -272,15 +309,10 @@ public class ProjectileStateBased : MonoBehaviour
         _visualEffects.PlayDeathEffect();
     }
 
-    public Vector3 CalculateTargetVelocity(GameObject target)
-    {
-        return _movement.CalculateTargetVelocity(target);
-    }
-
     public void SetLifetime(float seconds)
     {
         lifetime = seconds;
-        originalLifetime = seconds;
+        //originalLifetime = seconds;
     }
 
     public void ResetLifetime()
@@ -359,6 +391,11 @@ public class ProjectileStateBased : MonoBehaviour
         accuracy = Mathf.Clamp01(newAccuracy);
     }
 
+    public float GetAccuracy()
+    {
+        return accuracy;
+    }
+
     public void UpdateTrackingInfo()
     {
         if (isPlayerShot && !hasHitTarget)
@@ -392,6 +429,7 @@ public class ProjectileStateBased : MonoBehaviour
         lifetimeExtended = false;
         projHitPlayer = false;
         bulletSpeed = initialSpeed;
+        lifetime = initialLifetime;
 
         ChangeState(new EnemyShotState(this));
 
@@ -413,6 +451,7 @@ public class ProjectileStateBased : MonoBehaviour
         }
 
         accuracy = 1f;
+        lifetime = initialLifetime;
     }
 
     public void SetDamageMultiplier(float multiplier)
@@ -455,7 +494,21 @@ public class ProjectileStateBased : MonoBehaviour
     {
         if (currentTarget == null) return;
 
-        Vector3 targetVelocity = CalculateTargetVelocity(currentTarget.gameObject);
+        // Calculate target velocity
+        Vector3 targetVelocity = Vector3.zero;
+        Rigidbody targetRb = currentTarget.GetComponent<Rigidbody>();
+        if (targetRb != null)
+        {
+            targetVelocity = targetRb.velocity;
+        }
+        else
+        {
+            // If no Rigidbody, estimate velocity based on position change
+            Vector3 currentTargetPosition = currentTarget.position;
+            targetVelocity = (currentTargetPosition - _lastTargetPosition) / Time.deltaTime;
+            _lastTargetPosition = currentTargetPosition;
+        }
+
         float distanceToTarget = Vector3.Distance(transform.position, currentTarget.position);
         float predictionTime = Mathf.Min(distanceToTarget / bulletSpeed, _maxTimePrediction);
 
@@ -465,4 +518,34 @@ public class ProjectileStateBased : MonoBehaviour
             currentTarget.position.z + targetVelocity.z * predictionTime
         );
     }
+
+    public void LogProjectileHit(string hitObject)
+    {
+        string message = isPlayerShot ? 
+            $"Player projectile hit {hitObject}. Distance traveled: {distanceTraveled:F2}, Time alive: {timeAlive:F2}" :
+            $"Enemy projectile hit {hitObject}. Distance traveled: {distanceTraveled:F2}, Time alive: {timeAlive:F2}";
+        ConditionalDebug.Log(message);
+    }
+
+    public void LogProjectileExpired()
+    {
+        string message = isPlayerShot ?
+            $"Player projectile expired. Distance traveled: {distanceTraveled:F2}, Time alive: {timeAlive:F2}" :
+            $"Enemy projectile expired. Distance traveled: {distanceTraveled:F2}, Time alive: {timeAlive:F2}";
+        ConditionalDebug.Log(message);
+    }
+
+    public void ReportPlayerProjectileHit(bool hitTargetedEnemy, string enemyName)
+    {
+        string message = hitTargetedEnemy ?
+            $"Player projectile hit its targeted enemy: {enemyName}. Distance traveled: {distanceTraveled:F2}, Time alive: {timeAlive:F2}" :
+            $"Player projectile hit a non-targeted enemy: {enemyName}. Distance traveled: {distanceTraveled:F2}, Time alive: {timeAlive:F2}";
+        ConditionalDebug.Log(message);
+    }
+
+    public void LogProjectileMiss()
+    {
+        ConditionalDebug.Log($"Player projectile missed. Position: {transform.position}, Target: {(currentTarget != null ? currentTarget.name : "None")}, Distance to target: {(currentTarget != null ? Vector3.Distance(transform.position, currentTarget.position) : 0f)}");
+    }
+
 }

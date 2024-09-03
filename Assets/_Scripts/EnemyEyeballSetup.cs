@@ -212,12 +212,12 @@ public class EnemyEyeballSetup : MonoBehaviour, IDamageable
         ).normalized;
         Quaternion rotationToPlayer = Quaternion.LookRotation(directionToPlayer);
 
-        bool shotRequested = ProjectileManager.Instance.RequestEnemyShot(() =>
+        bool shotRequested = ProjectileSpawner.Instance.RequestEnemyShot(() =>
         {
             ConditionalDebug.Log(
                 $"[{gameObject.name}] Shot request approved. Shooting projectile."
             );
-            ProjectileManager.Instance.ShootProjectileFromEnemy(
+            ProjectileSpawner.Instance.ShootProjectileFromEnemy(
                 transform.position,
                 rotationToPlayer,
                 shootSpeed,

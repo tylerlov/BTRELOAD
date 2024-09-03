@@ -57,7 +57,6 @@ public class ProjectilePool : MonoBehaviour
         if (!projectilePool.Contains(projectile))
         {
             projectilePool.Enqueue(projectile);
-            ConditionalDebug.Log($"Projectile returned to pool. Pool size: {projectilePool.Count}");
         }
         else
         {
@@ -82,7 +81,6 @@ public class ProjectilePool : MonoBehaviour
                 proj.gameObject.SetActive(false);
                 projectilePool.Enqueue(proj);
             }
-            ConditionalDebug.Log($"Replenished projectile pool. New size: {projectilePool.Count}");
         }
     }
 

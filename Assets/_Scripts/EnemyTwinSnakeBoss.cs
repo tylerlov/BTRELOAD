@@ -327,12 +327,6 @@ public class EnemyTwinSnakeBoss : MonoBehaviour, ILimbDamageReceiver
         // Reset the attack condition
         snakes[snakeIndex].animator.SetBool(attackCondition, false);
 
-        if (projectileManager == null)
-        {
-            ConditionalDebug.LogError("ProjectileManager instance not found.");
-            yield break;
-        }
-
         ConditionalDebug.Log($"Shooting projectile for snake {snakeIndex}");
         if (playerTarget != null && playerTarget.activeInHierarchy)
         {
@@ -342,7 +336,7 @@ public class EnemyTwinSnakeBoss : MonoBehaviour, ILimbDamageReceiver
             );
 
             // Use ProjectileManager to shoot
-            projectileManager.ShootProjectileFromEnemy(
+            ProjectileSpawner.Instance.ShootProjectileFromEnemy(
                 snakes[snakeIndex].projectileOrigin.position,
                 rotationTowardsTarget,
                 shootSpeed,

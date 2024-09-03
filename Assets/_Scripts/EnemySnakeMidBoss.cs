@@ -266,7 +266,7 @@ public class EnemySnakeMidBoss : BaseBehaviour, IDamageable, ILimbDamageReceiver
             targetPosition - projectileOrigin.position
         );
 
-        ProjectileManager.Instance.ShootProjectileFromEnemy(
+        ProjectileSpawner.Instance.ShootProjectileFromEnemy(
             projectileOrigin.position,
             rotationTowardsTarget,
             shootSpeed,

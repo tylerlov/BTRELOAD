@@ -49,7 +49,6 @@ public class EnemyShootingManager : MonoBehaviour
         if (!staticEnemyShootings.Contains(shooting))
         {
             staticEnemyShootings.Add(shooting);
-            ConditionalDebug.Log($"Registered StaticEnemyShooting: {shooting.name}. Total count: {staticEnemyShootings.Count}");
         }
         else
         {

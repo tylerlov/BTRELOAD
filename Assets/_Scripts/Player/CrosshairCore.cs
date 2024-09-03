@@ -202,7 +202,6 @@ public class CrosshairCore : MonoBehaviour
     private void OnMusicalLock(KoreographyEvent evt)
     {
         PlayerLocking playerLocking = GetComponent<PlayerLocking>();
-        StaminaController staminaController = GetComponent<StaminaController>();
 
         if (CheckLockProjectiles() && playerLocking.projectileTargetList.Count > 0 && Time.timeScale != 0f)
         {
@@ -217,9 +216,6 @@ public class CrosshairCore : MonoBehaviour
             playerLocking.projectileTargetList.RemoveAt(0);
 
             GetComponent<PlayerShooting>().AnimateLockOnEffect();
-
-            if (!staminaController.canRewind)
-                playerLocking.triggeredLockFire = true;
         }
     }
 

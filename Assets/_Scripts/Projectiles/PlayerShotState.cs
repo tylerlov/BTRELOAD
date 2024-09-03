@@ -5,112 +5,100 @@ using BehaviorDesigner.Runtime.Tasks.Unity.UnityGameObject;
 
 public class PlayerShotState : ProjectileState
 {
-    private const float CLOSE_PROXIMITY_THRESHOLD = 2f;
-    private const float MAX_PREDICTION_TIME = 2f;
-    private const float MIN_SPEED_MULTIPLIER = 1.2f;
-    private const float PARRIED_SPEED_MULTIPLIER = 1.5f;
+    private const float CLOSE_PROXIMITY_THRESHOLD = 0.5f;
+    private const float TARGET_UPDATE_INTERVAL = 0.1f;
+    private const float MAX_PREDICTION_DISTANCE = 10f;
 
-    public PlayerShotState(ProjectileStateBased projectile, float playerAccuracyModifier = 1f)
+    private bool _hasAssignedTarget;
+    private Vector3 _lastKnownTargetPosition;
+    private float _targetUpdateTimer;
+
+    public PlayerShotState(ProjectileStateBased projectile, float playerAccuracyModifier = 1f, Transform initialTarget = null, bool hasAssignedTarget = false)
         : base(projectile)
     {
-        projectile.bulletSpeed *= MIN_SPEED_MULTIPLIER;
-
-        if (projectile.isParried)
-        {
-            projectile.bulletSpeed *= PARRIED_SPEED_MULTIPLIER;
-        }
-        _projectile.SetLifetime(10f);
+        _hasAssignedTarget = hasAssignedTarget;
         _projectile.isPlayerShot = true;
         _projectile.initialPosition = _projectile.transform.position;
         _projectile.initialDirection = _projectile.transform.forward;
-        _projectile.homing = true;
-        float finalAccuracy =
-            ProjectileManager.Instance.projectileAccuracy * playerAccuracyModifier;
+        _projectile.homing = _hasAssignedTarget;
+
+        float finalAccuracy = ProjectileManager.Instance.projectileAccuracy * playerAccuracyModifier;
         _projectile.SetAccuracy(finalAccuracy);
-    }
 
-    public override void OnStateEnter()
-    {
-        base.OnStateEnter();
-    }
-
-    public override void CustomUpdate(float timeScale)
-    {
-        base.CustomUpdate(timeScale);
-
-        if (_projectile.currentTarget != null)
+        if (initialTarget != null && _hasAssignedTarget)
         {
-            UpdateProjectileMovement(timeScale);
+            _projectile.currentTarget = initialTarget;
+            _lastKnownTargetPosition = initialTarget.position;
+        }
+        else if (!_hasAssignedTarget)
+        {
+            _projectile.currentTarget = null;
+            _lastKnownTargetPosition = _projectile.transform.position + _projectile.transform.forward * 100f;
         }
         else
         {
             FindNewTarget();
         }
 
-        CheckCollision();
+        _projectile.bulletSpeed = Mathf.Min(_projectile.bulletSpeed, _projectile.maxSpeed);
     }
 
-    private void UpdateProjectileMovement(float timeScale)
+    public override void CustomUpdate(float timeScale)
     {
-        if (_projectile.currentTarget == null) return;
+        base.CustomUpdate(timeScale);
 
-        ProjectileVector3 targetPosition = _projectile.currentTarget.position;
-        ProjectileVector3 toTarget = new ProjectileVector3(
-            targetPosition.x - _projectile.transform.position.x,
-            targetPosition.y - _projectile.transform.position.y,
-            targetPosition.z - _projectile.transform.position.z
-        );
-        float distanceToTarget = ProjectileVector3.Distance(targetPosition, (ProjectileVector3)_projectile.transform.position);
+        _targetUpdateTimer += Time.deltaTime * timeScale;
+        if (_targetUpdateTimer >= TARGET_UPDATE_INTERVAL)
+        {
+            _targetUpdateTimer = 0f;
+            UpdateTargetAndPrediction();
+        }
+
+        Vector3 targetPosition = _projectile.currentTarget != null ? _projectile.predictedPosition : _lastKnownTargetPosition;
+        float distanceToTarget = Vector3.Distance(_projectile.transform.position, targetPosition);
 
         if (distanceToTarget <= CLOSE_PROXIMITY_THRESHOLD)
         {
             EnsureHit();
-            return;
         }
 
-        Vector3 targetVelocity = ProjectileManager.Instance.CalculateTargetVelocity(
-            _projectile.currentTarget.gameObject
-        );
-        float predictionTime = Mathf.Min(
-            distanceToTarget / _projectile.bulletSpeed,
-            MAX_PREDICTION_TIME
-        );
-        _projectile.predictedPosition = new ProjectileVector3(
-            targetPosition.x + targetVelocity.x * predictionTime,
-            targetPosition.y + targetVelocity.y * predictionTime,
-            targetPosition.z + targetVelocity.z * predictionTime
-        );
+        ConditionalDebug.Log($"Projectile ID: {_projectile.GetInstanceID()}, Position: {_projectile.transform.position}, " +
+            $"Target: {targetPosition}, Distance: {distanceToTarget}, Velocity: {_projectile.rb.velocity}, " +
+            $"Forward: {_projectile.transform.forward}, Rotation: {_projectile.transform.rotation.eulerAngles}");
+    }
 
-        Vector3 directionToTarget = ((Vector3)_projectile.predictedPosition - _projectile.transform.position).normalized;
-
-        if (_projectile.accuracy < 1f)
+    private void UpdateTargetAndPrediction()
+    {
+        if (_projectile.currentTarget == null && _hasAssignedTarget)
         {
-            float maxDeviationAngle = Mathf.Lerp(5f, 0f, _projectile.accuracy);
-            Vector3 randomDeviation = UnityEngine.Random.insideUnitSphere * maxDeviationAngle;
-            directionToTarget = Quaternion.Euler(randomDeviation) * directionToTarget;
+            FindNewTarget();
         }
 
-        _projectile.transform.rotation = Quaternion.RotateTowards(
-            _projectile.transform.rotation,
-            Quaternion.LookRotation(directionToTarget),
-            _projectile.turnRate * timeScale * Time.deltaTime
-        );
-
-        _projectile.rb.velocity = _projectile.transform.forward * _projectile.bulletSpeed;
+        if (_projectile.currentTarget != null)
+        {
+            Vector3 targetVelocity = (_projectile.currentTarget.position - _lastKnownTargetPosition) / TARGET_UPDATE_INTERVAL;
+            float predictionTime = Mathf.Min(Vector3.Distance(_projectile.transform.position, _projectile.currentTarget.position) / _projectile.bulletSpeed, MAX_PREDICTION_DISTANCE / _projectile.bulletSpeed);
+            _projectile.predictedPosition = _projectile.currentTarget.position + targetVelocity * predictionTime;
+            _lastKnownTargetPosition = _projectile.currentTarget.position;
+        }
     }
 
     private void FindNewTarget()
     {
-        Transform nearestEnemy = ProjectileManager.Instance.FindNearestEnemy(
-            _projectile.transform.position
-        );
-        if (nearestEnemy != null)
+        if (_hasAssignedTarget)
         {
-            _projectile.currentTarget = nearestEnemy;
-        }
-        else
-        {
-            _projectile.rb.velocity = _projectile.transform.forward * _projectile.bulletSpeed;
+            Transform nearestEnemy = ProjectileManager.Instance.FindNearestEnemy(_projectile.transform.position);
+            if (nearestEnemy != null)
+            {
+                _projectile.currentTarget = nearestEnemy;
+                _lastKnownTargetPosition = nearestEnemy.position;
+                _projectile.homing = true;
+            }
+            else
+            {
+                _hasAssignedTarget = false;
+                _lastKnownTargetPosition = _projectile.transform.position + _projectile.transform.forward * 100f;
+            }
         }
     }
 
@@ -127,46 +115,47 @@ public class PlayerShotState : ProjectileState
                 OnTriggerEnter(targetCollider);
             }
         }
-    }
-
-    private void CheckCollision()
-    {
-        int layerMask = LayerMask.GetMask("Enemy", "Environment");
-        Collider[] hitColliders = Physics.OverlapSphere(_projectile.transform.position, 0.1f, layerMask);
-        
-        if (hitColliders.Length > 0)
+        else
         {
-            OnTriggerEnter(hitColliders[0]);
+            _projectile.Death();
         }
     }
 
     public override void OnTriggerEnter(Collider other)
     {
-        if (other.gameObject.CompareTag("Enemy"))
+        if (other.gameObject.layer == LayerMask.NameToLayer("Enemy"))
         {
+            bool isTargetedEnemy = (_projectile.currentTarget != null && other.transform == _projectile.currentTarget);
             IDamageable damageable = other.gameObject.GetComponent<IDamageable>();
             if (damageable != null)
             {
                 _projectile.ApplyDamage(damageable);
                 _projectile.hasHitTarget = true;
-                ConditionalDebug.Log(
-                    $"Player projectile hit enemy: {other.gameObject.name}. Distance: {_projectile.distanceTraveled}, Time: {_projectile.timeAlive}"
-                );
+                _projectile.ReportPlayerProjectileHit(isTargetedEnemy, other.gameObject.name);
+                
                 _projectile.Death();
                 ProjectileManager.Instance.NotifyEnemyHit(other.gameObject, _projectile);
                 PlayerLocking.Instance.RemoveLockedEnemy(other.transform);
             }
+            GameManager.Instance.LogProjectileHit(
+                _projectile.isPlayerShot,
+                true,
+                other.gameObject.tag
+            );
         }
         else
         {
-            ConditionalDebug.Log(
-                $"Player projectile hit non-enemy object: {other.gameObject.name}. Distance: {_projectile.distanceTraveled}, Time: {_projectile.timeAlive}"
-            );
+            _projectile.LogProjectileHit(other.gameObject.name);
         }
-        GameManager.Instance.LogProjectileHit(
-            _projectile.isPlayerShot,
-            other.gameObject.CompareTag("Enemy"),
-            other.gameObject.tag
-        );
+    }
+
+    private void OnDrawGizmos()
+    {
+        if (_projectile != null && _projectile.currentTarget != null)
+        {
+            Gizmos.color = Color.red;
+            Gizmos.DrawLine(_projectile.transform.position, _projectile.currentTarget.position);
+            Gizmos.DrawWireSphere(_projectile.currentTarget.position, 0.5f);
+        }
     }
 }

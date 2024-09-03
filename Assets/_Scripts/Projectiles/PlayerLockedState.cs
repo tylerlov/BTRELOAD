@@ -46,6 +46,9 @@ public class PlayerLockedState : ProjectileState
     {
         base.OnStateEnter();
 
+        // Reset the lifetime for locked projectiles
+        _projectile.SetLifetime(200f);
+
         if (_projectile.modelRenderer != null && _projectile.lockedStateMaterial != null)
         {
             _projectile.modelRenderer.material = _projectile.lockedStateMaterial;
@@ -123,7 +126,7 @@ public class PlayerLockedState : ProjectileState
                 _projectile.tRn.DOTime(5, 2);
             }
 
-            PlayerShotState newState = new PlayerShotState(_projectile, 1f);
+            PlayerShotState newState = new PlayerShotState(_projectile, 1f, null, false);
             _projectile.ChangeState(newState);
         }
         else
@@ -146,7 +149,7 @@ public class PlayerLockedState : ProjectileState
 
         _projectile.homing = true;
 
-        PlayerShotState newState = new PlayerShotState(_projectile, 1f);
+        PlayerShotState newState = new PlayerShotState(_projectile, 1f, target, true);
         _projectile.ChangeState(newState);
     }
 }
