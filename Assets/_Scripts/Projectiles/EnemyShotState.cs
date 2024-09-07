@@ -24,7 +24,7 @@ public class EnemyShotState : ProjectileState
         if (_projectile.currentTarget != null)
         {
             Vector3 targetVelocity = _projectile.currentTarget.GetComponent<Rigidbody>()?.velocity ?? Vector3.zero;
-            Vector3 predictedPosition = _projectile.currentTarget.position + targetVelocity * PREDICTION_MULTIPLIER;
+            Vector3 predictedPosition = _projectile.currentTarget.position + targetVelocity * PREDICTION_MULTIPLIER * timeScale;
             Vector3 directionToTarget = (predictedPosition - _projectile.transform.position).normalized;
 
             // Apply inaccuracy based on the projectile's accuracy value
@@ -40,7 +40,8 @@ public class EnemyShotState : ProjectileState
                 currentTurnRate * Mathf.Deg2Rad * Time.deltaTime * timeScale, 0f);
             _projectile.transform.rotation = Quaternion.LookRotation(newForward);
 
-            _projectile.rb.velocity = _projectile.transform.forward * _projectile.bulletSpeed;
+            // Apply timeScale to velocity
+            _projectile.rb.velocity = _projectile.transform.forward * _projectile.bulletSpeed * timeScale;
         }
     }
 

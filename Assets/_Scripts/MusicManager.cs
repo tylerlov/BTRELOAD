@@ -6,9 +6,7 @@ public class MusicManager : MonoBehaviour
 {
     public static MusicManager Instance { get; private set; }
 
-    public StudioEventEmitter musicPlayback;
-
-    private FMOD.Studio.EventInstance musicEventInstance;
+    [SerializeField] private StudioEventEmitter musicPlayback;
 
     private void Awake()
     {
@@ -20,55 +18,18 @@ public class MusicManager : MonoBehaviour
         else
         {
             Destroy(gameObject);
-            return;
-        }
-
-        // Additional initialization if needed
-    }
-
-    public static void FindActiveFMODInstance()
-    {
-        Instance.FindActiveFMODInstanceInternal();
-    }
-
-    private void FindActiveFMODInstanceInternal()
-    {
-        var fmodInstances = FindObjectsOfType<StudioEventEmitter>(true);
-        foreach (var instance in fmodInstances)
-        {
-            if (instance.gameObject.name == "FMOD Music" && instance.gameObject.activeInHierarchy)
-            {
-                musicPlayback = instance;
-                break;
-            }
-        }
-
-        if (musicPlayback == null)
-        {
-            Debug.LogError("Active FMOD Music instance not found in the scene.");
         }
     }
 
-    public static void ApplyMusicChanges(SceneGroup currentGroup, int currentScene, float currentSongSection)
-    {
-        Instance.ApplyMusicChangesInternal(currentGroup, currentScene, currentSongSection);
-    }
-
-    private void ApplyMusicChangesInternal(SceneGroup currentGroup, int currentScene, float currentSongSection)
+    public void ApplyMusicChanges(SceneGroup currentGroup, int currentScene, float currentSongSection)
     {
         if (musicPlayback != null && currentGroup != null && currentScene < currentGroup.scenes.Length)
         {
-            float sectionValue = currentSongSection;
-            musicPlayback.SetParameter("Sections", sectionValue);
+            musicPlayback.SetParameter("Sections", currentSongSection);
         }
     }
 
-    public static void ChangeMusicSectionByName(string sectionName, SceneGroup currentGroup)
-    {
-        Instance.ChangeMusicSectionByNameInternal(sectionName, currentGroup);
-    }
-
-    private void ChangeMusicSectionByNameInternal(string sectionName, SceneGroup currentGroup)
+    public void ChangeMusicSectionByName(string sectionName, SceneGroup currentGroup)
     {
         for (int i = 0; i < currentGroup.scenes.Length; i++)
         {
@@ -76,31 +37,25 @@ public class MusicManager : MonoBehaviour
             {
                 if (currentGroup.scenes[i].songSections[j].name == sectionName)
                 {
-                    int currentScene = i;
-                    float currentSongSection = currentGroup.scenes[i].songSections[j].section;
-                    ChangeSongSectionInternal(currentGroup, currentScene, currentSongSection);
-                    break;
+                    ChangeSongSection(currentGroup, i, currentGroup.scenes[i].songSections[j].section);
+                    return;
                 }
             }
         }
+        Debug.LogWarning($"Section '{sectionName}' not found in the current group.");
     }
 
-    public static void ChangeSongSection(SceneGroup currentGroup, int currentScene, float currentSongSection)
-    {
-        Instance.ChangeSongSectionInternal(currentGroup, currentScene, currentSongSection);
-    }
-
-    private void ChangeSongSectionInternal(SceneGroup currentGroup, int currentScene, float currentSongSection)
+    public void ChangeSongSection(SceneGroup currentGroup, int currentScene, float currentSongSection)
     {
         if (musicPlayback == null || currentGroup == null || currentGroup.scenes == null || 
             currentScene >= currentGroup.scenes.Length)
         {
-            Debug.LogWarning("One or more references are null in changeSongSection, or currentScene is out of bounds.");
+            Debug.LogWarning("Invalid parameters in ChangeSongSection.");
             return;
         }
 
         var songSections = currentGroup.scenes[currentScene].songSections;
-        int sectionIndex = FindSectionIndex(songSections, currentSongSection);
+        int sectionIndex = System.Array.FindIndex(songSections, section => section.section == currentSongSection);
 
         if (sectionIndex == -1)
         {
@@ -108,45 +63,31 @@ public class MusicManager : MonoBehaviour
             return;
         }
 
-        musicPlayback.EventInstance.setParameterByName("Sections", currentSongSection);
-
-        string currentSectionName = songSections[sectionIndex].name;
-
-        Debug.Log($"Song section changed to: {currentSectionName} (Section value: {currentSongSection})");
+        SetMusicParameter("Sections", currentSongSection);
+        Debug.Log($"Song section changed to: {songSections[sectionIndex].name} (Section value: {currentSongSection})");
     }
 
-    private int FindSectionIndex(SongSection[] songSections, float sectionValue)
-    {
-        for (int i = 0; i < songSections.Length; i++)
-        {
-            if (songSections[i].section == sectionValue)
-            {
-                return i;
-            }
-        }
-        return -1;
-    }
-
-    public IEnumerator RewindMusic(bool isRewinding, float duration)
+    public void SetMusicParameter(string parameterName, float value)
     {
         if (musicPlayback == null || !musicPlayback.EventInstance.isValid())
         {
-            Debug.LogError("Music event instance is not valid");
-            yield break;
+            Debug.LogError($"Failed to set music parameter '{parameterName}': Invalid event instance");
+            return;
         }
 
-        musicEventInstance = musicPlayback.EventInstance;
+        FMOD.Studio.PLAYBACK_STATE playbackState;
+        musicPlayback.EventInstance.getPlaybackState(out playbackState);
 
-        // Set the Rewind parameter
-        musicEventInstance.setParameterByName("Rewind", isRewinding ? 1f : 0f);
-
-        // Wait for the specified duration
-        yield return new WaitForSeconds(duration);
-
-        // If we were rewinding, turn off the rewind effect after the duration
-        if (isRewinding)
+        if (playbackState != FMOD.Studio.PLAYBACK_STATE.PLAYING)
         {
-            musicEventInstance.setParameterByName("Rewind", 0f);
+            Debug.LogWarning("FMOD event is not playing. Starting playback.");
+            musicPlayback.Play();
+        }
+
+        FMOD.RESULT result = musicPlayback.EventInstance.setParameterByName(parameterName, value);
+        if (result != FMOD.RESULT.OK)
+        {
+            Debug.LogError($"Failed to set music parameter '{parameterName}': {result}");
         }
     }
 }

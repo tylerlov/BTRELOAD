@@ -16,7 +16,7 @@ public class PlayerTimeControl : MonoBehaviour
     [SerializeField] private float rewindDuration = 3f;
     private Coroutine currentRewindCoroutine;
     [SerializeField] private float returnToNormalDuration = 0.25f;
-    [SerializeField] private float slowTimeScale = 0.5f;
+    [SerializeField] private float slowTimeScale = 0.1f;
     [SerializeField] private float slowTimeDuration = 5f;
     [SerializeField] private float rewindCooldown = 0.5f;
     [SerializeField] private float maxRewindDuration = 1f;
@@ -142,11 +142,14 @@ public class PlayerTimeControl : MonoBehaviour
 
     public void ResetMusicState()
     {
-        if (GameManager.Instance != null && MusicManager.Instance.musicPlayback != null)
+        if (MusicManager.Instance != null)
         {
             Debug.Log("Resetting music state");
-            MusicManager.Instance.musicPlayback.EventInstance.setParameterByName("Rewind", 0f);
-            // Add any other music-related parameters that need to be reset
+            MusicManager.Instance.SetMusicParameter("Time State", 0f); // 0 represents Default state
+        }
+        else
+        {
+            Debug.LogError("MusicManager.Instance is null in ResetMusicState");
         }
     }
 
@@ -162,23 +165,26 @@ public class PlayerTimeControl : MonoBehaviour
 
         // Set new position
         float rewindSpeed = originalSpeed * 0.25f;
-        float rewindDistance = rewindSpeed * Mathf.Abs(rewindTimeScale) * rewindDuration;
+        float rewindDistance = rewindSpeed * rewindDuration;
         float newPosition = Mathf.Clamp01(startPosition - rewindDistance);
 
         // Apply rewind effects
         splineControl.Speed = -rewindSpeed;
-        crosshairCore.TriggerRewindStart(rewindTimeScale); // Replace direct event invocation
+        crosshairCore.TriggerRewindStart(rewindTimeScale);
         rewindFeedback.PlayFeedbacks();
 
         JPGEffectController.Instance.SetJPGIntensity(0.7f, 0.5f);
 
-        // Use a timer to ensure the rewind completes after the specified duration
-        float elapsedTime = 0f;
-        while (elapsedTime < rewindDuration)
-        {
-            elapsedTime += Time.deltaTime;
-            yield return null;
-        }
+        // Use TimeManager to set the time scale
+        TimeManager.Instance.SetTimeScale(-1f);
+        MusicManager.Instance.SetMusicParameter("Time State", 1f); // 1 represents Rewind state
+
+        yield return new WaitForSeconds(rewindDuration);
+
+        // Reset time scale
+        TimeManager.Instance.SetTimeScale(1f);
+
+        // ResetMusicState() will be called in StopRewindEffect()
 
         // Ensure the position is set correctly after the rewind
         splineControl.RelativePosition = newPosition;
@@ -195,7 +201,7 @@ public class PlayerTimeControl : MonoBehaviour
 
         JPGEffectController.Instance.SetJPGIntensity(0f, 0.5f);
         DeactivateRewindEffects();
-        crosshairCore.TriggerRewindEnd(); // Replace direct event invocation
+        crosshairCore.TriggerRewindEnd();
 
         ResetMusicState();
 
@@ -220,13 +226,20 @@ public class PlayerTimeControl : MonoBehaviour
 
         // Apply slow motion effects
         splineControl.Speed = slowedSpeed;
-        crosshairCore.TriggerRewindStart(slowTimeScale); // Replace direct event invocation
+        crosshairCore.TriggerRewindStart(slowTimeScale);
         rewindFeedback.PlayFeedbacks();
         JPGEffectController.Instance.SetJPGIntensity(0.7f, 0.5f);
 
-        yield return StartCoroutine(
-            TimeManager.Instance.RewindTime(slowTimeScale, slowTimeDuration, returnToNormalDuration)
-        );
+        // Set music state to Slow
+        MusicManager.Instance.SetMusicParameter("Time State", 2f); // 2 represents Slow state
+
+        // Use TimeManager to set the time scale
+        TimeManager.Instance.SetTimeScale(slowTimeScale);
+
+        yield return new WaitForSeconds(slowTimeDuration);
+
+        // Reset time scale
+        TimeManager.Instance.SetTimeScale(1f);
 
         // Calculate new position based on slowed speed and duration
         float distanceTraveled = slowedSpeed * slowTimeDuration;
@@ -240,7 +253,10 @@ public class PlayerTimeControl : MonoBehaviour
 
         JPGEffectController.Instance.SetJPGIntensity(0f, 0.5f);
         DeactivateRewindEffects();
-        crosshairCore.TriggerRewindEnd(); // Replace direct event invocation
+        crosshairCore.TriggerRewindEnd();
+
+        // Reset music state to Default
+        MusicManager.Instance.SetMusicParameter("Time State", 0f); // 0 represents Default state
 
         slowTime.enabled = false;
         playerLocking.qteEnemyLockList.Clear();

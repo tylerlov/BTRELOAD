@@ -282,6 +282,9 @@ public class EnemyBasicSetup : BaseBehaviour, IDamageable, IAttackAgent
         SetLockOnStatus(false);
         ConditionalDebug.Log("Enemy has died");
 
+        // Add this line to update the score
+        ScoreManager.Instance.AddScore(CalculateScoreValue());
+
         deathParticles.GetFromPool(cachedTransform.position, Quaternion.identity);
         FMODUnity.RuntimeManager.PlayOneShot(
             "event:/Enemy/" + enemyType + "/Death",
@@ -298,6 +301,11 @@ public class EnemyBasicSetup : BaseBehaviour, IDamageable, IAttackAgent
         SpawnableItems.InformSpawnableDestroyed(cachedTransform);
         PoolManager.Pools[associatedPool].Despawn(cachedTransform);
         Destroy(GetComponent<SpawnableIdentity>());
+    }
+
+    private int CalculateScoreValue()
+    {
+        return (int)(startHealth * 2f);
     }
 
     private void OnMusicalEnemyShoot(KoreographyEvent evt)

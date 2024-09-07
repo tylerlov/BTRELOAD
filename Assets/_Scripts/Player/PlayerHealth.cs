@@ -44,7 +44,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
 
         int damageAmount = (int)amount;
         ScoreManager.Instance.AddScore(-damageAmount);
-        ScoreManager.Instance.ReportDamage(damageAmount); // New method to report damage
+        //ScoreManager.Instance.ReportDamage(damageAmount); // New method to report damage
         SpawnHitEffect();
         PlayHitFeedback();
 

@@ -124,6 +124,7 @@ public class WaveEventSubscriptions : MonoBehaviour
         Debug.Log("Wave Ended!");
         ScoreManager.Instance.waveCounterAdd();
         SceneManagerBTR.Instance.updateStatus("waveend");
+        EventManager.Instance.TriggerEvent("OnWaveEnd");
 
         if (shooterMovement != null)
         {

@@ -22,8 +22,8 @@ public class PlayerShotState : ProjectileState
         _projectile.initialDirection = _projectile.transform.forward;
         _projectile.homing = _hasAssignedTarget;
 
-        float finalAccuracy = ProjectileManager.Instance.projectileAccuracy * playerAccuracyModifier;
-        _projectile.SetAccuracy(finalAccuracy);
+        // Set accuracy to 100% for player shots
+        _projectile.SetAccuracy(1f);
 
         if (initialTarget != null && _hasAssignedTarget)
         {

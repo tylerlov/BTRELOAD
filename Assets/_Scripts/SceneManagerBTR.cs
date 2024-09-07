@@ -106,15 +106,28 @@ public class SceneManagerBTR : MonoBehaviour
             await UnityEngine.SceneManagement.SceneManager.UnloadSceneAsync(currentAdditiveScene);
         }
 
-        AsyncOperation asyncLoad = UnityEngine.SceneManagement.SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Additive);
-        await asyncLoad;
+        try
+        {
+            AsyncOperation asyncLoad = UnityEngine.SceneManagement.SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Additive);
+            await asyncLoad;
 
-        currentAdditiveScene = UnityEngine.SceneManagement.SceneManager.GetSceneByName(sceneName);
-        UnityEngine.SceneManagement.SceneManager.SetActiveScene(currentAdditiveScene);
+            currentAdditiveScene = UnityEngine.SceneManagement.SceneManager.GetSceneByName(sceneName);
+            if (!currentAdditiveScene.IsValid())
+            {
+                throw new System.Exception($"Failed to load scene: {sceneName}");
+            }
 
-        ScoreManager.Instance.CurrentSceneWaveCount = 0;
+            UnityEngine.SceneManagement.SceneManager.SetActiveScene(currentAdditiveScene);
 
-        OnSceneLoaded(currentAdditiveScene, LoadSceneMode.Additive);
+            ScoreManager.Instance.CurrentSceneWaveCount = 0;
+
+            OnSceneLoaded(currentAdditiveScene, LoadSceneMode.Additive);
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError($"Error loading additive scene {sceneName}: {e.Message}");
+            throw;
+        }
     }
 
     public void updateStatus(string waveEvent)
@@ -179,24 +192,49 @@ public class SceneManagerBTR : MonoBehaviour
 
     private async Task MoveToNextScene()
     {
-        isTransitioning = true;
-
-        currentSceneIndex = (currentSceneIndex + 1) % currentGroup.scenes.Length;
-        currentSectionIndex = 0;
-        completedWaves = 0;
-
-        // Skip empty scenes
-        while (string.IsNullOrEmpty(currentGroup.scenes[currentSceneIndex].sceneName))
+        if (isTransitioning)
         {
-            currentSceneIndex = (currentSceneIndex + 1) % currentGroup.scenes.Length;
+            Debug.LogWarning("Already transitioning to next scene. Aborting.");
+            return;
         }
 
-        await LoadAdditiveSceneAsync(currentGroup.scenes[currentSceneIndex].sceneName);
-        expectedWaves = currentGroup.scenes[currentSceneIndex].songSections[currentSectionIndex].waves;
-        UpdateMusicSection();
+        isTransitioning = true;
 
-        isTransitioning = false;
-        Debug.Log($"Moved to next scene. Scene: {currentSceneIndex}, Section: {currentSectionIndex}, Expected Waves: {expectedWaves}");
+        try
+        {
+            int initialSceneIndex = currentSceneIndex;
+            do
+            {
+                currentSceneIndex = (currentSceneIndex + 1) % currentGroup.scenes.Length;
+                currentSectionIndex = 0;
+                completedWaves = 0;
+
+                if (!string.IsNullOrEmpty(currentGroup.scenes[currentSceneIndex].sceneName))
+                {
+                    await LoadAdditiveSceneAsync(currentGroup.scenes[currentSceneIndex].sceneName);
+                    break;
+                }
+            } while (currentSceneIndex != initialSceneIndex);
+
+            if (currentSceneIndex == initialSceneIndex && string.IsNullOrEmpty(currentGroup.scenes[currentSceneIndex].sceneName))
+            {
+                Debug.LogError("No valid scenes found in the current group.");
+                return;
+            }
+
+            expectedWaves = currentGroup.scenes[currentSceneIndex].songSections[currentSectionIndex].waves;
+            UpdateMusicSection();
+
+            Debug.Log($"Moved to next scene. Scene: {currentSceneIndex}, Section: {currentSectionIndex}, Expected Waves: {expectedWaves}");
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError($"Error during scene transition: {e.Message}");
+        }
+        finally
+        {
+            isTransitioning = false;
+        }
     }
 
     private void HandleFinalSplineReached()
@@ -215,7 +253,10 @@ public class SceneManagerBTR : MonoBehaviour
         _isLoadingScene = false;
 
         UpdateSceneAttributes();
-        MusicManager.ApplyMusicChanges(currentGroup, currentSceneIndex, currentSectionIndex);
+        if (MusicManager.Instance != null)
+        {
+            MusicManager.Instance.ApplyMusicChanges(currentGroup, currentSceneIndex, currentGroup.scenes[currentSceneIndex].songSections[currentSectionIndex].section);
+        }
 
         LogCurrentState();
 
@@ -313,7 +354,10 @@ public class SceneManagerBTR : MonoBehaviour
                 }
 
                 UpdateSceneAttributes();
-                MusicManager.ApplyMusicChanges(currentGroup, currentSceneIndex, currentSectionIndex);
+                if (MusicManager.Instance != null)
+                {
+                    MusicManager.Instance.ApplyMusicChanges(currentGroup, currentSceneIndex, currentGroup.scenes[currentSceneIndex].songSections[currentSectionIndex].section);
+                }
 
                 await UnityMainThreadDispatcher.Instance().EnqueueAsync(() =>
                 {
@@ -343,10 +387,10 @@ public class SceneManagerBTR : MonoBehaviour
     private void UpdateMusicSection()
     {
         var currentScene = currentGroup.scenes[currentSceneIndex];
-        if (currentScene.songSections.Length > 0)
+        if (currentScene.songSections.Length > 0 && MusicManager.Instance != null)
         {
             float sectionValue = currentScene.songSections[currentSectionIndex].section;
-            MusicManager.ChangeSongSection(currentGroup, currentSceneIndex, sectionValue);
+            MusicManager.Instance.ChangeSongSection(currentGroup, currentSceneIndex, sectionValue);
         }
     }
 

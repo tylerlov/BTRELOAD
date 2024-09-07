@@ -111,6 +111,21 @@ public class Score : MonoBehaviour
         // Ensure both text elements are initially inactive
         scoreAddedText.gameObject.SetActive(false);
         scoreSubtractedText.gameObject.SetActive(false);
+
+        // Register this Score instance with ScoreManager
+        ScoreManager.Instance.scoreUI = this;
+
+        // Subscribe to the OnScoreChanged event
+        ScoreManager.Instance.OnScoreChanged += ShowScoreChange;
+    }
+
+    private void OnDestroy()
+    {
+        // Unsubscribe from the OnScoreChanged event to prevent memory leaks
+        if (ScoreManager.Instance != null)
+        {
+            ScoreManager.Instance.OnScoreChanged -= ShowScoreChange;
+        }
     }
 
     void Update()
@@ -163,7 +178,7 @@ public class Score : MonoBehaviour
         }
     }
 
-    private void ShowScoreChange(int change)
+    public void ShowScoreChange(int change)
     {
         if (change == 0)
             return;

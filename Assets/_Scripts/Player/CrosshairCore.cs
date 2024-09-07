@@ -122,11 +122,6 @@ public class CrosshairCore : MonoBehaviour
         GetComponent<PlayerTimeControl>().HandleRewindToBeat();
         GetComponent<PlayerTimeControl>().HandleSlowToBeat();
 
-        // Failsafe for music state reset
-        if (!QuickTimeEventManager.Instance.IsQTEActive && Time.timeScale == 1f)
-        {
-            GetComponent<PlayerTimeControl>().ResetMusicState();
-        }
     }
 
     private void HandleInput()

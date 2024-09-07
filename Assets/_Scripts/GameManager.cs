@@ -120,7 +120,7 @@ public class GameManager : MonoBehaviour
 
 private async void Start()
     {
-        MusicManager.FindActiveFMODInstance();
+        //MusicManager.FindActiveFMODInstance();
         TimeManager.InitializeDebugTimeScale();
 
         // Initialize scenes
@@ -146,7 +146,7 @@ private async void Start()
                 Debug.LogError("No Cinemachine State Driven Camera found in the scene.");
             }
 
-            StartingTransition.Invoke();
+            //StartingTransition.Invoke();
         });
     }
 

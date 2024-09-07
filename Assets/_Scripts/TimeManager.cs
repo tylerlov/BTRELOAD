@@ -113,7 +113,6 @@ public class TimeManager : MonoBehaviour
         if (globalClock != null)
         {
             globalClock.localTimeScale = timeScale;
-            debugSettings.debugTimeScale = timeScale;
             Debug.Log($"Time scale set to {timeScale} on global clock '{debugSettings.globalClockName}'");
         }
         else

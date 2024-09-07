@@ -14,15 +14,13 @@ public class ScoreManager : MonoBehaviour
     private Timeline timeline;
     private float lastScoreUpdateTime;
     private float accumulatedScoreDecrease = 0f;
-    private Score scoreUI;
+    public Score scoreUI; // Change to public
 
     public int Score { get; private set; }
     public int ShotTally { get; private set; }
 
-
-
     private const int SECTION_TRANSITION_SCORE_BOOST = 200;
-
+    private const int SCORE_CHANGE_THRESHOLD = 2; // Only report changes greater than this
 
     public int TotalWaveCount
     {
@@ -43,6 +41,10 @@ public class ScoreManager : MonoBehaviour
             OnValueChanged();
         }
     }
+
+    // Add this line near the top of the class
+    public delegate void ScoreChangedEventHandler(int change);
+    public event ScoreChangedEventHandler OnScoreChanged;
 
     private void Awake()
     {
@@ -98,7 +100,13 @@ public class ScoreManager : MonoBehaviour
 
     public void AddScore(int amount)
     {
+        int previousScore = Score;
         Score += amount;
+        // Only invoke OnScoreChanged for significant changes
+        if (Mathf.Abs(amount) >= SCORE_CHANGE_THRESHOLD)
+        {
+            OnScoreChanged?.Invoke(amount);
+        }
     }
 
     public void ResetScore()
@@ -130,8 +138,16 @@ public class ScoreManager : MonoBehaviour
 
             if (scoreDecrease > 0)
             {
+                int previousScore = Score;
                 Score = Mathf.Max(0, Score - scoreDecrease);
                 accumulatedScoreDecrease -= scoreDecrease;
+                
+                // Only invoke OnScoreChanged for significant changes
+                int change = Score - previousScore;
+                if (Mathf.Abs(change) >= SCORE_CHANGE_THRESHOLD)
+                {
+                    OnScoreChanged?.Invoke(change);
+                }
             }
 
             lastScoreUpdateTime = currentTime;
@@ -140,9 +156,10 @@ public class ScoreManager : MonoBehaviour
 
     public void ReportDamage(int damage)
     {
-        if (scoreUI != null)
+        // Only invoke OnScoreChanged for significant changes
+        if (damage >= SCORE_CHANGE_THRESHOLD)
         {
-            scoreUI.ReportDamage(damage);
+            OnScoreChanged?.Invoke(-damage);
         }
     }
 
@@ -151,12 +168,8 @@ public class ScoreManager : MonoBehaviour
         // This method is intentionally left empty or you can add logic here if needed
     }
 
-     public void AddSectionTransitionBoost()
+    public void AddSectionTransitionBoost()
     {
         AddScore(SECTION_TRANSITION_SCORE_BOOST);
-        if (scoreUI != null)
-        {
-            scoreUI.ShowSectionTransitionBoost(SECTION_TRANSITION_SCORE_BOOST);
-        }
     }
 }

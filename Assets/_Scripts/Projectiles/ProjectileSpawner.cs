@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Chronos;
 
 public class ProjectileSpawner : MonoBehaviour
 {
@@ -23,6 +24,8 @@ public class ProjectileSpawner : MonoBehaviour
     private ProjectileEffectManager effectManager;
     private ProjectileManager projectileManager;
 
+    private GlobalClock globalClock;
+
     private void Awake()
     {
         // Singleton pattern implementation
@@ -43,6 +46,9 @@ public class ProjectileSpawner : MonoBehaviour
         projectilePool = GetComponent<ProjectilePool>();
         effectManager = GetComponent<ProjectileEffectManager>();
         projectileManager = GetComponent<ProjectileManager>();
+
+        // Get the global clock
+        globalClock = Timekeeper.instance.Clock("Test");
 
         StartCoroutine(ProcessEnemyShotQueue());
         lastEnemyShotResetTime = Time.time;
@@ -106,7 +112,14 @@ public class ProjectileSpawner : MonoBehaviour
 
     public bool RequestEnemyShot(Action shotAction)
     {
-        if (Time.time - lastEnemyShotResetTime >= enemyShotIntervalSeconds)
+        float timeScale = globalClock.timeScale;
+
+        if (timeScale <= 0)
+        {
+            return false; // Don't spawn projectiles when time is stopped or rewinding
+        }
+
+        if (Time.time - lastEnemyShotResetTime >= enemyShotIntervalSeconds / timeScale)
         {
             currentEnemyShotCount = 0;
             lastEnemyShotResetTime = Time.time;
@@ -126,12 +139,20 @@ public class ProjectileSpawner : MonoBehaviour
     {
         while (true)
         {
-            if (enemyShotQueue.Count > 0)
+            float timeScale = globalClock.timeScale;
+            
+            if (timeScale > 0 && enemyShotQueue.Count > 0)
             {
                 Action shotAction = enemyShotQueue.Dequeue();
                 shotAction.Invoke();
+                
+                // Wait for the adjusted interval based on time scale
+                yield return new WaitForSeconds(enemyShotIntervalSeconds / timeScale);
             }
-            yield return null;
+            else
+            {
+                yield return null;
+            }
         }
     }
 

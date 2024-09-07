@@ -37,9 +37,11 @@ public class ProjectileManager : MonoBehaviour
     private ProjectileEffectManager effectManager;
     private ProjectileSpawner projectileSpawner;
 
-     private Dictionary<Transform, Vector3> cachedEnemyPositions = new Dictionary<Transform, Vector3>();
+    private Dictionary<Transform, Vector3> cachedEnemyPositions = new Dictionary<Transform, Vector3>();
     private float enemyPositionUpdateInterval = 0.5f;
     private float lastEnemyPositionUpdateTime;
+
+    private GlobalClock globalClock;
 
     private void Awake()
     {
@@ -64,6 +66,34 @@ public class ProjectileManager : MonoBehaviour
         if (playerGameObject == null)
         {
             ConditionalDebug.LogWarning("Player GameObject not found during initialization.");
+        }
+
+        // Remove the globalClock initialization from here
+    }
+
+    private void Start()
+    {
+        // Initialize the global clock here instead
+        InitializeGlobalClock();
+
+        // ... other Start logic ...
+    }
+
+    private void InitializeGlobalClock()
+    {
+        try
+        {
+            globalClock = Timekeeper.instance.Clock("Test") as GlobalClock;
+            if (globalClock == null)
+            {
+                Debug.LogWarning("'Test' clock is not a GlobalClock. Some time-related features may not work as expected.");
+            }
+        }
+        catch (ChronosException e)
+        {
+            Debug.LogError($"Failed to initialize global clock: {e.Message}");
+            // Optionally, you could create the clock here if it doesn't exist
+            // globalClock = Timekeeper.instance.AddClock("Test");
         }
     }
 
@@ -94,7 +124,18 @@ public class ProjectileManager : MonoBehaviour
 
     private void Update()
     {
-        float globalTimeScale = timekeeper.Clock("Test").localTimeScale;
+        if (globalClock == null)
+        {
+            // Try to initialize the clock again if it failed earlier
+            InitializeGlobalClock();
+            if (globalClock == null)
+            {
+                // If it's still null, skip this update
+                return;
+            }
+        }
+
+        float globalTimeScale = globalClock.timeScale;
         float deltaTime = Time.deltaTime;
 
         int projectileCount = projectileIds.Length;
@@ -135,8 +176,24 @@ public class ProjectileManager : MonoBehaviour
 
         updatedLifetimes.Dispose();
 
-        ProcessProjectileRequests();
+        ProcessProjectileRequests(globalTimeScale);
         projectilePool.CheckAndReplenishPool();
+    }
+
+    private void ProcessProjectileRequests(float timeScale)
+    {
+        if (timeScale <= 0)
+        {
+            return; // Don't process requests when time is stopped or rewinding
+        }
+
+        int processCount = Mathf.CeilToInt(staticShootingRequestsPerFrame * timeScale);
+        processCount = Math.Min(projectilePool.GetProjectileRequestCount(), processCount);
+        
+        for (int i = 0; i < processCount; i++)
+        {
+            projectileSpawner.ProcessShootProjectile(projectilePool.DequeueProjectileRequest());
+        }
     }
 
     private void RemoveProjectile(int projectileId)

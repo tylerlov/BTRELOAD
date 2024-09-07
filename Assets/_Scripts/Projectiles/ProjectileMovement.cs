@@ -103,7 +103,7 @@ public class ProjectileMovement
             speedFactor *= CalculateAccuracyFactor(accuracy, MIN_ACCURACY_SPEED_FACTOR);
 
             CheckIfPassedTarget(currentPosition, predictedPosition);
-            UpdateCloseProximityBehavior(distanceToTarget, timeScale);
+            UpdateCloseProximityBehavior(distanceToTarget, _projectile.GetCurrentState() is EnemyShotState ? timeScale : 1f);
 
             if (_hasPassedTarget || _aggressiveTurnAroundTriggered)
             {
@@ -112,7 +112,7 @@ public class ProjectileMovement
             }
 
             Vector3 newForward = Vector3.RotateTowards(_projectile.transform.forward, directionToTarget, 
-                turnFactor * MAX_ROTATION_DELTA * Mathf.Deg2Rad * Time.deltaTime * timeScale, 0f);
+                turnFactor * MAX_ROTATION_DELTA * Mathf.Deg2Rad * Time.deltaTime * (_projectile.GetCurrentState() is EnemyShotState ? timeScale : 1f), 0f);
             
             _projectile.transform.rotation = Quaternion.LookRotation(newForward);
 
@@ -122,7 +122,8 @@ public class ProjectileMovement
                 
                 float speedMultiplier = Vector3.Distance(predictedPosition, _projectile.currentTarget.position) > BASE_APPROACH_VARIATION_RADIUS ? SPEED_INCREASE_FACTOR : 1f;
                 
-                _projectile.rb.velocity = (newForward * _projectile.bulletSpeed * speedFactor * speedMultiplier) + velocityDeviation;
+                float appliedTimeScale = _projectile.GetCurrentState() is EnemyShotState ? timeScale : 1f;
+                _projectile.rb.velocity = (newForward * _projectile.bulletSpeed * speedFactor * speedMultiplier * appliedTimeScale) + velocityDeviation;
             }
         }
         else if (_projectile.rb != null && !_projectile.rb.isKinematic)

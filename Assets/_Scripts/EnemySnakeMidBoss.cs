@@ -83,8 +83,18 @@ public class EnemySnakeMidBoss : BaseBehaviour, IDamageable, ILimbDamageReceiver
     private Material enemyMaterial;
     private float originalFinalPower;
 
+    private DestroyEffect destroyEffect;
+
     private void Awake()
     {
+        // Find the DestroyEffect component
+        destroyEffect = GetComponent<DestroyEffect>();
+        
+        if (destroyEffect == null)
+        {
+            Debug.LogWarning("DestroyEffect component not found on " + gameObject.name);
+        }
+
         if (vfxPrefab != null)
         {
             InitializeVFXPool();
@@ -178,7 +188,7 @@ public class EnemySnakeMidBoss : BaseBehaviour, IDamageable, ILimbDamageReceiver
 
     public void DebugTriggerDeath()
     {
-        StartCoroutine(Death());
+        _ = OnDeath();
     }
 
     public void DamageFromLimb(string limbName, float amount)
@@ -198,8 +208,14 @@ public class EnemySnakeMidBoss : BaseBehaviour, IDamageable, ILimbDamageReceiver
         myTime = GetComponent<Timeline>();
     }
 
-    private void HandleDamage(float amount)
+    private async void HandleDamage(float amount)
     {
+        if (this == null || gameObject == null)
+        {
+            Debug.LogWarning("EnemySnakeMidBoss or its GameObject has been destroyed. Skipping damage handling.");
+            return;
+        }
+
         currentHealth = Mathf.Max(currentHealth - amount, 0);
 
         // Play hit sound
@@ -211,7 +227,7 @@ public class EnemySnakeMidBoss : BaseBehaviour, IDamageable, ILimbDamageReceiver
         // Check if the damage caused death
         if (currentHealth == 0)
         {
-            StartCoroutine(Death());
+            await OnDeath();
             return; // Exit the method early to skip hit animation
         }
 
@@ -301,31 +317,125 @@ public class EnemySnakeMidBoss : BaseBehaviour, IDamageable, ILimbDamageReceiver
         ReturnVFXToPool(vfx); // Return the VFX to the pool.
     }
 
-private IEnumerator Death()
+    private async Task OnDeath()
     {
-        animator.SetTrigger("Die"); // Trigger the death animation
+        // Notify SceneManagerBTR of the enemy's death immediately
+        NotifySceneManagerOfDeath();
 
         // Play death sound
         FMODUnity.RuntimeManager.PlayOneShot(deathSoundEventPath, transform.position);
 
-        // Wait for the death animation to start
-        yield return new WaitUntil(() => animator.GetCurrentAnimatorStateInfo(0).IsName("Death"));
+        if (animator != null)
+        {
+            animator.SetTrigger("Die"); // Trigger the death animation
+        }
 
-        // Now wait for the death animation to actually finish
-        float animationLength = animator.GetCurrentAnimatorStateInfo(0).length;
-        yield return new WaitForSeconds(animationLength);
+        try
+        {
+            if (animator != null)
+            {
+                // Wait for the death animation to start
+                await WaitForAnimationState("Death");
+
+                // Now wait for the death animation to actually finish
+                float animationLength = animator.GetCurrentAnimatorStateInfo(0).length;
+                await Task.Delay(Mathf.RoundToInt(animationLength * 1000));
+            }
+            else
+            {
+                // If animator is null, wait for a default time
+                await Task.Delay(2000); // Wait for 2 seconds as a fallback
+            }
+        }
+        catch (MissingReferenceException)
+        {
+            Debug.LogWarning("Animator was destroyed during death animation. Proceeding with cleanup.");
+        }
+
+        // Cleanup effects
+        if (destroyEffect != null)
+        {
+            destroyEffect.CleanupEffects();
+        }
+        else
+        {
+            Debug.LogWarning("DestroyEffect is null, skipping effect cleanup");
+        }
 
         // Additional cleanup or state management here, if necessary
+        CleanupDeathEffects();
 
-        // Call the async method to change the scene
-        _ = ChangeSceneAsync();
+        // The scene change will be handled by SceneManagerBTR based on the updateStatus call
     }
 
-    private async Task ChangeSceneAsync()
+    private void CleanupDeathEffects()
     {
-        await SceneManagerBTR.Instance.ChangeSceneWithTransitionToNextAsync();
+        if (this == null || gameObject == null)
+        {
+            Debug.LogWarning("EnemySnakeMidBoss or its GameObject has been destroyed. Skipping cleanup.");
+            return;
+        }
+
+        // Stop any ongoing tweens or effects
+        PrimeTween.Tween.StopAll(this);
+
+        try
+        {
+            // Disable any lights or particle systems
+            var lights = GetComponentsInChildren<Light>(true);
+            foreach (var light in lights)
+            {
+                if (light != null) light.enabled = false;
+            }
+
+            var particleSystems = GetComponentsInChildren<ParticleSystem>(true);
+            foreach (var ps in particleSystems)
+            {
+                if (ps != null) ps.Stop();
+            }
+
+            // Disable the renderer
+            var renderers = GetComponentsInChildren<Renderer>(true);
+            foreach (var renderer in renderers)
+            {
+                if (renderer != null) renderer.enabled = false;
+            }
+
+            // Disable the collider
+            var colliders = GetComponentsInChildren<Collider>(true);
+            foreach (var collider in colliders)
+            {
+                if (collider != null) collider.enabled = false;
+            }
+        }
+        catch (MissingReferenceException)
+        {
+            Debug.LogWarning("Some components were destroyed during cleanup. Continuing with available components.");
+        }
     }
 
+    private async Task WaitForAnimationState(string stateName)
+    {
+        float timeout = 5f; // 5 seconds timeout
+        float elapsedTime = 0f;
+
+        while (animator != null && !animator.GetCurrentAnimatorStateInfo(0).IsName(stateName))
+        {
+            await Task.Delay(50); // Wait for 50ms instead of using Task.Yield()
+            elapsedTime += 0.05f;
+
+            if (elapsedTime > timeout)
+            {
+                Debug.LogWarning($"Timeout waiting for animation state: {stateName}");
+                break;
+            }
+        }
+    }
+
+    private void NotifySceneManagerOfDeath()
+    {
+        SceneManagerBTR.Instance.updateStatus("waveend");
+    }
 
     private void Update()
     {
