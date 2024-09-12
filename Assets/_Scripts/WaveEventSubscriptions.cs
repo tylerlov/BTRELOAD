@@ -88,10 +88,9 @@ public class WaveEventSubscriptions : MonoBehaviour
 
     private void OnWaveStarted()
     {
-        Debug.Log("Wave Started!");
+        Debug.Log($"<color=blue>[WAVE] Wave Started! Current Scene: {SceneManagerBTR.Instance.GetCurrentSceneName()}, Section: {SceneManagerBTR.Instance.GetCurrentSongSectionName()}</color>");
         SceneManagerBTR.Instance.updateStatus("wavestart");
 
-        
         if (cameraSwitching != null)
         {
             cameraSwitching.SetMainCamera();
@@ -112,6 +111,7 @@ public class WaveEventSubscriptions : MonoBehaviour
         // Increment spline at the start of a wave
         if (splineManager != null)
         {
+            Debug.Log($"<color=blue>[WAVE] Calling IncrementSpline from OnWaveStarted</color>");
             splineManager.IncrementSpline();
         }
 
@@ -121,10 +121,14 @@ public class WaveEventSubscriptions : MonoBehaviour
 
     private void OnWaveEnded()
     {
-        Debug.Log("Wave Ended!");
+        Debug.Log($"<color=blue>[WAVE] Wave Ended! Current Scene: {SceneManagerBTR.Instance.GetCurrentSceneName()}, Section: {SceneManagerBTR.Instance.GetCurrentSongSectionName()}</color>");
         ScoreManager.Instance.waveCounterAdd();
         SceneManagerBTR.Instance.updateStatus("waveend");
-        EventManager.Instance.TriggerEvent("OnWaveEnd");
+        
+        if (EventManager.Instance != null)
+        {
+            EventManager.Instance.TriggerEvent("OnWaveEnd");
+        }
 
         if (shooterMovement != null)
         {

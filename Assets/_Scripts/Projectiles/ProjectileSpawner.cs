@@ -119,13 +119,21 @@ public class ProjectileSpawner : MonoBehaviour
             return false; // Don't spawn projectiles when time is stopped or rewinding
         }
 
-        if (Time.time - lastEnemyShotResetTime >= enemyShotIntervalSeconds / timeScale)
+        // Check if rate limiting is disabled
+        if (maxEnemyShotsPerInterval == -1 && enemyShotIntervalSeconds == -1)
+        {
+            shotAction.Invoke();
+            return true;
+        }
+
+        // Apply rate limiting if enabled
+        if (enemyShotIntervalSeconds != -1 && Time.time - lastEnemyShotResetTime >= enemyShotIntervalSeconds / timeScale)
         {
             currentEnemyShotCount = 0;
             lastEnemyShotResetTime = Time.time;
         }
 
-        if (currentEnemyShotCount < maxEnemyShotsPerInterval)
+        if (maxEnemyShotsPerInterval == -1 || currentEnemyShotCount < maxEnemyShotsPerInterval)
         {
             enemyShotQueue.Enqueue(shotAction);
             currentEnemyShotCount++;
@@ -146,8 +154,15 @@ public class ProjectileSpawner : MonoBehaviour
                 Action shotAction = enemyShotQueue.Dequeue();
                 shotAction.Invoke();
                 
-                // Wait for the adjusted interval based on time scale
-                yield return new WaitForSeconds(enemyShotIntervalSeconds / timeScale);
+                // Wait for the adjusted interval based on time scale, if interval is set
+                if (enemyShotIntervalSeconds != -1)
+                {
+                    yield return new WaitForSeconds(enemyShotIntervalSeconds / timeScale);
+                }
+                else
+                {
+                    yield return null;
+                }
             }
             else
             {
@@ -226,5 +241,17 @@ public class ProjectileSpawner : MonoBehaviour
     public ProjectileStateBased GetLastCreatedProjectile()
     {
         return lastCreatedProjectile;
+    }
+
+    public void SetShotRates(int maxShots, float intervalSeconds)
+    {
+        maxEnemyShotsPerInterval = maxShots;
+        enemyShotIntervalSeconds = intervalSeconds;
+        
+        // Reset the current shot count and timer when changing rates
+        currentEnemyShotCount = 0;
+        lastEnemyShotResetTime = Time.time;
+        
+        ConditionalDebug.Log($"[ProjectileSpawner] Shot rates updated: Max shots = {maxShots}, Interval = {intervalSeconds}s");
     }
 }

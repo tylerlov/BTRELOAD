@@ -73,7 +73,7 @@ ModelImporter:
     nodeNameCollisionStrategy: 1
     fileIdsGeneration: 2
     swapUVChannels: 0
-    generateSecondaryUV: 0
+    generateSecondaryUV: 1
     useFileUnits: 1
     keepQuads: 0
     weldVertices: 1
@@ -95,8 +95,8 @@ ModelImporter:
     useFileScale: 1
     strictVertexDataChecks: 0
   tangentSpace:
-    normalSmoothAngle: 60
-    normalImportMode: 0
+    normalSmoothAngle: 39
+    normalImportMode: 1
     tangentImportMode: 3
     normalCalculationMode: 4
     legacyComputeAllNormalsFromSmoothingGroupsWhenMeshHasBlendShapes: 0
@@ -107,7 +107,132 @@ ModelImporter:
   humanDescription:
     serializedVersion: 3
     human: []
-    skeleton: []
+    skeleton:
+    - name: JoostMan 3(Clone)
+      parentName: 
+      position: {x: 0, y: 0, z: 0}
+      rotation: {x: 0, y: 0, z: 0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: JoostMan
+      parentName: JoostMan 3(Clone)
+      position: {x: -0.025910392, y: -1.334895, z: -0.41972926}
+      rotation: {x: -0.7071068, y: 0, z: -0, w: 0.7071067}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Armature
+      parentName: JoostMan 3(Clone)
+      position: {x: -0, y: 0, z: 0}
+      rotation: {x: -0.7071068, y: 0, z: -0, w: 0.7071067}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Torso
+      parentName: Armature
+      position: {x: -0.037814822, y: 0.40562728, z: -0.2659254}
+      rotation: {x: 0.8586589, y: -0.00000006110048, z: -0.00000010236021, w: 0.5125474}
+      scale: {x: 1, y: 1.0000001, z: 1.0000001}
+    - name: Neck
+      parentName: Torso
+      position: {x: 5.6494365e-10, y: 0.54174733, z: -0.000000005885399}
+      rotation: {x: -0.08682102, y: 8.1712415e-14, z: 0.000000020699744, w: 0.9962239}
+      scale: {x: 1, y: 0.9999999, z: 0.9999999}
+    - name: Head
+      parentName: Neck
+      position: {x: -0.0000000023663003, y: 0.21912175, z: -0.0000000068167267}
+      rotation: {x: 0.023551766, y: -4.2389057e-15, z: -0.00000000561517, w: 0.99972266}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Head_end
+      parentName: Head
+      position: {x: -0, y: 0.1670299, z: 0}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: collar.L
+      parentName: Torso
+      position: {x: 5.6494365e-10, y: 0.54174733, z: -0.000000005885399}
+      rotation: {x: 0.09802756, y: -0.0219097, z: 0.72717166, w: 0.67906696}
+      scale: {x: 1.0000001, y: 1.0000001, z: 1}
+    - name: upperarm.L
+      parentName: collar.L
+      position: {x: 0.0000000037252903, y: 0.36695698, z: -0.000000011175871}
+      rotation: {x: -0.058237057, y: -0.07342893, z: -0.023989592, w: 0.9953096}
+      scale: {x: 1.0000004, y: 1.0000004, z: 1}
+    - name: lowerarm.L
+      parentName: upperarm.L
+      position: {x: 0.000000011175871, y: 0.3954082, z: 0.000000022351742}
+      rotation: {x: -0.021495016, y: 0.07900499, z: 0.021490825, w: 0.9964107}
+      scale: {x: 1.0000002, y: 1.0000001, z: 0.9999998}
+    - name: lowerarm.L_end
+      parentName: lowerarm.L
+      position: {x: -0, y: 0.4408299, z: 0}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: collar.R
+      parentName: Torso
+      position: {x: 5.6494365e-10, y: 0.54174733, z: -0.000000005885399}
+      rotation: {x: 0.09802733, y: 0.021909786, z: -0.7271716, w: 0.679067}
+      scale: {x: 1, y: 1.0000001, z: 0.9999998}
+    - name: upperarm.R
+      parentName: collar.R
+      position: {x: -0, y: 0.36695698, z: 0}
+      rotation: {x: 0.058237012, y: -0.07342904, z: -0.023989394, w: -0.9953096}
+      scale: {x: 1.0000005, y: 1.0000006, z: 1.0000001}
+    - name: lowerarm.R
+      parentName: upperarm.R
+      position: {x: 0.000000014901161, y: 0.39540824, z: -0.000000014901161}
+      rotation: {x: -0.021494845, y: -0.07900494, z: -0.021490779, w: 0.9964107}
+      scale: {x: 1.0000002, y: 1.0000002, z: 1}
+    - name: lowerarm.R_end
+      parentName: lowerarm.R
+      position: {x: -0, y: 0.4408299, z: 0}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: pelvis.L
+      parentName: Armature
+      position: {x: -0.037814822, y: 0.40562728, z: -0.2659254}
+      rotation: {x: -0.15375173, y: -0.3128561, z: 0.8664531, w: 0.357408}
+      scale: {x: 0.99999976, y: 0.99999976, z: 0.9999998}
+    - name: thigh.L
+      parentName: pelvis.L
+      position: {x: -0.000000022351742, y: 0.29027686, z: -0.000000007450581}
+      rotation: {x: -0.40139702, y: 0.022385046, z: -0.005726211, w: 0.9156127}
+      scale: {x: 1.0000006, y: 1.000001, z: 1.0000001}
+    - name: shin.L
+      parentName: thigh.L
+      position: {x: -0.000000007450581, y: 0.327558, z: -0.000000009313226}
+      rotation: {x: -0.15480444, y: 0.01212235, z: -0.18817501, w: 0.9697829}
+      scale: {x: 1.0000001, y: 0.99999994, z: 1.0000001}
+    - name: shin.L_end
+      parentName: shin.L
+      position: {x: -0, y: 0.3195659, z: 0}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: pelvis.R
+      parentName: Armature
+      position: {x: -0.037814822, y: 0.40562728, z: -0.2659254}
+      rotation: {x: 0.15375173, y: -0.3128561, z: 0.8664531, w: -0.357408}
+      scale: {x: 0.99999976, y: 0.99999976, z: 0.9999998}
+    - name: thigh.R
+      parentName: pelvis.R
+      position: {x: 0.000000029802322, y: 0.29027686, z: 0.0000000037252903}
+      rotation: {x: -0.40139702, y: -0.022385046, z: 0.005726211, w: 0.9156127}
+      scale: {x: 1.0000006, y: 1.000001, z: 1.0000001}
+    - name: shin.R
+      parentName: thigh.R
+      position: {x: 0.000000007450581, y: 0.32755804, z: -0.0000000018626451}
+      rotation: {x: -0.15480444, y: -0.01212235, z: 0.18817501, w: 0.9697829}
+      scale: {x: 1.0000001, y: 0.99999994, z: 1.0000001}
+    - name: shin.R_end
+      parentName: shin.R
+      position: {x: -0, y: 0.3195659, z: 0}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Light
+      parentName: JoostMan 3(Clone)
+      position: {x: -4.0762453, y: 5.8067026, z: -0.9887962}
+      rotation: {x: 0.52327543, y: -0.34203398, z: 0.7269423, w: 0.28416628}
+      scale: {x: 1, y: 0.99999994, z: 1}
+    - name: Camera
+      parentName: JoostMan 3(Clone)
+      position: {x: -0, y: 3.49, z: 0.42}
+      rotation: {x: 0.00000005960465, y: 0.7071068, z: -0.7071068, w: 0.00000005960465}
+      scale: {x: 1, y: 1, z: 1}
     armTwist: 0.5
     foreArmTwist: 0.5
     upperLegTwist: 0.5
@@ -122,7 +247,7 @@ ModelImporter:
     skeletonHasParents: 1
   lastHumanDescriptionAvatarSource: {instanceID: 0}
   autoGenerateAvatarMappingIfUnspecified: 1
-  animationType: 3
+  animationType: 2
   humanoidOversampling: 1
   avatarSetup: 1
   addHumanoidExtraRootOnlyWhenUsingAvatar: 1

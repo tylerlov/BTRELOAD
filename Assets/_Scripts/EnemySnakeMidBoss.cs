@@ -71,6 +71,12 @@ public class EnemySnakeMidBoss : BaseBehaviour, IDamageable, ILimbDamageReceiver
     [SerializeField]
     private float flashIntensity = 2f; // Adjust in inspector
 
+    [SerializeField]
+    private GameObject shootEffectPrefab; // Changed to GameObject
+
+    private List<GameObject> shootEffectPool;
+    private const int ShootEffectPoolSize = 5;
+
     private Timeline myTime;
     private Clock clock;
 
@@ -84,6 +90,12 @@ public class EnemySnakeMidBoss : BaseBehaviour, IDamageable, ILimbDamageReceiver
     private float originalFinalPower;
 
     private DestroyEffect destroyEffect;
+
+    // New cached references
+    private Transform cachedTransform;
+    private GameObject playerTarget;
+    private Vector3 cachedShootDirection;
+    private Quaternion cachedShootRotation;
 
     private void Awake()
     {
@@ -99,6 +111,12 @@ public class EnemySnakeMidBoss : BaseBehaviour, IDamageable, ILimbDamageReceiver
         {
             InitializeVFXPool();
         }
+
+        // Cache components
+        cachedTransform = transform;
+        playerTarget = GameObject.FindGameObjectWithTag("Player");
+
+        InitializeShootEffectPool();
     }
 
     private void InitializeVFXPool()
@@ -132,6 +150,31 @@ public class EnemySnakeMidBoss : BaseBehaviour, IDamageable, ILimbDamageReceiver
     private void ReturnVFXToPool(VisualEffect vfx)
     {
         vfx.gameObject.SetActive(false);
+    }
+
+    private void InitializeShootEffectPool()
+    {
+        shootEffectPool = new List<GameObject>();
+        for (int i = 0; i < ShootEffectPoolSize; i++)
+        {
+            GameObject effectInstance = Instantiate(shootEffectPrefab, transform);
+            effectInstance.SetActive(false);
+            shootEffectPool.Add(effectInstance);
+        }
+    }
+
+    private GameObject GetPooledShootEffect()
+    {
+        foreach (GameObject effect in shootEffectPool)
+        {
+            if (!effect.activeInHierarchy)
+            {
+                return effect;
+            }
+        }
+
+        // If all effects are in use, return the first one (overriding its use)
+        return shootEffectPool[0];
     }
 
     private void OnEnable()
@@ -271,20 +314,15 @@ public class EnemySnakeMidBoss : BaseBehaviour, IDamageable, ILimbDamageReceiver
 
     public void ShootProjectile()
     {
-        if (ProjectileManager.Instance == null)
+        if (ProjectileManager.Instance == null || playerTarget == null)
         {
-            Debug.LogError("ProjectileManager instance not found.");
+            Debug.LogError("ProjectileManager instance or player target not found.");
             return;
         }
 
-        Vector3 targetPosition = GameObject.FindGameObjectWithTag("Player").transform.position;
-        Quaternion rotationTowardsTarget = Quaternion.LookRotation(
-            targetPosition - projectileOrigin.position
-        );
-
         ProjectileSpawner.Instance.ShootProjectileFromEnemy(
             projectileOrigin.position,
-            rotationTowardsTarget,
+            cachedShootRotation,
             shootSpeed,
             projectileLifetime,
             projectileScale,
@@ -293,19 +331,49 @@ public class EnemySnakeMidBoss : BaseBehaviour, IDamageable, ILimbDamageReceiver
             projectileTimelineName
         );
 
-        FMODUnity.RuntimeManager.PlayOneShot(shootEventPath, projectileOrigin.position);
+        FMODUnity.RuntimeManager.PlayOneShot(shootEventPath);
 
         // Handle VFX
         if (vfxPrefab != null)
         {
             VisualEffect vfx = GetPooledVFX();
             vfx.transform.position = projectileOrigin.position;
-            vfx.transform.rotation = rotationTowardsTarget;
+            vfx.transform.rotation = cachedShootRotation;
             vfx.gameObject.SetActive(true);
             vfx.Play();
 
             StartCoroutine(DeactivateVFX(vfx));
         }
+
+        // Play shoot effect
+        PlayShootEffect();
+    }
+
+    private void PlayShootEffect()
+    {
+        GameObject effect = GetPooledShootEffect();
+        effect.transform.position = projectileOrigin.position;
+        effect.transform.rotation = cachedShootRotation;
+        effect.SetActive(true);
+
+        // Assuming the effect has a ParticleSystem component
+        ParticleSystem particleSystem = effect.GetComponent<ParticleSystem>();
+        if (particleSystem != null)
+        {
+            particleSystem.Play();
+            StartCoroutine(DeactivateShootEffect(effect, particleSystem.main.duration));
+        }
+        else
+        {
+            // If there's no ParticleSystem, deactivate after a fixed time
+            StartCoroutine(DeactivateShootEffect(effect, 1f));
+        }
+    }
+
+    private IEnumerator DeactivateShootEffect(GameObject effect, float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        effect.SetActive(false);
     }
 
     private IEnumerator DeactivateVFX(VisualEffect vfx)
@@ -325,31 +393,17 @@ public class EnemySnakeMidBoss : BaseBehaviour, IDamageable, ILimbDamageReceiver
         // Play death sound
         FMODUnity.RuntimeManager.PlayOneShot(deathSoundEventPath, transform.position);
 
-        if (animator != null)
+        if (animator != null && animator.isActiveAndEnabled)
         {
-            animator.SetTrigger("Die"); // Trigger the death animation
+            animator.SetTrigger("Die");
+            await WaitForAnimationState("Death");
+            float animationLength = animator.GetCurrentAnimatorStateInfo(0).length;
+            await Task.Delay(Mathf.RoundToInt(animationLength * 1000));
         }
-
-        try
+        else
         {
-            if (animator != null)
-            {
-                // Wait for the death animation to start
-                await WaitForAnimationState("Death");
-
-                // Now wait for the death animation to actually finish
-                float animationLength = animator.GetCurrentAnimatorStateInfo(0).length;
-                await Task.Delay(Mathf.RoundToInt(animationLength * 1000));
-            }
-            else
-            {
-                // If animator is null, wait for a default time
-                await Task.Delay(2000); // Wait for 2 seconds as a fallback
-            }
-        }
-        catch (MissingReferenceException)
-        {
-            Debug.LogWarning("Animator was destroyed during death animation. Proceeding with cleanup.");
+            Debug.LogWarning("Animator is null or disabled during OnDeath for EnemySnakeMidBoss");
+            await Task.Delay(2000); // Wait for 2 seconds as a fallback
         }
 
         // Cleanup effects
@@ -382,35 +436,29 @@ public class EnemySnakeMidBoss : BaseBehaviour, IDamageable, ILimbDamageReceiver
         try
         {
             // Disable any lights or particle systems
-            var lights = GetComponentsInChildren<Light>(true);
-            foreach (var light in lights)
-            {
-                if (light != null) light.enabled = false;
-            }
-
-            var particleSystems = GetComponentsInChildren<ParticleSystem>(true);
-            foreach (var ps in particleSystems)
-            {
-                if (ps != null) ps.Stop();
-            }
-
-            // Disable the renderer
-            var renderers = GetComponentsInChildren<Renderer>(true);
-            foreach (var renderer in renderers)
-            {
-                if (renderer != null) renderer.enabled = false;
-            }
-
-            // Disable the collider
-            var colliders = GetComponentsInChildren<Collider>(true);
-            foreach (var collider in colliders)
-            {
-                if (collider != null) collider.enabled = false;
-            }
+            DisableComponents<Light>();
+            DisableComponents<ParticleSystem>();
+            DisableComponents<Renderer>();
+            DisableComponents<Collider>();
         }
         catch (MissingReferenceException)
         {
             Debug.LogWarning("Some components were destroyed during cleanup. Continuing with available components.");
+        }
+    }
+
+    private void DisableComponents<T>() where T : Component
+    {
+        var components = GetComponentsInChildren<T>(true);
+        foreach (var component in components)
+        {
+            if (component != null)
+            {
+                if (component is ParticleSystem ps)
+                    ps.Stop();
+                else if (component is Behaviour behaviour)
+                    behaviour.enabled = false;
+            }
         }
     }
 
@@ -419,7 +467,7 @@ public class EnemySnakeMidBoss : BaseBehaviour, IDamageable, ILimbDamageReceiver
         float timeout = 5f; // 5 seconds timeout
         float elapsedTime = 0f;
 
-        while (animator != null && !animator.GetCurrentAnimatorStateInfo(0).IsName(stateName))
+        while (animator != null && animator.isActiveAndEnabled && !animator.GetCurrentAnimatorStateInfo(0).IsName(stateName))
         {
             await Task.Delay(50); // Wait for 50ms instead of using Task.Yield()
             elapsedTime += 0.05f;
@@ -440,6 +488,17 @@ public class EnemySnakeMidBoss : BaseBehaviour, IDamageable, ILimbDamageReceiver
     private void Update()
     {
         CheckTimelineChanges();
+        UpdateShootDirection(); // Update the shooting direction each frame
+    }
+
+    private void UpdateShootDirection()
+    {
+        if (playerTarget != null)
+        {
+            cachedShootDirection = playerTarget.transform.position - projectileOrigin.position;
+            cachedShootDirection.Normalize();
+            cachedShootRotation = Quaternion.LookRotation(cachedShootDirection);
+        }
     }
 
     private float previousTimeScale = 1.0f; // Default time scale

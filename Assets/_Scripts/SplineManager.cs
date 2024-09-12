@@ -94,45 +94,13 @@ public class SplineManager : MonoBehaviour
         }
     }
 
-    private void PerformSplineIncrement()
-    {
-        if (isSplineNeeded && currSpline < splineDatas.Count - 1)
-        {
-            float currentTime = Time.time;
-            if (currentTime - lastSwitchTime < MIN_SWITCH_INTERVAL)
-            {
-                Debug.LogWarning(
-                    $"Spline switch attempted too soon. Time since last switch: {currentTime - lastSwitchTime}"
-                );
-                return;
-            }
-
-            currSpline++;
-            SetSplineDataAttributes(currSpline);
-            splineSwitchCounter++;
-            lastSwitchTime = currentTime;
-            Debug.Log(
-                $"Spline Incremented. Current spline: {currSpline}, Total switches: {splineSwitchCounter}, Time: {currentTime}"
-            );
-
-            // Check if we've reached the final spline
-            if (currSpline == splineDatas.Count - 1)
-            {
-                OnFinalSplineReached?.Invoke();
-            }
-        }
-        else
-        {
-            Debug.Log("Next Spline is not available, maintaining current Spline");
-        }
-    }
-
     public void IncrementSpline()
     {
-        Debug.Log($"IncrementSpline called from:\n{UnityEngine.StackTraceUtility.ExtractStackTrace()}");
+        Debug.Log($"<color=yellow>[SPLINE] IncrementSpline called. Current spline before increment: {currSpline}</color>");
+        Debug.Log($"<color=yellow>[SPLINE] IncrementSpline called from:\n{UnityEngine.StackTraceUtility.ExtractStackTrace()}</color>");
         if (!canIncrement)
         {
-            Debug.Log($"Increment attempted during cooldown, ignoring. Time since last increment: {Time.time - lastSwitchTime}");
+            Debug.Log($"<color=orange>[SPLINE] Increment attempted during cooldown, ignoring. Time since last increment: {Time.time - lastSwitchTime}</color>");
             return;
         }
 
@@ -145,6 +113,40 @@ public class SplineManager : MonoBehaviour
         canIncrement = false;
         yield return new WaitForSeconds(incrementCooldown);
         canIncrement = true;
+    }
+
+    private void PerformSplineIncrement()
+    {
+        if (isSplineNeeded && currSpline < splineDatas.Count - 1)
+        {
+            float currentTime = Time.time;
+            if (currentTime - lastSwitchTime < MIN_SWITCH_INTERVAL)
+            {
+                Debug.LogWarning($"<color=orange>[SPLINE] Spline switch attempted too soon. Time since last switch: {currentTime - lastSwitchTime}</color>");
+                return;
+            }
+
+            currSpline++;
+            SetSplineDataAttributes(currSpline);
+            splineSwitchCounter++;
+            lastSwitchTime = currentTime;
+            Debug.Log($"<color=yellow>[SPLINE] Spline Incremented. Current spline: {currSpline} (Spline #{currSpline + 1}), Total switches: {splineSwitchCounter}, Time: {currentTime}</color>");
+
+            // Check if we've reached the final spline
+            if (currSpline == splineDatas.Count - 1)
+            {
+                Debug.Log($"<color=yellow>[SPLINE] Final spline reached (Spline #{splineDatas.Count}). Total switches: {splineSwitchCounter}</color>");
+                OnFinalSplineReached?.Invoke();
+            }
+        }
+        else if (currSpline >= splineDatas.Count - 1)
+        {
+            Debug.Log($"<color=orange>[SPLINE] Already at final spline (Spline #{splineDatas.Count}). Cannot increment further.</color>");
+        }
+        else
+        {
+            Debug.Log("<color=orange>[SPLINE] Next Spline is not available, maintaining current Spline</color>");
+        }
     }
 
     // Remove the lockShooter coroutine as it's no longer needed

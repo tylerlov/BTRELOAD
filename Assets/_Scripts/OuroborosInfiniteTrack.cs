@@ -59,9 +59,11 @@ namespace FluffyUnderware.Curvy.Controllers
         [SerializeField]
         private float ellipseRadiusY = 10;
 
-        [Header("Pooling Settings")]
+        [Header("Prefab Generation")]
         [SerializeField]
-        private OccaSoftware.BOP.ParticleSystemPooler particleSystemPooler;
+        private bool enablePrefabGeneration = true;
+
+        [Header("Pooling Settings")]
 
         [SerializeField]
         private OccaSoftware.BOP.Pooler prefabPooler;
@@ -271,7 +273,8 @@ namespace FluffyUnderware.Curvy.Controllers
             vol.MaterialSettings[0].SwapUV = true;
 
             msh.Collider = CGColliderEnum.Mesh;
-            gen.gameObject.layer = LayerMask.NameToLayer("Ground");
+            msh.Layer = LayerMask.NameToLayer("Ground"); // Add this line to set the layer of the generated mesh to 'Ground'
+            gen.gameObject.layer = LayerMask.NameToLayer("Ground"); // Set the generator's GameObject layer to 'Ground' as well
 
             return gen;
         }
@@ -397,6 +400,11 @@ namespace FluffyUnderware.Curvy.Controllers
 
         void PlacePrefabsOnSectionSurface(CurvySpline spline, int sectionIndex)
         {
+            if (!enablePrefabGeneration)
+            {
+                return;
+            }
+
             if (sectionIndex < 0 || sectionIndex >= prefabsBySection.Count)
             {
                 ConditionalDebug.LogError(

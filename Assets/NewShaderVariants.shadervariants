@@ -1,0 +1,1242 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!200 &20000000
+ShaderVariantCollection:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: NewShaderVariants
+  m_Shaders:
+  - first: {fileID: 0}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 0}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 0}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 0}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 0}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 0}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 0}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 0}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 0}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 0}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 0}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 0}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 0}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 0}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 0}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 0}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 0}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 0}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 0}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 0}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 0}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 0}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 0}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 0}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 0}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 0}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 0}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 0}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 0}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 0}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 0}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 0}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 0}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 0}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 0}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 0}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 0}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 0}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 0}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 0}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 0}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 0}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 0}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 0}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 0}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 0}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 0}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 0}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 0}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 0}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 0}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 0}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 0}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 0}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 10770, guid: 0000000000000000f000000000000000, type: 0}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 66, guid: 0000000000000000f000000000000000, type: 0}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 46, guid: 0000000000000000f000000000000000, type: 0}
+    second:
+      variants:
+      - keywords: DIRECTIONAL LIGHTPROBE_SH
+        passType: 4
+      - keywords: DIRECTIONAL
+        passType: 5
+      - keywords: 
+        passType: 8
+  - first: {fileID: 106, guid: 0000000000000000f000000000000000, type: 0}
+    second:
+      variants:
+      - keywords: _SUNDISK_SIMPLE
+        passType: 0
+  - first: {fileID: 200, guid: 0000000000000000f000000000000000, type: 0}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: FOG_EXP
+        passType: 0
+  - first: {fileID: 203, guid: 0000000000000000f000000000000000, type: 0}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: FOG_EXP
+        passType: 0
+  - first: {fileID: 207, guid: 0000000000000000f000000000000000, type: 0}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 209, guid: 0000000000000000f000000000000000, type: 0}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: FOG_EXP
+        passType: 0
+  - first: {fileID: 9000, guid: 0000000000000000f000000000000000, type: 0}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 9001, guid: 0000000000000000f000000000000000, type: 0}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 9002, guid: 0000000000000000f000000000000000, type: 0}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 9003, guid: 0000000000000000f000000000000000, type: 0}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 9004, guid: 0000000000000000f000000000000000, type: 0}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 9007, guid: 0000000000000000f000000000000000, type: 0}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 9101, guid: 0000000000000000f000000000000000, type: 0}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 9103, guid: 0000000000000000f000000000000000, type: 0}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 10750, guid: 0000000000000000f000000000000000, type: 0}
+    second:
+      variants:
+      - keywords: FOG_EXP
+        passType: 0
+  - first: {fileID: 10753, guid: 0000000000000000f000000000000000, type: 0}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: ETC1_EXTERNAL_ALPHA
+        passType: 0
+  - first: {fileID: 4800000, guid: 62449f654265cf94e81275e55a4b1823, type: 3}
+    second:
+      variants:
+      - keywords: BLOCK_SIZE_4
+        passType: 0
+      - keywords: BLOCK_SIZE_4 REPROJECTION
+        passType: 0
+      - keywords: BLOCK_SIZE_8 COLOR_CRUNCH_SKYBOX
+        passType: 0
+  - first: {fileID: 4800000, guid: d6dae50ee9e1bfa4db75f19f99355220, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: _OUTPUT_DEPTH
+        passType: 0
+  - first: {fileID: 4800000, guid: ec9fec698a3456d4fb18cf8bacb7a2bc, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: _TONEMAP_ACES
+        passType: 0
+  - first: {fileID: 4800000, guid: e7857e9d0c934dc4f83f270f8447b006, type: 3}
+    second:
+      variants:
+      - keywords: _CHROMATIC_ABERRATION _DISTORTION _DITHERING _FILM_GRAIN _HDR_GRADING
+        passType: 0
+      - keywords: _CHROMATIC_ABERRATION _FILM_GRAIN _HDR_GRADING
+        passType: 0
+      - keywords: _HDR_GRADING
+        passType: 0
+  - first: {fileID: 4800000, guid: e6e9a19c3678ded42a3bc431ebef7dbd, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 4800000, guid: 93446b5c5339d4f00b85c159e1159b7c, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: BLIT_DECODE_HDR DISABLE_TEXTURE2D_X_ARRAY
+        passType: 0
+  - first: {fileID: 4800000, guid: c56b7e0d4c7cb484e959caeeedae9bbf, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 4800000, guid: 7b3ede40266cd49a395def176e1bc486, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 12
+  - first: {fileID: 4800000, guid: 1121bb4e615ca3c48b214e79e841e823, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 4800000, guid: 2aed67ad60045d54ba3a00c91e2d2631, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 4800000, guid: 1edcd131364091c46a17cbff0b1de97a, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 4800000, guid: 933532a4fcc9baf4fa0491de14d08ed7, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 8
+      - keywords: INSTANCING_ON
+        passType: 8
+      - keywords: _CASTING_PUNCTUAL_LIGHT_SHADOW
+        passType: 8
+      - keywords: _SMOOTHNESS_TEXTURE_ALBEDO_CHANNEL_A
+        passType: 8
+      - keywords: 
+        passType: 13
+      - keywords: FOG_EXP INSTANCING_ON SHADOWS_SHADOWMASK _ADDITIONAL_LIGHT_SHADOWS
+          _EMISSION _FORWARD_PLUS _LIGHT_LAYERS _MAIN_LIGHT_SHADOWS_CASCADE _NORMALMAP
+          _OCCLUSIONMAP _REFLECTION_PROBE_BLENDING _REFLECTION_PROBE_BOX_PROJECTION
+          _SHADOWS_SOFT
+        passType: 13
+      - keywords: FOG_EXP INSTANCING_ON SHADOWS_SHADOWMASK _ADDITIONAL_LIGHT_SHADOWS
+          _FORWARD_PLUS _LIGHT_LAYERS _MAIN_LIGHT_SHADOWS_CASCADE _METALLICSPECGLOSSMAP
+          _NORMALMAP _OCCLUSIONMAP _REFLECTION_PROBE_BLENDING _REFLECTION_PROBE_BOX_PROJECTION
+          _SHADOWS_SOFT
+        passType: 13
+      - keywords: FOG_EXP INSTANCING_ON SHADOWS_SHADOWMASK _ADDITIONAL_LIGHT_SHADOWS
+          _FORWARD_PLUS _LIGHT_LAYERS _MAIN_LIGHT_SHADOWS_CASCADE _NORMALMAP _REFLECTION_PROBE_BLENDING
+          _REFLECTION_PROBE_BOX_PROJECTION _SHADOWS_SOFT
+        passType: 13
+      - keywords: FOG_EXP INSTANCING_ON SHADOWS_SHADOWMASK _FORWARD_PLUS _LIGHT_LAYERS
+          _MAIN_LIGHT_SHADOWS_CASCADE _NORMALMAP
+        passType: 13
+      - keywords: FOG_EXP SHADOWS_SHADOWMASK _ADDITIONAL_LIGHT_SHADOWS _EMISSION
+          _FORWARD_PLUS _LIGHT_LAYERS _MAIN_LIGHT_SHADOWS_CASCADE _METALLICSPECGLOSSMAP
+          _NORMALMAP _OCCLUSIONMAP _PARALLAXMAP _REFLECTION_PROBE_BLENDING _REFLECTION_PROBE_BOX_PROJECTION
+          _SHADOWS_SOFT
+        passType: 13
+      - keywords: FOG_EXP SHADOWS_SHADOWMASK _ADDITIONAL_LIGHT_SHADOWS _EMISSION
+          _FORWARD_PLUS _LIGHT_LAYERS _MAIN_LIGHT_SHADOWS_CASCADE _METALLICSPECGLOSSMAP
+          _NORMALMAP _OCCLUSIONMAP _PARALLAXMAP _REFLECTION_PROBE_BLENDING _REFLECTION_PROBE_BOX_PROJECTION
+          _SHADOWS_SOFT _SMOOTHNESS_TEXTURE_ALBEDO_CHANNEL_A
+        passType: 13
+      - keywords: FOG_EXP SHADOWS_SHADOWMASK _ADDITIONAL_LIGHT_SHADOWS _EMISSION
+          _FORWARD_PLUS _LIGHT_LAYERS _MAIN_LIGHT_SHADOWS_CASCADE _NORMALMAP _REFLECTION_PROBE_BLENDING
+          _REFLECTION_PROBE_BOX_PROJECTION _SHADOWS_SOFT
+        passType: 13
+      - keywords: FOG_EXP SHADOWS_SHADOWMASK _ADDITIONAL_LIGHT_SHADOWS _FORWARD_PLUS
+          _LIGHT_LAYERS _MAIN_LIGHT_SHADOWS _METALLICSPECGLOSSMAP _NORMALMAP _REFLECTION_PROBE_BLENDING
+          _REFLECTION_PROBE_BOX_PROJECTION
+        passType: 13
+      - keywords: FOG_EXP SHADOWS_SHADOWMASK _ADDITIONAL_LIGHT_SHADOWS _FORWARD_PLUS
+          _LIGHT_LAYERS _MAIN_LIGHT_SHADOWS _REFLECTION_PROBE_BLENDING _REFLECTION_PROBE_BOX_PROJECTION
+        passType: 13
+      - keywords: FOG_EXP SHADOWS_SHADOWMASK _ADDITIONAL_LIGHT_SHADOWS _FORWARD_PLUS
+          _LIGHT_LAYERS _MAIN_LIGHT_SHADOWS_CASCADE _METALLICSPECGLOSSMAP _NORMALMAP
+          _OCCLUSIONMAP _PARALLAXMAP _REFLECTION_PROBE_BLENDING _REFLECTION_PROBE_BOX_PROJECTION
+          _SHADOWS_SOFT
+        passType: 13
+      - keywords: FOG_EXP SHADOWS_SHADOWMASK _ADDITIONAL_LIGHT_SHADOWS _FORWARD_PLUS
+          _LIGHT_LAYERS _MAIN_LIGHT_SHADOWS_CASCADE _METALLICSPECGLOSSMAP _NORMALMAP
+          _REFLECTION_PROBE_BLENDING _REFLECTION_PROBE_BOX_PROJECTION _SHADOWS_SOFT
+        passType: 13
+      - keywords: FOG_EXP SHADOWS_SHADOWMASK _ADDITIONAL_LIGHT_SHADOWS _FORWARD_PLUS
+          _LIGHT_LAYERS _MAIN_LIGHT_SHADOWS_CASCADE _REFLECTION_PROBE_BLENDING _REFLECTION_PROBE_BOX_PROJECTION
+          _SHADOWS_SOFT
+        passType: 13
+      - keywords: FOG_EXP SHADOWS_SHADOWMASK _FORWARD_PLUS _LIGHT_LAYERS _MAIN_LIGHT_SHADOWS_CASCADE
+          _NORMALMAP _PARALLAXMAP
+        passType: 13
+      - keywords: SHADOWS_SHADOWMASK _ADDITIONAL_LIGHT_SHADOWS _FORWARD_PLUS _LIGHT_LAYERS
+          _MAIN_LIGHT_SHADOWS_CASCADE _METALLICSPECGLOSSMAP _NORMALMAP _REFLECTION_PROBE_BLENDING
+          _REFLECTION_PROBE_BOX_PROJECTION _SHADOWS_SOFT
+        passType: 13
+      - keywords: SHADOWS_SHADOWMASK _ADDITIONAL_LIGHT_SHADOWS _FORWARD_PLUS _LIGHT_LAYERS
+          _MAIN_LIGHT_SHADOWS_CASCADE _REFLECTION_PROBE_BLENDING _REFLECTION_PROBE_BOX_PROJECTION
+          _SHADOWS_SOFT
+        passType: 13
+      - keywords: _ADDITIONAL_LIGHT_SHADOWS _EMISSION _FORWARD_PLUS _LIGHT_LAYERS
+          _MAIN_LIGHT_SHADOWS _METALLICSPECGLOSSMAP _NORMALMAP _OCCLUSIONMAP _PARALLAXMAP
+          _REFLECTION_PROBE_BLENDING _REFLECTION_PROBE_BOX_PROJECTION
+        passType: 13
+      - keywords: _ADDITIONAL_LIGHT_SHADOWS _EMISSION _FORWARD_PLUS _LIGHT_LAYERS
+          _MAIN_LIGHT_SHADOWS _METALLICSPECGLOSSMAP _NORMALMAP _OCCLUSIONMAP _PARALLAXMAP
+          _REFLECTION_PROBE_BLENDING _REFLECTION_PROBE_BOX_PROJECTION _SMOOTHNESS_TEXTURE_ALBEDO_CHANNEL_A
+        passType: 13
+      - keywords: _ADDITIONAL_LIGHT_SHADOWS _EMISSION _FORWARD_PLUS _LIGHT_LAYERS
+          _MAIN_LIGHT_SHADOWS _NORMALMAP _OCCLUSIONMAP _REFLECTION_PROBE_BLENDING
+          _REFLECTION_PROBE_BOX_PROJECTION
+        passType: 13
+      - keywords: _ADDITIONAL_LIGHT_SHADOWS _EMISSION _FORWARD_PLUS _LIGHT_LAYERS
+          _MAIN_LIGHT_SHADOWS _NORMALMAP _REFLECTION_PROBE_BLENDING _REFLECTION_PROBE_BOX_PROJECTION
+        passType: 13
+      - keywords: _ADDITIONAL_LIGHT_SHADOWS _FORWARD_PLUS _LIGHT_LAYERS _MAIN_LIGHT_SHADOWS
+          _METALLICSPECGLOSSMAP _NORMALMAP _OCCLUSIONMAP _PARALLAXMAP _REFLECTION_PROBE_BLENDING
+          _REFLECTION_PROBE_BOX_PROJECTION
+        passType: 13
+      - keywords: _ADDITIONAL_LIGHT_SHADOWS _FORWARD_PLUS _LIGHT_LAYERS _MAIN_LIGHT_SHADOWS
+          _METALLICSPECGLOSSMAP _NORMALMAP _OCCLUSIONMAP _REFLECTION_PROBE_BLENDING
+          _REFLECTION_PROBE_BOX_PROJECTION
+        passType: 13
+      - keywords: _ADDITIONAL_LIGHT_SHADOWS _FORWARD_PLUS _LIGHT_LAYERS _MAIN_LIGHT_SHADOWS
+          _NORMALMAP _REFLECTION_PROBE_BLENDING _REFLECTION_PROBE_BOX_PROJECTION
+        passType: 13
+      - keywords: _ADDITIONAL_LIGHT_SHADOWS _FORWARD_PLUS _LIGHT_LAYERS _MAIN_LIGHT_SHADOWS
+          _REFLECTION_PROBE_BLENDING _REFLECTION_PROBE_BOX_PROJECTION
+        passType: 13
+      - keywords: _ADDITIONAL_LIGHT_SHADOWS _FORWARD_PLUS _LIGHT_LAYERS _MAIN_LIGHT_SHADOWS_CASCADE
+          _METALLICSPECGLOSSMAP _NORMALMAP _OCCLUSIONMAP _PARALLAXMAP _REFLECTION_PROBE_BLENDING
+          _REFLECTION_PROBE_BOX_PROJECTION _SHADOWS_SOFT
+        passType: 13
+      - keywords: _FORWARD_PLUS _LIGHT_LAYERS _MAIN_LIGHT_SHADOWS _NORMALMAP
+        passType: 13
+      - keywords: _FORWARD_PLUS _LIGHT_LAYERS _MAIN_LIGHT_SHADOWS _NORMALMAP _PARALLAXMAP
+        passType: 13
+      - keywords: _FORWARD_PLUS _LIGHT_LAYERS _MAIN_LIGHT_SHADOWS_CASCADE _NORMALMAP
+          _PARALLAXMAP
+        passType: 13
+      - keywords: _SMOOTHNESS_TEXTURE_ALBEDO_CHANNEL_A
+        passType: 13
+  - first: {fileID: -6465566751694194690, guid: e77111046b851ae47b57003f367ef054, type: 3}
+    second:
+      variants:
+      - keywords: FOG_EXP _ADDITIONAL_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS
+        passType: 0
+      - keywords: FOG_EXP _ADDITIONAL_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _SHADOWS_SOFT
+        passType: 0
+      - keywords: _ADDITIONAL_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS
+        passType: 0
+      - keywords: _ADDITIONAL_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _SHADOWS_SOFT
+        passType: 0
+      - keywords: 
+        passType: 8
+      - keywords: _CASTING_PUNCTUAL_LIGHT_SHADOW
+        passType: 8
+      - keywords: 
+        passType: 13
+  - first: {fileID: 4800000, guid: dcda956a6808f8c4e84b1460ad3ac6eb, type: 3}
+    second:
+      variants:
+      - keywords: _AD_CUTOUT_STANDARD_SOURCE_MAPS_MAPPING_TYPE_SCREEN_SPACE _AD_CUTOUT_STANDARD_SOURCE_TWO_CUSTOM_MAPS
+          _AD_EDGE_ADDITIONAL_COLOR_CUSTOM_MAP _AD_EDGE_BASE_SOURCE_CUTOUT_STANDARD
+          _AD_STATE_ENABLED
+        passType: 8
+      - keywords: _AD_CUTOUT_STANDARD_SOURCE_MAPS_MAPPING_TYPE_SCREEN_SPACE _AD_CUTOUT_STANDARD_SOURCE_TWO_CUSTOM_MAPS
+          _AD_EDGE_ADDITIONAL_COLOR_CUSTOM_MAP _AD_EDGE_BASE_SOURCE_CUTOUT_STANDARD
+          _AD_STATE_ENABLED _ALPHATEST_ON
+        passType: 8
+      - keywords: _AD_CUTOUT_STANDARD_SOURCE_MAPS_MAPPING_TYPE_SCREEN_SPACE _AD_CUTOUT_STANDARD_SOURCE_TWO_CUSTOM_MAPS
+          _AD_EDGE_ADDITIONAL_COLOR_CUSTOM_MAP _AD_EDGE_BASE_SOURCE_CUTOUT_STANDARD
+          _AD_STATE_ENABLED _ALPHATEST_ON _CASTING_PUNCTUAL_LIGHT_SHADOW
+        passType: 8
+      - keywords: FOG_EXP SHADOWS_SHADOWMASK _ADDITIONAL_LIGHT_SHADOWS _AD_CUTOUT_STANDARD_SOURCE_MAPS_MAPPING_TYPE_SCREEN_SPACE
+          _AD_CUTOUT_STANDARD_SOURCE_TWO_CUSTOM_MAPS _AD_EDGE_ADDITIONAL_COLOR_CUSTOM_MAP
+          _AD_EDGE_BASE_SOURCE_CUTOUT_STANDARD _AD_STATE_ENABLED _ALPHATEST_ON _EMISSION
+          _LIGHT_LAYERS _MAIN_LIGHT_SHADOWS _RECEIVE_SHADOWS_OFF _REFLECTION_PROBE_BLENDING
+          _REFLECTION_PROBE_BOX_PROJECTION
+        passType: 13
+      - keywords: FOG_EXP SHADOWS_SHADOWMASK _ADDITIONAL_LIGHT_SHADOWS _AD_CUTOUT_STANDARD_SOURCE_MAPS_MAPPING_TYPE_SCREEN_SPACE
+          _AD_CUTOUT_STANDARD_SOURCE_TWO_CUSTOM_MAPS _AD_EDGE_ADDITIONAL_COLOR_CUSTOM_MAP
+          _AD_EDGE_BASE_SOURCE_CUTOUT_STANDARD _AD_STATE_ENABLED _ALPHATEST_ON _EMISSION
+          _LIGHT_LAYERS _MAIN_LIGHT_SHADOWS_CASCADE _RECEIVE_SHADOWS_OFF _REFLECTION_PROBE_BLENDING
+          _REFLECTION_PROBE_BOX_PROJECTION _SHADOWS_SOFT
+        passType: 13
+      - keywords: SHADOWS_SHADOWMASK _ADDITIONAL_LIGHT_SHADOWS _AD_CUTOUT_STANDARD_SOURCE_MAPS_MAPPING_TYPE_SCREEN_SPACE
+          _AD_CUTOUT_STANDARD_SOURCE_TWO_CUSTOM_MAPS _AD_EDGE_ADDITIONAL_COLOR_CUSTOM_MAP
+          _AD_EDGE_BASE_SOURCE_CUTOUT_STANDARD _AD_STATE_ENABLED _ALPHATEST_ON _EMISSION
+          _LIGHT_LAYERS _MAIN_LIGHT_SHADOWS_CASCADE _RECEIVE_SHADOWS_OFF _REFLECTION_PROBE_BLENDING
+          _REFLECTION_PROBE_BOX_PROJECTION _SHADOWS_SOFT
+        passType: 13
+      - keywords: SHADOWS_SHADOWMASK _ADDITIONAL_LIGHT_SHADOWS _AD_CUTOUT_STANDARD_SOURCE_MAPS_MAPPING_TYPE_SCREEN_SPACE
+          _AD_CUTOUT_STANDARD_SOURCE_TWO_CUSTOM_MAPS _AD_EDGE_ADDITIONAL_COLOR_CUSTOM_MAP
+          _AD_EDGE_BASE_SOURCE_CUTOUT_STANDARD _AD_STATE_ENABLED _EMISSION _LIGHT_LAYERS
+          _MAIN_LIGHT_SHADOWS _RECEIVE_SHADOWS_OFF _REFLECTION_PROBE_BLENDING _REFLECTION_PROBE_BOX_PROJECTION
+          _SPECULAR_SETUP
+        passType: 13
+      - keywords: SHADOWS_SHADOWMASK _ADDITIONAL_LIGHT_SHADOWS _AD_CUTOUT_STANDARD_SOURCE_MAPS_MAPPING_TYPE_SCREEN_SPACE
+          _AD_CUTOUT_STANDARD_SOURCE_TWO_CUSTOM_MAPS _AD_EDGE_ADDITIONAL_COLOR_CUSTOM_MAP
+          _AD_EDGE_BASE_SOURCE_CUTOUT_STANDARD _AD_STATE_ENABLED _EMISSION _LIGHT_LAYERS
+          _MAIN_LIGHT_SHADOWS_CASCADE _RECEIVE_SHADOWS_OFF _REFLECTION_PROBE_BLENDING
+          _REFLECTION_PROBE_BOX_PROJECTION _SHADOWS_SOFT _SPECULAR_SETUP
+        passType: 13
+      - keywords: SHADOWS_SHADOWMASK _AD_CUTOUT_STANDARD_SOURCE_MAPS_MAPPING_TYPE_SCREEN_SPACE
+          _AD_CUTOUT_STANDARD_SOURCE_TWO_CUSTOM_MAPS _AD_EDGE_ADDITIONAL_COLOR_CUSTOM_MAP
+          _AD_EDGE_BASE_SOURCE_CUTOUT_STANDARD _AD_STATE_ENABLED _MAIN_LIGHT_SHADOWS
+          _RECEIVE_SHADOWS_OFF
+        passType: 13
+      - keywords: _AD_CUTOUT_STANDARD_SOURCE_MAPS_MAPPING_TYPE_SCREEN_SPACE _AD_CUTOUT_STANDARD_SOURCE_TWO_CUSTOM_MAPS
+          _AD_EDGE_ADDITIONAL_COLOR_CUSTOM_MAP _AD_EDGE_BASE_SOURCE_CUTOUT_STANDARD
+          _AD_STATE_ENABLED
+        passType: 13
+      - keywords: _AD_CUTOUT_STANDARD_SOURCE_MAPS_MAPPING_TYPE_SCREEN_SPACE _AD_CUTOUT_STANDARD_SOURCE_TWO_CUSTOM_MAPS
+          _AD_EDGE_ADDITIONAL_COLOR_CUSTOM_MAP _AD_EDGE_BASE_SOURCE_CUTOUT_STANDARD
+          _AD_STATE_ENABLED _ALPHATEST_ON
+        passType: 13
+  - first: {fileID: 4800000, guid: 7b4df804bfdc6ec429d0ce9540fdfdf7, type: 3}
+    second:
+      variants:
+      - keywords: FOG_EXP _ADDITIONAL_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _SHADOWS_SOFT
+        passType: 13
+      - keywords: _ADDITIONAL_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _SHADOWS_SOFT
+        passType: 13
+  - first: {fileID: -6465566751694194690, guid: eccc0934a4c2a0b499270ffed865aefc, type: 3}
+    second:
+      variants:
+      - keywords: DIRLIGHTMAP_COMBINED FOG_EXP INSTANCING_ON LIGHTMAP_ON _DARKCLOUDSENABLED_ON
+          _RIMENABLED_ON _RIMNOISECAENABLED_ON
+        passType: 0
+      - keywords: DIRLIGHTMAP_COMBINED FOG_EXP LIGHTMAP_ON _DARKCLOUDSENABLED_ON
+          _RIMENABLED_ON _RIMNOISECAENABLED_ON
+        passType: 0
+      - keywords: DIRLIGHTMAP_COMBINED FOG_EXP LIGHTMAP_ON _RIMENABLED_ON _RIMNOISECAENABLED_ON
+        passType: 0
+      - keywords: DIRLIGHTMAP_COMBINED LIGHTMAP_ON _DARKCLOUDSENABLED_ON _RIMENABLED_ON
+          _RIMNOISECAENABLED_ON
+        passType: 0
+      - keywords: DIRLIGHTMAP_COMBINED LIGHTMAP_ON _RIMENABLED_ON _RIMNOISECAENABLED_ON
+        passType: 0
+      - keywords: FOG_EXP INSTANCING_ON LIGHTMAP_ON _DARKCLOUDSENABLED_ON _RIMENABLED_ON
+          _RIMNOISECAENABLED_ON
+        passType: 0
+      - keywords: FOG_EXP INSTANCING_ON _DARKCLOUDSENABLED_ON _RIMENABLED_ON _RIMNOISECAENABLED_ON
+        passType: 0
+      - keywords: FOG_EXP LIGHTMAP_ON _DARKCLOUDSENABLED_ON _RIMENABLED_ON _RIMNOISECAENABLED_ON
+        passType: 0
+      - keywords: FOG_EXP LIGHTMAP_ON _RIMENABLED_ON _RIMNOISECAENABLED_ON
+        passType: 0
+      - keywords: FOG_EXP _DARKCLOUDSENABLED_ON _RIMENABLED_ON _RIMNOISECAENABLED_ON
+        passType: 0
+      - keywords: FOG_EXP _RIMENABLED_ON _RIMNOISECAENABLED_ON
+        passType: 0
+      - keywords: INSTANCING_ON _DARKCLOUDSENABLED_ON _RIMENABLED_ON _RIMNOISECAENABLED_ON
+        passType: 0
+      - keywords: _DARKCLOUDSENABLED_ON _RIMENABLED_ON _RIMNOISECAENABLED_ON
+        passType: 0
+      - keywords: _RIMENABLED_ON _RIMNOISECAENABLED_ON
+        passType: 0
+      - keywords: INSTANCING_ON _DARKCLOUDSENABLED_ON _RIMENABLED_ON _RIMNOISECAENABLED_ON
+        passType: 8
+      - keywords: _CASTING_PUNCTUAL_LIGHT_SHADOW _DARKCLOUDSENABLED_ON _RIMENABLED_ON
+          _RIMNOISECAENABLED_ON
+        passType: 8
+      - keywords: _CASTING_PUNCTUAL_LIGHT_SHADOW _RIMENABLED_ON _RIMNOISECAENABLED_ON
+        passType: 8
+      - keywords: _DARKCLOUDSENABLED_ON _RIMENABLED_ON _RIMNOISECAENABLED_ON
+        passType: 8
+      - keywords: _RIMENABLED_ON _RIMNOISECAENABLED_ON
+        passType: 8
+      - keywords: INSTANCING_ON _DARKCLOUDSENABLED_ON _RIMENABLED_ON _RIMNOISECAENABLED_ON
+        passType: 13
+      - keywords: _DARKCLOUDSENABLED_ON _RIMENABLED_ON _RIMNOISECAENABLED_ON
+        passType: 13
+      - keywords: _RIMENABLED_ON _RIMNOISECAENABLED_ON
+        passType: 13
+  - first: {fileID: 4800000, guid: 2a230514c860643f69b6a4d1871d3825, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 8
+      - keywords: INSTANCING_ON
+        passType: 8
+      - keywords: _ALPHATEST_ON
+        passType: 8
+      - keywords: 
+        passType: 13
+      - keywords: DR_RIM_ON DR_SPECULAR_ON FOG_EXP INSTANCING_ON SHADOWS_SHADOWMASK
+          _ADDITIONAL_LIGHT_SHADOWS _DETAILMAPBLENDINGMODE_MULTIPLY _FORWARD_PLUS
+          _LIGHT_LAYERS _MAIN_LIGHT_SHADOWS_CASCADE _RECEIVE_SHADOWS_OFF _SHADOWS_SOFT
+          _TEXTUREBLENDINGMODE_ADD
+        passType: 13
+      - keywords: DR_RIM_ON DR_SPECULAR_ON FOG_EXP INSTANCING_ON SHADOWS_SHADOWMASK
+          _FORWARD_PLUS _MAIN_LIGHT_SHADOWS_CASCADE _RECEIVE_SHADOWS_OFF _TEXTUREBLENDINGMODE_ADD
+        passType: 13
+      - keywords: DR_RIM_ON DR_SPECULAR_ON _ADDITIONAL_LIGHT_SHADOWS _DETAILMAPBLENDINGMODE_MULTIPLY
+          _FORWARD_PLUS _LIGHT_LAYERS _MAIN_LIGHT_SHADOWS _RECEIVE_SHADOWS_OFF _TEXTUREBLENDINGMODE_ADD
+        passType: 13
+      - keywords: DR_RIM_ON DR_SPECULAR_ON _FORWARD_PLUS _MAIN_LIGHT_SHADOWS _RECEIVE_SHADOWS_OFF
+          _TEXTUREBLENDINGMODE_ADD
+        passType: 13
+      - keywords: DR_RIM_ON FOG_EXP INSTANCING_ON SHADOWS_SHADOWMASK _ADDITIONAL_LIGHT_SHADOWS
+          _DETAILMAPBLENDINGMODE_MULTIPLY _FORWARD_PLUS _LIGHT_LAYERS _MAIN_LIGHT_SHADOWS_CASCADE
+          _RECEIVE_SHADOWS_OFF _SHADOWS_SOFT _TEXTUREBLENDINGMODE_ADD
+        passType: 13
+      - keywords: DR_RIM_ON FOG_EXP INSTANCING_ON SHADOWS_SHADOWMASK _FORWARD_PLUS
+          _MAIN_LIGHT_SHADOWS_CASCADE _RECEIVE_SHADOWS_OFF _TEXTUREBLENDINGMODE_ADD
+        passType: 13
+      - keywords: DR_RIM_ON FOG_EXP SHADOWS_SHADOWMASK _ADDITIONAL_LIGHT_SHADOWS
+          _ALPHATEST_ON _DETAILMAPBLENDINGMODE_MULTIPLY _FORWARD_PLUS _LIGHT_LAYERS
+          _MAIN_LIGHT_SHADOWS _TEXTUREBLENDINGMODE_MULTIPLY
+        passType: 13
+      - keywords: DR_RIM_ON FOG_EXP SHADOWS_SHADOWMASK _ADDITIONAL_LIGHT_SHADOWS
+          _ALPHATEST_ON _DETAILMAPBLENDINGMODE_MULTIPLY _FORWARD_PLUS _LIGHT_LAYERS
+          _MAIN_LIGHT_SHADOWS_CASCADE _SHADOWS_SOFT _TEXTUREBLENDINGMODE_MULTIPLY
+        passType: 13
+      - keywords: DR_RIM_ON FOG_EXP SHADOWS_SHADOWMASK _ADDITIONAL_LIGHT_SHADOWS
+          _DETAILMAPBLENDINGMODE_MULTIPLY _FORWARD_PLUS _LIGHT_LAYERS _MAIN_LIGHT_SHADOWS_CASCADE
+          _RECEIVE_SHADOWS_OFF _SHADOWS_SOFT _TEXTUREBLENDINGMODE_MULTIPLY
+        passType: 13
+      - keywords: DR_RIM_ON FOG_EXP SHADOWS_SHADOWMASK _FORWARD_PLUS _MAIN_LIGHT_SHADOWS
+          _TEXTUREBLENDINGMODE_MULTIPLY
+        passType: 13
+      - keywords: DR_RIM_ON FOG_EXP SHADOWS_SHADOWMASK _FORWARD_PLUS _MAIN_LIGHT_SHADOWS_CASCADE
+          _RECEIVE_SHADOWS_OFF _TEXTUREBLENDINGMODE_MULTIPLY
+        passType: 13
+      - keywords: DR_RIM_ON FOG_EXP _ADDITIONAL_LIGHT_SHADOWS _ALPHATEST_ON _DETAILMAPBLENDINGMODE_MULTIPLY
+          _FORWARD_PLUS _LIGHT_LAYERS _MAIN_LIGHT_SHADOWS _TEXTUREBLENDINGMODE_MULTIPLY
+        passType: 13
+      - keywords: DR_RIM_ON SHADOWS_SHADOWMASK _ADDITIONAL_LIGHT_SHADOWS _ALPHATEST_ON
+          _DETAILMAPBLENDINGMODE_MULTIPLY _FORWARD_PLUS _LIGHT_LAYERS _MAIN_LIGHT_SHADOWS_CASCADE
+          _SHADOWS_SOFT _TEXTUREBLENDINGMODE_MULTIPLY
+        passType: 13
+      - keywords: DR_RIM_ON _ADDITIONAL_LIGHT_SHADOWS _DETAILMAPBLENDINGMODE_MULTIPLY
+          _FORWARD_PLUS _LIGHT_LAYERS _MAIN_LIGHT_SHADOWS _RECEIVE_SHADOWS_OFF _TEXTUREBLENDINGMODE_ADD
+        passType: 13
+      - keywords: DR_RIM_ON _ADDITIONAL_LIGHT_SHADOWS _DETAILMAPBLENDINGMODE_MULTIPLY
+          _FORWARD_PLUS _LIGHT_LAYERS _MAIN_LIGHT_SHADOWS _RECEIVE_SHADOWS_OFF _TEXTUREBLENDINGMODE_MULTIPLY
+        passType: 13
+      - keywords: DR_RIM_ON _FORWARD_PLUS _MAIN_LIGHT_SHADOWS _RECEIVE_SHADOWS_OFF
+          _TEXTUREBLENDINGMODE_ADD
+        passType: 13
+      - keywords: DR_RIM_ON _FORWARD_PLUS _MAIN_LIGHT_SHADOWS _RECEIVE_SHADOWS_OFF
+          _TEXTUREBLENDINGMODE_MULTIPLY
+        passType: 13
+      - keywords: DR_SPECULAR_ON FOG_EXP INSTANCING_ON SHADOWS_SHADOWMASK _ADDITIONAL_LIGHT_SHADOWS
+          _DETAILMAPBLENDINGMODE_MULTIPLY _FORWARD_PLUS _LIGHT_LAYERS _MAIN_LIGHT_SHADOWS_CASCADE
+          _RECEIVE_SHADOWS_OFF _SHADOWS_SOFT _TEXTUREBLENDINGMODE_ADD
+        passType: 13
+      - keywords: DR_SPECULAR_ON FOG_EXP INSTANCING_ON SHADOWS_SHADOWMASK _FORWARD_PLUS
+          _MAIN_LIGHT_SHADOWS_CASCADE _RECEIVE_SHADOWS_OFF _TEXTUREBLENDINGMODE_ADD
+        passType: 13
+      - keywords: DR_SPECULAR_ON _ADDITIONAL_LIGHT_SHADOWS _DETAILMAPBLENDINGMODE_MULTIPLY
+          _FORWARD_PLUS _LIGHT_LAYERS _MAIN_LIGHT_SHADOWS _RECEIVE_SHADOWS_OFF _TEXTUREBLENDINGMODE_ADD
+        passType: 13
+      - keywords: DR_SPECULAR_ON _FORWARD_PLUS _MAIN_LIGHT_SHADOWS _RECEIVE_SHADOWS_OFF
+          _TEXTUREBLENDINGMODE_ADD
+        passType: 13
+      - keywords: FOG_EXP INSTANCING_ON SHADOWS_SHADOWMASK _ADDITIONAL_LIGHT_SHADOWS
+          _DETAILMAPBLENDINGMODE_MULTIPLY _FORWARD_PLUS _LIGHT_LAYERS _MAIN_LIGHT_SHADOWS_CASCADE
+          _RECEIVE_SHADOWS_OFF _SHADOWS_SOFT _TEXTUREBLENDINGMODE_ADD
+        passType: 13
+      - keywords: FOG_EXP INSTANCING_ON SHADOWS_SHADOWMASK _FORWARD_PLUS _MAIN_LIGHT_SHADOWS_CASCADE
+          _RECEIVE_SHADOWS_OFF _TEXTUREBLENDINGMODE_ADD
+        passType: 13
+      - keywords: _ADDITIONAL_LIGHT_SHADOWS _DETAILMAPBLENDINGMODE_MULTIPLY _FORWARD_PLUS
+          _LIGHT_LAYERS _MAIN_LIGHT_SHADOWS _RECEIVE_SHADOWS_OFF _TEXTUREBLENDINGMODE_ADD
+        passType: 13
+      - keywords: _FORWARD_PLUS _MAIN_LIGHT_SHADOWS _RECEIVE_SHADOWS_OFF _TEXTUREBLENDINGMODE_ADD
+        passType: 13
+      - keywords: DR_OUTLINE_ON
+        passType: 14
+      - keywords: DR_OUTLINE_ON FOG_EXP
+        passType: 14
+  - first: {fileID: 4800000, guid: 6d7dbbdf9194b6745ae79aaf2f3c053c, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 8
+      - keywords: INSTANCING_ON
+        passType: 8
+      - keywords: INSTANCING_ON _ALPHATEST_ON
+        passType: 8
+      - keywords: _ALPHATEST_ON
+        passType: 8
+      - keywords: _CASTING_PUNCTUAL_LIGHT_SHADOW
+        passType: 8
+      - keywords: 
+        passType: 13
+      - keywords: FOG_EXP INSTANCING_ON SHADOWS_SHADOWMASK _ADDITIONAL_LIGHT_SHADOWS
+          _ALPHATEST_ON _FORWARD_PLUS _LIGHT_LAYERS _MAIN_LIGHT_SHADOWS_CASCADE _SHADOWS_SOFT
+        passType: 13
+      - keywords: FOG_EXP INSTANCING_ON SHADOWS_SHADOWMASK _ADDITIONAL_LIGHT_SHADOWS
+          _FORWARD_PLUS _LIGHT_LAYERS _MAIN_LIGHT_SHADOWS_CASCADE _SHADOWS_SOFT
+        passType: 13
+      - keywords: FOG_EXP INSTANCING_ON SHADOWS_SHADOWMASK _ADDITIONAL_LIGHT_SHADOWS
+          _FORWARD_PLUS _LIGHT_LAYERS _MAIN_LIGHT_SHADOWS_CASCADE _SHADOWS_SOFT _SURFACE_TYPE_TRANSPARENT
+        passType: 13
+      - keywords: FOG_EXP INSTANCING_ON SHADOWS_SHADOWMASK _ADDITIONAL_LIGHT_SHADOWS
+          _FORWARD_PLUS _MAIN_LIGHT_SHADOWS_CASCADE _SHADOWS_SOFT
+        passType: 13
+      - keywords: FOG_EXP SHADOWS_SHADOWMASK _ADDITIONAL_LIGHT_SHADOWS _ALPHATEST_ON
+          _FORWARD_PLUS _LIGHT_LAYERS _MAIN_LIGHT_SHADOWS_CASCADE _SHADOWS_SOFT
+        passType: 13
+      - keywords: FOG_EXP SHADOWS_SHADOWMASK _ADDITIONAL_LIGHT_SHADOWS _FORWARD_PLUS
+          _LIGHT_LAYERS _MAIN_LIGHT_SHADOWS
+        passType: 13
+      - keywords: FOG_EXP SHADOWS_SHADOWMASK _ADDITIONAL_LIGHT_SHADOWS _FORWARD_PLUS
+          _LIGHT_LAYERS _MAIN_LIGHT_SHADOWS_CASCADE _SHADOWS_SOFT
+        passType: 13
+      - keywords: FOG_EXP SHADOWS_SHADOWMASK _ADDITIONAL_LIGHT_SHADOWS _FORWARD_PLUS
+          _LIGHT_LAYERS _MAIN_LIGHT_SHADOWS_CASCADE _SHADOWS_SOFT _SURFACE_TYPE_TRANSPARENT
+        passType: 13
+      - keywords: FOG_EXP SHADOWS_SHADOWMASK _ADDITIONAL_LIGHT_SHADOWS _FORWARD_PLUS
+          _MAIN_LIGHT_SHADOWS
+        passType: 13
+      - keywords: FOG_EXP SHADOWS_SHADOWMASK _ADDITIONAL_LIGHT_SHADOWS _FORWARD_PLUS
+          _MAIN_LIGHT_SHADOWS_CASCADE _SHADOWS_SOFT
+        passType: 13
+      - keywords: FOG_EXP _ADDITIONAL_LIGHT_SHADOWS _FORWARD_PLUS _LIGHT_LAYERS _MAIN_LIGHT_SHADOWS
+        passType: 13
+      - keywords: FOG_EXP _ADDITIONAL_LIGHT_SHADOWS _FORWARD_PLUS _MAIN_LIGHT_SHADOWS
+        passType: 13
+      - keywords: SHADOWS_SHADOWMASK _ADDITIONAL_LIGHT_SHADOWS _FORWARD_PLUS _LIGHT_LAYERS
+          _MAIN_LIGHT_SHADOWS_CASCADE _SHADOWS_SOFT
+        passType: 13
+      - keywords: SHADOWS_SHADOWMASK _ADDITIONAL_LIGHT_SHADOWS _FORWARD_PLUS _MAIN_LIGHT_SHADOWS_CASCADE
+          _SHADOWS_SOFT
+        passType: 13
+      - keywords: _ADDITIONAL_LIGHT_SHADOWS _ALPHATEST_ON _FORWARD_PLUS _LIGHT_LAYERS
+          _MAIN_LIGHT_SHADOWS
+        passType: 13
+      - keywords: _ADDITIONAL_LIGHT_SHADOWS _FORWARD_PLUS _LIGHT_LAYERS _MAIN_LIGHT_SHADOWS
+        passType: 13
+      - keywords: _ADDITIONAL_LIGHT_SHADOWS _FORWARD_PLUS _LIGHT_LAYERS _MAIN_LIGHT_SHADOWS
+          _SURFACE_TYPE_TRANSPARENT
+        passType: 13
+      - keywords: _ADDITIONAL_LIGHT_SHADOWS _FORWARD_PLUS _MAIN_LIGHT_SHADOWS
+        passType: 13
+      - keywords: _ALPHATEST_ON
+        passType: 13
+  - first: {fileID: 4800000, guid: 26e3fb68c360c334a8fbff798b01ade2, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 8
+      - keywords: 
+        passType: 13
+      - keywords: _RIMENABLED_ON _RIMNOISECAENABLED_ON
+        passType: 13
+  - first: {fileID: 4800000, guid: dad6b0236f3fc4141b1bc6ae44e0d9a6, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: FOG_EXP
+        passType: 0
+  - first: {fileID: 4800000, guid: 88e9264ba3f8ff64fbbcb07a4957e5d3, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 13
+      - keywords: FOG_EXP INSTANCING_ON
+        passType: 13
+      - keywords: INSTANCING_ON
+        passType: 13
+  - first: {fileID: 4800000, guid: 6c78a6dd468954643a87ebf0014bc305, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: -6465566751694194690, guid: 3add2469248ff6f40906004fb3647029, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: FOG_EXP
+        passType: 0
+      - keywords: 
+        passType: 8
+      - keywords: 
+        passType: 13
+  - first: {fileID: 4800000, guid: 82c42a0b06f4f684db1ee2c535fb985c, type: 3}
+    second:
+      variants:
+      - keywords: _SHADOWMIXMODE_MULTIPLY _SHARPRIMLIGHT_ON
+        passType: 8
+  - first: {fileID: 4800000, guid: 21e4e8d2f60a42819bfae821d278aabf, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 8
+      - keywords: SHADOWS_SHADOWMASK _ADDITIONAL_LIGHT_SHADOWS _FORWARD_PLUS _LIGHT_LAYERS
+          _MAIN_LIGHT_SHADOWS_CASCADE _REFLECTION_PROBE_BLENDING _REFLECTION_PROBE_BOX_PROJECTION
+          _SHADOWS_SOFT
+        passType: 13
+  - first: {fileID: 4800000, guid: b7839dad95683814aa64166edc107ae2, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 13
+      - keywords: FOG_EXP _ADDITIONAL_LIGHT_SHADOWS _ALPHAPREMULTIPLY_ON _DISTORTION_ON
+          _EMISSION _FADING_ON _FORWARD_PLUS _MAIN_LIGHT_SHADOWS_CASCADE _RECEIVE_SHADOWS_OFF
+          _REFLECTION_PROBE_BLENDING _REFLECTION_PROBE_BOX_PROJECTION _SHADOWS_SOFT
+          _SOFTPARTICLES_ON _SURFACE_TYPE_TRANSPARENT
+        passType: 13
+      - keywords: _ADDITIONAL_LIGHT_SHADOWS _ALPHAPREMULTIPLY_ON _DISTORTION_ON _EMISSION
+          _FADING_ON _FORWARD_PLUS _MAIN_LIGHT_SHADOWS _RECEIVE_SHADOWS_OFF _REFLECTION_PROBE_BLENDING
+          _REFLECTION_PROBE_BOX_PROJECTION _SOFTPARTICLES_ON _SURFACE_TYPE_TRANSPARENT
+        passType: 13
+      - keywords: _ADDITIONAL_LIGHT_SHADOWS _ALPHAPREMULTIPLY_ON _DISTORTION_ON _EMISSION
+          _FADING_ON _FORWARD_PLUS _MAIN_LIGHT_SHADOWS_CASCADE _RECEIVE_SHADOWS_OFF
+          _REFLECTION_PROBE_BLENDING _REFLECTION_PROBE_BOX_PROJECTION _SHADOWS_SOFT
+          _SOFTPARTICLES_ON _SURFACE_TYPE_TRANSPARENT
+        passType: 13
+  - first: {fileID: 4800000, guid: 034c31a32e398ea429c30a5c48b261be, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 8
+      - keywords: FOG_EXP
+        passType: 8
+      - keywords: FOG_EXP _CASTING_PUNCTUAL_LIGHT_SHADOW
+        passType: 8
+      - keywords: _CASTING_PUNCTUAL_LIGHT_SHADOW
+        passType: 8
+      - keywords: 
+        passType: 13
+      - keywords: FOG_EXP
+        passType: 13
+      - keywords: FOG_EXP SHADOWS_SHADOWMASK _ADDITIONAL_LIGHT_SHADOWS _LIGHT_LAYERS
+          _MAIN_LIGHT_SHADOWS _REFLECTION_PROBE_BLENDING _REFLECTION_PROBE_BOX_PROJECTION
+        passType: 13
+      - keywords: FOG_EXP SHADOWS_SHADOWMASK _ADDITIONAL_LIGHT_SHADOWS _LIGHT_LAYERS
+          _MAIN_LIGHT_SHADOWS_CASCADE _REFLECTION_PROBE_BLENDING _REFLECTION_PROBE_BOX_PROJECTION
+          _SHADOWS_SOFT
+        passType: 13
+      - keywords: FOG_EXP _ADDITIONAL_LIGHT_SHADOWS _LIGHT_LAYERS _MAIN_LIGHT_SHADOWS
+          _REFLECTION_PROBE_BLENDING _REFLECTION_PROBE_BOX_PROJECTION
+        passType: 13
+      - keywords: SHADOWS_SHADOWMASK _ADDITIONAL_LIGHT_SHADOWS _LIGHT_LAYERS _MAIN_LIGHT_SHADOWS_CASCADE
+          _REFLECTION_PROBE_BLENDING _REFLECTION_PROBE_BOX_PROJECTION _SHADOWS_SOFT
+        passType: 13
+      - keywords: _ADDITIONAL_LIGHT_SHADOWS _LIGHT_LAYERS _MAIN_LIGHT_SHADOWS _REFLECTION_PROBE_BLENDING
+          _REFLECTION_PROBE_BOX_PROJECTION
+        passType: 13
+  - first: {fileID: 4800000, guid: 68e6db2ebdc24f95958faec2be5558d6, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 4800000, guid: 21b28f3ee4b3c13408ed85c229008f40, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 4
+  - first: {fileID: 4800000, guid: 03cbdd32a8958fe459d7b5edaae49ff7, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: INSTANCING_ON
+        passType: 0
+      - keywords: 
+        passType: 8
+      - keywords: INSTANCING_ON
+        passType: 8
+      - keywords: 
+        passType: 13
+      - keywords: INSTANCING_ON
+        passType: 13
+  - first: {fileID: 4800000, guid: 83e4eb1c16a47f44e898b0393a5322e8, type: 3}
+    second:
+      variants:
+      - keywords: SHADOWS_DEPTH UNITY_PASS_SHADOWCASTER _EMISSION_ON
+        passType: 8
+  - first: {fileID: 4800000, guid: 39ddf95fbbeab264e9902d597e045856, type: 3}
+    second:
+      variants:
+      - keywords: ENABLE_GLOW ENABLE_QUAD ENABLE_SCANLINE
+        passType: 0
+      - keywords: ENABLE_GLOW ENABLE_QUAD ENABLE_SCANLINE FOG_EXP
+        passType: 0
+  - first: {fileID: -6465566751694194690, guid: 3b64b5de3bfb8a949963df728aa306c0, type: 3}
+    second:
+      variants:
+      - keywords: FOG_EXP _RIMENABLED_ON _RIMNOISECAENABLED_ON
+        passType: 0
+      - keywords: _RIMENABLED_ON _RIMNOISECAENABLED_ON
+        passType: 0
+      - keywords: _CASTING_PUNCTUAL_LIGHT_SHADOW _RIMENABLED_ON _RIMNOISECAENABLED_ON
+        passType: 8
+      - keywords: _RIMENABLED_ON _RIMNOISECAENABLED_ON
+        passType: 8
+      - keywords: _RIMENABLED_ON _RIMNOISECAENABLED_ON
+        passType: 13
+  - first: {fileID: 4800000, guid: 4a7c468e9c5c4184cbfabc1384b83ba4, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: -6465566751694194690, guid: 0318a698b312a8f47b7558532a001050, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 8
+      - keywords: _CASTING_PUNCTUAL_LIGHT_SHADOW
+        passType: 8
+      - keywords: 
+        passType: 13
+      - keywords: DIRLIGHTMAP_COMBINED FOG_EXP LIGHTMAP_ON SHADOWS_SHADOWMASK _ADDITIONAL_LIGHT_SHADOWS
+          _FORWARD_PLUS _LIGHT_LAYERS _MAIN_LIGHT_SHADOWS _REFLECTION_PROBE_BLENDING
+          _REFLECTION_PROBE_BOX_PROJECTION
+        passType: 13
+      - keywords: DIRLIGHTMAP_COMBINED FOG_EXP LIGHTMAP_ON SHADOWS_SHADOWMASK _ADDITIONAL_LIGHT_SHADOWS
+          _FORWARD_PLUS _LIGHT_LAYERS _MAIN_LIGHT_SHADOWS_CASCADE _REFLECTION_PROBE_BLENDING
+          _REFLECTION_PROBE_BOX_PROJECTION _SHADOWS_SOFT
+        passType: 13
+      - keywords: DIRLIGHTMAP_COMBINED FOG_EXP LIGHTMAP_ON _ADDITIONAL_LIGHT_SHADOWS
+          _FORWARD_PLUS _LIGHT_LAYERS _MAIN_LIGHT_SHADOWS _REFLECTION_PROBE_BLENDING
+          _REFLECTION_PROBE_BOX_PROJECTION
+        passType: 13
+      - keywords: DIRLIGHTMAP_COMBINED LIGHTMAP_ON SHADOWS_SHADOWMASK _ADDITIONAL_LIGHT_SHADOWS
+          _FORWARD_PLUS _LIGHT_LAYERS _MAIN_LIGHT_SHADOWS_CASCADE _REFLECTION_PROBE_BLENDING
+          _REFLECTION_PROBE_BOX_PROJECTION _SHADOWS_SOFT
+        passType: 13
+      - keywords: FOG_EXP LIGHTMAP_ON SHADOWS_SHADOWMASK _ADDITIONAL_LIGHT_SHADOWS
+          _FORWARD_PLUS _LIGHT_LAYERS _MAIN_LIGHT_SHADOWS_CASCADE _REFLECTION_PROBE_BLENDING
+          _REFLECTION_PROBE_BOX_PROJECTION _SHADOWS_SOFT
+        passType: 13
+  - first: {fileID: 4800000, guid: 6dad35c0b62e44c26ab244ad80deee1a, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 4800000, guid: 36e335017ad71d54fbb10842863188ae, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: -6465566751694194690, guid: 2ba5451f84cb8d142b2fd5c48e91de82, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 8
+      - keywords: 
+        passType: 13
+      - keywords: FOG_EXP SHADOWS_SHADOWMASK _ADDITIONAL_LIGHT_SHADOWS _FORWARD_PLUS
+          _LIGHT_LAYERS _MAIN_LIGHT_SHADOWS _REFLECTION_PROBE_BLENDING _REFLECTION_PROBE_BOX_PROJECTION
+        passType: 13
+      - keywords: FOG_EXP SHADOWS_SHADOWMASK _ADDITIONAL_LIGHT_SHADOWS _FORWARD_PLUS
+          _LIGHT_LAYERS _MAIN_LIGHT_SHADOWS_CASCADE _REFLECTION_PROBE_BLENDING _REFLECTION_PROBE_BOX_PROJECTION
+          _SHADOWS_SOFT
+        passType: 13
+      - keywords: SHADOWS_SHADOWMASK _ADDITIONAL_LIGHT_SHADOWS _FORWARD_PLUS _LIGHT_LAYERS
+          _MAIN_LIGHT_SHADOWS _REFLECTION_PROBE_BLENDING _REFLECTION_PROBE_BOX_PROJECTION
+        passType: 13
+      - keywords: SHADOWS_SHADOWMASK _ADDITIONAL_LIGHT_SHADOWS _FORWARD_PLUS _LIGHT_LAYERS
+          _MAIN_LIGHT_SHADOWS_CASCADE _REFLECTION_PROBE_BLENDING _REFLECTION_PROBE_BOX_PROJECTION
+          _SHADOWS_SOFT
+        passType: 13
+  - first: {fileID: 4800000, guid: 8dd49cd8305cbae4f8c358c16965dbba, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: -6465566751694194690, guid: 479a3a5ebe2be224c9db1e0fd92977df, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 8
+      - keywords: 
+        passType: 13
+      - keywords: FOG_EXP SHADOWS_SHADOWMASK _ADDITIONAL_LIGHT_SHADOWS _FORWARD_PLUS
+          _LIGHT_LAYERS _MAIN_LIGHT_SHADOWS _REFLECTION_PROBE_BLENDING _REFLECTION_PROBE_BOX_PROJECTION
+        passType: 13
+      - keywords: FOG_EXP SHADOWS_SHADOWMASK _ADDITIONAL_LIGHT_SHADOWS _FORWARD_PLUS
+          _LIGHT_LAYERS _MAIN_LIGHT_SHADOWS_CASCADE _REFLECTION_PROBE_BLENDING _REFLECTION_PROBE_BOX_PROJECTION
+          _SHADOWS_SOFT
+        passType: 13
+      - keywords: SHADOWS_SHADOWMASK _ADDITIONAL_LIGHT_SHADOWS _FORWARD_PLUS _LIGHT_LAYERS
+          _MAIN_LIGHT_SHADOWS_CASCADE _REFLECTION_PROBE_BLENDING _REFLECTION_PROBE_BOX_PROJECTION
+          _SHADOWS_SOFT
+        passType: 13
+  - first: {fileID: 4800000, guid: a0f00a9427f52384abeeac4dfa055318, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 4800000, guid: 00ac8ff41ecbf314fa7c876036980861, type: 3}
+    second:
+      variants:
+      - keywords: _GRAYSCALE_ON _TYPE_BILLOW
+        passType: 0
+  - first: {fileID: 4800000, guid: aaa23196f850a9840b6a7f1eda6a1137, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 4800000, guid: 415d35c805efe4546aa9ca50de327d75, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 13
+      - keywords: FOG_EXP
+        passType: 13
+  - first: {fileID: 4800000, guid: d9ddd17a21a02ca44923f0fe12072d15, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 13
+  - first: {fileID: 4800000, guid: 9cccc23ecce337e4ba025ea38d50ccd1, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 13
+      - keywords: FOG_EXP INSTANCING_ON
+        passType: 13
+      - keywords: INSTANCING_ON
+        passType: 13
+  - first: {fileID: 4800000, guid: f398f29d5637e40f8a0032bb158b1779, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 4800000, guid: f4a7e97bd3f8b48a0be6eeee50fecec6, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: -6465566751694194690, guid: 3739e562a03fc0b4982d8aa66cc50865, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 8
+      - keywords: INSTANCING_ON
+        passType: 8
+      - keywords: _CASTING_PUNCTUAL_LIGHT_SHADOW
+        passType: 8
+      - keywords: 
+        passType: 13
+      - keywords: FOG_EXP SHADOWS_SHADOWMASK _ADDITIONAL_LIGHT_SHADOWS _FORWARD_PLUS
+          _LIGHT_LAYERS _MAIN_LIGHT_SHADOWS_CASCADE _REFLECTION_PROBE_BLENDING _REFLECTION_PROBE_BOX_PROJECTION
+          _SHADOWS_SOFT
+        passType: 13
+      - keywords: FOG_EXP _ADDITIONAL_LIGHT_SHADOWS _FORWARD_PLUS _LIGHT_LAYERS _MAIN_LIGHT_SHADOWS
+          _REFLECTION_PROBE_BLENDING _REFLECTION_PROBE_BOX_PROJECTION
+        passType: 13
+      - keywords: SHADOWS_SHADOWMASK _ADDITIONAL_LIGHT_SHADOWS _FORWARD_PLUS _LIGHT_LAYERS
+          _MAIN_LIGHT_SHADOWS_CASCADE _REFLECTION_PROBE_BLENDING _REFLECTION_PROBE_BOX_PROJECTION
+          _SHADOWS_SOFT
+        passType: 13
+      - keywords: _ADDITIONAL_LIGHT_SHADOWS _FORWARD_PLUS _LIGHT_LAYERS _MAIN_LIGHT_SHADOWS
+          _REFLECTION_PROBE_BLENDING _REFLECTION_PROBE_BOX_PROJECTION
+        passType: 13
+  - first: {fileID: 4800002, guid: d230a125746f41740a3e7baf73591ec0, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 13
+      - keywords: FOG_EXP INSTANCING_ON
+        passType: 13
+      - keywords: INSTANCING_ON
+        passType: 13
+  - first: {fileID: 4800004, guid: d230a125746f41740a3e7baf73591ec0, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 13
+      - keywords: FOG_EXP INSTANCING_ON
+        passType: 13
+      - keywords: INSTANCING_ON
+        passType: 13
+  - first: {fileID: 4800000, guid: d230a125746f41740a3e7baf73591ec0, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 13
+      - keywords: FOG_EXP INSTANCING_ON
+        passType: 13
+      - keywords: INSTANCING_ON
+        passType: 13
+  - first: {fileID: 4800004, guid: add4619f6fe7d25438f59ebaf3755350, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 13
+      - keywords: FOG_EXP INSTANCING_ON
+        passType: 13
+      - keywords: INSTANCING_ON
+        passType: 13
+  - first: {fileID: 4800002, guid: add4619f6fe7d25438f59ebaf3755350, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 13
+      - keywords: FOG_EXP INSTANCING_ON
+        passType: 13
+      - keywords: INSTANCING_ON
+        passType: 13
+  - first: {fileID: 4800000, guid: add4619f6fe7d25438f59ebaf3755350, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 13
+      - keywords: FOG_EXP INSTANCING_ON
+        passType: 13
+      - keywords: INSTANCING_ON
+        passType: 13
+  - first: {fileID: 4800000, guid: 7eefe3d8a8ce83843bb441f5c8c156bc, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 13
+      - keywords: FOG_EXP
+        passType: 13

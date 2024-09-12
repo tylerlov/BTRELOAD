@@ -46,12 +46,22 @@ namespace Michsky.UI.Reach
                 .OrderByDescending(r => r.width * r.height)
                 .ToArray();
 
-            CurrentResolution = Screen.currentResolution;
-            CurrentResolutionIndex = System.Array.IndexOf(resolutions, CurrentResolution);
+            if (resolutions.Length > 0)
+            {
+                CurrentResolution = resolutions[0];
+                CurrentResolutionIndex = 0;
+            }
+            else
+            {
+                // If no resolutions are available, use the current screen resolution
+                CurrentResolution = Screen.currentResolution;
+                CurrentResolutionIndex = -1;
+                Debug.LogWarning("No compatible resolutions found. Using current screen resolution.");
+            }
 
             if (CurrentResolutionIndex == -1)
             {
-                CurrentResolution = resolutions.OrderBy(r => Mathf.Abs((r.width * r.height) - (CurrentResolution.width * CurrentResolution.height))).First();
+                CurrentResolution = resolutions.OrderBy(r => Mathf.Abs((r.width * r.height) - (CurrentResolution.width * CurrentResolution.height))).FirstOrDefault();
                 CurrentResolutionIndex = System.Array.IndexOf(resolutions, CurrentResolution);
             }
 

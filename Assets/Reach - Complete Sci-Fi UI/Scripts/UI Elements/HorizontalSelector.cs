@@ -74,8 +74,16 @@ namespace Michsky.UI.Reach
 
             if (invokeOnAwake)
             {
-                items[index].onItemSelect.Invoke();
-                onValueChanged.Invoke(index);
+                if (index >= 0 && index < items.Count)
+                {
+                    items[index].onItemSelect.Invoke();
+                    onValueChanged.Invoke(index);
+                }
+                else
+                {
+                    Debug.LogWarning("Invalid index in HorizontalSelector.InitializeSelector()");
+                    // Set a default value or handle the error case
+                }
             }
 
             cachedStateLength = ReachUIInternalTools.GetAnimatorClipLength(selectorAnimator, "HorizontalSelector_Next");

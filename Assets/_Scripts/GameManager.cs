@@ -22,9 +22,6 @@ public class GameManager : MonoBehaviour
 
     [SerializeField] private PauseMenuManager pauseMenuManager;
 
-    private UnityEvent transCamOn;
-    private UnityEvent transCamOff;
-    private UnityEvent StartingTransition;
     private CinemachineStateDrivenCamera stateDrivenCamera;
     private DebugSettings debugSettings;
     private bool isPlayerDead = false;
@@ -40,6 +37,10 @@ public class GameManager : MonoBehaviour
     public MusicManager MusicManager { get; private set; }
     public TimeManager TimeManager { get; private set; }
     public SceneManagerBTR SceneManagerBTR { get; private set; }
+
+    public static readonly string TransCamOnEvent = EventManager.TransCamOnEvent;
+public static readonly string StartingTransitionEvent = EventManager.StartingTransitionEvent;
+public static readonly string TransCamOffEvent = "TransCamOff";
 
     private void Awake()
     {
@@ -132,10 +133,6 @@ private async void Start()
     {
         UnityMainThreadDispatcher.Instance().Enqueue(() =>
         {
-            transCamOn = new UnityEvent();
-            transCamOff = new UnityEvent();
-            StartingTransition = new UnityEvent();
-
             InitializeCameraSwitching();
             InitializeCrosshair();
             InitializeShooterMovement();
@@ -145,8 +142,6 @@ private async void Start()
             {
                 Debug.LogError("No Cinemachine State Driven Camera found in the scene.");
             }
-
-            //StartingTransition.Invoke();
         });
     }
 
@@ -155,8 +150,8 @@ private async void Start()
         var cameraSwitching = FindObjectOfType<CinemachineCameraSwitching>();
         if (cameraSwitching != null)
         {
-            transCamOn.AddListener(cameraSwitching.SwitchToTransitionCamera);
-            StartingTransition.AddListener(cameraSwitching.SwitchToTransitionCamera);
+            EventManager.Instance.AddListener(EventManager.TransCamOnEvent, cameraSwitching.SwitchToTransitionCamera);
+            EventManager.Instance.AddListener(EventManager.StartingTransitionEvent, cameraSwitching.SwitchToTransitionCamera);
         }
         else
         {
@@ -166,7 +161,7 @@ private async void Start()
 
     private void InitializeCrosshair()
     {
-            transCamOn.AddListener(PlayerLocking.Instance.ReleasePlayerLocks);
+        EventManager.Instance.AddListener(EventManager.TransCamOnEvent, PlayerLocking.Instance.ReleasePlayerLocks);
     }
 
     private void InitializeShooterMovement()
@@ -174,7 +169,7 @@ private async void Start()
         var shooterMovement = FindObjectOfType<ShooterMovement>();
         if (shooterMovement != null)
         {
-            transCamOff.AddListener(shooterMovement.ResetToCenter);
+            EventManager.Instance.AddListener(TransCamOffEvent, shooterMovement.ResetToCenter);
         }
         else
         {
@@ -367,5 +362,23 @@ private async void Start()
     {
         string message = isPlayerShot ? "Player projectile expired" : "Enemy projectile expired";
         Debug.Log($"[ProjectileExpired] {message}");
+    }
+
+    private void OnDestroy()
+    {
+        var cameraSwitching = FindObjectOfType<CinemachineCameraSwitching>();
+        if (cameraSwitching != null)
+        {
+            EventManager.Instance.RemoveListener(EventManager.TransCamOnEvent, cameraSwitching.SwitchToTransitionCamera);
+            EventManager.Instance.RemoveListener(EventManager.StartingTransitionEvent, cameraSwitching.SwitchToTransitionCamera);
+        }
+
+        EventManager.Instance.RemoveListener(EventManager.TransCamOnEvent, PlayerLocking.Instance.ReleasePlayerLocks);
+
+        var shooterMovement = FindObjectOfType<ShooterMovement>();
+        if (shooterMovement != null)
+        {
+            EventManager.Instance.RemoveListener("TransCamOff", shooterMovement.ResetToCenter);
+        }
     }
 }

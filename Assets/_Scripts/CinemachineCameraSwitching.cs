@@ -71,4 +71,16 @@ public class CinemachineCameraSwitching : MonoBehaviour
     {
         yield return new WaitForSeconds(1f);
     }
+
+    void Start()
+    {
+        EventManager.Instance.AddListener(EventManager.TransCamOnEvent, SwitchToTransitionCamera);
+        EventManager.Instance.AddListener(EventManager.StartingTransitionEvent, SwitchToTransitionCamera);
+    }
+
+    void OnDestroy()
+    {
+        EventManager.Instance.RemoveListener(EventManager.TransCamOnEvent, SwitchToTransitionCamera);
+        EventManager.Instance.RemoveListener(EventManager.StartingTransitionEvent, SwitchToTransitionCamera);
+    }
 }
