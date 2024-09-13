@@ -7,18 +7,27 @@ public class ProjectileEffectManager : MonoBehaviour
 {
     public static ProjectileEffectManager Instance { get; private set; }
 
-    [SerializeField] private ParticleSystem deathEffectPrefab;
-    [SerializeField] private int initialDeathEffectPoolSize = 10;
+    [SerializeField]
+    private ParticleSystem deathEffectPrefab;
+
+    [SerializeField]
+    private int initialDeathEffectPoolSize = 10;
     private Queue<ParticleSystem> deathEffectPool = new Queue<ParticleSystem>(50);
 
-    [SerializeField] private GameObject enemyShotFXPrefab;
+    [SerializeField]
+    private GameObject enemyShotFXPrefab;
 
     public GameObject projectileRadarSymbol;
-    [SerializeField] private int radarSymbolPoolSize = 50;
+
+    [SerializeField]
+    private int radarSymbolPoolSize = 50;
     private Queue<GameObject> radarSymbolPool = new Queue<GameObject>(50);
 
-    [SerializeField] private VisualEffect lockedFXPrefab;
-    [SerializeField] private int initialLockedFXPoolSize = 10;
+    [SerializeField]
+    private VisualEffect lockedFXPrefab;
+
+    [SerializeField]
+    private int initialLockedFXPoolSize = 10;
     private Queue<VisualEffect> lockedFXPool = new Queue<VisualEffect>();
 
     private void Start()
@@ -28,7 +37,7 @@ public class ProjectileEffectManager : MonoBehaviour
         InitializeLockedFXPool();
     }
 
-        public void InitializeAllPools()
+    public void InitializeAllPools()
     {
         InitializeDeathEffectPool();
         InitializeRadarSymbolPool();

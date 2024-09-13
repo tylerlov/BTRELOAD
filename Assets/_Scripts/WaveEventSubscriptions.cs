@@ -1,13 +1,18 @@
+using UltimateSpawner;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.SceneManagement;
-using UltimateSpawner;
 
 public class WaveEventSubscriptions : MonoBehaviour
 {
-    [SerializeField] private UnityEvent onWaveStarted;
-    [SerializeField] private UnityEvent onWaveEnded;
-    [SerializeField] private SplineManager splineManager;
+    [SerializeField]
+    private UnityEvent onWaveStarted;
+
+    [SerializeField]
+    private UnityEvent onWaveEnded;
+
+    [SerializeField]
+    private SplineManager splineManager;
 
     private WaveSpawnController waveSpawnController;
     private CinemachineCameraSwitching cameraSwitching;
@@ -51,7 +56,7 @@ public class WaveEventSubscriptions : MonoBehaviour
         {
             waveSpawnController.OnWaveStarted.AddListener(OnWaveStarted);
             waveSpawnController.OnWaveEnded.AddListener(OnWaveEnded);
-            
+
             // Subscribe to the new OnEnemySpawned event
             waveSpawnController.OnEnemySpawned += OnEnemySpawned;
         }
@@ -61,7 +66,8 @@ public class WaveEventSubscriptions : MonoBehaviour
         }
     }
 
-    private T FindActiveInstance<T>() where T : MonoBehaviour
+    private T FindActiveInstance<T>()
+        where T : MonoBehaviour
     {
         T[] instances = FindObjectsOfType<T>();
         foreach (T instance in instances)
@@ -80,7 +86,7 @@ public class WaveEventSubscriptions : MonoBehaviour
         {
             waveSpawnController.OnWaveStarted.RemoveListener(OnWaveStarted);
             waveSpawnController.OnWaveEnded.RemoveListener(OnWaveEnded);
-            
+
             // Unsubscribe from the OnEnemySpawned event
             waveSpawnController.OnEnemySpawned -= OnEnemySpawned;
         }
@@ -88,7 +94,9 @@ public class WaveEventSubscriptions : MonoBehaviour
 
     private void OnWaveStarted()
     {
-        Debug.Log($"<color=blue>[WAVE] Wave Started! Current Scene: {SceneManagerBTR.Instance.GetCurrentSceneName()}, Section: {SceneManagerBTR.Instance.GetCurrentSongSectionName()}</color>");
+        Debug.Log(
+            $"<color=blue>[WAVE] Wave Started! Current Scene: {SceneManagerBTR.Instance.GetCurrentSceneName()}, Section: {SceneManagerBTR.Instance.GetCurrentSongSectionName()}</color>"
+        );
         SceneManagerBTR.Instance.updateStatus("wavestart");
 
         if (cameraSwitching != null)
@@ -121,10 +129,12 @@ public class WaveEventSubscriptions : MonoBehaviour
 
     private void OnWaveEnded()
     {
-        Debug.Log($"<color=blue>[WAVE] Wave Ended! Current Scene: {SceneManagerBTR.Instance.GetCurrentSceneName()}, Section: {SceneManagerBTR.Instance.GetCurrentSongSectionName()}</color>");
+        Debug.Log(
+            $"<color=blue>[WAVE] Wave Ended! Current Scene: {SceneManagerBTR.Instance.GetCurrentSceneName()}, Section: {SceneManagerBTR.Instance.GetCurrentSongSectionName()}</color>"
+        );
         ScoreManager.Instance.waveCounterAdd();
         SceneManagerBTR.Instance.updateStatus("waveend");
-        
+
         if (EventManager.Instance != null)
         {
             EventManager.Instance.TriggerEvent("OnWaveEnd");

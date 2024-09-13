@@ -132,11 +132,11 @@ public class EnemyTwinSnakeBoss : MonoBehaviour, ILimbDamageReceiver
         }
 
         // Subscribe to rewind events
-/*         if (crosshair != null)
-        {
-            crosshair.OnRewindStart += HandleRewindStart;
-            crosshair.OnRewindEnd += HandleRewindEnd;
-        } */
+        /*         if (crosshair != null)
+                {
+                    crosshair.OnRewindStart += HandleRewindStart;
+                    crosshair.OnRewindEnd += HandleRewindEnd;
+                } */
 
         playerTarget = GameObject.FindGameObjectWithTag("Player");
     }
@@ -144,11 +144,11 @@ public class EnemyTwinSnakeBoss : MonoBehaviour, ILimbDamageReceiver
     private void OnDestroy()
     {
         // Unsubscribe from rewind events
-       /*  if (crosshair != null)
-        {
-            crosshair.OnRewindStart -= HandleRewindStart;
-            crosshair.OnRewindEnd -= HandleRewindEnd;
-        } */
+        /*  if (crosshair != null)
+         {
+             crosshair.OnRewindStart -= HandleRewindStart;
+             crosshair.OnRewindEnd -= HandleRewindEnd;
+         } */
     }
 
     private void HandleRewindStart(float timeScale)
@@ -171,7 +171,6 @@ public class EnemyTwinSnakeBoss : MonoBehaviour, ILimbDamageReceiver
 
     private int DetermineTargetSnake()
     {
-
         Vector3 aimPoint = PlayerLocking.Instance.RaycastTarget();
         float closestDistance = float.MaxValue;
         int closestSnakeIndex = -1;

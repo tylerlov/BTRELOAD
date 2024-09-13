@@ -1,9 +1,10 @@
-using UnityEngine;
 using DG.Tweening;
+using UnityEngine;
 
 public class PlayerLockedState : ProjectileState
 {
-    public PlayerLockedState(ProjectileStateBased projectile) : base(projectile)
+    public PlayerLockedState(ProjectileStateBased projectile)
+        : base(projectile)
     {
         if (_projectile.isParried)
             return;

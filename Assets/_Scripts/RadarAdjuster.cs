@@ -1,5 +1,5 @@
-using UnityEngine;
 using SickscoreGames.HUDNavigationSystem;
+using UnityEngine;
 
 public class RadarAdjuster : MonoBehaviour
 {

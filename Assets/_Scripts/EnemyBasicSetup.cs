@@ -198,8 +198,7 @@ public class EnemyBasicSetup : BaseBehaviour, IDamageable, IAttackAgent
     {
         isLockedOn = status;
         UpdateLockOnVisuals();
-            GameManager.Instance.SetEnemyLockState(cachedTransform, status);
-
+        GameManager.Instance.SetEnemyLockState(cachedTransform, status);
     }
 
     // Keep this method for GameManager compatibility

@@ -1,5 +1,5 @@
-using UnityEngine;
 using UnityEditor;
+using UnityEngine;
 
 [ExecuteInEditMode]
 public class PlacePrefabsOnMesh : MonoBehaviour
@@ -23,7 +23,8 @@ public class PlacePrefabsOnMesh : MonoBehaviour
     void OnValidate()
     {
         // Ensure the number of prefabs is non-negative
-        if (numberOfPrefabs < 0) numberOfPrefabs = 0;
+        if (numberOfPrefabs < 0)
+            numberOfPrefabs = 0;
     }
 
     [ContextMenu("Generate")]
@@ -41,18 +42,19 @@ public class PlacePrefabsOnMesh : MonoBehaviour
         {
             Vector3 randomPosition = GetRandomPositionOnMesh();
             GameObject prefab = prefabs[Random.Range(0, prefabs.Length)];
-            
+
             // Replace PrefabUtility.InstantiatePrefab with Instantiate
             GameObject instance = Instantiate(prefab, transform);
-            
+
             instance.transform.position = transform.TransformPoint(randomPosition);
-            
+
             // Calculate normal at the random position
             Vector3 normal = CalculateNormalAtPosition(randomPosition);
-            
+
             // Rotate the instance to face outward
-            instance.transform.rotation = Quaternion.LookRotation(normal) * Quaternion.Euler(90f, 0f, 0f);
-            
+            instance.transform.rotation =
+                Quaternion.LookRotation(normal) * Quaternion.Euler(90f, 0f, 0f);
+
             // Apply local Y offset
             instance.transform.position += instance.transform.up * localYOffset;
         }

@@ -1,6 +1,7 @@
 using BehaviorDesigner.Runtime.Tactical;
 using BehaviorDesigner.Runtime.Tasks.Movement;
 using BehaviorDesigner.Runtime.Tasks.Unity.UnityGameObject;
+
 public class ProjectileCombat
 {
     private ProjectileStateBased _projectile;

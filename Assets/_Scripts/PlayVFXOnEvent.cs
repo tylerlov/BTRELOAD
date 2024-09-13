@@ -3,8 +3,11 @@ using UnityEngine.VFX;
 
 public class PlayVFXOnEvent : MonoBehaviour
 {
-    [SerializeField] private string eventName = "OnWaveEnded";
-    [SerializeField] private VisualEffect visualEffect;
+    [SerializeField]
+    private string eventName = "OnWaveEnded";
+
+    [SerializeField]
+    private VisualEffect visualEffect;
 
     private void OnEnable()
     {
@@ -19,7 +22,10 @@ public class PlayVFXOnEvent : MonoBehaviour
             visualEffect = GetComponent<VisualEffect>();
             if (visualEffect == null)
             {
-                Debug.LogError("No VisualEffect component found on this GameObject or assigned in the inspector.", this);
+                Debug.LogError(
+                    "No VisualEffect component found on this GameObject or assigned in the inspector.",
+                    this
+                );
                 return;
             }
         }

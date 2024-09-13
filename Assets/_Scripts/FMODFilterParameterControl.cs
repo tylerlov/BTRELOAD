@@ -1,6 +1,6 @@
-using UnityEngine;
 using FMOD.Studio;
 using FMODUnity;
+using UnityEngine;
 
 public class FMODFilterParameterControl : MonoBehaviour
 {
@@ -9,11 +9,20 @@ public class FMODFilterParameterControl : MonoBehaviour
 
     public void SetPauseValue(float value)
     {
-        FMOD.RESULT result = RuntimeManager.StudioSystem.setParameterByName(pauseParameterName, value);
+        FMOD.RESULT result = RuntimeManager.StudioSystem.setParameterByName(
+            pauseParameterName,
+            value
+        );
 
         if (result != FMOD.RESULT.OK)
         {
-            Debug.LogError(string.Format(("[FMOD] FilterParameterControl failed to set parameter {0} : result = {1}"), pauseParameterName, result));
+            Debug.LogError(
+                string.Format(
+                    ("[FMOD] FilterParameterControl failed to set parameter {0} : result = {1}"),
+                    pauseParameterName,
+                    result
+                )
+            );
         }
     }
 }

@@ -1,5 +1,5 @@
-using UnityEngine;
 using DG.Tweening;
+using UnityEngine;
 
 public class ProjectileVisualEffects
 {
@@ -24,11 +24,15 @@ public class ProjectileVisualEffects
             _projectile.playerProjPath.enabled = false;
         }
 
-        if (_projectile.myMaterial != null && _projectile.myMaterial.HasProperty("_AdvancedDissolveCutoutStandardClip"))
+        if (
+            _projectile.myMaterial != null
+            && _projectile.myMaterial.HasProperty("_AdvancedDissolveCutoutStandardClip")
+        )
         {
-            _projectile.myMaterial
-                .DOFloat(0.05f, "_AdvancedDissolveCutoutStandardClip", 0.1f)
-                .OnComplete(() => {
+            _projectile
+                .myMaterial.DOFloat(0.05f, "_AdvancedDissolveCutoutStandardClip", 0.1f)
+                .OnComplete(() =>
+                {
                     _projectile.gameObject.SetActive(false);
                 });
         }

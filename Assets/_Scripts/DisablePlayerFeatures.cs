@@ -18,10 +18,14 @@ public class DisablePlayerFeatures : MonoBehaviour
         }
 
         // Access the playerInputActions field using reflection
-        var playerInputActionsField = typeof(PlayerMovement).GetField("playerInputActions", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        var playerInputActionsField = typeof(PlayerMovement).GetField(
+            "playerInputActions",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance
+        );
         if (playerInputActionsField != null)
         {
-            var playerInputActions = playerInputActionsField.GetValue(playerMovement) as DefaultControls;
+            var playerInputActions =
+                playerInputActionsField.GetValue(playerMovement) as DefaultControls;
             if (playerInputActions != null)
             {
                 // Disable the ReverseDirection action

@@ -1,9 +1,9 @@
-using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using DG.Tweening;
 using FMODUnity;
 using MoreMountains.Feedbacks;
-using DG.Tweening;
+using UnityEngine;
 
 public class PlayerShooting : MonoBehaviour
 {
@@ -13,8 +13,12 @@ public class PlayerShooting : MonoBehaviour
     [Header("Shooting Settings")]
     public float launchDelay = 0.1f;
     public MMF_Player shootFeedback;
-    [SerializeField] private EventReference randomShootingEvent;
-    [SerializeField] private EventReference shootTagEvent;
+
+    [SerializeField]
+    private EventReference randomShootingEvent;
+
+    [SerializeField]
+    private EventReference shootTagEvent;
     #endregion
 
     #region References
@@ -25,7 +29,8 @@ public class PlayerShooting : MonoBehaviour
 
     #region Object Pooling
     [Header("Object Pooling")]
-    [SerializeField] private int lockOnEffectPoolSize = 10;
+    [SerializeField]
+    private int lockOnEffectPoolSize = 10;
     private Queue<GameObject> lockOnEffectPool;
     #endregion
 
@@ -52,7 +57,10 @@ public class PlayerShooting : MonoBehaviour
         lockOnEffectPool = new Queue<GameObject>();
         for (int i = 0; i < lockOnEffectPoolSize; i++)
         {
-            GameObject lockOnEffect = Instantiate(crosshairCore.lockOnPrefab, crosshairCore.Reticle.transform);
+            GameObject lockOnEffect = Instantiate(
+                crosshairCore.lockOnPrefab,
+                crosshairCore.Reticle.transform
+            );
             lockOnEffect.SetActive(false);
             lockOnEffectPool.Enqueue(lockOnEffect);
         }
@@ -90,7 +98,9 @@ public class PlayerShooting : MonoBehaviour
                 playerLocking.qteEnemyLockList.Add(lockedState.GetProjectile().currentTarget);
             }
         }
-        Debug.Log($"QTE Enemy Lock List populated with {playerLocking.qteEnemyLockList.Count} targets");
+        Debug.Log(
+            $"QTE Enemy Lock List populated with {playerLocking.qteEnemyLockList.Count} targets"
+        );
 
         for (int i = 0; i < projectilesToLaunch.Count; i++)
         {
@@ -131,8 +141,10 @@ public class PlayerShooting : MonoBehaviour
                 spriteRenderer.DOFade(1f, 0.5f);
             }
 
-            lockOnInstance.transform.DOScale(Vector3.zero, 1f)
-                .OnComplete(() => {
+            lockOnInstance
+                .transform.DOScale(Vector3.zero, 1f)
+                .OnComplete(() =>
+                {
                     lockOnInstance.SetActive(false);
                     lockOnEffectPool.Enqueue(lockOnInstance);
                 });

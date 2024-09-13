@@ -1,21 +1,30 @@
 using System;
 using System.Collections;
-using UnityEngine;
-using UnityEngine.UI;
-using TMPro;
-using UnityEngine.InputSystem;
-using FMODUnity;
 using FMOD.Studio;
+using FMODUnity;
+using TMPro;
+using UnityEngine;
+using UnityEngine.InputSystem;
+using UnityEngine.UI;
 
 public class QuickTimeEventManager : MonoBehaviour
 {
     public static QuickTimeEventManager Instance { get; private set; }
 
-    [SerializeField] private GameObject qtePanel;
-    [SerializeField] private TextMeshProUGUI qteText;
-    [SerializeField] private float qteDisplayTime = 0.5f; // Increased to 0.5 seconds
-    [SerializeField] private EventReference successSoundEvent;
-    [SerializeField] private EventReference failureSoundEvent;
+    [SerializeField]
+    private GameObject qtePanel;
+
+    [SerializeField]
+    private TextMeshProUGUI qteText;
+
+    [SerializeField]
+    private float qteDisplayTime = 0.5f; // Increased to 0.5 seconds
+
+    [SerializeField]
+    private EventReference successSoundEvent;
+
+    [SerializeField]
+    private EventReference failureSoundEvent;
 
     private string[] directions = { "↑", "→", "↓", "←" };
     private char[] currentSequence;
@@ -57,7 +66,8 @@ public class QuickTimeEventManager : MonoBehaviour
 
     public void StartQTE(float duration)
     {
-        if (isQteActive) return;
+        if (isQteActive)
+            return;
 
         Debug.Log($"QTE Started. Duration: {duration} seconds");
         isQteActive = true;
@@ -109,19 +119,31 @@ public class QuickTimeEventManager : MonoBehaviour
     {
         bool inputCorrect = false;
 
-        if (playerInputActions.Player.Up.WasPressedThisFrame() && currentSequence[currentIndex] == '↑')
+        if (
+            playerInputActions.Player.Up.WasPressedThisFrame()
+            && currentSequence[currentIndex] == '↑'
+        )
         {
             inputCorrect = true;
         }
-        else if (playerInputActions.Player.Right.WasPressedThisFrame() && currentSequence[currentIndex] == '→')
+        else if (
+            playerInputActions.Player.Right.WasPressedThisFrame()
+            && currentSequence[currentIndex] == '→'
+        )
         {
             inputCorrect = true;
         }
-        else if (playerInputActions.Player.Down.WasPressedThisFrame() && currentSequence[currentIndex] == '↓')
+        else if (
+            playerInputActions.Player.Down.WasPressedThisFrame()
+            && currentSequence[currentIndex] == '↓'
+        )
         {
             inputCorrect = true;
         }
-        else if (playerInputActions.Player.Left.WasPressedThisFrame() && currentSequence[currentIndex] == '←')
+        else if (
+            playerInputActions.Player.Left.WasPressedThisFrame()
+            && currentSequence[currentIndex] == '←'
+        )
         {
             inputCorrect = true;
         }
@@ -130,10 +152,12 @@ public class QuickTimeEventManager : MonoBehaviour
         {
             RuntimeManager.PlayOneShot(successSoundEvent);
         }
-        else if (playerInputActions.Player.Up.WasPressedThisFrame() ||
-                 playerInputActions.Player.Right.WasPressedThisFrame() ||
-                 playerInputActions.Player.Down.WasPressedThisFrame() ||
-                 playerInputActions.Player.Left.WasPressedThisFrame())
+        else if (
+            playerInputActions.Player.Up.WasPressedThisFrame()
+            || playerInputActions.Player.Right.WasPressedThisFrame()
+            || playerInputActions.Player.Down.WasPressedThisFrame()
+            || playerInputActions.Player.Left.WasPressedThisFrame()
+        )
         {
             RuntimeManager.PlayOneShot(failureSoundEvent);
             EndQTE(false);

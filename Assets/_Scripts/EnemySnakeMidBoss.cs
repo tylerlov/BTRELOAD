@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using BehaviorDesigner.Runtime.Tactical;
 using Chronos;
 using FMODUnity;
@@ -8,8 +9,6 @@ using UnityEngine;
 using UnityEngine.Animations;
 using UnityEngine.Events;
 using UnityEngine.VFX;
-using System.Threading.Tasks;
-
 
 [RequireComponent(typeof(Timeline))]
 public class EnemySnakeMidBoss : BaseBehaviour, IDamageable, ILimbDamageReceiver
@@ -101,7 +100,7 @@ public class EnemySnakeMidBoss : BaseBehaviour, IDamageable, ILimbDamageReceiver
     {
         // Find the DestroyEffect component
         destroyEffect = GetComponent<DestroyEffect>();
-        
+
         if (destroyEffect == null)
         {
             Debug.LogWarning("DestroyEffect component not found on " + gameObject.name);
@@ -255,7 +254,9 @@ public class EnemySnakeMidBoss : BaseBehaviour, IDamageable, ILimbDamageReceiver
     {
         if (this == null || gameObject == null)
         {
-            Debug.LogWarning("EnemySnakeMidBoss or its GameObject has been destroyed. Skipping damage handling.");
+            Debug.LogWarning(
+                "EnemySnakeMidBoss or its GameObject has been destroyed. Skipping damage handling."
+            );
             return;
         }
 
@@ -426,7 +427,9 @@ public class EnemySnakeMidBoss : BaseBehaviour, IDamageable, ILimbDamageReceiver
     {
         if (this == null || gameObject == null)
         {
-            Debug.LogWarning("EnemySnakeMidBoss or its GameObject has been destroyed. Skipping cleanup.");
+            Debug.LogWarning(
+                "EnemySnakeMidBoss or its GameObject has been destroyed. Skipping cleanup."
+            );
             return;
         }
 
@@ -443,11 +446,14 @@ public class EnemySnakeMidBoss : BaseBehaviour, IDamageable, ILimbDamageReceiver
         }
         catch (MissingReferenceException)
         {
-            Debug.LogWarning("Some components were destroyed during cleanup. Continuing with available components.");
+            Debug.LogWarning(
+                "Some components were destroyed during cleanup. Continuing with available components."
+            );
         }
     }
 
-    private void DisableComponents<T>() where T : Component
+    private void DisableComponents<T>()
+        where T : Component
     {
         var components = GetComponentsInChildren<T>(true);
         foreach (var component in components)
@@ -467,7 +473,11 @@ public class EnemySnakeMidBoss : BaseBehaviour, IDamageable, ILimbDamageReceiver
         float timeout = 5f; // 5 seconds timeout
         float elapsedTime = 0f;
 
-        while (animator != null && animator.isActiveAndEnabled && !animator.GetCurrentAnimatorStateInfo(0).IsName(stateName))
+        while (
+            animator != null
+            && animator.isActiveAndEnabled
+            && !animator.GetCurrentAnimatorStateInfo(0).IsName(stateName)
+        )
         {
             await Task.Delay(50); // Wait for 50ms instead of using Task.Yield()
             elapsedTime += 0.05f;

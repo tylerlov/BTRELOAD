@@ -1,16 +1,23 @@
-using UnityEngine;
 using System.Collections;
 using Chronos;
+using UnityEngine;
 
 public class TimeManager : MonoBehaviour
 {
     public static TimeManager Instance { get; private set; }
 
     [Header("Time Control")]
-    [SerializeField] private float defaultRewindTimeScale = -2f;
-    [SerializeField] private float defaultRewindDuration = 0.5f;
-    [SerializeField] private float defaultReturnToNormalDuration = 0.25f;
-    [SerializeField] private string globalClockName = "Test";
+    [SerializeField]
+    private float defaultRewindTimeScale = -2f;
+
+    [SerializeField]
+    private float defaultRewindDuration = 0.5f;
+
+    [SerializeField]
+    private float defaultReturnToNormalDuration = 0.25f;
+
+    [SerializeField]
+    private string globalClockName = "Test";
 
     private GlobalClock globalClock;
     private DebugSettings debugSettings;
@@ -44,7 +51,9 @@ public class TimeManager : MonoBehaviour
         }
         catch (ChronosException)
         {
-            Debug.LogWarning($"Global clock '{debugSettings.globalClockName}' not found. Debug time scale will not be applied.");
+            Debug.LogWarning(
+                $"Global clock '{debugSettings.globalClockName}' not found. Debug time scale will not be applied."
+            );
         }
     }
 
@@ -53,7 +62,9 @@ public class TimeManager : MonoBehaviour
         if (globalClock != null)
         {
             globalClock.localTimeScale = debugSettings.debugTimeScale;
-            Debug.Log($"Debug time scale set to {debugSettings.debugTimeScale} on global clock '{debugSettings.globalClockName}'");
+            Debug.Log(
+                $"Debug time scale set to {debugSettings.debugTimeScale} on global clock '{debugSettings.globalClockName}'"
+            );
         }
         else
         {
@@ -61,7 +72,11 @@ public class TimeManager : MonoBehaviour
         }
     }
 
-    public IEnumerator RewindTime(float rewindTimeScale = -2f, float rewindDuration = 0.5f, float returnToNormalDuration = 0.25f)
+    public IEnumerator RewindTime(
+        float rewindTimeScale = -2f,
+        float rewindDuration = 0.5f,
+        float returnToNormalDuration = 0.25f
+    )
     {
         if (globalClock == null)
         {
@@ -72,21 +87,29 @@ public class TimeManager : MonoBehaviour
         float startTime = globalClock.time;
         globalClock.LerpTimeScale(rewindTimeScale, rewindDuration);
 
-        Debug.Log($"Rewinding time... Start time: {startTime}, Rewind scale: {rewindTimeScale}, Duration: {rewindDuration}");
+        Debug.Log(
+            $"Rewinding time... Start time: {startTime}, Rewind scale: {rewindTimeScale}, Duration: {rewindDuration}"
+        );
 
         yield return new WaitForSeconds(Mathf.Abs(rewindDuration));
 
         float rewoundTime = globalClock.time;
         globalClock.LerpTimeScale(1f, returnToNormalDuration);
 
-        Debug.Log($"Returning to normal time... Rewound time: {rewoundTime}, Return duration: {returnToNormalDuration}");
+        Debug.Log(
+            $"Returning to normal time... Rewound time: {rewoundTime}, Return duration: {returnToNormalDuration}"
+        );
 
         yield return new WaitForSeconds(returnToNormalDuration);
 
         Debug.Log("Rewind complete");
     }
 
-    public void StartRewindTime(float rewindTimeScale = -2f, float rewindDuration = 0.5f, float returnToNormalDuration = 0.25f)
+    public void StartRewindTime(
+        float rewindTimeScale = -2f,
+        float rewindDuration = 0.5f,
+        float returnToNormalDuration = 0.25f
+    )
     {
         if (QuickTimeEventManager.Instance != null && QuickTimeEventManager.Instance.IsQTEActive)
         {
@@ -113,7 +136,9 @@ public class TimeManager : MonoBehaviour
         if (globalClock != null)
         {
             globalClock.localTimeScale = timeScale;
-            Debug.Log($"Time scale set to {timeScale} on global clock '{debugSettings.globalClockName}'");
+            Debug.Log(
+                $"Time scale set to {timeScale} on global clock '{debugSettings.globalClockName}'"
+            );
         }
         else
         {

@@ -20,7 +20,7 @@ public enum ProjectilePoolType
     // Add your pool types here, for example:
     Standard,
     Homing,
-    Explosive
+    Explosive,
 }
 
 // Define ProjectileVector3 if it's not defined elsewhere
@@ -38,8 +38,11 @@ public struct ProjectileVector3
         this.z = z;
     }
 
-    public static implicit operator Vector3(ProjectileVector3 pv3) => new Vector3(pv3.x, pv3.y, pv3.z);
-    public static implicit operator ProjectileVector3(Vector3 v3) => new ProjectileVector3(v3.x, v3.y, v3.z);
+    public static implicit operator Vector3(ProjectileVector3 pv3) =>
+        new Vector3(pv3.x, pv3.y, pv3.z);
+
+    public static implicit operator ProjectileVector3(Vector3 v3) =>
+        new ProjectileVector3(v3.x, v3.y, v3.z);
 
     public static float Distance(ProjectileVector3 a, ProjectileVector3 b)
     {
@@ -56,21 +59,36 @@ public class ProjectileStateBased : MonoBehaviour
     public ProjectilePoolType poolType;
     public bool isParried = false;
 
-    [HideInInspector] public Rigidbody rb;
-    [HideInInspector] public TrailRenderer tRn;
-    [HideInInspector] public LineRenderer lRn;
-    [HideInInspector] public Timeline TLine;
+    [HideInInspector]
+    public Rigidbody rb;
+
+    [HideInInspector]
+    public TrailRenderer tRn;
+
+    [HideInInspector]
+    public LineRenderer lRn;
+
+    [HideInInspector]
+    public Timeline TLine;
 
     [Header("State")]
     public string projectileType;
-    [HideInInspector] public string _currentTag;
-    [HideInInspector] public bool collectable;
-    [HideInInspector] public bool homing;
+
+    [HideInInspector]
+    public string _currentTag;
+
+    [HideInInspector]
+    public bool collectable;
+
+    [HideInInspector]
+    public bool homing;
     private bool activeLine = false;
     private bool disableOnProjMove;
     internal bool shotAtEnemy;
     internal bool projHitPlayer = false;
-    [HideInInspector] public bool lifetimeExtended = false;
+
+    [HideInInspector]
+    public bool lifetimeExtended = false;
 
     [Header("Movement")]
     public float bulletSpeed;
@@ -80,14 +98,17 @@ public class ProjectileStateBased : MonoBehaviour
     public float turnRate = 360f;
     public float maxRotateSpeed = 180;
     public float maxDistance = 100f;
-    [HideInInspector] public float initialSpeed;
+
+    [HideInInspector]
+    public float initialSpeed;
 
     [Header("Targeting and Prediction")]
     public Transform currentTarget;
     public float _maxDistancePredict = 100;
     public float _minDistancePredict = 5;
     public float _maxTimePrediction = 5;
-    public ProjectileVector3 _standardPrediction, _deviatedPrediction;
+    public ProjectileVector3 _standardPrediction,
+        _deviatedPrediction;
     public ProjectileVector3 predictedPosition { get; set; }
 
     [Header("Combat")]
@@ -97,7 +118,8 @@ public class ProjectileStateBased : MonoBehaviour
     private float originalLifetime;
 
     [Header("Accuracy and Approach")]
-    [Range(0f, 1f)] public float accuracy = 1f;
+    [Range(0f, 1f)]
+    public float accuracy = 1f;
     public float maxInaccuracyRadius = 5f;
     public float minInaccuracyRadius = 0.1f;
     public float minTurnRadius = 10f;
@@ -110,7 +132,9 @@ public class ProjectileStateBased : MonoBehaviour
 
     [Header("Visual Effects")]
     public Renderer modelRenderer;
-    [HideInInspector] public Material myMaterial;
+
+    [HideInInspector]
+    public Material myMaterial;
     public Color lockedProjectileColor;
     private Color originalProjectileColor;
     public TrailRenderer playerProjPath;
@@ -134,7 +158,9 @@ public class ProjectileStateBased : MonoBehaviour
     internal static GameObject shootingObject;
 
     private static readonly int BaseColorProperty = Shader.PropertyToID("_BaseColor");
-    private static readonly int DissolveCutoutProperty = Shader.PropertyToID("_AdvancedDissolveCutoutStandardClip");
+    private static readonly int DissolveCutoutProperty = Shader.PropertyToID(
+        "_AdvancedDissolveCutoutStandardClip"
+    );
     private MaterialPropertyBlock propBlock;
 
     private Transform cachedTransform;
@@ -142,11 +168,15 @@ public class ProjectileStateBased : MonoBehaviour
 
     public static int EnemyLayerMask { get; private set; }
 
-    public float maxSpeed = 50f; 
+    public float maxSpeed = 50f;
 
     public float initialLifetime;
 
     private Vector3 _lastTargetPosition;
+
+    public string CurrentStateName => currentState?.GetType().Name ?? "NoState";
+
+    public float creationTime;
 
     private void Awake()
     {
@@ -214,7 +244,7 @@ public class ProjectileStateBased : MonoBehaviour
         }
     }
 
-       private void OnDisable()
+    private void OnDisable()
     {
         if (ProjectileManager.Instance != null)
         {
@@ -222,7 +252,7 @@ public class ProjectileStateBased : MonoBehaviour
         }
     }
 
-   private void Start()
+    private void Start()
     {
         rb = gameObject.GetComponent<Rigidbody>();
         TLine = gameObject.GetComponent<Timeline>();
@@ -236,6 +266,8 @@ public class ProjectileStateBased : MonoBehaviour
 
     public void CustomUpdate(float timeScale)
     {
+        Debug.Log($"[ProjectileStateBased] ID: {GetInstanceID()}, State: {CurrentStateName}, Position: {transform.position}, Velocity: {rb.velocity}, TimeScale: {timeScale}");
+
         currentState?.CustomUpdate(timeScale);
 
         UpdatePredictedPosition();
@@ -381,6 +413,25 @@ public class ProjectileStateBased : MonoBehaviour
         }
     }
 
+    private void OnDrawGizmos()
+    {
+        if (!Application.isPlaying) return;
+
+        // Draw a sphere at the projectile's position
+        Gizmos.color = CurrentStateName switch
+        {
+            "EnemyShotState" => Color.red,
+            "PlayerShotState" => Color.blue,
+            "PlayerLockedState" => Color.green,
+            _ => Color.yellow
+        };
+        Gizmos.DrawSphere(transform.position, 0.5f);
+
+        // Draw a line in the direction of the projectile's velocity
+        Gizmos.color = Color.cyan;
+        Gizmos.DrawLine(transform.position, transform.position + rb.velocity.normalized * 2f);
+    }
+
     public void OnPlayerRicochetDodge()
     {
         _movement.OnPlayerRicochetDodge();
@@ -400,7 +451,10 @@ public class ProjectileStateBased : MonoBehaviour
     {
         if (isPlayerShot && !hasHitTarget)
         {
-            distanceTraveled += ProjectileVector3.Distance((ProjectileVector3)cachedTransform.position, initialPosition);
+            distanceTraveled += ProjectileVector3.Distance(
+                (ProjectileVector3)cachedTransform.position,
+                initialPosition
+            );
             initialPosition = cachedTransform.position;
             timeAlive += Time.deltaTime;
         }
@@ -492,7 +546,8 @@ public class ProjectileStateBased : MonoBehaviour
 
     public void UpdatePredictedPosition()
     {
-        if (currentTarget == null) return;
+        if (currentTarget == null)
+            return;
 
         // Calculate target velocity
         Vector3 targetVelocity = Vector3.zero;
@@ -521,31 +576,43 @@ public class ProjectileStateBased : MonoBehaviour
 
     public void LogProjectileHit(string hitObject)
     {
-        string message = isPlayerShot ? 
-            $"Player projectile hit {hitObject}. Distance traveled: {distanceTraveled:F2}, Time alive: {timeAlive:F2}" :
-            $"Enemy projectile hit {hitObject}. Distance traveled: {distanceTraveled:F2}, Time alive: {timeAlive:F2}";
+        string message = isPlayerShot
+            ? $"Player projectile hit {hitObject}. Distance traveled: {distanceTraveled:F2}, Time alive: {timeAlive:F2}"
+            : $"Enemy projectile hit {hitObject}. Distance traveled: {distanceTraveled:F2}, Time alive: {timeAlive:F2}";
         ConditionalDebug.Log(message);
     }
 
     public void LogProjectileExpired()
     {
-        string message = isPlayerShot ?
-            $"Player projectile expired. Distance traveled: {distanceTraveled:F2}, Time alive: {timeAlive:F2}" :
-            $"Enemy projectile expired. Distance traveled: {distanceTraveled:F2}, Time alive: {timeAlive:F2}";
+        string message = isPlayerShot
+            ? $"Player projectile expired. Distance traveled: {distanceTraveled:F2}, Time alive: {timeAlive:F2}"
+            : $"Enemy projectile expired. Distance traveled: {distanceTraveled:F2}, Time alive: {timeAlive:F2}";
         ConditionalDebug.Log(message);
     }
 
     public void ReportPlayerProjectileHit(bool hitTargetedEnemy, string enemyName)
     {
-        string message = hitTargetedEnemy ?
-            $"Player projectile hit its targeted enemy: {enemyName}. Distance traveled: {distanceTraveled:F2}, Time alive: {timeAlive:F2}" :
-            $"Player projectile hit a non-targeted enemy: {enemyName}. Distance traveled: {distanceTraveled:F2}, Time alive: {timeAlive:F2}";
+        string message = hitTargetedEnemy
+            ? $"Player projectile hit its targeted enemy: {enemyName}. Distance traveled: {distanceTraveled:F2}, Time alive: {timeAlive:F2}"
+            : $"Player projectile hit a non-targeted enemy: {enemyName}. Distance traveled: {distanceTraveled:F2}, Time alive: {timeAlive:F2}";
         ConditionalDebug.Log(message);
     }
 
     public void LogProjectileMiss()
     {
-        ConditionalDebug.Log($"Player projectile missed. Position: {transform.position}, Target: {(currentTarget != null ? currentTarget.name : "None")}, Distance to target: {(currentTarget != null ? Vector3.Distance(transform.position, currentTarget.position) : 0f)}");
+        ConditionalDebug.Log(
+            $"Player projectile missed. Position: {transform.position}, Target: {(currentTarget != null ? currentTarget.name : "None")}, Distance to target: {(currentTarget != null ? Vector3.Distance(transform.position, currentTarget.position) : 0f)}"
+        );
     }
 
+     public void Initialize()
+    {
+        creationTime = Time.time;
+    }
+
+    // Add this method to check if the projectile should be deactivated
+    public bool ShouldDeactivate(float currentTime)
+    {
+        return currentTime < creationTime;
+    }
 }

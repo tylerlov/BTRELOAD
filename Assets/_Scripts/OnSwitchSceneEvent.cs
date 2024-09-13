@@ -46,14 +46,14 @@ public class OnSwitchSceneEvent : MonoBehaviour
 
     private void ConnectToGameManager()
     {
-            onSwitchScene.AddListener(SceneManagerBTR.Instance.ChangeToNextScene);
-            Debug.Log("Connected to GameManager and set up ChangeToNextScene method.");
+        onSwitchScene.AddListener(SceneManagerBTR.Instance.ChangeToNextScene);
+        Debug.Log("Connected to GameManager and set up ChangeToNextScene method.");
     }
 
     private void DisconnectFromGameManager()
     {
-            onSwitchScene.RemoveListener(SceneManagerBTR.Instance.ChangeToNextScene);
-            Debug.Log("Disconnected from GameManager.");
+        onSwitchScene.RemoveListener(SceneManagerBTR.Instance.ChangeToNextScene);
+        Debug.Log("Disconnected from GameManager.");
     }
 
     private void HandleSwitchSceneEvent(string eventName)

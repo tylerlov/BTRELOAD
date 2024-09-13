@@ -32,7 +32,7 @@ public class DebugControls : MonoBehaviour, IPointerClickHandler
             type: InputActionType.Button,
             binding: "<Keyboard>/k"
         );
-        debugKillPlayerAction.performed += ctx => 
+        debugKillPlayerAction.performed += ctx =>
         {
             Debug.Log("Debug kill player action performed");
             OnDebugKillPlayer();
@@ -45,7 +45,7 @@ public class DebugControls : MonoBehaviour, IPointerClickHandler
             type: InputActionType.Button,
             binding: "<Keyboard>/0"
         );
-        debugKillAllEnemiesAction.performed += ctx => 
+        debugKillAllEnemiesAction.performed += ctx =>
         {
             Debug.Log("Debug kill all enemies action performed");
             KillAllEnemies();
@@ -76,11 +76,9 @@ public class DebugControls : MonoBehaviour, IPointerClickHandler
 
         isSceneTransitioning = true; // Set the flag to true to indicate a scene transition is in progress
 
-            GameManager.Instance.DebugMoveToNextScene();
+        GameManager.Instance.DebugMoveToNextScene();
 
-
-            GameManager.Instance.HandleDebugSceneTransition();
-
+        GameManager.Instance.HandleDebugSceneTransition();
 
         // Subscribe to the sceneLoaded event to reset the flag after the scene is loaded
         SceneManager.sceneLoaded += OnSceneLoaded;
@@ -96,7 +94,6 @@ public class DebugControls : MonoBehaviour, IPointerClickHandler
 
     private void OnDebugKillPlayer()
     {
-
         if (GameManager.Instance == null)
         {
             Debug.LogError("GameManager instance is null. Cannot initiate player death.");
@@ -111,7 +108,6 @@ public class DebugControls : MonoBehaviour, IPointerClickHandler
         }
 
         playerHealth.Damage(9999999);
-
     }
 
     public void OnPointerClick(PointerEventData eventData)
@@ -216,7 +212,7 @@ public class DebugControls : MonoBehaviour, IPointerClickHandler
 
     private void InitializeComponents()
     {
-      // Find the UI element named "Score"
+        // Find the UI element named "Score"
         FindUIElement();
 
         // Add Event Trigger to the UI element

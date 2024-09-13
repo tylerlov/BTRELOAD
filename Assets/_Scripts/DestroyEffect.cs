@@ -3,9 +3,14 @@ using UnityEngine;
 
 public class DestroyEffect : MonoBehaviour
 {
-    [SerializeField] private float startTemp = 7000f;
-    [SerializeField] private float endTemp = 1500f;
-    [SerializeField] private float duration = 0.3f;
+    [SerializeField]
+    private float startTemp = 7000f;
+
+    [SerializeField]
+    private float endTemp = 1500f;
+
+    [SerializeField]
+    private float duration = 0.3f;
 
     private Light _mainLight;
     private Light _localLight;
@@ -38,47 +43,64 @@ public class DestroyEffect : MonoBehaviour
 
     void AnimateMainLight()
     {
-        _mainLightTween = Tween.Custom(_mainLight, _mainLight.colorTemperature, endTemp, duration,
-            (light, value) => 
-            { 
-                if (light != null && light) 
-                    light.colorTemperature = value; 
-                else 
-                    _mainLightTween.Stop();
-            },
-            Ease.InOutQuad)
-            .OnComplete(() => 
+        _mainLightTween = Tween
+            .Custom(
+                _mainLight,
+                _mainLight.colorTemperature,
+                endTemp,
+                duration,
+                (light, value) =>
+                {
+                    if (light != null && light)
+                        light.colorTemperature = value;
+                    else
+                        _mainLightTween.Stop();
+                },
+                Ease.InOutQuad
+            )
+            .OnComplete(() =>
             {
                 if (_mainLight != null && _mainLight)
                 {
-                    _mainLightTween = Tween.Custom(_mainLight, endTemp, startTemp, duration,
-                        (light, value) => 
-                        { 
-                            if (light != null && light) 
-                                light.colorTemperature = value; 
-                            else 
+                    _mainLightTween = Tween.Custom(
+                        _mainLight,
+                        endTemp,
+                        startTemp,
+                        duration,
+                        (light, value) =>
+                        {
+                            if (light != null && light)
+                                light.colorTemperature = value;
+                            else
                                 _mainLightTween.Stop();
                         },
-                        Ease.InOutQuad);
+                        Ease.InOutQuad
+                    );
                 }
             });
     }
 
     void AnimateLocalLight()
     {
-        _localLightTween = Tween.Delay(0.5f)
+        _localLightTween = Tween
+            .Delay(0.5f)
             .OnComplete(() =>
             {
                 if (_localLight != null && _localLight)
                 {
-                    _localLightTween = Tween.Custom(_localLight, 1f, 0f, 0.3f,
-                        (light, value) => 
-                        { 
-                            if (light != null && light) 
-                                light.intensity = value; 
-                            else 
+                    _localLightTween = Tween.Custom(
+                        _localLight,
+                        1f,
+                        0f,
+                        0.3f,
+                        (light, value) =>
+                        {
+                            if (light != null && light)
+                                light.intensity = value;
+                            else
                                 _localLightTween.Stop();
-                        });
+                        }
+                    );
                 }
             });
     }
@@ -86,8 +108,10 @@ public class DestroyEffect : MonoBehaviour
     void OnDestroy()
     {
         // Stop any ongoing tweens to prevent null reference errors
-        if (_mainLightTween.isAlive) _mainLightTween.Stop();
-        if (_localLightTween.isAlive) _localLightTween.Stop();
+        if (_mainLightTween.isAlive)
+            _mainLightTween.Stop();
+        if (_localLightTween.isAlive)
+            _localLightTween.Stop();
     }
 
     public void CleanupEffects()

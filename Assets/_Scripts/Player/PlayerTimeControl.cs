@@ -1,9 +1,9 @@
-using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
-using MoreMountains.Feedbacks;
 using FluffyUnderware.Curvy.Controllers;
 using FMODUnity;
+using MoreMountains.Feedbacks;
+using UnityEngine;
 using UnityEngine.VFX;
 
 public class PlayerTimeControl : MonoBehaviour
@@ -12,14 +12,27 @@ public class PlayerTimeControl : MonoBehaviour
 
     #region Time Control Variables
     [Header("Time Control Settings")]
-    [SerializeField] private float rewindTimeScale = -2f;
-    [SerializeField] private float rewindDuration = 3f;
+    [SerializeField]
+    private float rewindTimeScale = -2f;
+
+    [SerializeField]
+    private float rewindDuration = 3f;
     private Coroutine currentRewindCoroutine;
-    [SerializeField] private float returnToNormalDuration = 0.25f;
-    [SerializeField] private float slowTimeScale = 0.1f;
-    [SerializeField] private float slowTimeDuration = 5f;
-    [SerializeField] private float rewindCooldown = 0.5f;
-    [SerializeField] private float maxRewindDuration = 1f;
+
+    [SerializeField]
+    private float returnToNormalDuration = 0.25f;
+
+    [SerializeField]
+    private float slowTimeScale = 0.1f;
+
+    [SerializeField]
+    private float slowTimeDuration = 5f;
+
+    [SerializeField]
+    private float rewindCooldown = 0.5f;
+
+    [SerializeField]
+    private float maxRewindDuration = 1f;
     #endregion
 
     #region References
@@ -67,17 +80,24 @@ public class PlayerTimeControl : MonoBehaviour
         if (crosshairCore.CheckRewindToBeat() && Time.time - lastRewindTime > rewindCooldown)
         {
             float timeSinceLastLaunch = Time.time - crosshairCore.lastProjectileLaunchTime;
-            Debug.Log($"Time since last projectile launch: {timeSinceLastLaunch}, QTE window: {CrosshairCore.QTE_TRIGGER_WINDOW}, QTE Locked targets: {playerLocking.qteEnemyLockList.Count}");
-            
+            Debug.Log(
+                $"Time since last projectile launch: {timeSinceLastLaunch}, QTE window: {CrosshairCore.QTE_TRIGGER_WINDOW}, QTE Locked targets: {playerLocking.qteEnemyLockList.Count}"
+            );
+
             lastRewindTime = Time.time;
-            if (timeSinceLastLaunch <= CrosshairCore.QTE_TRIGGER_WINDOW && playerLocking.qteEnemyLockList.Count > 0)
+            if (
+                timeSinceLastLaunch <= CrosshairCore.QTE_TRIGGER_WINDOW
+                && playerLocking.qteEnemyLockList.Count > 0
+            )
             {
                 Debug.Log("QTE Initiated for Rewind");
                 TriggerQTE(rewindDuration);
             }
             else
             {
-                Debug.Log($"Rewind started without QTE. Time condition met: {timeSinceLastLaunch <= CrosshairCore.QTE_TRIGGER_WINDOW}, Targets condition met: {playerLocking.qteEnemyLockList.Count > 0}");
+                Debug.Log(
+                    $"Rewind started without QTE. Time condition met: {timeSinceLastLaunch <= CrosshairCore.QTE_TRIGGER_WINDOW}, Targets condition met: {playerLocking.qteEnemyLockList.Count > 0}"
+                );
                 StartCoroutine(RewindToBeat());
             }
         }
@@ -88,16 +108,23 @@ public class PlayerTimeControl : MonoBehaviour
         if (crosshairCore.CheckSlowToBeat())
         {
             float timeSinceLastLaunch = Time.time - crosshairCore.lastProjectileLaunchTime;
-            Debug.Log($"Time since last projectile launch: {timeSinceLastLaunch}, QTE window: {CrosshairCore.QTE_TRIGGER_WINDOW}, QTE Locked targets: {playerLocking.qteEnemyLockList.Count}");
-            
-            if (timeSinceLastLaunch <= CrosshairCore.QTE_TRIGGER_WINDOW && playerLocking.qteEnemyLockList.Count > 0)
+            Debug.Log(
+                $"Time since last projectile launch: {timeSinceLastLaunch}, QTE window: {CrosshairCore.QTE_TRIGGER_WINDOW}, QTE Locked targets: {playerLocking.qteEnemyLockList.Count}"
+            );
+
+            if (
+                timeSinceLastLaunch <= CrosshairCore.QTE_TRIGGER_WINDOW
+                && playerLocking.qteEnemyLockList.Count > 0
+            )
             {
                 Debug.Log("QTE Initiated for Slow");
                 TriggerQTE(slowTimeDuration);
             }
             else
             {
-                Debug.Log($"Slow started without QTE. Time condition met: {timeSinceLastLaunch <= CrosshairCore.QTE_TRIGGER_WINDOW}, Targets condition met: {playerLocking.qteEnemyLockList.Count > 0}");
+                Debug.Log(
+                    $"Slow started without QTE. Time condition met: {timeSinceLastLaunch <= CrosshairCore.QTE_TRIGGER_WINDOW}, Targets condition met: {playerLocking.qteEnemyLockList.Count > 0}"
+                );
                 StartCoroutine(SlowToBeat());
             }
         }
@@ -134,9 +161,9 @@ public class PlayerTimeControl : MonoBehaviour
         {
             playerLocking.ClearLockedTargets();
         }
-        
+
         ResetMusicState();
-        
+
         Debug.Log($"QTE completed with success: {success}");
     }
 
@@ -289,12 +316,13 @@ public class PlayerTimeControl : MonoBehaviour
             }
         }
     }
+
     public void HandleRewindTime()
-{
-    if (rewindTriggedStillPressed && Time.time - lastRewindTime > rewindCooldown)
     {
-        lastRewindTime = Time.time;
-        TriggerQTE(rewindDuration);
+        if (rewindTriggedStillPressed && Time.time - lastRewindTime > rewindCooldown)
+        {
+            lastRewindTime = Time.time;
+            TriggerQTE(rewindDuration);
+        }
     }
-}
 }

@@ -5,9 +5,12 @@ public class ProjectilePool : MonoBehaviour
 {
     public static ProjectilePool Instance { get; private set; }
 
-    [SerializeField] private ProjectileStateBased projectilePrefab;
-    [SerializeField] private int initialPoolSize = 10;
-    
+    [SerializeField]
+    private ProjectileStateBased projectilePrefab;
+
+    [SerializeField]
+    private int initialPoolSize = 10;
+
     private Queue<ProjectileStateBased> projectilePool = new Queue<ProjectileStateBased>(200);
     private Queue<ProjectileRequest> projectileRequestPool = new Queue<ProjectileRequest>();
     private Queue<ProjectileRequest> projectileRequests = new Queue<ProjectileRequest>();
@@ -32,7 +35,9 @@ public class ProjectilePool : MonoBehaviour
     {
         if (projectilePool.Count == 0)
         {
-            ConditionalDebug.LogWarning("[ProjectilePool] No projectile available in pool, creating new one.");
+            ConditionalDebug.LogWarning(
+                "[ProjectilePool] No projectile available in pool, creating new one."
+            );
             return Instantiate(projectilePrefab, transform);
         }
         return projectilePool.Dequeue();
@@ -60,7 +65,9 @@ public class ProjectilePool : MonoBehaviour
         }
         else
         {
-            ConditionalDebug.LogWarning("Attempted to return a projectile that's already in the pool.");
+            ConditionalDebug.LogWarning(
+                "Attempted to return a projectile that's already in the pool."
+            );
         }
     }
 
@@ -106,9 +113,24 @@ public class ProjectilePool : MonoBehaviour
         return projectileRequests.Count;
     }
 
+    public bool TryDequeueProjectileRequest(out ProjectileRequest request)
+    {
+        if (projectileRequests.Count > 0)
+        {
+            request = projectileRequests.Dequeue();
+            return true;
+        }
+        request = default;
+        return false;
+    }
+
     public ProjectileRequest DequeueProjectileRequest()
     {
-        return projectileRequests.Dequeue();
+        if (projectileRequests.Count > 0)
+        {
+            return projectileRequests.Dequeue();
+        }
+        return default;
     }
 
     public void ClearProjectileRequests()
@@ -133,7 +155,6 @@ public class ProjectilePool : MonoBehaviour
             Destroy(gameObject);
         }
     }
-
 }
 
 public struct ProjectileRequest
@@ -145,10 +166,20 @@ public struct ProjectileRequest
     public float UniformScale;
     public bool EnableHoming;
     public int MaterialId;
-    public string ClockKey;  // Add this line
-    public float Accuracy;   // Add this line
+    public string ClockKey; // Add this line
+    public float Accuracy; // Add this line
 
-    public void Set(Vector3 position, Quaternion rotation, float speed, float lifetime, float uniformScale, bool enableHoming, int materialId, string clockKey, float accuracy)
+    public void Set(
+        Vector3 position,
+        Quaternion rotation,
+        float speed,
+        float lifetime,
+        float uniformScale,
+        bool enableHoming,
+        int materialId,
+        string clockKey,
+        float accuracy
+    )
     {
         Position = position;
         Rotation = rotation;

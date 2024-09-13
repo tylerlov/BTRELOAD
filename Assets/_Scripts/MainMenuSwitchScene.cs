@@ -1,7 +1,7 @@
 using System.Collections;
+using FMODUnity; // Add this import
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using FMODUnity; // Add this import
 
 public class MainMenuSwitchScene : MonoBehaviour
 {
@@ -26,7 +26,7 @@ public class MainMenuSwitchScene : MonoBehaviour
         {
             Destroy(gameObject);
         }
-        
+
         // If this is the instance we're keeping, find the FMOD emitter
         if (instance == this)
         {

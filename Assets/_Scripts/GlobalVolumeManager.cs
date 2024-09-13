@@ -1,8 +1,8 @@
+using JPG;
+using PrimeTween;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
-using PrimeTween;
-using JPG;
 
 public class GlobalVolumeManager : MonoBehaviour
 {
@@ -38,7 +38,12 @@ public class GlobalVolumeManager : MonoBehaviour
     {
         if (jpgEffect != null)
         {
-            Tween.Custom(0f, 1f, duration, onValueChange: v => jpgEffect.EffectIntensity.Override(v)); // Updated property name
+            Tween.Custom(
+                0f,
+                1f,
+                duration,
+                onValueChange: v => jpgEffect.EffectIntensity.Override(v)
+            ); // Updated property name
         }
     }
 
@@ -46,7 +51,12 @@ public class GlobalVolumeManager : MonoBehaviour
     {
         if (jpgEffect != null)
         {
-            Tween.Custom(1f, 0f, duration, onValueChange: v => jpgEffect.EffectIntensity.Override(v)); // Updated property name
+            Tween.Custom(
+                1f,
+                0f,
+                duration,
+                onValueChange: v => jpgEffect.EffectIntensity.Override(v)
+            ); // Updated property name
         }
     }
 }

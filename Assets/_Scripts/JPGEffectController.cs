@@ -1,13 +1,14 @@
+using System.Collections;
+using JPG.Universal;
 using UnityEngine;
 using UnityEngine.Rendering;
-using JPG.Universal;
-using System.Collections;
 
 public class JPGEffectController : MonoBehaviour
 {
     public static JPGEffectController Instance { get; private set; }
 
-    [SerializeField] private Volume globalVolume;
+    [SerializeField]
+    private Volume globalVolume;
     private JPG.Universal.JPG jpgEffect;
 
     private void Awake()

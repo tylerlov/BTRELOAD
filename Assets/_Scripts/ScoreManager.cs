@@ -1,15 +1,19 @@
-using UnityEngine;
 using Chronos;
+using UnityEngine;
 
 public class ScoreManager : MonoBehaviour
 {
     public static ScoreManager Instance { get; private set; }
 
-    [SerializeField] private float scoreDecayRate = 1f; // Points lost per second
+    [SerializeField]
+    private float scoreDecayRate = 1f; // Points lost per second
 
     [Header("Wave Management")]
-    [SerializeField] private int _totalWaveCount = 0;
-    [SerializeField] private int _currentSceneWaveCount = 0;
+    [SerializeField]
+    private int _totalWaveCount = 0;
+
+    [SerializeField]
+    private int _currentSceneWaveCount = 0;
 
     private Timeline timeline;
     private float lastScoreUpdateTime;
@@ -123,7 +127,9 @@ public class ScoreManager : MonoBehaviour
     {
         CurrentSceneWaveCount++;
         TotalWaveCount++;
-        Debug.Log($"Wave added. Current scene wave: {CurrentSceneWaveCount}, Total waves: {TotalWaveCount}");
+        Debug.Log(
+            $"Wave added. Current scene wave: {CurrentSceneWaveCount}, Total waves: {TotalWaveCount}"
+        );
     }
 
     private void UpdateScoreOverTime()
@@ -141,7 +147,7 @@ public class ScoreManager : MonoBehaviour
                 int previousScore = Score;
                 Score = Mathf.Max(0, Score - scoreDecrease);
                 accumulatedScoreDecrease -= scoreDecrease;
-                
+
                 // Only invoke OnScoreChanged for significant changes
                 int change = Score - previousScore;
                 if (Mathf.Abs(change) >= SCORE_CHANGE_THRESHOLD)

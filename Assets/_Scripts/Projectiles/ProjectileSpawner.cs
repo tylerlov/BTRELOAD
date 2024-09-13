@@ -1,8 +1,8 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using UnityEngine;
 using Chronos;
+using UnityEngine;
 
 public class ProjectileSpawner : MonoBehaviour
 {
@@ -11,9 +11,14 @@ public class ProjectileSpawner : MonoBehaviour
 
     private Dictionary<int, Material> materialLookup = new Dictionary<int, Material>();
 
-    [SerializeField] private ProjectileStateBased projectilePrefab;
-    [SerializeField] private int maxEnemyShotsPerInterval = 4;
-    [SerializeField] private float enemyShotIntervalSeconds = 3f;
+    [SerializeField]
+    private ProjectileStateBased projectilePrefab;
+
+    [SerializeField]
+    private int maxEnemyShotsPerInterval = 4;
+
+    [SerializeField]
+    private float enemyShotIntervalSeconds = 3f;
     private Queue<Action> enemyShotQueue = new Queue<Action>();
     private int currentEnemyShotCount = 0;
     private float lastEnemyShotResetTime;
@@ -59,7 +64,9 @@ public class ProjectileSpawner : MonoBehaviour
         ProjectileStateBased projectile = projectilePool.GetProjectileFromPool();
         if (projectile == null)
         {
-            ConditionalDebug.LogWarning("[ProjectileSpawner] No projectile available in pool, skipping shot.");
+            ConditionalDebug.LogWarning(
+                "[ProjectileSpawner] No projectile available in pool, skipping shot."
+            );
             return;
         }
 
@@ -69,45 +76,62 @@ public class ProjectileSpawner : MonoBehaviour
 
     private void SetupProjectile(ProjectileStateBased projectile, ProjectileRequest request)
     {
-        projectile.transform.SetParent(transform);
-        projectile.transform.position = request.Position;
-        projectile.transform.rotation = request.Rotation;
-        projectile.gameObject.SetActive(true);
-        projectile.transform.localScale = Vector3.one * request.UniformScale;
-
-        projectile.rb.isKinematic = false;
-        projectile.rb.velocity = request.Rotation * Vector3.forward * request.Speed;
-        projectile.bulletSpeed = request.Speed;
-        projectile.SetLifetime(request.Lifetime);
-        projectile.EnableHoming(request.EnableHoming);
-
-        Material material = GetMaterialById(request.MaterialId);
-        if (material != null && projectile.modelRenderer != null)
+        try
         {
-            projectile.modelRenderer.material = material;
+            projectile.transform.SetParent(transform);
+            projectile.transform.position = request.Position;
+            projectile.transform.rotation = request.Rotation;
+            projectile.gameObject.SetActive(true);
+            projectile.transform.localScale = Vector3.one * request.UniformScale;
+
+            projectile.rb.isKinematic = false;
+            projectile.rb.velocity = request.Rotation * Vector3.forward * request.Speed;
+            projectile.bulletSpeed = request.Speed;
+            projectile.SetLifetime(request.Lifetime);
+            projectile.EnableHoming(request.EnableHoming);
+
+            Material material = GetMaterialById(request.MaterialId);
+            if (material != null && projectile.modelRenderer != null)
+            {
+                projectile.modelRenderer.material = material;
+            }
+
+            effectManager.CreateEnemyShotFX(
+                projectile.transform,
+                Vector3.zero,
+                Vector3.one * request.UniformScale
+            );
+
+            GameObject radarSymbol = effectManager.GetRadarSymbolFromPool();
+            if (radarSymbol != null)
+            {
+                radarSymbol.transform.SetParent(projectile.transform);
+                radarSymbol.transform.localPosition = Vector3.zero;
+                radarSymbol.SetActive(true);
+            }
+
+            projectile.initialSpeed = request.Speed;
+            projectile.SetAccuracy(projectileManager.projectileAccuracy);
+
+            if (!string.IsNullOrEmpty(request.ClockKey))
+            {
+                projectile.SetClock(request.ClockKey);
+            }
+
+            projectile.SetAccuracy(request.Accuracy);
+
+            effectManager.CreateEnemyShotFX(
+                projectile.transform,
+                Vector3.zero,
+                Vector3.one * request.UniformScale
+            );
+
+            Debug.Log($"[ProjectileSpawner] Projectile setup complete. Position: {request.Position}, Speed: {request.Speed}, Lifetime: {request.Lifetime}");
         }
-
-        effectManager.CreateEnemyShotFX(projectile.transform, Vector3.zero, Vector3.one * request.UniformScale);
-
-        GameObject radarSymbol = effectManager.GetRadarSymbolFromPool();
-        if (radarSymbol != null)
+        catch (System.Exception e)
         {
-            radarSymbol.transform.SetParent(projectile.transform);
-            radarSymbol.transform.localPosition = Vector3.zero;
-            radarSymbol.SetActive(true);
+            Debug.LogError($"[ProjectileSpawner] Error setting up projectile: {e.Message}\n{e.StackTrace}");
         }
-
-        projectile.initialSpeed = request.Speed;
-        projectile.SetAccuracy(projectileManager.projectileAccuracy);
-
-        if (!string.IsNullOrEmpty(request.ClockKey))
-        {
-            projectile.SetClock(request.ClockKey);
-        }
-
-        projectile.SetAccuracy(request.Accuracy);
-
-        effectManager.CreateEnemyShotFX(projectile.transform, Vector3.zero, Vector3.one * request.UniformScale);
     }
 
     public bool RequestEnemyShot(Action shotAction)
@@ -127,7 +151,10 @@ public class ProjectileSpawner : MonoBehaviour
         }
 
         // Apply rate limiting if enabled
-        if (enemyShotIntervalSeconds != -1 && Time.time - lastEnemyShotResetTime >= enemyShotIntervalSeconds / timeScale)
+        if (
+            enemyShotIntervalSeconds != -1
+            && Time.time - lastEnemyShotResetTime >= enemyShotIntervalSeconds / timeScale
+        )
         {
             currentEnemyShotCount = 0;
             lastEnemyShotResetTime = Time.time;
@@ -148,12 +175,12 @@ public class ProjectileSpawner : MonoBehaviour
         while (true)
         {
             float timeScale = globalClock.timeScale;
-            
+
             if (timeScale > 0 && enemyShotQueue.Count > 0)
             {
                 Action shotAction = enemyShotQueue.Dequeue();
                 shotAction.Invoke();
-                
+
                 // Wait for the adjusted interval based on time scale, if interval is set
                 if (enemyShotIntervalSeconds != -1)
                 {
@@ -171,7 +198,15 @@ public class ProjectileSpawner : MonoBehaviour
         }
     }
 
-    public void ShootProjectile(Vector3 position, Quaternion rotation, float speed, float lifetime, float uniformScale, bool enableHoming = false, Material material = null)
+    public void ShootProjectile(
+        Vector3 position,
+        Quaternion rotation,
+        float speed,
+        float lifetime,
+        float uniformScale,
+        bool enableHoming = false,
+        Material material = null
+    )
     {
         ProjectileRequest request = projectilePool.GetProjectileRequest();
         request.Set(
@@ -203,15 +238,27 @@ public class ProjectileSpawner : MonoBehaviour
         bool shotRequested = RequestEnemyShot(() =>
         {
             ProjectileRequest request = projectilePool.GetProjectileRequest();
-            request.Set(position, rotation, speed, lifetime, uniformScale, enableHoming, RegisterMaterial(material), clockKey, accuracy);
+            request.Set(
+                position,
+                rotation,
+                speed,
+                lifetime,
+                uniformScale,
+                enableHoming,
+                RegisterMaterial(material),
+                clockKey,
+                accuracy
+            );
             projectilePool.EnqueueProjectileRequest(request);
-            
+
             lastCreatedProjectile = null; // Will be set in ProcessShootProjectile
         });
 
         if (!shotRequested)
         {
-            ConditionalDebug.Log("[ProjectileSpawner] Enemy shot request denied due to rate limiting.");
+            ConditionalDebug.Log(
+                "[ProjectileSpawner] Enemy shot request denied due to rate limiting."
+            );
         }
 
         return lastCreatedProjectile;
@@ -247,11 +294,13 @@ public class ProjectileSpawner : MonoBehaviour
     {
         maxEnemyShotsPerInterval = maxShots;
         enemyShotIntervalSeconds = intervalSeconds;
-        
+
         // Reset the current shot count and timer when changing rates
         currentEnemyShotCount = 0;
         lastEnemyShotResetTime = Time.time;
-        
-        ConditionalDebug.Log($"[ProjectileSpawner] Shot rates updated: Max shots = {maxShots}, Interval = {intervalSeconds}s");
+
+        ConditionalDebug.Log(
+            $"[ProjectileSpawner] Shot rates updated: Max shots = {maxShots}, Interval = {intervalSeconds}s"
+        );
     }
 }

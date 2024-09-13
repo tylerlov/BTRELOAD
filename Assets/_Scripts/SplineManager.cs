@@ -96,11 +96,17 @@ public class SplineManager : MonoBehaviour
 
     public void IncrementSpline()
     {
-        Debug.Log($"<color=yellow>[SPLINE] IncrementSpline called. Current spline before increment: {currSpline}</color>");
-        Debug.Log($"<color=yellow>[SPLINE] IncrementSpline called from:\n{UnityEngine.StackTraceUtility.ExtractStackTrace()}</color>");
+        Debug.Log(
+            $"<color=yellow>[SPLINE] IncrementSpline called. Current spline before increment: {currSpline}</color>"
+        );
+        Debug.Log(
+            $"<color=yellow>[SPLINE] IncrementSpline called from:\n{UnityEngine.StackTraceUtility.ExtractStackTrace()}</color>"
+        );
         if (!canIncrement)
         {
-            Debug.Log($"<color=orange>[SPLINE] Increment attempted during cooldown, ignoring. Time since last increment: {Time.time - lastSwitchTime}</color>");
+            Debug.Log(
+                $"<color=orange>[SPLINE] Increment attempted during cooldown, ignoring. Time since last increment: {Time.time - lastSwitchTime}</color>"
+            );
             return;
         }
 
@@ -122,7 +128,9 @@ public class SplineManager : MonoBehaviour
             float currentTime = Time.time;
             if (currentTime - lastSwitchTime < MIN_SWITCH_INTERVAL)
             {
-                Debug.LogWarning($"<color=orange>[SPLINE] Spline switch attempted too soon. Time since last switch: {currentTime - lastSwitchTime}</color>");
+                Debug.LogWarning(
+                    $"<color=orange>[SPLINE] Spline switch attempted too soon. Time since last switch: {currentTime - lastSwitchTime}</color>"
+                );
                 return;
             }
 
@@ -130,22 +138,30 @@ public class SplineManager : MonoBehaviour
             SetSplineDataAttributes(currSpline);
             splineSwitchCounter++;
             lastSwitchTime = currentTime;
-            Debug.Log($"<color=yellow>[SPLINE] Spline Incremented. Current spline: {currSpline} (Spline #{currSpline + 1}), Total switches: {splineSwitchCounter}, Time: {currentTime}</color>");
+            Debug.Log(
+                $"<color=yellow>[SPLINE] Spline Incremented. Current spline: {currSpline} (Spline #{currSpline + 1}), Total switches: {splineSwitchCounter}, Time: {currentTime}</color>"
+            );
 
             // Check if we've reached the final spline
             if (currSpline == splineDatas.Count - 1)
             {
-                Debug.Log($"<color=yellow>[SPLINE] Final spline reached (Spline #{splineDatas.Count}). Total switches: {splineSwitchCounter}</color>");
+                Debug.Log(
+                    $"<color=yellow>[SPLINE] Final spline reached (Spline #{splineDatas.Count}). Total switches: {splineSwitchCounter}</color>"
+                );
                 OnFinalSplineReached?.Invoke();
             }
         }
         else if (currSpline >= splineDatas.Count - 1)
         {
-            Debug.Log($"<color=orange>[SPLINE] Already at final spline (Spline #{splineDatas.Count}). Cannot increment further.</color>");
+            Debug.Log(
+                $"<color=orange>[SPLINE] Already at final spline (Spline #{splineDatas.Count}). Cannot increment further.</color>"
+            );
         }
         else
         {
-            Debug.Log("<color=orange>[SPLINE] Next Spline is not available, maintaining current Spline</color>");
+            Debug.Log(
+                "<color=orange>[SPLINE] Next Spline is not available, maintaining current Spline</color>"
+            );
         }
     }
 

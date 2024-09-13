@@ -2,16 +2,29 @@ using UnityEngine;
 
 public class StaticEnemyShooting : MonoBehaviour
 {
-    [SerializeField] private string enemyType;
-    [SerializeField] private float shootSpeed = 25f;
-    [SerializeField] private float projectileLifetime = 3f;
-    [SerializeField] private float projectileScale = 1f;
-    [SerializeField] private Material alternativeProjectileMaterial;
-    [SerializeField] private Transform target;
+    [SerializeField]
+    private string enemyType;
+
+    [SerializeField]
+    private float shootSpeed = 25f;
+
+    [SerializeField]
+    private float projectileLifetime = 3f;
+
+    [SerializeField]
+    private float projectileScale = 1f;
+
+    [SerializeField]
+    private Material alternativeProjectileMaterial;
+
+    [SerializeField]
+    private Transform target;
 
     private Transform cachedTransform;
     private float lastShootTime = 0f;
-    [SerializeField] private float minTimeBetweenShots = 0.1f;
+
+    [SerializeField]
+    private float minTimeBetweenShots = 0.1f;
 
     void Awake()
     {
@@ -39,7 +52,9 @@ public class StaticEnemyShooting : MonoBehaviour
         float currentTime = EnemyShootingManager.Instance.GetCurrentTime();
         if (currentTime - lastShootTime < minTimeBetweenShots)
         {
-            ConditionalDebug.Log($"[StaticEnemyShooting] Skipped shot due to rapid firing at {currentTime}");
+            ConditionalDebug.Log(
+                $"[StaticEnemyShooting] Skipped shot due to rapid firing at {currentTime}"
+            );
             return;
         }
 

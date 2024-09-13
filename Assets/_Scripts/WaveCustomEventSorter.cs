@@ -24,7 +24,7 @@ public class WaveCustomEventSorter : MonoBehaviour
         switch (eventName)
         {
             case "Switch Scene":
-                    SceneManagerBTR.Instance.ChangeSceneWithTransitionToNext();
+                SceneManagerBTR.Instance.ChangeSceneWithTransitionToNext();
                 break;
             // Add more cases here for other custom events
             default:

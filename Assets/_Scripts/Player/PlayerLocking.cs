@@ -1,8 +1,8 @@
-using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using FMODUnity;
 using MoreMountains.Feedbacks;
+using UnityEngine;
 using UnityEngine.SceneManagement;
 
 public class PlayerLocking : MonoBehaviour
@@ -17,7 +17,9 @@ public class PlayerLocking : MonoBehaviour
     public bool triggeredLockFire;
     public int maxLockedEnemyTargets = 3;
     public int maxTargets = 6;
-    [SerializeField] private int range = 300;
+
+    [SerializeField]
+    private int range = 300;
     public float bulletLockInterval = 0.1f;
     public float enemyLockInterval = 0.2f;
     public Vector3 bulletLockBoxSize = new Vector3(1, 1, 1);
@@ -35,7 +37,8 @@ public class PlayerLocking : MonoBehaviour
     private StaminaController staminaController;
     #endregion
 
-    private float lastBulletTime, lastEnemyTime;
+    private float lastBulletTime,
+        lastEnemyTime;
     private int enemyTargetListIndex;
 
     private void Awake()
@@ -162,19 +165,28 @@ public class PlayerLocking : MonoBehaviour
     }
 
     private bool IsValidBulletHit(RaycastHit hit) =>
-        hit.collider != null && (hit.collider.CompareTag("Bullet") || hit.collider.CompareTag("LaunchableBullet"));
+        hit.collider != null
+        && (hit.collider.CompareTag("Bullet") || hit.collider.CompareTag("LaunchableBullet"));
 
     private void UpdateLastBulletLockTime() => lastBulletTime = Time.time;
 
     private bool TryLockOntoBullet(RaycastHit hit)
     {
         ProjectileStateBased hitPSB = hit.transform.GetComponent<ProjectileStateBased>();
-        if (crosshairCore.collectHealthMode && hitPSB && hitPSB.GetCurrentStateType() == typeof(EnemyShotState))
+        if (
+            crosshairCore.collectHealthMode
+            && hitPSB
+            && hitPSB.GetCurrentStateType() == typeof(EnemyShotState)
+        )
         {
             HandleCollectHealthMode(hit);
             return true;
         }
-        else if (!crosshairCore.collectHealthMode && staminaController.canRewind && crosshairCore.CheckLockProjectiles())
+        else if (
+            !crosshairCore.collectHealthMode
+            && staminaController.canRewind
+            && crosshairCore.CheckLockProjectiles()
+        )
         {
             return TryAddBulletToLockList(hit, hitPSB);
         }
@@ -193,7 +205,11 @@ public class PlayerLocking : MonoBehaviour
 
     private bool TryAddBulletToLockList(RaycastHit hit, ProjectileStateBased hitPSB)
     {
-        if (!projectileTargetList.Contains(hit.transform) && hitPSB && hitPSB.GetCurrentStateType() == typeof(EnemyShotState))
+        if (
+            !projectileTargetList.Contains(hit.transform)
+            && hitPSB
+            && hitPSB.GetCurrentStateType() == typeof(EnemyShotState)
+        )
         {
             if (LockedList.Count < maxTargets && projectileTargetList.Count < maxTargets)
             {
@@ -222,7 +238,8 @@ public class PlayerLocking : MonoBehaviour
 
     private RaycastHit[] PerformEnemyLockBoxCast()
     {
-        int combinedLayerMask = (1 << LayerMask.NameToLayer("Enemy")) | (1 << LayerMask.NameToLayer("Ground"));
+        int combinedLayerMask =
+            (1 << LayerMask.NameToLayer("Enemy")) | (1 << LayerMask.NameToLayer("Ground"));
         RaycastHit[] hits = new RaycastHit[10];
         Physics.BoxCastNonAlloc(
             crosshairCore.RaySpawn.transform.position,
@@ -237,14 +254,17 @@ public class PlayerLocking : MonoBehaviour
     }
 
     private bool IsValidEnemyHit(RaycastHit hit) =>
-        hit.collider != null && hit.collider.CompareTag("Enemy") && crosshairCore.CheckLockProjectiles();
+        hit.collider != null
+        && hit.collider.CompareTag("Enemy")
+        && crosshairCore.CheckLockProjectiles();
 
     private bool ShouldLockOntoEnemy() => crosshairCore.CheckLockEnemies();
 
     private Transform GetEnemyTransform(RaycastHit hit)
     {
         EnemyBasicSetup enemySetup = hit.collider.GetComponentInParent<EnemyBasicSetup>();
-        EnemyBasicDamagablePart damagablePart = hit.collider.GetComponent<EnemyBasicDamagablePart>();
+        EnemyBasicDamagablePart damagablePart =
+            hit.collider.GetComponent<EnemyBasicDamagablePart>();
 
         if (enemySetup != null)
         {
@@ -338,7 +358,8 @@ public class PlayerLocking : MonoBehaviour
         return projectilesToLaunch;
     }
 
-   public void PlayRandomLocking() => FMODUnity.RuntimeManager.PlayOneShot("event:/Player/Locking");
+    public void PlayRandomLocking() =>
+        FMODUnity.RuntimeManager.PlayOneShot("event:/Player/Locking");
 
     public IEnumerator LockVibrate()
     {
@@ -358,10 +379,20 @@ public class PlayerLocking : MonoBehaviour
 
     public Vector3 RaycastTarget()
     {
-        if (Physics.Raycast(crosshairCore.RaySpawn.transform.position, crosshairCore.RaySpawn.transform.forward, out RaycastHit hit, range))
+        if (
+            Physics.Raycast(
+                crosshairCore.RaySpawn.transform.position,
+                crosshairCore.RaySpawn.transform.forward,
+                out RaycastHit hit,
+                range
+            )
+        )
             return hit.point;
         else
-            return new Ray(crosshairCore.RaySpawn.transform.position, crosshairCore.RaySpawn.transform.forward).GetPoint(range);
+            return new Ray(
+                crosshairCore.RaySpawn.transform.position,
+                crosshairCore.RaySpawn.transform.forward
+            ).GetPoint(range);
     }
 
     public void ApplyIncreasedDamage()

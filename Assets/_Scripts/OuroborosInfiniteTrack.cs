@@ -64,7 +64,6 @@ namespace FluffyUnderware.Curvy.Controllers
         private bool enablePrefabGeneration = true;
 
         [Header("Pooling Settings")]
-
         [SerializeField]
         private OccaSoftware.BOP.Pooler prefabPooler;
 
@@ -429,20 +428,35 @@ namespace FluffyUnderware.Curvy.Controllers
                     Vector3 potentialPosition = spline.Interpolate(t);
 
                     bool tooClose = placedPositions.Any(p =>
-                        Vector3.Distance(spline.Interpolate(p), potentialPosition) < minDistanceApart
+                        Vector3.Distance(spline.Interpolate(p), potentialPosition)
+                        < minDistanceApart
                     );
 
                     if (!tooClose)
                     {
                         Quaternion rotation = spline.GetOrientationFast(t);
 
-                        float randomXRotationSubtract = Random.Range(minRandomXRotationSubtract, maxRandomXRotationSubtract);
-                        float randomYRotation = Random.Range(minRandomYRotation, maxRandomYRotation);
-                        float randomZRotation = Random.Range(minRandomZRotation, maxRandomZRotation);
-                        Quaternion rotationAdjustment = Quaternion.Euler(-randomXRotationSubtract, randomYRotation, randomZRotation);
+                        float randomXRotationSubtract = Random.Range(
+                            minRandomXRotationSubtract,
+                            maxRandomXRotationSubtract
+                        );
+                        float randomYRotation = Random.Range(
+                            minRandomYRotation,
+                            maxRandomYRotation
+                        );
+                        float randomZRotation = Random.Range(
+                            minRandomZRotation,
+                            maxRandomZRotation
+                        );
+                        Quaternion rotationAdjustment = Quaternion.Euler(
+                            -randomXRotationSubtract,
+                            randomYRotation,
+                            randomZRotation
+                        );
                         rotation *= rotationAdjustment;
 
-                        Vector3 sideDirection = (Random.value > 0.5f) ? Vector3.right : Vector3.left;
+                        Vector3 sideDirection =
+                            (Random.value > 0.5f) ? Vector3.right : Vector3.left;
                         Vector3 offsetDirection = rotation * sideDirection;
 
                         float sideOffset = Random.Range(7f, 12f) * ((Random.value > 0.5f) ? 1 : -1);

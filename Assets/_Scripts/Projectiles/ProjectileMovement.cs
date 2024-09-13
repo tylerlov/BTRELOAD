@@ -56,7 +56,11 @@ public class ProjectileMovement
         }
         else if (distanceToTarget <= CLOSE_RANGE)
         {
-            return Mathf.Lerp(TURN_FACTOR_VERY_CLOSE, 1f, (distanceToTarget - VERY_CLOSE_RANGE) / (CLOSE_RANGE - VERY_CLOSE_RANGE));
+            return Mathf.Lerp(
+                TURN_FACTOR_VERY_CLOSE,
+                1f,
+                (distanceToTarget - VERY_CLOSE_RANGE) / (CLOSE_RANGE - VERY_CLOSE_RANGE)
+            );
         }
         else if (distanceToTarget >= FAR_RANGE)
         {
@@ -64,7 +68,11 @@ public class ProjectileMovement
         }
         else
         {
-            return Mathf.Lerp(1f, 0.2f, (distanceToTarget - CLOSE_RANGE) / (FAR_RANGE - CLOSE_RANGE));
+            return Mathf.Lerp(
+                1f,
+                0.2f,
+                (distanceToTarget - CLOSE_RANGE) / (FAR_RANGE - CLOSE_RANGE)
+            );
         }
     }
 
@@ -91,7 +99,7 @@ public class ProjectileMovement
             UpdateTargetVelocity();
             Vector3 predictedPosition = PredictTargetPosition();
             Vector3 directionToTarget = (predictedPosition - currentPosition).normalized;
-            
+
             directionToTarget = ApplyInaccuracy(directionToTarget);
 
             float distanceToTarget = Vector3.Distance(currentPosition, predictedPosition);
@@ -103,7 +111,10 @@ public class ProjectileMovement
             speedFactor *= CalculateAccuracyFactor(accuracy, MIN_ACCURACY_SPEED_FACTOR);
 
             CheckIfPassedTarget(currentPosition, predictedPosition);
-            UpdateCloseProximityBehavior(distanceToTarget, _projectile.GetCurrentState() is EnemyShotState ? timeScale : 1f);
+            UpdateCloseProximityBehavior(
+                distanceToTarget,
+                _projectile.GetCurrentState() is EnemyShotState ? timeScale : 1f
+            );
 
             if (_hasPassedTarget || _aggressiveTurnAroundTriggered)
             {
@@ -111,30 +122,85 @@ public class ProjectileMovement
                 speedFactor *= OVERSHOOT_SPEED_MULTIPLIER;
             }
 
-            Vector3 newForward = Vector3.RotateTowards(_projectile.transform.forward, directionToTarget, 
-                turnFactor * MAX_ROTATION_DELTA * Mathf.Deg2Rad * Time.deltaTime * (_projectile.GetCurrentState() is EnemyShotState ? timeScale : 1f), 0f);
-            
+            Vector3 newForward = Vector3.RotateTowards(
+                _projectile.transform.forward,
+                directionToTarget,
+                turnFactor
+                    * MAX_ROTATION_DELTA
+                    * Mathf.Deg2Rad
+                    * Time.deltaTime
+                    * (_projectile.GetCurrentState() is EnemyShotState ? timeScale : 1f),
+                0f
+            );
+
             _projectile.transform.rotation = Quaternion.LookRotation(newForward);
 
-            if (_projectile.rb != null && !_projectile.rb.isKinematic)
+            if (_projectile.rb != null)
             {
-                Vector3 velocityDeviation = Random.insideUnitSphere * CalculateInaccuracyFactor(accuracy) * _projectile.bulletSpeed * VELOCITY_DEVIATION_FACTOR;
-                
-                float speedMultiplier = Vector3.Distance(predictedPosition, _projectile.currentTarget.position) > BASE_APPROACH_VARIATION_RADIUS ? SPEED_INCREASE_FACTOR : 1f;
-                
-                float appliedTimeScale = _projectile.GetCurrentState() is EnemyShotState ? timeScale : 1f;
-                _projectile.rb.velocity = (newForward * _projectile.bulletSpeed * speedFactor * speedMultiplier * appliedTimeScale) + velocityDeviation;
+                Vector3 velocityDeviation =
+                    Random.insideUnitSphere
+                    * CalculateInaccuracyFactor(accuracy)
+                    * _projectile.bulletSpeed
+                    * VELOCITY_DEVIATION_FACTOR;
+
+                float speedMultiplier =
+                    Vector3.Distance(predictedPosition, _projectile.currentTarget.position)
+                    > BASE_APPROACH_VARIATION_RADIUS
+                        ? SPEED_INCREASE_FACTOR
+                        : 1f;
+
+                float appliedTimeScale =
+                    _projectile.GetCurrentState() is EnemyShotState ? timeScale : 1f;
+
+                Vector3 newVelocity =
+                    (
+                        newForward
+                        * _projectile.bulletSpeed
+                        * speedFactor
+                        * speedMultiplier
+                        * appliedTimeScale
+                    ) + velocityDeviation;
+
+                if (_projectile.rb.isKinematic)
+                {
+                    _projectile.rb.MovePosition(_projectile.rb.position + newVelocity * Time.fixedDeltaTime);
+                }
+                else
+                {
+                    _projectile.rb.velocity = newVelocity;
+                }
             }
         }
-        else if (_projectile.rb != null && !_projectile.rb.isKinematic)
+        else if (_projectile.rb != null)
         {
             Vector3 velocityDeviation = Random.insideUnitSphere * CalculateInaccuracyFactor(_projectile.GetAccuracy()) * _projectile.bulletSpeed * VELOCITY_DEVIATION_FACTOR * 0.5f;
-            _projectile.rb.velocity = (_projectile.transform.forward * _projectile.bulletSpeed) + velocityDeviation;
+            Vector3 newVelocity = (_projectile.transform.forward * _projectile.bulletSpeed) + velocityDeviation;
+
+            if (_projectile.rb.isKinematic)
+            {
+                _projectile.rb.MovePosition(_projectile.rb.position + newVelocity * Time.fixedDeltaTime);
+            }
+            else
+            {
+                _projectile.rb.velocity = newVelocity;
+            }
         }
 
-        if (_projectile.rb.velocity.magnitude < MIN_VELOCITY)
+        if (_projectile.rb != null && !_projectile.rb.isKinematic)
         {
-            _projectile.rb.velocity = _projectile.rb.velocity.normalized * MIN_VELOCITY;
+            if (_projectile.rb.velocity.magnitude < MIN_VELOCITY)
+            {
+                _projectile.rb.velocity = _projectile.rb.velocity.normalized * MIN_VELOCITY;
+            }
+        }
+        else if (_projectile.rb != null && _projectile.rb.isKinematic)
+        {
+            Vector3 currentVelocity = (_projectile.rb.position - _lastPosition) / Time.fixedDeltaTime;
+            if (currentVelocity.magnitude < MIN_VELOCITY)
+            {
+                Vector3 newVelocity = currentVelocity.normalized * MIN_VELOCITY;
+                _projectile.rb.MovePosition(_projectile.rb.position + newVelocity * Time.fixedDeltaTime);
+            }
         }
 
         _lastPosition = currentPosition;
@@ -146,7 +212,10 @@ public class ProjectileMovement
         {
             float inaccuracyFactor = CalculateInaccuracyFactor(_projectile.GetAccuracy());
             float inaccuracyAngle = inaccuracyFactor * MAX_INACCURACY_ANGLE;
-            Quaternion randomRotation = Quaternion.AngleAxis(Random.Range(-inaccuracyAngle, inaccuracyAngle), Random.onUnitSphere);
+            Quaternion randomRotation = Quaternion.AngleAxis(
+                Random.Range(-inaccuracyAngle, inaccuracyAngle),
+                Random.onUnitSphere
+            );
             return randomRotation * direction;
         }
         return direction;
@@ -206,7 +275,11 @@ public class ProjectileMovement
         }
         else
         {
-            return Mathf.Lerp(MIN_SPEED_FACTOR, 1f, (distanceToTarget - CLOSE_RANGE) / (FAR_RANGE - CLOSE_RANGE));
+            return Mathf.Lerp(
+                MIN_SPEED_FACTOR,
+                1f,
+                (distanceToTarget - CLOSE_RANGE) / (FAR_RANGE - CLOSE_RANGE)
+            );
         }
     }
 
@@ -214,7 +287,14 @@ public class ProjectileMovement
     {
         ConditionalDebug.Log("Projectile stuck detected. Resetting movement.");
         _projectile.homing = true;
-        _projectile.rb.velocity = _projectile.transform.forward * _projectile.bulletSpeed;
+        if (_projectile.rb.isKinematic)
+        {
+            _projectile.rb.MovePosition(_projectile.rb.position + _projectile.transform.forward * _projectile.bulletSpeed * Time.fixedDeltaTime);
+        }
+        else
+        {
+            _projectile.rb.velocity = _projectile.transform.forward * _projectile.bulletSpeed;
+        }
         _stuckFrameCount = 0;
     }
 
@@ -240,17 +320,27 @@ public class ProjectileMovement
         float timeToReachTarget = distanceToTarget / _projectile.bulletSpeed;
 
         float accuracy = _projectile.GetAccuracy();
-        float predictionTime = Mathf.Lerp(MIN_ACCURACY_PREDICTION_TIME, MAX_ACCURACY_PREDICTION_TIME, Mathf.Pow(accuracy, 1f / INACCURACY_CURVE_STEEPNESS));
-        float varianceFactor = Random.Range(-MAX_PREDICTION_VARIANCE, MAX_PREDICTION_VARIANCE) * CalculateInaccuracyFactor(accuracy);
+        float predictionTime = Mathf.Lerp(
+            MIN_ACCURACY_PREDICTION_TIME,
+            MAX_ACCURACY_PREDICTION_TIME,
+            Mathf.Pow(accuracy, 1f / INACCURACY_CURVE_STEEPNESS)
+        );
+        float varianceFactor =
+            Random.Range(-MAX_PREDICTION_VARIANCE, MAX_PREDICTION_VARIANCE)
+            * CalculateInaccuracyFactor(accuracy);
         float adjustedPredictionTime = predictionTime * (1f + varianceFactor);
 
         adjustedPredictionTime = Mathf.Min(adjustedPredictionTime, timeToReachTarget * 0.5f);
 
-        Vector3 predictedPosition = targetPosition + _targetVelocity * (timeToReachTarget + adjustedPredictionTime);
+        Vector3 predictedPosition =
+            targetPosition + _targetVelocity * (timeToReachTarget + adjustedPredictionTime);
 
         float approachVariationRadius = BASE_APPROACH_VARIATION_RADIUS * (2f - accuracy);
 
-        Vector3 randomDirection = GenerateRandomApproachDirection(_projectile.transform.position, targetPosition);
+        Vector3 randomDirection = GenerateRandomApproachDirection(
+            _projectile.transform.position,
+            targetPosition
+        );
 
         Vector3 offset = randomDirection * approachVariationRadius;
         predictedPosition += offset;
@@ -258,15 +348,18 @@ public class ProjectileMovement
         return predictedPosition;
     }
 
-    private Vector3 GenerateRandomApproachDirection(Vector3 projectilePosition, Vector3 targetPosition)
+    private Vector3 GenerateRandomApproachDirection(
+        Vector3 projectilePosition,
+        Vector3 targetPosition
+    )
     {
         Vector3 toTarget = targetPosition - projectilePosition;
         Vector3 perpendicularDir = Vector3.Cross(toTarget, Vector3.up).normalized;
 
         float angle = Random.Range(0f, 360f - MAX_BEHIND_ANGLE * 2f) + MAX_BEHIND_ANGLE;
-        
+
         Quaternion rotation = Quaternion.AngleAxis(angle, toTarget);
-        
+
         return rotation * perpendicularDir;
     }
 

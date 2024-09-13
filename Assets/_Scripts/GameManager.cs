@@ -2,25 +2,29 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Cinemachine;
+using Michsky.UI.Reach;
+using PrimeTween;
 using UnityEngine;
 using UnityEngine.Events;
-using Cinemachine;
-using PrimeTween;
-using Michsky.UI.Reach;
 
 public class GameManager : MonoBehaviour
 {
     public static GameManager Instance { get; private set; }
 
     [Header("Player Reference")]
-    [SerializeField] private PlayerMovement playerMovement;
+    [SerializeField]
+    private PlayerMovement playerMovement;
     private PlayerHealth playerHealth;
-    [SerializeField] private bool isPlayerInvincible = false;
+
+    [SerializeField]
+    private bool isPlayerInvincible = false;
 
     [Header("Dependencies")]
     public EnemyShootingManager enemyShootingManager;
 
-    [SerializeField] private PauseMenuManager pauseMenuManager;
+    [SerializeField]
+    private PauseMenuManager pauseMenuManager;
 
     private CinemachineStateDrivenCamera stateDrivenCamera;
     private DebugSettings debugSettings;
@@ -28,7 +32,6 @@ public class GameManager : MonoBehaviour
 
     private List<Transform> spawnedEnemies = new List<Transform>();
     private Dictionary<Transform, bool> lockedEnemies = new Dictionary<Transform, bool>();
-
 
     public int totalPlayerProjectilesShot = 0;
     public int playerProjectileHits = 0;
@@ -39,8 +42,8 @@ public class GameManager : MonoBehaviour
     public SceneManagerBTR SceneManagerBTR { get; private set; }
 
     public static readonly string TransCamOnEvent = EventManager.TransCamOnEvent;
-public static readonly string StartingTransitionEvent = EventManager.StartingTransitionEvent;
-public static readonly string TransCamOffEvent = "TransCamOff";
+    public static readonly string StartingTransitionEvent = EventManager.StartingTransitionEvent;
+    public static readonly string TransCamOffEvent = "TransCamOff";
 
     private void Awake()
     {
@@ -91,7 +94,12 @@ public static readonly string TransCamOffEvent = "TransCamOff";
         TimeManager = GetComponent<TimeManager>();
         SceneManagerBTR = GetComponent<SceneManagerBTR>();
 
-        if (ScoreManager == null || MusicManager == null || TimeManager == null || SceneManagerBTR == null)
+        if (
+            ScoreManager == null
+            || MusicManager == null
+            || TimeManager == null
+            || SceneManagerBTR == null
+        )
         {
             Debug.LogError("One or more manager components are missing on the GameManager object.");
         }
@@ -119,30 +127,34 @@ public static readonly string TransCamOffEvent = "TransCamOff";
         UnityEngine.SceneManagement.SceneManager.sceneLoaded -= InitializeListenersAndComponents;
     }
 
-private async void Start()
+    private async void Start()
     {
         //MusicManager.FindActiveFMODInstance();
         TimeManager.InitializeDebugTimeScale();
 
         // Initialize scenes
         await SceneManagerBTR.InitializeScenes();
-        
     }
 
-    public void InitializeListenersAndComponents(UnityEngine.SceneManagement.Scene scene, UnityEngine.SceneManagement.LoadSceneMode mode)
+    public void InitializeListenersAndComponents(
+        UnityEngine.SceneManagement.Scene scene,
+        UnityEngine.SceneManagement.LoadSceneMode mode
+    )
     {
-        UnityMainThreadDispatcher.Instance().Enqueue(() =>
-        {
-            InitializeCameraSwitching();
-            InitializeCrosshair();
-            InitializeShooterMovement();
-
-            stateDrivenCamera = FindObjectOfType<CinemachineStateDrivenCamera>();
-            if (stateDrivenCamera == null)
+        UnityMainThreadDispatcher
+            .Instance()
+            .Enqueue(() =>
             {
-                Debug.LogError("No Cinemachine State Driven Camera found in the scene.");
-            }
-        });
+                InitializeCameraSwitching();
+                InitializeCrosshair();
+                InitializeShooterMovement();
+
+                stateDrivenCamera = FindObjectOfType<CinemachineStateDrivenCamera>();
+                if (stateDrivenCamera == null)
+                {
+                    Debug.LogError("No Cinemachine State Driven Camera found in the scene.");
+                }
+            });
     }
 
     private void InitializeCameraSwitching()
@@ -150,8 +162,14 @@ private async void Start()
         var cameraSwitching = FindObjectOfType<CinemachineCameraSwitching>();
         if (cameraSwitching != null)
         {
-            EventManager.Instance.AddListener(EventManager.TransCamOnEvent, cameraSwitching.SwitchToTransitionCamera);
-            EventManager.Instance.AddListener(EventManager.StartingTransitionEvent, cameraSwitching.SwitchToTransitionCamera);
+            EventManager.Instance.AddListener(
+                EventManager.TransCamOnEvent,
+                cameraSwitching.SwitchToTransitionCamera
+            );
+            EventManager.Instance.AddListener(
+                EventManager.StartingTransitionEvent,
+                cameraSwitching.SwitchToTransitionCamera
+            );
         }
         else
         {
@@ -161,7 +179,10 @@ private async void Start()
 
     private void InitializeCrosshair()
     {
-        EventManager.Instance.AddListener(EventManager.TransCamOnEvent, PlayerLocking.Instance.ReleasePlayerLocks);
+        EventManager.Instance.AddListener(
+            EventManager.TransCamOnEvent,
+            PlayerLocking.Instance.ReleasePlayerLocks
+        );
     }
 
     private void InitializeShooterMovement()
@@ -179,7 +200,8 @@ private async void Start()
 
     public void HandlePlayerDeath()
     {
-        if (isPlayerDead) return;
+        if (isPlayerDead)
+            return;
 
         isPlayerDead = true;
         Debug.Log("Player has died. Pausing game and showing menu.");
@@ -339,7 +361,7 @@ private async void Start()
         }
     }
 
-       public void LogProjectileHit(bool isPlayerShot, bool hitEnemy, string additionalInfo = "")
+    public void LogProjectileHit(bool isPlayerShot, bool hitEnemy, string additionalInfo = "")
     {
         if (isPlayerShot && hitEnemy)
         {
@@ -369,11 +391,20 @@ private async void Start()
         var cameraSwitching = FindObjectOfType<CinemachineCameraSwitching>();
         if (cameraSwitching != null)
         {
-            EventManager.Instance.RemoveListener(EventManager.TransCamOnEvent, cameraSwitching.SwitchToTransitionCamera);
-            EventManager.Instance.RemoveListener(EventManager.StartingTransitionEvent, cameraSwitching.SwitchToTransitionCamera);
+            EventManager.Instance.RemoveListener(
+                EventManager.TransCamOnEvent,
+                cameraSwitching.SwitchToTransitionCamera
+            );
+            EventManager.Instance.RemoveListener(
+                EventManager.StartingTransitionEvent,
+                cameraSwitching.SwitchToTransitionCamera
+            );
         }
 
-        EventManager.Instance.RemoveListener(EventManager.TransCamOnEvent, PlayerLocking.Instance.ReleasePlayerLocks);
+        EventManager.Instance.RemoveListener(
+            EventManager.TransCamOnEvent,
+            PlayerLocking.Instance.ReleasePlayerLocks
+        );
 
         var shooterMovement = FindObjectOfType<ShooterMovement>();
         if (shooterMovement != null)

@@ -1,10 +1,10 @@
-using UnityEngine;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using UnityEngine.InputSystem;
 using FMODUnity;
 using SonicBloom.Koreo;
+using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
 
 public class CrosshairCore : MonoBehaviour
@@ -13,19 +13,35 @@ public class CrosshairCore : MonoBehaviour
 
     #region Core References
     [Header("Core References")]
-    [SerializeField] private GameObject Player;
-    [SerializeField] private GameObject LineToTarget;
-    [SerializeField] public GameObject RaySpawn;
-    [SerializeField] public GameObject RaySpawnEnemyLocking;
-    [SerializeField] public GameObject Reticle;
-    [SerializeField] public GameObject BonusDamage;
+    [SerializeField]
+    private GameObject Player;
+
+    [SerializeField]
+    private GameObject LineToTarget;
+
+    [SerializeField]
+    public GameObject RaySpawn;
+
+    [SerializeField]
+    public GameObject RaySpawnEnemyLocking;
+
+    [SerializeField]
+    public GameObject Reticle;
+
+    [SerializeField]
+    public GameObject BonusDamage;
     #endregion
 
     #region Lock-On Visuals
     [Header("Lock-On Visuals")]
-    [SerializeField] public GameObject lockOnPrefab;
-    [SerializeField] public float initialScale = 1f;
-    [SerializeField] public float initialTransparency = 0.5f;
+    [SerializeField]
+    public GameObject lockOnPrefab;
+
+    [SerializeField]
+    public float initialScale = 1f;
+
+    [SerializeField]
+    public float initialTransparency = 0.5f;
     #endregion
 
     #region Input and Time
@@ -46,16 +62,21 @@ public class CrosshairCore : MonoBehaviour
     #endregion
 
     #region Components
-    [HideInInspector] public StudioEventEmitter musicPlayback;
+    [HideInInspector]
+    public StudioEventEmitter musicPlayback;
     #endregion
 
     #region Koreography Events
     [Header("Koreography Events")]
-    [EventID] public string eventIDShooting;
-    [EventID] public string eventIDRewindTime;
+    [EventID]
+    public string eventIDShooting;
+
+    [EventID]
+    public string eventIDRewindTime;
     #endregion
 
-    [SerializeField] private LayerMask groundMask;
+    [SerializeField]
+    private LayerMask groundMask;
     public bool showRaycastGizmo = true;
     private float tapStartTime;
     private const float tapThreshold = 0.1f;
@@ -87,6 +108,7 @@ public class CrosshairCore : MonoBehaviour
     {
         UnregisterKoreographyEvents();
     }
+
     private void OnDestroy()
     {
         SceneManager.sceneLoaded -= GetComponent<PlayerLocking>().OnSceneLoaded;
@@ -104,7 +126,9 @@ public class CrosshairCore : MonoBehaviour
         {
             musicPlayback = musicGameObject.GetComponent<StudioEventEmitter>();
             if (musicPlayback == null)
-                Debug.LogError("StudioEventEmitter component not found on 'FMOD Music' GameObject.");
+                Debug.LogError(
+                    "StudioEventEmitter component not found on 'FMOD Music' GameObject."
+                );
         }
         else
             Debug.LogError("GameObject with name 'FMOD Music' not found in the scene.");
@@ -121,7 +145,6 @@ public class CrosshairCore : MonoBehaviour
         GetComponent<PlayerTimeControl>().HandleRewindTime();
         GetComponent<PlayerTimeControl>().HandleRewindToBeat();
         GetComponent<PlayerTimeControl>().HandleSlowToBeat();
-
     }
 
     private void HandleInput()
@@ -137,14 +160,16 @@ public class CrosshairCore : MonoBehaviour
         }
     }
 
-    public bool CheckLockProjectilesButtonDown() => playerInputActions.Player.LockProjectiles.triggered;
+    public bool CheckLockProjectilesButtonDown() =>
+        playerInputActions.Player.LockProjectiles.triggered;
 
     public bool CheckLockProjectilesButtonUp()
     {
         return !playerInputActions.Player.LockProjectiles.IsPressed();
     }
 
-    public bool CheckLockProjectiles() => playerInputActions.Player.LockProjectiles.ReadValue<float>() > 0;
+    public bool CheckLockProjectiles() =>
+        playerInputActions.Player.LockProjectiles.ReadValue<float>() > 0;
 
     public bool CheckLockEnemies() => playerInputActions.Player.LockEnemies.ReadValue<float>() > 0;
 
@@ -180,9 +205,14 @@ public class CrosshairCore : MonoBehaviour
         PlayerShooting playerShooting = GetComponent<PlayerShooting>();
         PlayerLocking playerLocking = GetComponent<PlayerLocking>();
 
-        if ((!CheckLockProjectiles() || playerLocking.triggeredLockFire) && playerLocking.LockedList.Count > 0 && Time.timeScale != 0f)
+        if (
+            (!CheckLockProjectiles() || playerLocking.triggeredLockFire)
+            && playerLocking.LockedList.Count > 0
+            && Time.timeScale != 0f
+        )
         {
-            List<PlayerLockedState> projectilesToLaunch = playerLocking.PrepareProjectilesToLaunch();
+            List<PlayerLockedState> projectilesToLaunch =
+                playerLocking.PrepareProjectilesToLaunch();
 
             if (projectilesToLaunch.Count > 0)
                 StartCoroutine(playerShooting.LaunchProjectilesWithDelay(projectilesToLaunch));
@@ -198,11 +228,17 @@ public class CrosshairCore : MonoBehaviour
     {
         PlayerLocking playerLocking = GetComponent<PlayerLocking>();
 
-        if (CheckLockProjectiles() && playerLocking.projectileTargetList.Count > 0 && Time.timeScale != 0f)
+        if (
+            CheckLockProjectiles()
+            && playerLocking.projectileTargetList.Count > 0
+            && Time.timeScale != 0f
+        )
         {
             var target = playerLocking.projectileTargetList[0];
             target.transform.GetChild(0).gameObject.SetActive(true);
-            target.GetComponent<ProjectileStateBased>().ChangeState(new PlayerLockedState(target.GetComponent<ProjectileStateBased>()));
+            target
+                .GetComponent<ProjectileStateBased>()
+                .ChangeState(new PlayerLockedState(target.GetComponent<ProjectileStateBased>()));
             playerLocking.LockedList.Add(target);
             StartCoroutine(playerLocking.LockVibrate());
             playerLocking.lockFeedback.PlayFeedbacks();

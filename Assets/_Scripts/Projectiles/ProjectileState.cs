@@ -1,4 +1,5 @@
 using UnityEngine;
+
 public abstract class ProjectileState
 {
     protected ProjectileStateBased _projectile;
@@ -9,14 +10,20 @@ public abstract class ProjectileState
     }
 
     public virtual void FixedUpdate(float timeScale) { }
+
     public virtual void OnTriggerEnter(Collider other) { }
+
     public virtual void OnDeath() { }
+
     public virtual void OnStateEnter() { }
+
     public virtual void OnStateExit() { }
+
     public virtual void Update() { }
+
     public virtual void CustomUpdate(float timeScale) { }
 
-     public ProjectileStateBased GetProjectile()
+    public ProjectileStateBased GetProjectile()
     {
         return _projectile;
     }
