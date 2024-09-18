@@ -178,6 +178,10 @@ public class ProjectileStateBased : MonoBehaviour
 
     public float creationTime;
 
+    public bool isMissing { get; set; }
+
+    public bool isFromStaticEnemy = false;
+
     private void Awake()
     {
         cachedTransform = transform;
@@ -246,10 +250,8 @@ public class ProjectileStateBased : MonoBehaviour
 
     private void OnDisable()
     {
-        if (ProjectileManager.Instance != null)
-        {
-            ProjectileManager.Instance.UnregisterProjectile(this);
-        }
+        // Return to pool when disabled
+        ProjectilePool.Instance.ReturnProjectile(this);
     }
 
     private void Start()
@@ -266,7 +268,13 @@ public class ProjectileStateBased : MonoBehaviour
 
     public void CustomUpdate(float timeScale)
     {
-        Debug.Log($"[ProjectileStateBased] ID: {GetInstanceID()}, State: {CurrentStateName}, Position: {transform.position}, Velocity: {rb.velocity}, TimeScale: {timeScale}");
+        if (homing && currentTarget != null)
+        {
+            Vector3 directionToTarget = (currentTarget.position - transform.position).normalized;
+            transform.rotation = Quaternion.RotateTowards(transform.rotation, Quaternion.LookRotation(directionToTarget), turnRate * Time.deltaTime * timeScale);
+        }
+
+        ConditionalDebug.Log($"[ProjectileStateBased] ID: {GetInstanceID()}, State: {CurrentStateName}, Position: {transform.position}, Velocity: {rb.velocity}, TimeScale: {timeScale}");
 
         currentState?.CustomUpdate(timeScale);
 
@@ -355,7 +363,8 @@ public class ProjectileStateBased : MonoBehaviour
     public void SetHomingTarget(Transform target)
     {
         currentTarget = target;
-        EnableHoming(true);
+        homing = (target != null);
+        Debug.Log($"[ProjectileStateBased] Homing target set to {(target != null ? target.name : "None")}. Homing: {homing}");
     }
 
     public void EnableHoming(bool enable)
@@ -506,6 +515,7 @@ public class ProjectileStateBased : MonoBehaviour
 
         accuracy = 1f;
         lifetime = initialLifetime;
+        isMissing = false;
     }
 
     public void SetDamageMultiplier(float multiplier)
@@ -614,5 +624,45 @@ public class ProjectileStateBased : MonoBehaviour
     public bool ShouldDeactivate(float currentTime)
     {
         return currentTime < creationTime;
+    }
+
+    public void ReturnToPool()
+    {
+        // Reset any necessary properties
+        rb.velocity = Vector3.zero;
+        transform.position = Vector3.zero;
+        gameObject.SetActive(false);
+
+        // Return to pool
+        ProjectilePool.Instance.ReturnProjectileToPool(this);
+    }
+
+    public void SetupProjectile(float damage, float speed, float lifetime, bool homing, float scale, Transform target, bool isStatic)
+    {
+        this.damageAmount = damage;
+        this.bulletSpeed = speed;
+        this.lifetime = lifetime;
+        this.homing = homing;
+        this.currentTarget = target;
+        this.isFromStaticEnemy = isStatic;
+        
+        transform.localScale = Vector3.one * scale;
+
+        Debug.Log($"[ProjectileStateBased] Set up projectile with scale: {scale}, Target: {(target != null ? target.name : "None")}, IsStatic: {isStatic}, Speed: {speed}, Lifetime: {lifetime}, Homing: {homing}");
+
+        // Only add radar symbol if it's not from a static enemy
+        if (!isFromStaticEnemy)
+        {
+            GameObject radarSymbol = ProjectileEffectManager.Instance.GetRadarSymbolFromPool();
+            if (radarSymbol != null)
+            {
+                radarSymbol.transform.SetParent(transform);
+                radarSymbol.transform.localPosition = Vector3.zero;
+                radarSymbol.SetActive(true);
+            }
+        }
+
+        // Ensure the projectile is in the correct state
+        ChangeState(new EnemyShotState(this, target));
     }
 }

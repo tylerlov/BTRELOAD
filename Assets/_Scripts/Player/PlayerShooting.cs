@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq; // Add this for LINQ methods
 using DG.Tweening;
 using FMODUnity;
 using MoreMountains.Feedbacks;
@@ -25,6 +26,7 @@ public class PlayerShooting : MonoBehaviour
     private PlayerLocking playerLocking;
     private CrosshairCore crosshairCore;
     private float lastFireTime;
+    private WaitForSeconds launchDelayWait; // Add this line
     #endregion
 
     #region Object Pooling
@@ -33,6 +35,8 @@ public class PlayerShooting : MonoBehaviour
     private int lockOnEffectPoolSize = 10;
     private Queue<GameObject> lockOnEffectPool;
     #endregion
+
+    private Sequence lockOnSequence;
 
     private void Awake()
     {
@@ -50,6 +54,8 @@ public class PlayerShooting : MonoBehaviour
         playerLocking = GetComponent<PlayerLocking>();
         crosshairCore = GetComponent<CrosshairCore>();
         InitializeLockOnEffectPool();
+        InitializeLockOnSequence();
+        launchDelayWait = new WaitForSeconds(launchDelay);
     }
 
     private void InitializeLockOnEffectPool()
@@ -64,6 +70,13 @@ public class PlayerShooting : MonoBehaviour
             lockOnEffect.SetActive(false);
             lockOnEffectPool.Enqueue(lockOnEffect);
         }
+    }
+
+    private void InitializeLockOnSequence()
+    {
+        lockOnSequence = DOTween.Sequence();
+        lockOnSequence.SetAutoKill(false);
+        lockOnSequence.Pause();
     }
 
     public void HandleShootingEffects()
@@ -84,43 +97,34 @@ public class PlayerShooting : MonoBehaviour
         yield return new WaitForSeconds(.1f);
     }
 
-    public IEnumerator LaunchProjectilesWithDelay(List<PlayerLockedState> projectilesToLaunch)
+   public IEnumerator LaunchProjectilesWithDelay(List<PlayerLockedState> projectilesToLaunch)
+{
+    crosshairCore.lastProjectileLaunchTime = Time.time;
+    Debug.Log($"Projectiles launched at {crosshairCore.lastProjectileLaunchTime}");
+
+    float totalDamage = projectilesToLaunch.Sum(state => state.GetProjectile()?.damageAmount ?? 0f);
+    List<Transform> enemiesHit = projectilesToLaunch.Select(state => state.GetTarget()).ToList();
+
+    foreach (var lockedState in projectilesToLaunch)
     {
-        crosshairCore.lastProjectileLaunchTime = Time.time;
-        Debug.Log($"Projectiles launched at {crosshairCore.lastProjectileLaunchTime}");
+        ProjectileStateBased projectile = lockedState.GetProjectile();
 
-        // Populate the qteEnemyLockList with current locked targets
-        playerLocking.qteEnemyLockList.Clear();
-        foreach (var lockedState in projectilesToLaunch)
+        if (projectile != null)
         {
-            if (lockedState.GetProjectile()?.currentTarget != null)
-            {
-                playerLocking.qteEnemyLockList.Add(lockedState.GetProjectile().currentTarget);
-            }
+            projectile.ReturnToPool();
+            AnimateLockOnEffect();
+            yield return launchDelayWait;
         }
-        Debug.Log(
-            $"QTE Enemy Lock List populated with {playerLocking.qteEnemyLockList.Count} targets"
-        );
-
-        for (int i = 0; i < projectilesToLaunch.Count; i++)
-        {
-            PlayerLockedState lockedState = projectilesToLaunch[i];
-            ProjectileStateBased projectile = lockedState.GetProjectile();
-
-            if (projectile != null)
-            {
-                if (projectile.currentTarget != null)
-                    lockedState.LaunchAtEnemy(projectile.currentTarget);
-                else
-                    lockedState.LaunchBack();
-
-                AnimateLockOnEffect();
-                yield return new WaitForSeconds(launchDelay);
-            }
-        }
-
-        playerLocking.ClearLockedTargets();
     }
+
+    Debug.Log($"Total damage to be applied: {totalDamage}");
+    
+    // Apply damage to locked enemies
+    playerLocking.DamageLockedEnemies(totalDamage, enemiesHit);
+    
+    // Clear locked targets after applying damage
+    playerLocking.ClearLockedTargets();
+}
 
     public void AnimateLockOnEffect()
     {
@@ -138,16 +142,16 @@ public class PlayerShooting : MonoBehaviour
                 initialColor.a = crosshairCore.initialTransparency;
                 spriteRenderer.color = initialColor;
 
-                spriteRenderer.DOFade(1f, 0.5f);
+                lockOnSequence.Append(spriteRenderer.DOFade(1f, 0.5f));
             }
 
-            lockOnInstance
-                .transform.DOScale(Vector3.zero, 1f)
-                .OnComplete(() =>
-                {
-                    lockOnInstance.SetActive(false);
-                    lockOnEffectPool.Enqueue(lockOnInstance);
-                });
+            lockOnSequence.Append(lockOnInstance.transform.DOScale(Vector3.zero, 1f));
+            lockOnSequence.AppendCallback(() => {
+                lockOnInstance.SetActive(false);
+                lockOnEffectPool.Enqueue(lockOnInstance);
+            });
+
+            lockOnSequence.Restart();
         }
     }
 }

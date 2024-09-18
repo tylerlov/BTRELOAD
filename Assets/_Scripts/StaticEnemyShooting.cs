@@ -29,7 +29,6 @@ public class StaticEnemyShooting : MonoBehaviour
     void Awake()
     {
         cachedTransform = transform;
-        // Remove the UpdateDirectionToTarget() call as it's no longer needed
     }
 
     public void OnEnable()
@@ -44,17 +43,17 @@ public class StaticEnemyShooting : MonoBehaviour
 
     public void Shoot()
     {
+        ConditionalDebug.Log($"[StaticEnemyShooting] Shoot method called on {gameObject.name}");
         if (this == null || !gameObject.activeInHierarchy || EnemyShootingManager.Instance == null)
         {
+            ConditionalDebug.LogWarning($"[StaticEnemyShooting] Shoot conditions not met for {gameObject.name}");
             return;
         }
 
         float currentTime = EnemyShootingManager.Instance.GetCurrentTime();
         if (currentTime - lastShootTime < minTimeBetweenShots)
         {
-            ConditionalDebug.Log(
-                $"[StaticEnemyShooting] Skipped shot due to rapid firing at {currentTime}"
-            );
+            ConditionalDebug.Log($"[StaticEnemyShooting] Skipped shot due to rapid firing at {currentTime}");
             return;
         }
 
@@ -64,21 +63,29 @@ public class StaticEnemyShooting : MonoBehaviour
 
     private void PerformShoot()
     {
-        if (ProjectileManager.Instance == null)
+        ConditionalDebug.Log($"[StaticEnemyShooting] PerformShoot called for {gameObject.name}");
+        if (ProjectileSpawner.Instance == null)
         {
-            ConditionalDebug.LogError("[StaticEnemyShooting] ProjectileManager instance is null.");
+            ConditionalDebug.LogError("[StaticEnemyShooting] ProjectileSpawner instance is null.");
             return;
         }
 
-        ProjectileSpawner.Instance.ShootProjectile(
+        ProjectileSpawner.Instance.ShootProjectileFromEnemy(
             cachedTransform.position,
-            Quaternion.LookRotation(Vector3.up), // Change this to shoot upward
+            Quaternion.LookRotation(Vector3.up),
             shootSpeed,
             projectileLifetime,
             projectileScale,
-            false,
-            alternativeProjectileMaterial
+            10f,
+            enableHoming: false,
+            alternativeProjectileMaterial,
+            "",
+            -1f,
+            null,
+            true // Add this parameter to indicate it's from a static enemy
         );
+
+        ConditionalDebug.Log($"[StaticEnemyShooting] Projectile shot from {gameObject.name}");
     }
 
     // Remove the UpdateDirectionToTarget() method as it's no longer needed

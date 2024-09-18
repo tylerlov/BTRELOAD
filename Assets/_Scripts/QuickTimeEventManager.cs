@@ -26,6 +26,20 @@ public class QuickTimeEventManager : MonoBehaviour
     [SerializeField]
     private EventReference failureSoundEvent;
 
+    // Add these new variables
+    [SerializeField]
+    private int minSequenceLength = 3;
+    [SerializeField]
+    private int maxSequenceLength = 6;
+    [SerializeField]
+    private Image progressBar;
+    [SerializeField]
+    private Color correctInputColor = Color.green;
+    [SerializeField]
+    private Color incorrectInputColor = Color.red;
+    [SerializeField]
+    private float colorChangeTime = 0.1f;
+
     private string[] directions = { "↑", "→", "↓", "←" };
     private char[] currentSequence;
     private int currentIndex = 0;
@@ -39,6 +53,9 @@ public class QuickTimeEventManager : MonoBehaviour
     private DefaultControls playerInputActions;
 
     private Coroutine qteCoroutine;
+
+    private const float INPUT_BUFFER_TIME = 0.1f;
+    private float lastInputTime;
 
     private void Awake()
     {
@@ -66,22 +83,29 @@ public class QuickTimeEventManager : MonoBehaviour
 
     public void StartQTE(float duration)
     {
+        StartQTE(duration, minSequenceLength);
+    }
+
+    public void StartQTE(float duration, int difficulty)
+    {
         if (isQteActive)
             return;
 
-        Debug.Log($"QTE Started. Duration: {duration} seconds");
+        Debug.Log($"QTE Started. Duration: {duration} seconds, Difficulty: {difficulty}");
         isQteActive = true;
         qteStartTime = Time.time;
-        currentSequence = GenerateSequence().ToCharArray();
+        currentSequence = GenerateSequence(difficulty).ToCharArray();
         currentIndex = 0;
         qtePanel.SetActive(true);
+        UpdateProgressBar();
         qteCoroutine = StartCoroutine(DisplayQTE(duration));
     }
 
-    private string GenerateSequence()
+    private string GenerateSequence(int difficulty)
     {
+        int length = Mathf.Clamp(difficulty, minSequenceLength, maxSequenceLength);
         string sequence = "";
-        for (int i = 0; i < 4; i++)
+        for (int i = 0; i < length; i++)
         {
             sequence += directions[UnityEngine.Random.Range(0, directions.Length)];
         }
@@ -99,6 +123,7 @@ public class QuickTimeEventManager : MonoBehaviour
             if (CheckInput())
             {
                 currentIndex++;
+                UpdateProgressBar();
                 if (currentIndex >= currentSequence.Length)
                 {
                     Debug.Log("QTE Completed Successfully");
@@ -118,6 +143,14 @@ public class QuickTimeEventManager : MonoBehaviour
     private bool CheckInput()
     {
         bool inputCorrect = false;
+        float currentTime = Time.time;
+
+        if (currentTime - lastInputTime < INPUT_BUFFER_TIME)
+        {
+            return false;
+        }
+
+        bool wrongInputDetected = false;
 
         if (
             playerInputActions.Player.Up.WasPressedThisFrame()
@@ -148,9 +181,15 @@ public class QuickTimeEventManager : MonoBehaviour
             inputCorrect = true;
         }
 
+        if (inputCorrect || wrongInputDetected)
+        {
+            lastInputTime = currentTime;
+        }
+
         if (inputCorrect)
         {
             RuntimeManager.PlayOneShot(successSoundEvent);
+            StartCoroutine(ChangeTextColor(correctInputColor));
         }
         else if (
             playerInputActions.Player.Up.WasPressedThisFrame()
@@ -160,10 +199,19 @@ public class QuickTimeEventManager : MonoBehaviour
         )
         {
             RuntimeManager.PlayOneShot(failureSoundEvent);
+            StartCoroutine(ChangeTextColor(incorrectInputColor));
             EndQTE(false);
         }
 
         return inputCorrect;
+    }
+
+    private IEnumerator ChangeTextColor(Color targetColor)
+    {
+        Color originalColor = qteText.color;
+        qteText.color = targetColor;
+        yield return new WaitForSeconds(colorChangeTime);
+        qteText.color = originalColor;
     }
 
     public void EndQTE(bool success = false)
@@ -179,6 +227,23 @@ public class QuickTimeEventManager : MonoBehaviour
             isQteActive = false;
             qtePanel.SetActive(false);
             OnQteComplete?.Invoke(success);
+        }
+    }
+
+    public void CancelQTE()
+    {
+        if (isQteActive)
+        {
+            Debug.Log("QTE Cancelled");
+            EndQTE(false);
+        }
+    }
+
+    private void UpdateProgressBar()
+    {
+        if (progressBar != null)
+        {
+            progressBar.fillAmount = (float)currentIndex / currentSequence.Length;
         }
     }
 }

@@ -153,4 +153,9 @@ public class PlayerLockedState : ProjectileState
         PlayerShotState newState = new PlayerShotState(_projectile, 1f, target, true);
         _projectile.ChangeState(newState);
     }
+
+    public Transform GetTarget()
+    {
+        return _projectile.currentTarget;
+    }
 }

@@ -91,7 +91,7 @@ public class PlayerTimeControl : MonoBehaviour
             )
             {
                 Debug.Log("QTE Initiated for Rewind");
-                TriggerQTE(rewindDuration);
+                TriggerQTE(rewindDuration, 3); // 3 is an example difficulty level
             }
             else
             {
@@ -130,11 +130,11 @@ public class PlayerTimeControl : MonoBehaviour
         }
     }
 
-    private void TriggerQTE(float duration)
+    private void TriggerQTE(float duration, int difficulty = 3)
     {
         if (QuickTimeEventManager.Instance != null)
         {
-            QuickTimeEventManager.Instance.StartQTE(duration);
+            QuickTimeEventManager.Instance.StartQTE(duration, difficulty);
             QuickTimeEventManager.Instance.OnQteComplete += HandleQTEComplete;
             currentRewindCoroutine = StartCoroutine(RewindToBeat());
         }
@@ -200,7 +200,7 @@ public class PlayerTimeControl : MonoBehaviour
         crosshairCore.TriggerRewindStart(rewindTimeScale);
         rewindFeedback.PlayFeedbacks();
 
-        JPGEffectController.Instance.SetJPGIntensity(0.7f, 0.5f);
+        JPGEffectController.Instance.SetJPGIntensity(0.2f, 0.5f);
 
         // Use TimeManager to set the time scale
         TimeManager.Instance.SetTimeScale(-1f);
@@ -255,7 +255,7 @@ public class PlayerTimeControl : MonoBehaviour
         splineControl.Speed = slowedSpeed;
         crosshairCore.TriggerRewindStart(slowTimeScale);
         rewindFeedback.PlayFeedbacks();
-        JPGEffectController.Instance.SetJPGIntensity(0.7f, 0.5f);
+        JPGEffectController.Instance.SetJPGIntensity(0.4f, 0.5f);
 
         // Set music state to Slow
         MusicManager.Instance.SetMusicParameter("Time State", 2f); // 2 represents Slow state

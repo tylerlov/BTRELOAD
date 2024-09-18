@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using FMODUnity;
 using MoreMountains.Feedbacks;
 using UnityEngine;
@@ -41,6 +42,25 @@ public class PlayerLocking : MonoBehaviour
         lastEnemyTime;
     private int enemyTargetListIndex;
 
+    [SerializeField]
+    private GameObject lockIndicator;
+
+    #region Aim Assist
+    [Header("Aim Assist")]
+    [SerializeField, Range(0f, 1f)]
+    private float aimAssistStrength = 0.5f;
+
+    [SerializeField, Range(0f, 45f)]
+    private float maxAimAssistAngle = 10f;
+
+    [SerializeField, Range(0f, 1f)]
+    private float lockMaintainAngle = 15f;
+
+    [SerializeField, Range(0f, 1f)]
+    private float lockGracePeriod = 0.5f;
+    private Dictionary<Transform, float> enemyLockTimes = new Dictionary<Transform, float>();
+    #endregion
+
     private void Awake()
     {
         if (Instance == null)
@@ -59,8 +79,173 @@ public class PlayerLocking : MonoBehaviour
         staminaController = FindObjectOfType<StaminaController>();
     }
 
+    private void Update()
+    {
+        OnLock();
+        CheckEnemyLock();
+    }
+
+    public void CheckEnemyLock()
+    {
+        ConditionalDebug.Log(
+            $"CheckEnemyLock called. LockedList count: {LockedList.Count}, enemyTargetList count: {enemyTargetList.Count}"
+        );
+
+        if (LockedList.Count == 0)
+        {
+            ConditionalDebug.Log("No locked projectiles, unlocking enemies");
+            UnlockEnemies();
+            HideLockIndicator();
+            return;
+        }
+
+        Vector3 aimAssistDirection = Vector3.zero;
+        Collider nearestEnemyInSight = null;
+        float nearestDistance = float.MaxValue;
+
+        Collider[] nearbyEnemies = Physics.OverlapSphere(
+            crosshairCore.RaySpawn.transform.position,
+            range,
+            LayerMask.GetMask("Enemy")
+        );
+        ConditionalDebug.Log($"Found {nearbyEnemies.Length} nearby enemies");
+
+        foreach (Collider enemy in nearbyEnemies)
+        {
+            Vector3 directionToEnemy =
+                enemy.transform.position - crosshairCore.RaySpawn.transform.position;
+            float angle = Vector3.Angle(crosshairCore.RaySpawn.transform.forward, directionToEnemy);
+
+            bool isCurrentlyLocked = enemyTargetList.Contains(enemy.transform);
+            float angleThreshold = isCurrentlyLocked ? lockMaintainAngle : maxAimAssistAngle;
+
+            ConditionalDebug.Log(
+                $"Enemy: {enemy.name}, Angle: {angle}, Threshold: {angleThreshold}, Currently locked: {isCurrentlyLocked}"
+            );
+
+            if (angle <= angleThreshold)
+            {
+                float distance = directionToEnemy.magnitude;
+                if (distance < nearestDistance)
+                {
+                    nearestDistance = distance;
+                    nearestEnemyInSight = enemy;
+                    ConditionalDebug.Log($"New nearest enemy: {enemy.name}, Distance: {distance}");
+                }
+            }
+            else if (isCurrentlyLocked)
+            {
+                if (!enemyLockTimes.ContainsKey(enemy.transform))
+                {
+                    enemyLockTimes[enemy.transform] = Time.time;
+                    ConditionalDebug.Log($"Started grace period for {enemy.name}");
+                }
+                else if (Time.time - enemyLockTimes[enemy.transform] > lockGracePeriod)
+                {
+                    ConditionalDebug.Log($"Grace period expired for {enemy.name}, unlocking");
+                    UnlockEnemy(enemy.transform);
+                }
+            }
+        }
+
+        if (nearestEnemyInSight != null)
+        {
+            Vector3 directionToEnemy = (
+                nearestEnemyInSight.transform.position - crosshairCore.RaySpawn.transform.position
+            ).normalized;
+            aimAssistDirection = Vector3
+                .ProjectOnPlane(directionToEnemy, crosshairCore.RaySpawn.transform.forward)
+                .normalized;
+
+            if (!enemyTargetList.Contains(nearestEnemyInSight.transform))
+            {
+                ConditionalDebug.Log($"Locking onto new enemy: {nearestEnemyInSight.name}");
+                LockOntoEnemy(nearestEnemyInSight.transform);
+                ShowLockIndicator();
+            }
+            enemyLockTimes.Remove(nearestEnemyInSight.transform);
+        }
+        else if (
+            enemyTargetList.Count > 0
+            && !enemyLockTimes.Any(kvp => Time.time - kvp.Value <= lockGracePeriod)
+        )
+        {
+            ConditionalDebug.Log("No enemies in sight and grace period expired, unlocking all");
+            UnlockEnemies();
+            HideLockIndicator();
+        }
+
+        ApplyAimAssist(aimAssistDirection);
+        ConditionalDebug.Log($"CheckEnemyLock finished. enemyTargetList count: {enemyTargetList.Count}");
+    }
+
+    private void LockOntoEnemy(Transform enemyTransform)
+    {
+        if (!enemyTargetList.Contains(enemyTransform))
+        {
+            enemyTarget = enemyTransform;
+            enemyTargetList.Add(enemyTarget);
+            ConditionalDebug.Log(
+                $"Locked onto enemy: {enemyTarget.name}. Total locked enemies: {enemyTargetList.Count}"
+            );
+            FMODUnity.RuntimeManager.PlayOneShot("event:/Player/LockEnemy");
+            uiLockOnEffect.LockOnTarget(enemyTarget);
+        }
+        else
+        {
+            ConditionalDebug.Log($"Enemy {enemyTransform.name} is already locked.");
+        }
+    }
+
+    public void UnlockEnemies()
+    {
+        ConditionalDebug.Log($"UnlockEnemies called. Current enemyTargetList count: {enemyTargetList.Count}");
+        foreach (var enemy in enemyTargetList)
+        {
+            if (enemy != null)
+            {
+                EnemyBasicSetup enemySetup = enemy.GetComponent<EnemyBasicSetup>();
+                if (enemySetup != null)
+                {
+                    enemySetup.SetLockOnStatus(false);
+                    ConditionalDebug.Log($"Unlocked enemy {enemy.name}");
+                }
+            }
+        }
+        enemyTargetList.Clear();
+        ConditionalDebug.Log("enemyTargetList cleared");
+    }
+
+    private void UnlockEnemy(Transform enemy)
+    {
+        if (enemy != null && enemyTargetList.Contains(enemy))
+        {
+            ConditionalDebug.Log($"Unlocking enemy: {enemy.name}");
+            EnemyBasicSetup enemySetup = enemy.GetComponent<EnemyBasicSetup>();
+            EnemyBasicDamagablePart damagablePart = enemy.GetComponent<EnemyBasicDamagablePart>();
+
+            if (enemySetup != null)
+                enemySetup.SetLockOnStatus(false);
+            else if (damagablePart != null)
+                damagablePart.SetLockOnStatus(false);
+
+            enemyTargetList.Remove(enemy);
+            enemyLockTimes.Remove(enemy);
+
+            if (enemyTargetList.Count == 0)
+            {
+                HideLockIndicator();
+            }
+        }
+        else
+        {
+                ConditionalDebug.Log($"Attempted to unlock invalid enemy: {enemy}");
+        }
+    }
+
     public void OnLock()
     {
+        ConditionalDebug.Log("OnLock method called");
         if (!IsTimeToLockBullet())
             return;
 
@@ -76,56 +261,21 @@ public class PlayerLocking : MonoBehaviour
                 break;
             }
             else if (TryLockOntoBullet(hit))
-                break;
-        }
-    }
-
-    public void OnLockEnemy()
-    {
-        if (!IsTimeToLockEnemy())
-            return;
-
-        foreach (var hit in PerformEnemyLockBoxCast())
-        {
-            if (!IsValidEnemyHit(hit))
-                continue;
-
-            UpdateLastEnemyLockTime();
-            crosshairCore.hitEnemy = hit;
-
-            if (!ShouldLockOntoEnemy())
-                continue;
-
-            Transform enemyTransform = GetEnemyTransform(hit);
-            if (enemyTransform != null && !enemyTargetList.Contains(enemyTransform))
             {
-                LockOntoEnemy(enemyTransform);
-                return;
+                // After successfully locking onto a bullet, check for enemy lock
+                CheckEnemyLock();
+                break;
             }
         }
     }
 
     public void ClearLockedTargets()
     {
-        enemyTargetList.RemoveAll(enemy => enemy == null);
-        foreach (var enemy in enemyTargetList)
-        {
-            EnemyBasicSetup enemySetup = enemy.GetComponent<EnemyBasicSetup>();
-            EnemyBasicDamagablePart damagablePart = enemy.GetComponent<EnemyBasicDamagablePart>();
-
-            if (enemySetup != null)
-                enemySetup.SetLockOnStatus(false);
-            else if (damagablePart != null)
-                damagablePart.SetLockOnStatus(false);
-        }
-
+        ConditionalDebug.Log("Clearing locked targets");
+        LockedList.Clear();
         enemyTargetList.Clear();
-        projectileTargetList.RemoveAll(projectile => projectile == null);
-        LockedList.RemoveAll(locked => locked == null);
-        enemyTarget = null;
-
-        qteEnemyLockList.Clear();
-        Debug.Log("All locked targets cleared, including QTE Enemy Lock List");
+        projectileTargetList.Clear();
+        ConditionalDebug.Log("All locked targets cleared, including QTE Enemy Lock List");
     }
 
     public void ReleasePlayerLocks()
@@ -234,85 +384,16 @@ public class PlayerLocking : MonoBehaviour
         }
     }
 
-    private bool IsTimeToLockEnemy() => Time.time >= lastEnemyTime + enemyLockInterval;
-
-    private RaycastHit[] PerformEnemyLockBoxCast()
-    {
-        int combinedLayerMask =
-            (1 << LayerMask.NameToLayer("Enemy")) | (1 << LayerMask.NameToLayer("Ground"));
-        RaycastHit[] hits = new RaycastHit[10];
-        Physics.BoxCastNonAlloc(
-            crosshairCore.RaySpawn.transform.position,
-            crosshairCore.RaySpawnEnemyLocking.transform.lossyScale / 8,
-            crosshairCore.RaySpawnEnemyLocking.transform.forward,
-            hits,
-            crosshairCore.RaySpawnEnemyLocking.transform.rotation,
-            range,
-            combinedLayerMask
-        );
-        return hits;
-    }
-
-    private bool IsValidEnemyHit(RaycastHit hit) =>
-        hit.collider != null
-        && hit.collider.CompareTag("Enemy")
-        && crosshairCore.CheckLockProjectiles();
-
-    private bool ShouldLockOntoEnemy() => crosshairCore.CheckLockEnemies();
-
-    private Transform GetEnemyTransform(RaycastHit hit)
-    {
-        EnemyBasicSetup enemySetup = hit.collider.GetComponentInParent<EnemyBasicSetup>();
-        EnemyBasicDamagablePart damagablePart =
-            hit.collider.GetComponent<EnemyBasicDamagablePart>();
-
-        if (enemySetup != null)
-        {
-            enemySetup.SetLockOnStatus(true);
-            return hit.collider.transform;
-        }
-        else if (damagablePart != null)
-        {
-            damagablePart.SetLockOnStatus(true);
-            return hit.collider.transform;
-        }
-
-        return null;
-    }
-
-    private void LockOntoEnemy(Transform enemyTransform)
-    {
-        if (enemyTargetList.Count > maxLockedEnemyTargets)
-            UnlockOldestEnemy();
-
-        enemyTarget = enemyTransform;
-        enemyTargetList.Add(enemyTarget);
-        enemyTargetListIndex = enemyTargetList.Count;
-        FMODUnity.RuntimeManager.PlayOneShot("event:/Player/LockEnemy");
-        uiLockOnEffect.LockOnTarget(enemyTarget);
-        lastEnemyTime = Time.time;
-    }
-
-    private void UnlockOldestEnemy()
-    {
-        Transform oldestEnemy = enemyTargetList[0];
-        EnemyBasicSetup enemySetup = oldestEnemy.GetComponent<EnemyBasicSetup>();
-        EnemyBasicDamagablePart damagablePart = oldestEnemy.GetComponent<EnemyBasicDamagablePart>();
-
-        if (enemySetup != null)
-            enemySetup.SetLockOnStatus(false);
-        else if (damagablePart != null)
-            damagablePart.SetLockOnStatus(false);
-
-        enemyTargetList.RemoveAt(0);
-    }
-
-    private void UpdateLastEnemyLockTime() => lastEnemyTime = Time.time;
-
     public List<PlayerLockedState> PrepareProjectilesToLaunch()
     {
         List<PlayerLockedState> projectilesToLaunch = new List<PlayerLockedState>();
         CleanLockedList();
+
+        if (enemyTargetList.Count == 0)
+        {
+            Debug.LogWarning("No locked enemies found. Cannot launch projectiles.");
+            return projectilesToLaunch;
+        }
 
         for (int i = LockedList.Count - 1; i >= 0; i--)
         {
@@ -410,5 +491,56 @@ public class PlayerLocking : MonoBehaviour
     public void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
         ClearLockedTargets();
+    }
+
+    private void ShowLockIndicator()
+    {
+        if (lockIndicator != null && !lockIndicator.activeSelf)
+        {
+            lockIndicator.SetActive(true);
+        }
+    }
+
+    private void HideLockIndicator()
+    {
+        if (lockIndicator != null && lockIndicator.activeSelf)
+        {
+            lockIndicator.SetActive(false);
+        }
+    }
+
+    private void ApplyAimAssist(Vector3 aimAssistDirection)
+    {
+        ShooterMovement shooterMovement = GetComponent<ShooterMovement>();
+        if (shooterMovement != null)
+        {
+            shooterMovement.ApplyAimAssist(aimAssistDirection * aimAssistStrength);
+        }
+    }
+
+    public void DamageLockedEnemies(float totalDamage, List<Transform> enemiesHit)
+    {
+        ConditionalDebug.Log($"DamageLockedEnemies called. Total damage: {totalDamage}, Enemies hit: {enemiesHit.Count}");
+
+        if (enemiesHit.Count == 0)
+        {
+            ConditionalDebug.LogWarning("No enemies hit to damage.");
+            return;
+        }
+
+        float damagePerEnemy = totalDamage / enemiesHit.Count;
+
+        foreach (Transform enemyTransform in enemiesHit)
+        {
+            if (enemyTransform != null)
+            {
+                EnemyBasicSetup enemy = enemyTransform.GetComponent<EnemyBasicSetup>();
+                if (enemy != null)
+                {
+                    enemy.Damage(damagePerEnemy);
+                    ConditionalDebug.Log($"Applied {damagePerEnemy} damage to enemy {enemyTransform.name}");
+                }
+            }
+        }
     }
 }

@@ -6,56 +6,32 @@ using HelpURL = BehaviorDesigner.Runtime.Tasks.HelpURLAttribute;
 namespace BehaviorDesigner.Runtime.Tactical.AstarPathfindingProject.Tasks
 {
     [TaskCategory("Tactical/A* Pathfinding Project")]
-    [TaskDescription("Charges towards the target in cycles, stopping at decreasing distances before attacking")]
+    [TaskDescription("Chases the target in phases, maintaining set distances before finally attempting to touch")]
     [HelpURL("https://www.opsive.com/support/documentation/behavior-designer-tactical-pack/")]
     [TaskIcon("Assets/Behavior Designer Tactical/Editor/Icons/{SkinColor}ChargeIcon.png")]
-    public class CyclingChargeAndAttack : IAstarAITacticalGroup
+    public class PhasedChaseAndExplode : IAstarAITacticalGroup
     {
-        [Tooltip("The number of agents that should be in a row")]
-        public SharedInt agentsPerRow = 2;
-        [Tooltip("The separation between agents")]
-        public SharedVector2 separation = new Vector2(2, 2);
-        [Tooltip("The maximum distance to stop at during the first cycle")]
-        public SharedFloat maximumStopDistance = 10f;
-        [Tooltip("The distance to decrease the stop point by each cycle")]
-        public SharedFloat stoppingDifference = 5f;
-        [Tooltip("The time to wait at each stop point")]
-        public SharedFloat stopDuration = 2f;
-        [Tooltip("The final attack distance")]
-        public SharedFloat attackDistance = 2f;
+        [Tooltip("Distance to maintain in phase 1")]
+        public SharedFloat phase1Distance = 10f;
+        [Tooltip("Duration of phase 1 in seconds")]
+        public SharedFloat phase1Duration = 10f;
+        [Tooltip("Distance to maintain in phase 2")]
+        public SharedFloat phase2Distance = 5f;
+        [Tooltip("Duration of phase 2 in seconds")]
+        public SharedFloat phase2Duration = 5f;
+        [Tooltip("Final approach distance for explosion")]
+        public SharedFloat explosionDistance = 0.5f;
 
-        private Vector3 offset;
-        private bool inPosition;
-        private float currentStopDistance;
-        private float stopTimer;
-        private bool isStopped;
+        private float phaseTimer;
+        private int currentPhase = 1;
 
-        protected override void FormationUpdated(int index)
+        public override void OnStart()
         {
-            base.FormationUpdated(index);
-
-            if (leader.Value != null)
-            {
-                var row = formationIndex / agentsPerRow.Value;
-                var column = formationIndex % agentsPerRow.Value;
-
-                // Arrange the agents in charging position.
-                if (column == 0)
-                {
-                    offset.Set(0, 0, -separation.Value.y * row);
-                }
-                else
-                {
-                    offset.Set(separation.Value.x * (column % 2 == 0 ? -1 : 1) * (((column - 1) / 2) + 1), 0, -separation.Value.y * row);
-                }
-            }
-
-            inPosition = false;
-            currentStopDistance = maximumStopDistance.Value;
-            stopTimer = 0f;
-            isStopped = false;
+            base.OnStart();
+            phaseTimer = phase1Duration.Value;
+            currentPhase = 1;
         }
-        
+
         public override TaskStatus OnUpdate()
         {
             var baseStatus = base.OnUpdate();
@@ -64,91 +40,59 @@ namespace BehaviorDesigner.Runtime.Tactical.AstarPathfindingProject.Tasks
                 return baseStatus;
             }
 
-            var attackCenter = CenterAttackPosition();
-            var attackRotation = ReverseCenterAttackRotation(attackCenter);
+            Vector3 targetPosition = GetTargetPosition();
+            float distanceToTarget = Vector3.Distance(transform.position, targetPosition);
 
-            // Move the agents into their starting position if they haven't been there already.
-            if (!inPosition)
+            switch (currentPhase)
             {
-                var leaderTransform = leader.Value != null ? leader.Value.transform : transform;
-                var destination = TransformPoint(leaderTransform.position, offset, attackRotation);
-                if (tacticalAgent.HasArrived())
-                {
-                    // The agent is in position but it may not be facing the target.
-                    if (tacticalAgent.RotateTowardsPosition(TransformPoint(attackCenter, offset, attackRotation)))
-                    {
-                        inPosition = true;
-                        // Notify the leader when the agent is in position.
-                        if (leaderTree != null)
-                        {
-                            leaderTree.SendEvent("UpdateInPosition", formationIndex, true);
-                        }
-                        else
-                        {
-                            UpdateInPosition(0, true);
-                        }
-                    }
-                }
-                else
-                {
-                    tacticalAgent.SetDestination(destination);
-                }
-            }
-            else if (canAttack)
-            {
-                var destination = TransformPoint(attackCenter, offset, attackRotation);
-                var distanceToTarget = (destination - transform.position).magnitude;
-
-                if (distanceToTarget <= attackDistance.Value)
-                {
-                    // We've reached the final attack distance, start attacking
-                    tacticalAgent.AttackPosition = true;
-                    if (MoveToAttackPosition())
+                case 1:
+                    ChaseWithDistance(targetPosition, phase1Distance.Value);
+                    break;
+                case 2:
+                    ChaseWithDistance(targetPosition, phase2Distance.Value);
+                    break;
+                case 3:
+                    if (distanceToTarget <= explosionDistance.Value)
                     {
                         tacticalAgent.TryAttack();
+                        return TaskStatus.Success;
                     }
-                }
-                else if (distanceToTarget <= currentStopDistance)
-                {
-                    // We've reached a stop point
-                    if (!isStopped)
-                    {
-                        isStopped = true;
-                        stopTimer = stopDuration.Value;
-                    }
+                    tacticalAgent.SetDestination(targetPosition);
+                    break;
+            }
 
-                    if (stopTimer > 0)
-                    {
-                        stopTimer -= Time.deltaTime;
-                    }
-                    else
-                    {
-                        // Stop duration is over, move to the next cycle
-                        isStopped = false;
-                        currentStopDistance -= stoppingDifference.Value;
-                        currentStopDistance = Mathf.Max(currentStopDistance, attackDistance.Value);
-                    }
-                }
-                else
-                {
-                    // Continue moving towards the target
-                    tacticalAgent.SetDestination(destination);
-                }
+            phaseTimer -= Time.deltaTime;
+            if (phaseTimer <= 0 && currentPhase < 3)
+            {
+                currentPhase++;
+                phaseTimer = (currentPhase == 2) ? phase2Duration.Value : float.MaxValue;
             }
 
             return TaskStatus.Running;
         }
 
+        private Vector3 GetTargetPosition()
+        {
+            // Implement logic to get the player's position
+            // This might involve using a shared variable or finding the player in the scene
+            return GameObject.FindGameObjectWithTag("Player").transform.position;
+        }
+
+        private void ChaseWithDistance(Vector3 targetPosition, float desiredDistance)
+        {
+            Vector3 directionToTarget = (targetPosition - transform.position).normalized;
+            Vector3 desiredPosition = targetPosition - directionToTarget * desiredDistance;
+            tacticalAgent.SetDestination(desiredPosition);
+        }
+
         public override void OnReset()
         {
             base.OnReset();
-
-            agentsPerRow = 2;
-            separation = new Vector2(2, 2);
-            maximumStopDistance = 10f;
-            stoppingDifference = 5f;
-            stopDuration = 2f;
-            attackDistance = 2f;
+            phase1Distance = 10f;
+            phase1Duration = 10f;
+            phase2Distance = 5f;
+            phase2Duration = 5f;
+            explosionDistance = 0.5f;
         }
     }
 }

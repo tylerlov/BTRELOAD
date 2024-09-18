@@ -64,7 +64,6 @@ public class ProjectileManager : MonoBehaviour
 
         Instance = this;
 
-        // Updated to 500 from 100, testing errors
         projectileIds = new NativeArray<int>(500, Allocator.Persistent);
         projectileLifetimes = new NativeHashMap<int, float>(500, Allocator.Persistent);
 
@@ -79,16 +78,11 @@ public class ProjectileManager : MonoBehaviour
         {
             ConditionalDebug.LogWarning("Player GameObject not found during initialization.");
         }
-
-        // Remove the globalClock initialization from here
     }
 
     private void Start()
     {
-        // Initialize the global clock here instead
         InitializeGlobalClock();
-
-        // ... other Start logic ...
     }
 
     private void InitializeGlobalClock()
@@ -98,14 +92,14 @@ public class ProjectileManager : MonoBehaviour
             globalClock = Timekeeper.instance.Clock("Test") as GlobalClock;
             if (globalClock == null)
             {
-                Debug.LogWarning(
+                ConditionalDebug.LogWarning(
                     "'Test' clock is not a GlobalClock. Some time-related features may not work as expected."
                 );
             }
         }
         catch (ChronosException e)
         {
-            Debug.LogError($"Failed to initialize global clock: {e.Message}");
+            ConditionalDebug.LogError($"Failed to initialize global clock: {e.Message}");
         }
     }
 
@@ -142,7 +136,7 @@ public class ProjectileManager : MonoBehaviour
 
         if (deltaTime > 0.1f)
         {
-            Debug.LogWarning($"[ProjectileManager] High frame time detected: {deltaTime * 1000}ms");
+            ConditionalDebug.LogWarning($"[ProjectileManager] High frame time detected: {deltaTime * 1000}ms");
         }
 
         if (globalClock == null)
@@ -171,8 +165,12 @@ public class ProjectileManager : MonoBehaviour
             }
 
             ProcessProjectileRequests(globalTimeScale);
-            projectilePool.CheckAndReplenishPool();
         }
+    }
+
+    private void LateUpdate()
+    {
+        projectilePool.CheckAndReplenishPool();
     }
 
     private void UpdateProjectiles(float deltaTime, float globalTimeScale)
@@ -195,28 +193,26 @@ public class ProjectileManager : MonoBehaviour
             GlobalTimeScale = globalTimeScale,
         };
 
-        job.Schedule(activeProjectileCount, 64).Complete();
+        JobHandle jobHandle = job.Schedule(activeProjectileCount, 64);
+        jobHandle.Complete();
 
         List<int> projectilesToRemove = new List<int>();
 
-        for (int i = 0; i < projectileIds.Length; i++)
+        for (int i = 0; i < activeProjectileCount; i++)
         {
             int projectileId = projectileIds[i];
             if (projectileLookup.TryGetValue(projectileId, out ProjectileStateBased projectile))
             {
-                if (i < updatedLifetimes.Length)
-                {
-                    float updatedLifetime = updatedLifetimes[i];
+                float updatedLifetime = updatedLifetimes[i];
 
-                    if (updatedLifetime < 0)
-                    {
-                        projectilesToRemove.Add(projectileId);
-                    }
-                    else
-                    {
-                        projectileLifetimes[projectileId] = updatedLifetime;
-                        projectile.CustomUpdate(globalTimeScale);
-                    }
+                if (updatedLifetime < 0)
+                {
+                    projectilesToRemove.Add(projectileId);
+                }
+                else
+                {
+                    projectileLifetimes[projectileId] = updatedLifetime;
+                    projectile.CustomUpdate(globalTimeScale);
                 }
             }
             else
@@ -225,9 +221,9 @@ public class ProjectileManager : MonoBehaviour
             }
         }
 
-        foreach (int projectileId in projectilesToRemove)
+        for (int i = projectilesToRemove.Count - 1; i >= 0; i--)
         {
-            RemoveProjectile(projectileId);
+            RemoveProjectile(projectilesToRemove[i]);
         }
 
         updatedLifetimes.Dispose();
@@ -243,73 +239,61 @@ public class ProjectileManager : MonoBehaviour
         int processCount = Mathf.CeilToInt(staticShootingRequestsPerFrame * timeScale);
         processCount = Mathf.Min(projectilePool.GetProjectileRequestCount(), processCount);
 
+        Debug.Log($"[ProjectileManager] Processing {processCount} projectile requests");
+
         for (int i = 0; i < processCount; i++)
         {
             if (projectilePool.TryDequeueProjectileRequest(out ProjectileRequest request))
             {
-                projectileSpawner.ProcessShootProjectile(request);
+                ProjectileStateBased projectile = projectilePool.GetProjectile();
+                projectileSpawner.ProcessShootProjectile(request, projectile, request.IsStatic);
+                RegisterProjectile(projectile);
+                Debug.Log($"[ProjectileManager] Projectile processed and registered. Position: {projectile.transform.position}, IsStatic: {request.IsStatic}");
             }
         }
     }
 
-   private void RemoveProjectile(int projectileId)
-{
-    if (projectileLookup.TryGetValue(projectileId, out ProjectileStateBased projectile))
+    private void RemoveProjectile(int projectileId)
     {
-        projectile.Death();
-        projectilePool.ReturnProjectileToPool(projectile);
-    }
-    projectileLifetimes.Remove(projectileId);
-    projectileLookup.Remove(projectileId);
-
-    // Remove the projectile ID from the projectileIds array
-    for (int i = 0; i < projectileIds.Length; i++)
-    {
-        if (projectileIds[i] == projectileId)
+        if (projectileLookup.TryGetValue(projectileId, out ProjectileStateBased projectile))
         {
-            // Move the last element to this position and resize the array
-            projectileIds[i] = projectileIds[projectileIds.Length - 1];
-            ResizeNativeArray(ref projectileIds, projectileIds.Length - 1);
-            break;
-        }
-    }
-}
+            projectile.Death();
+            projectilePool.ReturnProjectileToPool(projectile);
+            projectileLifetimes.Remove(projectileId);
+            projectileLookup.Remove(projectileId);
 
-    private void ProcessProjectileRequests()
-    {
-        int processCount = Math.Min(
-            projectilePool.GetProjectileRequestCount(),
-            staticShootingRequestsPerFrame
-        );
-        for (int i = 0; i < processCount; i++)
-        {
-            projectileSpawner.ProcessShootProjectile(projectilePool.DequeueProjectileRequest());
+            // Use binary search to find and remove the projectile ID
+            int index = System.Array.BinarySearch(projectileIds.ToArray(), projectileId);
+            if (index >= 0)
+            {
+                int lastIndex = projectileIds.Length - 1;
+                projectileIds[index] = projectileIds[lastIndex];
+                ResizeNativeArray(ref projectileIds, lastIndex);
+            }
         }
     }
 
-   public void RegisterProjectile(ProjectileStateBased projectile)
-{
-    int projectileId = projectile.GetInstanceID();
-    if (!projectileLookup.ContainsKey(projectileId))
+    public void RegisterProjectile(ProjectileStateBased projectile)
     {
-        int currentCount = projectileLookup.Count;
-        if (projectileIds.Length <= currentCount)
+        int projectileId = projectile.GetInstanceID();
+        if (!projectileLookup.ContainsKey(projectileId))
         {
-            int newSize = Mathf.Max(currentCount + 1, projectileIds.Length * 2);
-            ResizeNativeArray(ref projectileIds, newSize);
+            int currentCount = projectileLookup.Count;
+            if (projectileIds.Length <= currentCount)
+            {
+                int newSize = Mathf.Max(currentCount + 1, projectileIds.Length * 2);
+                ResizeNativeArray(ref projectileIds, newSize);
+            }
+
+            projectileIds[currentCount] = projectileId;
+            projectileLifetimes[projectileId] = projectile.lifetime;
+            projectileLookup[projectileId] = projectile;
+
+            projectile.SetAccuracy(projectileAccuracy);
+
+            Debug.Log($"[ProjectileManager] Registered projectile: {projectile.name} with accuracy: {projectileAccuracy}. Total projectiles: {projectileLookup.Count}, Position: {projectile.transform.position}, Velocity: {projectile.rb?.velocity}");
         }
-
-        projectileIds[currentCount] = projectileId;
-        projectileLifetimes[projectileId] = projectile.lifetime;
-        projectileLookup[projectileId] = projectile;
-
-        projectile.SetAccuracy(projectileAccuracy);
-
-        ConditionalDebug.Log(
-            $"Registered projectile: {projectile.name} with accuracy: {projectileAccuracy}. Total projectiles: {projectileLookup.Count}"
-        );
     }
-}
 
     public void UnregisterProjectile(ProjectileStateBased projectile)
     {
@@ -348,7 +332,6 @@ public class ProjectileManager : MonoBehaviour
         }
     }
 
-    // Replace the existing CalculateTargetVelocity method with this improved version
     public Vector3 CalculateTargetVelocity(GameObject target)
     {
         Vector3 currentPos = target.transform.position;
@@ -378,11 +361,14 @@ public class ProjectileManager : MonoBehaviour
 
         foreach (var enemy in enemyTransforms.Values)
         {
-            float distanceSqr = (enemy.position - position).sqrMagnitude;
-            if (distanceSqr < nearestDistanceSqr)
+            if (enemy != null)
             {
-                nearestDistanceSqr = distanceSqr;
-                nearestEnemy = enemy;
+                float distanceSqr = (enemy.position - position).sqrMagnitude;
+                if (distanceSqr < nearestDistanceSqr)
+                {
+                    nearestDistanceSqr = distanceSqr;
+                    nearestEnemy = enemy;
+                }
             }
         }
 
@@ -392,7 +378,7 @@ public class ProjectileManager : MonoBehaviour
     private void UpdateEnemyTransforms()
     {
         enemyTransforms.Clear();
-        GameObject[] enemies = GameObject.FindGameObjectsWithTag("Enemy");
+        var enemies = GameObject.FindGameObjectsWithTag("Enemy");
         foreach (var enemy in enemies)
         {
             enemyTransforms[enemy.GetInstanceID()] = enemy.transform;
@@ -450,13 +436,9 @@ public class ProjectileManager : MonoBehaviour
 
     public void ClearAllProjectiles()
     {
-        for (int i = projectileIds.Length - 1; i >= 0; i--)
+        foreach (var projectile in projectileLookup.Values)
         {
-            int projectileId = projectileIds[i];
-            if (projectileLookup.TryGetValue(projectileId, out ProjectileStateBased projectile))
-            {
-                projectile.Death();
-            }
+            projectile.Death();
         }
 
         ClearNativeArray(projectileIds);
@@ -464,9 +446,12 @@ public class ProjectileManager : MonoBehaviour
         projectileLookup.Clear();
         projectilePool.ClearProjectileRequests();
 
-        ConditionalDebug.Log(
-            $"Cleared all projectiles. Pools: Projectile={projectilePool.GetPoolSize()}"
-        );
+        if (ConditionalDebug.IsLoggingEnabled)
+        {
+            ConditionalDebug.Log(
+                $"Cleared all projectiles. Pools: Projectile={projectilePool.GetPoolSize()}"
+            );
+        }
     }
 
     public void HandleRewind(float currentTime)
@@ -484,7 +469,7 @@ public class ProjectileManager : MonoBehaviour
         }
     }
 
-    public void PlayOneShotSound(string soundEvent, Vector3 position)
+ public void PlayOneShotSound(string soundEvent, Vector3 position)
     {
         FMODUnity.RuntimeManager.PlayOneShot(soundEvent, position);
     }

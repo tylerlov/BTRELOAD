@@ -5,17 +5,25 @@ using UnityEngine;
 
 public class EnemyShotState : ProjectileState
 {
-    private const float PREDICTION_MULTIPLIER = 2f; // Increase this for more aggressive prediction
-    private const float MAX_INACCURACY_ANGLE = 30f; // Increased for more noticeable effect
+    private const float PREDICTION_MULTIPLIER = 1.5f; // Reduced from 2f
+    private const float MAX_INACCURACY_ANGLE = 15f; // Reduced from 30f
 
-    public EnemyShotState(ProjectileStateBased projectile)
+    private ProjectileMovement _projectileMovement;
+
+    public EnemyShotState(ProjectileStateBased projectile, Transform target = null)
         : base(projectile)
     {
-        _projectile.currentTarget = GameObject.FindWithTag("Player").transform;
-        _projectile.minTurnRadius = 3f; // Reduced for tighter turns
-        _projectile.maxTurnRadius = 15f; // Reduced for more accurate aiming
-        _projectile.approachAngle = UnityEngine.Random.Range(10f, 20f); // Reduced for more direct approach
-        _projectile.turnRate = 270f; // Increased for faster turning
+        _projectile.currentTarget = target;
+        _projectile.homing = target != null;
+        _projectile.minTurnRadius = 5f;
+        _projectile.maxTurnRadius = 20f;
+        _projectile.approachAngle = UnityEngine.Random.Range(5f, 15f);
+        _projectile.turnRate = 180f; // Reduced from 270f
+
+        // Set initial accuracy (adjust this value as needed)
+        _projectile.SetAccuracy(ProjectileManager.Instance.projectileAccuracy);
+
+        _projectileMovement = new ProjectileMovement(projectile);
     }
 
     public override void CustomUpdate(float timeScale)
@@ -24,52 +32,20 @@ public class EnemyShotState : ProjectileState
 
         if (_projectile.currentTarget != null)
         {
-            Vector3 targetVelocity =
-                _projectile.currentTarget.GetComponent<Rigidbody>()?.velocity ?? Vector3.zero;
-            Vector3 predictedPosition =
-                _projectile.currentTarget.position
-                + targetVelocity * PREDICTION_MULTIPLIER * timeScale;
-            Vector3 directionToTarget = (
-                predictedPosition - _projectile.transform.position
-            ).normalized;
-
-            // Apply inaccuracy based on the projectile's accuracy value
-            float accuracy = _projectile.GetAccuracy();
-            float inaccuracyAngle = (1f - accuracy) * MAX_INACCURACY_ANGLE;
-            Vector3 inaccurateDirection = ApplyInaccuracy(directionToTarget, inaccuracyAngle);
-
-            float distanceToTarget = Vector3.Distance(
-                _projectile.transform.position,
-                predictedPosition
-            );
-            float approachFactor = Mathf.Clamp01(distanceToTarget / _projectile.maxTurnRadius);
-            float currentTurnRate = Mathf.Lerp(
-                _projectile.turnRate,
-                _projectile.turnRate * 0.5f,
-                approachFactor
-            );
-
-            Vector3 newForward = Vector3.RotateTowards(
-                _projectile.transform.forward,
-                inaccurateDirection,
-                currentTurnRate * Mathf.Deg2Rad * Time.deltaTime * timeScale,
-                0f
-            );
-            _projectile.transform.rotation = Quaternion.LookRotation(newForward);
-
-            // Apply timeScale to velocity
-            _projectile.rb.velocity =
-                _projectile.transform.forward * _projectile.bulletSpeed * timeScale;
+            _projectileMovement.UpdateMovement(timeScale);
         }
     }
 
-    private Vector3 ApplyInaccuracy(Vector3 direction, float maxAngle)
+    private Vector3 ApplyInaccuracy(Vector3 direction, float accuracy)
     {
-        Quaternion randomRotation = Quaternion.AngleAxis(
-            Random.Range(-maxAngle, maxAngle),
-            Random.onUnitSphere
-        );
-        return randomRotation * direction;
+        float inaccuracyAngle = Mathf.Lerp(MAX_INACCURACY_ANGLE, 0f, Mathf.Pow(accuracy, 2));
+        if (Random.value > accuracy)
+        {
+            float randomAngle = Random.Range(0f, inaccuracyAngle);
+            Vector3 randomAxis = Random.insideUnitSphere;
+            return Quaternion.AngleAxis(randomAngle, randomAxis) * direction;
+        }
+        return direction;
     }
 
     public override void OnTriggerEnter(Collider other)

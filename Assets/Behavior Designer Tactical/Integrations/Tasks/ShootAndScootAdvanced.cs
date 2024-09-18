@@ -38,6 +38,8 @@ namespace BehaviorDesigner.Runtime.Tactical.AstarPathfindingProject.Tasks
         public SharedFloat verticalSeparationFactor = 0.5f;
         [Tooltip("The minimum distance agents should maintain from the player")]
         public SharedFloat minPlayerDistance = 5f;
+        [Tooltip("The weight given to surrounding the player (0-1)")]
+        public SharedFloat surroundWeight = 0.5f;
 
         private Vector3 offset;
         private float currentAngle;
@@ -45,6 +47,7 @@ namespace BehaviorDesigner.Runtime.Tactical.AstarPathfindingProject.Tasks
         private bool inPosition;
         private float attackRadius;
         private bool determinePosition;
+        private List<Vector3> occupiedPositions = new List<Vector3>();
 
         public override void OnAwake()
         {
@@ -73,6 +76,13 @@ namespace BehaviorDesigner.Runtime.Tactical.AstarPathfindingProject.Tasks
                 }
             }
             inPosition = false;
+
+            // Initialize occupied positions
+            occupiedPositions.Clear();
+            foreach (var tree in formationTrees)
+            {
+                occupiedPositions.Add(tree.transform.position);
+            }
         }
 
         protected override void AddAgentToGroup(Behavior agent, int index)
@@ -181,6 +191,13 @@ namespace BehaviorDesigner.Runtime.Tactical.AstarPathfindingProject.Tasks
                     // The agents are in position. Set the arrival time so they will move to a new position after timeStationary.
                     arrivalTime = Time.time;
                     determinePosition = true;
+
+                    // Update occupied positions
+                    occupiedPositions.Clear();
+                    foreach (var tree in formationTrees)
+                    {
+                        occupiedPositions.Add(tree.transform.position);
+                    }
                 }
             } else if (canAttack) {
                 // The agents are in position and looking at their target. Attack.
@@ -198,10 +215,15 @@ namespace BehaviorDesigner.Runtime.Tactical.AstarPathfindingProject.Tasks
                 float angle = currentAngle + Random.Range(-maxMoveAngle.Value, maxMoveAngle.Value);
                 float radius = Random.Range(minAttackRadius.Value, maxAttackRadius.Value);
 
-                Vector3 potentialPosition = attackCenter + new Vector3(
-                    Mathf.Sin(angle * Mathf.Deg2Rad) * radius,
-                    Random.Range(-radius * 0.2f, radius * 0.2f), // Add some vertical variation
-                    Mathf.Cos(angle * Mathf.Deg2Rad) * radius
+                Vector3 surroundPosition = CalculateSurroundPosition(attackCenter);
+                Vector3 potentialPosition = Vector3.Lerp(
+                    attackCenter + new Vector3(
+                        Mathf.Sin(angle * Mathf.Deg2Rad) * radius,
+                        Random.Range(-radius * 0.2f, radius * 0.2f),
+                        Mathf.Cos(angle * Mathf.Deg2Rad) * radius
+                    ),
+                    surroundPosition,
+                    surroundWeight.Value
                 );
 
                 Vector3 transformedPosition = TransformPoint(potentialPosition, offset, attackRotation);
@@ -225,6 +247,44 @@ namespace BehaviorDesigner.Runtime.Tactical.AstarPathfindingProject.Tasks
                 0,
                 Mathf.Cos(currentAngle * Mathf.Deg2Rad) * attackRadius
             ), offset, attackRotation);
+        }
+
+        private Vector3 CalculateSurroundPosition(Vector3 attackCenter)
+        {
+            if (tacticalAgent.TargetTransform == null) return attackCenter;
+
+            Vector3 playerPosition = tacticalAgent.TargetTransform.position;
+            Vector3 directionToPlayer = (playerPosition - transform.position).normalized;
+            
+            // Calculate the ideal surrounding angle based on the number of agents
+            float idealAngle = 360f / formationTrees.Count;
+            
+            // Find the least occupied direction
+            float bestAngle = 0f;
+            float maxDistance = 0f;
+
+            for (float angle = 0; angle < 360; angle += 10f)
+            {
+                Vector3 checkDirection = Quaternion.Euler(0, angle, 0) * directionToPlayer;
+                Vector3 checkPosition = playerPosition + checkDirection * attackRadius;
+
+                float minDistanceToOthers = float.MaxValue;
+                foreach (Vector3 occupiedPos in occupiedPositions)
+                {
+                    float distance = Vector3.Distance(checkPosition, occupiedPos);
+                    minDistanceToOthers = Mathf.Min(minDistanceToOthers, distance);
+                }
+
+                if (minDistanceToOthers > maxDistance)
+                {
+                    maxDistance = minDistanceToOthers;
+                    bestAngle = angle;
+                }
+            }
+
+            // Calculate the final surrounding position
+            Vector3 surroundDirection = Quaternion.Euler(0, bestAngle, 0) * directionToPlayer;
+            return playerPosition + surroundDirection * attackRadius;
         }
 
         private bool HasLineOfSight(Vector3 position)
@@ -284,6 +344,7 @@ namespace BehaviorDesigner.Runtime.Tactical.AstarPathfindingProject.Tasks
             minAgentSeparation = 3f;
             verticalSeparationFactor = 0.5f;
             minPlayerDistance = 5f;
+            surroundWeight = 0.5f;
         }
     }
 }

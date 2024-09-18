@@ -5,143 +5,10 @@ public class ProjectilePool : MonoBehaviour
 {
     public static ProjectilePool Instance { get; private set; }
 
-    [SerializeField]
-    private ProjectileStateBased projectilePrefab;
-
-    [SerializeField]
-    private int initialPoolSize = 10;
-
-    private Queue<ProjectileStateBased> projectilePool = new Queue<ProjectileStateBased>(200);
-    private Queue<ProjectileRequest> projectileRequestPool = new Queue<ProjectileRequest>();
-    private Queue<ProjectileRequest> projectileRequests = new Queue<ProjectileRequest>();
-
-    private void Start()
-    {
-        InitializeProjectilePool();
-    }
-
-    public void InitializeProjectilePool()
-    {
-        projectilePool = new Queue<ProjectileStateBased>(200);
-        for (int i = 0; i < 200; i++)
-        {
-            ProjectileStateBased proj = Instantiate(projectilePrefab, transform);
-            proj.gameObject.SetActive(false);
-            projectilePool.Enqueue(proj);
-        }
-    }
-
-    public ProjectileStateBased GetProjectileFromPool()
-    {
-        if (projectilePool.Count == 0)
-        {
-            ConditionalDebug.LogWarning(
-                "[ProjectilePool] No projectile available in pool, creating new one."
-            );
-            return Instantiate(projectilePrefab, transform);
-        }
-        return projectilePool.Dequeue();
-    }
-
-    public void ReturnProjectileToPool(ProjectileStateBased projectile)
-    {
-        if (projectile == null)
-        {
-            ConditionalDebug.LogWarning("Attempted to return null projectile to pool.");
-            return;
-        }
-
-        projectile.ResetForPool();
-        projectile.gameObject.SetActive(false);
-
-        if (projectile.modelRenderer != null && projectilePrefab.modelRenderer != null)
-        {
-            projectile.modelRenderer.sharedMaterial = projectilePrefab.modelRenderer.sharedMaterial;
-        }
-
-        if (!projectilePool.Contains(projectile))
-        {
-            projectilePool.Enqueue(projectile);
-        }
-        else
-        {
-            ConditionalDebug.LogWarning(
-                "Attempted to return a projectile that's already in the pool."
-            );
-        }
-    }
-
-    public void ClearPool()
-    {
-        projectilePool.Clear();
-        projectileRequests.Clear();
-    }
-
-    public void CheckAndReplenishPool()
-    {
-        if (projectilePool.Count < initialPoolSize / 2)
-        {
-            int toAdd = initialPoolSize - projectilePool.Count;
-            for (int i = 0; i < toAdd; i++)
-            {
-                ProjectileStateBased proj = Instantiate(projectilePrefab, transform);
-                proj.gameObject.SetActive(false);
-                projectilePool.Enqueue(proj);
-            }
-        }
-    }
-
-    public ProjectileRequest GetProjectileRequest()
-    {
-        if (projectileRequestPool.Count > 0)
-            return projectileRequestPool.Dequeue();
-        return new ProjectileRequest();
-    }
-
-    public void ReturnProjectileRequest(ProjectileRequest request)
-    {
-        projectileRequestPool.Enqueue(request);
-    }
-
-    public void EnqueueProjectileRequest(ProjectileRequest request)
-    {
-        projectileRequests.Enqueue(request);
-    }
-
-    public int GetProjectileRequestCount()
-    {
-        return projectileRequests.Count;
-    }
-
-    public bool TryDequeueProjectileRequest(out ProjectileRequest request)
-    {
-        if (projectileRequests.Count > 0)
-        {
-            request = projectileRequests.Dequeue();
-            return true;
-        }
-        request = default;
-        return false;
-    }
-
-    public ProjectileRequest DequeueProjectileRequest()
-    {
-        if (projectileRequests.Count > 0)
-        {
-            return projectileRequests.Dequeue();
-        }
-        return default;
-    }
-
-    public void ClearProjectileRequests()
-    {
-        projectileRequests.Clear();
-    }
-
-    public int GetPoolSize()
-    {
-        return projectilePool.Count;
-    }
+    [SerializeField] private ProjectileStateBased projectilePrefab;
+    [SerializeField] private int initialPoolSize = 100;
+    private Queue<ProjectileStateBased> projectilePool = new Queue<ProjectileStateBased>();
+    private Queue<ProjectileRequest> projectileRequestQueue = new Queue<ProjectileRequest>();
 
     private void Awake()
     {
@@ -154,6 +21,94 @@ public class ProjectilePool : MonoBehaviour
         {
             Destroy(gameObject);
         }
+
+        InitializePool();
+    }
+
+    private void InitializePool()
+    {
+        for (int i = 0; i < initialPoolSize; i++)
+        {
+            CreateNewProjectile();
+        }
+    }
+
+    private ProjectileStateBased CreateNewProjectile()
+    {
+        ProjectileStateBased newProjectile = Instantiate(projectilePrefab, transform);
+        newProjectile.gameObject.SetActive(false);
+        projectilePool.Enqueue(newProjectile);
+        return newProjectile;
+    }
+
+    public ProjectileStateBased GetProjectile()
+    {
+        if (projectilePool.Count == 0)
+        {
+            return CreateNewProjectile();
+        }
+        return projectilePool.Dequeue();
+    }
+
+    public void ReturnProjectile(ProjectileStateBased projectile)
+    {
+        projectile.gameObject.SetActive(false);
+        projectilePool.Enqueue(projectile);
+    }
+
+    public ProjectileRequest GetProjectileRequest()
+    {
+        return new ProjectileRequest();
+    }
+
+    public void EnqueueProjectileRequest(ProjectileRequest request)
+    {
+        projectileRequestQueue.Enqueue(request);
+    }
+
+    public bool TryDequeueProjectileRequest(out ProjectileRequest request)
+    {
+        return projectileRequestQueue.TryDequeue(out request);
+    }
+
+    public void ReturnProjectileToPool(ProjectileStateBased projectile)
+    {
+        ReturnProjectile(projectile);
+    }
+
+    public void ClearPool()
+    {
+        projectilePool.Clear();
+        projectileRequestQueue.Clear();
+    }
+
+    public void CheckAndReplenishPool()
+    {
+        while (projectilePool.Count < initialPoolSize)
+        {
+            CreateNewProjectile();
+        }
+    }
+
+    public int GetProjectileRequestCount()
+    {
+        return projectileRequestQueue.Count;
+    }
+
+    public int GetPoolSize()
+    {
+        return projectilePool.Count;
+    }
+
+    public void ClearProjectileRequests()
+    {
+        projectileRequestQueue.Clear();
+    }
+
+    public void InitializeProjectilePool()
+    {
+        ClearPool();
+        InitializePool();
     }
 }
 
@@ -168,6 +123,9 @@ public struct ProjectileRequest
     public int MaterialId;
     public string ClockKey; // Add this line
     public float Accuracy; // Add this line
+    public Transform Target; // Add this line
+    public float Damage; // Add this line
+    public bool IsStatic; // Add this line
 
     public void Set(
         Vector3 position,
@@ -178,7 +136,10 @@ public struct ProjectileRequest
         bool enableHoming,
         int materialId,
         string clockKey,
-        float accuracy
+        float accuracy,
+        Transform target,
+        float damage,
+        bool isStatic
     )
     {
         Position = position;
@@ -190,5 +151,8 @@ public struct ProjectileRequest
         MaterialId = materialId;
         ClockKey = clockKey;
         Accuracy = accuracy;
+        Target = target;
+        Damage = damage;
+        IsStatic = isStatic; // Add this line
     }
 }

@@ -12,6 +12,12 @@ public class DestroyEffect : MonoBehaviour
     [SerializeField]
     private float duration = 0.3f;
 
+    [SerializeField]
+    private float localLightDelay = 0.5f;
+
+    [SerializeField]
+    private float localLightFadeDuration = 0.3f;
+
     private Light _mainLight;
     private Light _localLight;
     private Tween _mainLightTween;
@@ -20,28 +26,16 @@ public class DestroyEffect : MonoBehaviour
     private void Awake()
     {
         _localLight = GetComponent<Light>();
+        _mainLight = GameObject.FindGameObjectWithTag("Main Light")?.GetComponent<Light>();
     }
 
-    void Start()
+    private void Start()
     {
-        GameObject mainLightObj = GameObject.FindGameObjectWithTag("Main Light");
-        if (mainLightObj != null)
-        {
-            _mainLight = mainLightObj.GetComponent<Light>();
-        }
-
-        if (_mainLight != null)
-        {
-            AnimateMainLight();
-        }
-
-        if (_localLight != null)
-        {
-            AnimateLocalLight();
-        }
+        if (_mainLight != null) AnimateMainLight();
+        if (_localLight != null) AnimateLocalLight();
     }
 
-    void AnimateMainLight()
+    private void AnimateMainLight()
     {
         _mainLightTween = Tween
             .Custom(
@@ -80,10 +74,10 @@ public class DestroyEffect : MonoBehaviour
             });
     }
 
-    void AnimateLocalLight()
+    private void AnimateLocalLight()
     {
         _localLightTween = Tween
-            .Delay(0.5f)
+            .Delay(localLightDelay)
             .OnComplete(() =>
             {
                 if (_localLight != null && _localLight)
@@ -92,7 +86,7 @@ public class DestroyEffect : MonoBehaviour
                         _localLight,
                         1f,
                         0f,
-                        0.3f,
+                        localLightFadeDuration,
                         (light, value) =>
                         {
                             if (light != null && light)
@@ -105,23 +99,28 @@ public class DestroyEffect : MonoBehaviour
             });
     }
 
-    void OnDestroy()
+    private void OnDestroy()
     {
-        // Stop any ongoing tweens to prevent null reference errors
-        if (_mainLightTween.isAlive)
-            _mainLightTween.Stop();
-        if (_localLightTween.isAlive)
-            _localLightTween.Stop();
+        StopAllTweens();
     }
 
     public void CleanupEffects()
     {
-        // Stop all tweens associated with this object
-        PrimeTween.Tween.StopAll(this);
+        StopAllTweens();
+        DisableParticleSystems();
+        DisableLights();
+        DisableRenderers();
+        this.enabled = false;
+    }
 
-        // Stop and disable all particle systems
-        var particleSystems = GetComponentsInChildren<ParticleSystem>(true);
-        foreach (var ps in particleSystems)
+    private void StopAllTweens()
+    {
+        PrimeTween.Tween.StopAll(this);
+    }
+
+    private void DisableParticleSystems()
+    {
+        foreach (var ps in GetComponentsInChildren<ParticleSystem>(true))
         {
             if (ps != null)
             {
@@ -129,28 +128,21 @@ public class DestroyEffect : MonoBehaviour
                 ps.gameObject.SetActive(false);
             }
         }
+    }
 
-        // Disable all lights
-        var lights = GetComponentsInChildren<Light>(true);
-        foreach (var light in lights)
+    private void DisableLights()
+    {
+        foreach (var light in GetComponentsInChildren<Light>(true))
         {
-            if (light != null)
-            {
-                light.enabled = false;
-            }
+            if (light != null) light.enabled = false;
         }
+    }
 
-        // Disable all renderers
-        var renderers = GetComponentsInChildren<Renderer>(true);
-        foreach (var renderer in renderers)
+    private void DisableRenderers()
+    {
+        foreach (var renderer in GetComponentsInChildren<Renderer>(true))
         {
-            if (renderer != null)
-            {
-                renderer.enabled = false;
-            }
+            if (renderer != null) renderer.enabled = false;
         }
-
-        // Disable this component
-        this.enabled = false;
     }
 }

@@ -141,7 +141,7 @@ public class CrosshairCore : MonoBehaviour
         HandleInput();
         Debug.DrawRay(RaySpawn.transform.position, RaySpawn.transform.forward, Color.green);
         GetComponent<PlayerLocking>().OnLock();
-        GetComponent<PlayerLocking>().OnLockEnemy();
+        GetComponent<PlayerLocking>().CheckEnemyLock();
         GetComponent<PlayerTimeControl>().HandleRewindTime();
         GetComponent<PlayerTimeControl>().HandleRewindToBeat();
         GetComponent<PlayerTimeControl>().HandleSlowToBeat();
@@ -228,11 +228,9 @@ public class CrosshairCore : MonoBehaviour
     {
         PlayerLocking playerLocking = GetComponent<PlayerLocking>();
 
-        if (
-            CheckLockProjectiles()
-            && playerLocking.projectileTargetList.Count > 0
-            && Time.timeScale != 0f
-        )
+        Debug.Log($"OnMusicalLock called. Projectile targets: {playerLocking.projectileTargetList.Count}, Time scale: {Time.timeScale}");
+
+        if (CheckLockProjectiles() && playerLocking.projectileTargetList.Count > 0 && Time.timeScale != 0f)
         {
             var target = playerLocking.projectileTargetList[0];
             target.transform.GetChild(0).gameObject.SetActive(true);
@@ -246,7 +244,13 @@ public class CrosshairCore : MonoBehaviour
             playerLocking.Locks++;
             playerLocking.projectileTargetList.RemoveAt(0);
 
+            Debug.Log($"Locked onto projectile. Current locks: {playerLocking.Locks}");
+
             GetComponent<PlayerShooting>().AnimateLockOnEffect();
+        }
+        else
+        {
+            Debug.Log("Failed to lock onto projectile");
         }
     }
 

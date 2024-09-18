@@ -20,8 +20,8 @@ public class ProjectileSpawner : MonoBehaviour
     [SerializeField]
     private float enemyShotIntervalSeconds = 3f;
     private Queue<Action> enemyShotQueue = new Queue<Action>();
-    private int currentEnemyShotCount = 0;
-    private float lastEnemyShotResetTime;
+    private float lastShotTime;
+    private int shotsInCurrentInterval;
 
     private ProjectileStateBased lastCreatedProjectile;
 
@@ -54,24 +54,35 @@ public class ProjectileSpawner : MonoBehaviour
 
         // Get the global clock
         globalClock = Timekeeper.instance.Clock("Test");
+        lastShotTime = Time.time;
+        shotsInCurrentInterval = 0;
 
         StartCoroutine(ProcessEnemyShotQueue());
-        lastEnemyShotResetTime = Time.time;
     }
 
-    public void ProcessShootProjectile(ProjectileRequest request)
+    public void ProcessShootProjectile(ProjectileRequest request, ProjectileStateBased projectile, bool isStatic)
     {
-        ProjectileStateBased projectile = projectilePool.GetProjectileFromPool();
-        if (projectile == null)
+        projectile.transform.position = request.Position;
+        projectile.transform.rotation = request.Rotation;
+        
+        // Set up the projectile properties based on the request
+        projectile.SetupProjectile(request.Damage, request.Speed, request.Lifetime, request.EnableHoming, request.UniformScale, request.Target, isStatic);
+        
+        // Ensure the projectile is active
+        projectile.gameObject.SetActive(true);
+        
+        // Set the velocity
+        if (projectile.rb != null)
         {
-            ConditionalDebug.LogWarning(
-                "[ProjectileSpawner] No projectile available in pool, skipping shot."
-            );
-            return;
+            projectile.rb.velocity = projectile.transform.forward * request.Speed;
         }
-
-        SetupProjectile(projectile, request);
-        projectileManager.RegisterProjectile(projectile);
+        
+        if (request.EnableHoming && request.Target != null)
+        {
+            projectile.SetHomingTarget(request.Target);
+        }
+        
+        ConditionalDebug.Log($"[ProjectileSpawner] Processed projectile. Position: {request.Position}, Target: {(request.Target != null ? request.Target.name : "None")}, IsStatic: {isStatic}, Velocity: {projectile.rb?.velocity}, Homing: {request.EnableHoming}");
     }
 
     private void SetupProjectile(ProjectileStateBased projectile, ProjectileRequest request)
@@ -102,12 +113,15 @@ public class ProjectileSpawner : MonoBehaviour
                 Vector3.one * request.UniformScale
             );
 
-            GameObject radarSymbol = effectManager.GetRadarSymbolFromPool();
-            if (radarSymbol != null)
+            if (!request.IsStatic)
             {
-                radarSymbol.transform.SetParent(projectile.transform);
-                radarSymbol.transform.localPosition = Vector3.zero;
-                radarSymbol.SetActive(true);
+                GameObject radarSymbol = effectManager.GetRadarSymbolFromPool();
+                if (radarSymbol != null)
+                {
+                    radarSymbol.transform.SetParent(projectile.transform);
+                    radarSymbol.transform.localPosition = Vector3.zero;
+                    radarSymbol.SetActive(true);
+                }
             }
 
             projectile.initialSpeed = request.Speed;
@@ -126,11 +140,11 @@ public class ProjectileSpawner : MonoBehaviour
                 Vector3.one * request.UniformScale
             );
 
-            Debug.Log($"[ProjectileSpawner] Projectile setup complete. Position: {request.Position}, Speed: {request.Speed}, Lifetime: {request.Lifetime}");
+            ConditionalDebug.Log($"[ProjectileSpawner] Projectile setup complete. Position: {request.Position}, Speed: {request.Speed}, Lifetime: {request.Lifetime}");
         }
         catch (System.Exception e)
         {
-            Debug.LogError($"[ProjectileSpawner] Error setting up projectile: {e.Message}\n{e.StackTrace}");
+            ConditionalDebug.LogError($"[ProjectileSpawner] Error setting up projectile: {e.Message}\n{e.StackTrace}");
         }
     }
 
@@ -140,34 +154,21 @@ public class ProjectileSpawner : MonoBehaviour
 
         if (timeScale <= 0)
         {
-            return false; // Don't spawn projectiles when time is stopped or rewinding
+            ConditionalDebug.Log("[ProjectileSpawner] Shot denied due to timeScale <= 0");
+            return false;
         }
 
         // Check if rate limiting is disabled
         if (maxEnemyShotsPerInterval == -1 && enemyShotIntervalSeconds == -1)
         {
+            ConditionalDebug.Log("[ProjectileSpawner] Rate limiting disabled, executing shot immediately");
             shotAction.Invoke();
             return true;
         }
 
-        // Apply rate limiting if enabled
-        if (
-            enemyShotIntervalSeconds != -1
-            && Time.time - lastEnemyShotResetTime >= enemyShotIntervalSeconds / timeScale
-        )
-        {
-            currentEnemyShotCount = 0;
-            lastEnemyShotResetTime = Time.time;
-        }
-
-        if (maxEnemyShotsPerInterval == -1 || currentEnemyShotCount < maxEnemyShotsPerInterval)
-        {
-            enemyShotQueue.Enqueue(shotAction);
-            currentEnemyShotCount++;
-            return true;
-        }
-
-        return false;
+        enemyShotQueue.Enqueue(shotAction);
+        ConditionalDebug.Log($"[ProjectileSpawner] Shot request approved, enqueued. Queue size: {enemyShotQueue.Count}");
+        return true;
     }
 
     private IEnumerator ProcessEnemyShotQueue()
@@ -178,17 +179,30 @@ public class ProjectileSpawner : MonoBehaviour
 
             if (timeScale > 0 && enemyShotQueue.Count > 0)
             {
-                Action shotAction = enemyShotQueue.Dequeue();
-                shotAction.Invoke();
+                float currentTime = Time.time;
+                float scaledInterval = enemyShotIntervalSeconds / timeScale;
 
-                // Wait for the adjusted interval based on time scale, if interval is set
-                if (enemyShotIntervalSeconds != -1)
+                if (currentTime - lastShotTime >= scaledInterval)
                 {
-                    yield return new WaitForSeconds(enemyShotIntervalSeconds / timeScale);
+                    lastShotTime = currentTime;
+                    shotsInCurrentInterval = 0;
+                }
+
+                if (shotsInCurrentInterval < maxEnemyShotsPerInterval)
+                {
+                    Action shotAction = enemyShotQueue.Dequeue();
+                    shotAction.Invoke();
+                    shotsInCurrentInterval++;
+                    ConditionalDebug.Log($"[ProjectileSpawner] Processing enemy shot from queue. Remaining in queue: {enemyShotQueue.Count}");
+
+                    // Calculate time to next shot
+                    float timeToNextShot = scaledInterval / maxEnemyShotsPerInterval;
+                    yield return new WaitForSeconds(timeToNextShot);
                 }
                 else
                 {
-                    yield return null;
+                    // Wait for the next interval
+                    yield return new WaitForSeconds(scaledInterval - (Time.time - lastShotTime));
                 }
             }
             else
@@ -204,11 +218,14 @@ public class ProjectileSpawner : MonoBehaviour
         float speed,
         float lifetime,
         float uniformScale,
+        float damage,  // Add this parameter
         bool enableHoming = false,
-        Material material = null
+        Material material = null,
+        Transform target = null,
+        bool isStatic = false
     )
     {
-        ProjectileRequest request = projectilePool.GetProjectileRequest();
+        ProjectileRequest request = ProjectilePool.Instance.GetProjectileRequest();
         request.Set(
             position,
             rotation,
@@ -218,9 +235,15 @@ public class ProjectileSpawner : MonoBehaviour
             enableHoming,
             RegisterMaterial(material),
             "", // clockKey (empty for player projectiles)
-            projectileManager.projectileAccuracy // using the projectileAccuracy field from ProjectileManager
+            projectileManager.projectileAccuracy, // using the projectileAccuracy field from ProjectileManager
+            target,
+            damage,  // Add this argument
+            isStatic
         );
-        projectilePool.EnqueueProjectileRequest(request);
+        ProjectilePool.Instance.EnqueueProjectileRequest(request);
+
+        // Log the scale being used in the request
+        ConditionalDebug.Log($"[ProjectileSpawner] Enqueued projectile request with scale: {uniformScale}, IsStatic: {isStatic}");
     }
 
     public ProjectileStateBased ShootProjectileFromEnemy(
@@ -229,39 +252,41 @@ public class ProjectileSpawner : MonoBehaviour
         float speed,
         float lifetime,
         float uniformScale,
+        float damage,
         bool enableHoming = false,
         Material material = null,
         string clockKey = "",
-        float accuracy = 1f
+        float accuracy = -1f,
+        Transform target = null,
+        bool isStatic = false
     )
     {
-        bool shotRequested = RequestEnemyShot(() =>
-        {
-            ProjectileRequest request = projectilePool.GetProjectileRequest();
-            request.Set(
-                position,
-                rotation,
-                speed,
-                lifetime,
-                uniformScale,
-                enableHoming,
-                RegisterMaterial(material),
-                clockKey,
-                accuracy
-            );
-            projectilePool.EnqueueProjectileRequest(request);
+        ConditionalDebug.Log($"[ProjectileSpawner] ShootProjectileFromEnemy called. Position: {position}, Target: {target?.name}, IsStatic: {isStatic}");
+        
+        ProjectileRequest request = ProjectilePool.Instance.GetProjectileRequest();
+        float finalAccuracy = accuracy >= 0 ? accuracy : ProjectileManager.Instance.projectileAccuracy;
+        request.Set(
+            position,
+            rotation,
+            speed,
+            lifetime,
+            uniformScale,
+            enableHoming,
+            RegisterMaterial(material),
+            clockKey,
+            finalAccuracy,
+            target,
+            damage,
+            isStatic
+        );
 
-            lastCreatedProjectile = null; // Will be set in ProcessShootProjectile
-        });
+        ProjectileStateBased projectile = projectilePool.GetProjectile();
+        ProcessShootProjectile(request, projectile, isStatic);
+        ProjectileManager.Instance.RegisterProjectile(projectile);
 
-        if (!shotRequested)
-        {
-            ConditionalDebug.Log(
-                "[ProjectileSpawner] Enemy shot request denied due to rate limiting."
-            );
-        }
+            ConditionalDebug.Log($"[ProjectileSpawner] Projectile created and registered for enemy. Position: {position}, Speed: {speed}, Target: {(target != null ? target.name : "None")}, IsStatic: {isStatic}");
 
-        return lastCreatedProjectile;
+        return projectile;
     }
 
     private int RegisterMaterial(Material material)
@@ -296,11 +321,104 @@ public class ProjectileSpawner : MonoBehaviour
         enemyShotIntervalSeconds = intervalSeconds;
 
         // Reset the current shot count and timer when changing rates
-        currentEnemyShotCount = 0;
-        lastEnemyShotResetTime = Time.time;
+        shotsInCurrentInterval = 0;
+        lastShotTime = Time.time;
 
         ConditionalDebug.Log(
             $"[ProjectileSpawner] Shot rates updated: Max shots = {maxShots}, Interval = {intervalSeconds}s"
         );
+    }
+
+    private Queue<StaticEnemyProjectileRequest> staticEnemyProjectileQueue = new Queue<StaticEnemyProjectileRequest>();
+    private bool isProcessingStaticEnemyProjectiles = false;
+
+    private struct StaticEnemyProjectileRequest
+    {
+        public Vector3 Position;
+        public Quaternion Rotation;
+        public float Speed;
+        public float Lifetime;
+        public float Scale;
+        public float Damage;
+        public bool EnableHoming;
+        public Material Material;
+    }
+
+    public void ShootStaticEnemyProjectile(
+        Vector3 position,
+        Quaternion rotation,
+        float speed,
+        float lifetime,
+        float scale,
+        float damage,
+        bool enableHoming,
+        Material material)
+    {
+        staticEnemyProjectileQueue.Enqueue(new StaticEnemyProjectileRequest
+        {
+            Position = position,
+            Rotation = rotation,
+            Speed = speed,
+            Lifetime = lifetime,
+            Scale = scale,
+            Damage = damage,
+            EnableHoming = enableHoming,
+            Material = material
+        });
+
+        if (!isProcessingStaticEnemyProjectiles)
+        {
+            StartCoroutine(ProcessStaticEnemyProjectiles());
+        }
+    }
+
+    private IEnumerator ProcessStaticEnemyProjectiles()
+    {
+        isProcessingStaticEnemyProjectiles = true;
+        WaitForSeconds shortDelay = new WaitForSeconds(0.02f); // Reduced delay between batches
+
+        while (staticEnemyProjectileQueue.Count > 0)
+        {
+            int batchSize = Mathf.Min(30, staticEnemyProjectileQueue.Count); // Process up to 30 projectiles per batch
+            for (int i = 0; i < batchSize; i++)
+            {
+                if (staticEnemyProjectileQueue.Count > 0)
+                {
+                    StaticEnemyProjectileRequest request = staticEnemyProjectileQueue.Dequeue();
+                    ProjectileStateBased projectile = projectilePool.GetProjectile();
+
+                    if (projectile != null)
+                    {
+                        SetupStaticEnemyProjectile(projectile, request);
+                        projectile.gameObject.SetActive(true);
+                        ConditionalDebug.Log($"[ProjectileSpawner] Static enemy projectile shot from {request.Position}");
+                    }
+                    else
+                    {
+                        ConditionalDebug.LogWarning("[ProjectileSpawner] Failed to get projectile from pool for static enemy.");
+                    }
+
+                    // Add a small random delay between individual shots in the batch
+                    yield return new WaitForSeconds(UnityEngine.Random.Range(0.005f, 0.015f));
+                }
+            }
+
+            yield return shortDelay; // Short delay between batches
+        }
+
+        isProcessingStaticEnemyProjectiles = false;
+    }
+
+    private void SetupStaticEnemyProjectile(ProjectileStateBased projectile, StaticEnemyProjectileRequest request)
+    {
+        projectile.transform.position = request.Position;
+        projectile.transform.rotation = request.Rotation;
+        projectile.transform.localScale = Vector3.one * request.Scale;
+        projectile.SetupProjectile(request.Damage, request.Speed, request.Lifetime, request.EnableHoming, request.Scale, null, true);
+        
+        if (request.Material != null && projectile.modelRenderer != null)
+        {
+            projectile.modelRenderer.material = request.Material;
+        }
     }
 }

@@ -84,8 +84,12 @@ public class ShooterMovement : MonoBehaviour
         // Use Chronos' deltaTime if available, otherwise use Unity's Time.deltaTime
         float deltaTime = timeline != null ? timeline.deltaTime : Time.deltaTime;
 
-        transform.localPosition += new Vector3(direction.x, direction.y, 0) * xySpeed * deltaTime;
+        Vector2 movement = (direction + aimAssistVector) * xySpeed * deltaTime;
+        transform.localPosition += new Vector3(movement.x, movement.y, 0);
         ClampPosition();
+
+        // Reset aim assist vector after applying it
+        aimAssistVector = Vector2.zero;
     }
 
     void ClampPosition()
@@ -157,5 +161,12 @@ public class ShooterMovement : MonoBehaviour
         {
             objectToRotate.transform.localRotation = Quaternion.identity;
         }
+    }
+
+    private Vector2 aimAssistVector;
+
+    public void ApplyAimAssist(Vector3 aimAssistDirection)
+    {
+        aimAssistVector = new Vector2(aimAssistDirection.x, aimAssistDirection.y);
     }
 }
