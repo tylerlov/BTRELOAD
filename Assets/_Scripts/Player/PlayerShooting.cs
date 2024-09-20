@@ -1,9 +1,9 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq; // Add this for LINQ methods
-using DG.Tweening;
 using FMODUnity;
 using MoreMountains.Feedbacks;
+using PrimeTween;
 using UnityEngine;
 
 public class PlayerShooting : MonoBehaviour
@@ -36,8 +36,6 @@ public class PlayerShooting : MonoBehaviour
     private Queue<GameObject> lockOnEffectPool;
     #endregion
 
-    private Sequence lockOnSequence;
-
     private void Awake()
     {
         if (Instance == null)
@@ -54,7 +52,6 @@ public class PlayerShooting : MonoBehaviour
         playerLocking = GetComponent<PlayerLocking>();
         crosshairCore = GetComponent<CrosshairCore>();
         InitializeLockOnEffectPool();
-        InitializeLockOnSequence();
         launchDelayWait = new WaitForSeconds(launchDelay);
     }
 
@@ -70,13 +67,6 @@ public class PlayerShooting : MonoBehaviour
             lockOnEffect.SetActive(false);
             lockOnEffectPool.Enqueue(lockOnEffect);
         }
-    }
-
-    private void InitializeLockOnSequence()
-    {
-        lockOnSequence = DOTween.Sequence();
-        lockOnSequence.SetAutoKill(false);
-        lockOnSequence.Pause();
     }
 
     public void HandleShootingEffects()
@@ -97,34 +87,38 @@ public class PlayerShooting : MonoBehaviour
         yield return new WaitForSeconds(.1f);
     }
 
-   public IEnumerator LaunchProjectilesWithDelay(List<PlayerLockedState> projectilesToLaunch)
-{
-    crosshairCore.lastProjectileLaunchTime = Time.time;
-    Debug.Log($"Projectiles launched at {crosshairCore.lastProjectileLaunchTime}");
-
-    float totalDamage = projectilesToLaunch.Sum(state => state.GetProjectile()?.damageAmount ?? 0f);
-    List<Transform> enemiesHit = projectilesToLaunch.Select(state => state.GetTarget()).ToList();
-
-    foreach (var lockedState in projectilesToLaunch)
+    public IEnumerator LaunchProjectilesWithDelay(List<PlayerLockedState> projectilesToLaunch)
     {
-        ProjectileStateBased projectile = lockedState.GetProjectile();
+        crosshairCore.lastProjectileLaunchTime = Time.time;
+        Debug.Log($"Projectiles launched at {crosshairCore.lastProjectileLaunchTime}");
 
-        if (projectile != null)
+        float totalDamage = projectilesToLaunch.Sum(state =>
+            state.GetProjectile()?.damageAmount ?? 0f
+        );
+        List<Transform> enemiesHit = projectilesToLaunch
+            .Select(state => state.GetTarget())
+            .ToList();
+
+        foreach (var lockedState in projectilesToLaunch)
         {
-            projectile.ReturnToPool();
-            AnimateLockOnEffect();
-            yield return launchDelayWait;
-        }
-    }
+            ProjectileStateBased projectile = lockedState.GetProjectile();
 
-    Debug.Log($"Total damage to be applied: {totalDamage}");
-    
-    // Apply damage to locked enemies
-    playerLocking.DamageLockedEnemies(totalDamage, enemiesHit);
-    
-    // Clear locked targets after applying damage
-    playerLocking.ClearLockedTargets();
-}
+            if (projectile != null)
+            {
+                projectile.ReturnToPool();
+                AnimateLockOnEffect();
+                yield return launchDelayWait;
+            }
+        }
+
+        Debug.Log($"Total damage to be applied: {totalDamage}");
+
+        // Apply damage to locked enemies
+        playerLocking.DamageLockedEnemies(totalDamage, enemiesHit);
+
+        // Clear locked targets after applying damage
+        playerLocking.ClearLockedTargets();
+    }
 
     public void AnimateLockOnEffect()
     {
@@ -142,16 +136,18 @@ public class PlayerShooting : MonoBehaviour
                 initialColor.a = crosshairCore.initialTransparency;
                 spriteRenderer.color = initialColor;
 
-                lockOnSequence.Append(spriteRenderer.DOFade(1f, 0.5f));
+                Color targetColor = spriteRenderer.color;
+                targetColor.a = 1f;
+                Tween.Color(spriteRenderer, targetColor, 0.5f);
             }
 
-            lockOnSequence.Append(lockOnInstance.transform.DOScale(Vector3.zero, 1f));
-            lockOnSequence.AppendCallback(() => {
-                lockOnInstance.SetActive(false);
-                lockOnEffectPool.Enqueue(lockOnInstance);
-            });
-
-            lockOnSequence.Restart();
+            Tween
+                .Scale(lockOnInstance.transform, Vector3.zero, 1f)
+                .OnComplete(() =>
+                {
+                    lockOnInstance.SetActive(false);
+                    lockOnEffectPool.Enqueue(lockOnInstance);
+                });
         }
     }
 }

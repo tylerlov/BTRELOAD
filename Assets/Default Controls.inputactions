@@ -148,6 +148,17 @@
                 },
                 {
                     "name": "",
+                    "id": "4821b129-444b-4ed7-a970-a322a335ceca",
+                    "path": "<Gamepad>/rightStick/left",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Controller",
+                    "action": "Rotate Left",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
                     "id": "9bca9a56-2d2a-4d58-943c-9815b91f4450",
                     "path": "<Gamepad>/rightShoulder",
                     "interactions": "",
@@ -164,6 +175,17 @@
                     "interactions": "",
                     "processors": "",
                     "groups": "Keyboard",
+                    "action": "Rotate Right",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "c57d4a0f-ce96-48f1-95dd-5ebfdfbac3f3",
+                    "path": "<Gamepad>/rightStick/right",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Controller",
                     "action": "Rotate Right",
                     "isComposite": false,
                     "isPartOfComposite": false
@@ -193,7 +215,7 @@
                 {
                     "name": "",
                     "id": "9c91ee13-9b59-4a68-8693-7ca442a6db69",
-                    "path": "<XInputController>/buttonWest",
+                    "path": "<Gamepad>/buttonSouth",
                     "interactions": "",
                     "processors": "",
                     "groups": "Controller",
@@ -248,7 +270,7 @@
                 {
                     "name": "",
                     "id": "27050b15-7031-4be5-ba2d-47289f0f299c",
-                    "path": "<Gamepad>/buttonEast",
+                    "path": "<Gamepad>/buttonWest",
                     "interactions": "",
                     "processors": "",
                     "groups": "Controller",

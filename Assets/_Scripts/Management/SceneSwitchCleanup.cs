@@ -42,7 +42,7 @@ public class SceneSwitchCleanup : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning("CinemachineCameraSwitching component not found in the scene.");
+            ConditionalDebug.LogWarning("CinemachineCameraSwitching component not found in the scene.");
         }
     }
 

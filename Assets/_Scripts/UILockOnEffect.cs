@@ -67,13 +67,7 @@ public class UILockOnEffect : MonoBehaviour
         boxSizeTween.Stop();
 
         // Animate the box size from initialBoxSize to 0 over 0.6 seconds
-        boxSizeTween = Tween.Custom(
-            this,
-            initialBoxSize,
-            0f,
-            0.6f,
-            (target, value) => target.boxSize = value
-        );
+        boxSizeTween = Tween.Custom(this, initialBoxSize, 0f, 0.6f, (target, value) => target.boxSize = value);
     }
 
     private void OnDisable()

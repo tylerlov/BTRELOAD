@@ -1,9 +1,9 @@
 using System.Collections;
 using System.Collections.Generic;
-using DG.Tweening;
 using SonicBloom.Koreo;
 using UnityEngine;
 using UnityEngine.VFX;
+using PrimeTween;
 
 public class WarpSpeed : MonoBehaviour
 {
@@ -38,17 +38,7 @@ public class WarpSpeed : MonoBehaviour
         if (_warpActive)
         {
             WarpVFX.Play();
-            DOVirtual
-                .Float(
-                    0,
-                    1,
-                    0.1f,
-                    v =>
-                    {
-                        WarpVFX.SetFloat("WarpAmount", v);
-                    }
-                )
-                .SetEase(Ease.Flash);
+            Tween.Custom(0f, 1f, 0.1f, v => WarpVFX.SetFloat("WarpAmount", v), Ease.InOutQuad);
             yield return new WaitForSeconds(0.2f);
             WarpVFX.SetFloat("WarpAmount", 0);
         }
@@ -64,12 +54,10 @@ public class WarpSpeed : MonoBehaviour
         {
             _warpActive = true;
             StartCoroutine(ActivateParticles());
-            return;
         }
-        else if (Time.timeScale != 0f)
+        else
         {
             _warpActive = false;
-            return;
         }
     }
 }

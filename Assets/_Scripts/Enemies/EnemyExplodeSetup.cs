@@ -101,7 +101,7 @@ public class EnemyExplodeSetup : BaseBehaviour, IDamageable, IAttackAgent
             pulseVisualEffect = GetComponent<VisualEffect>();
             if (pulseVisualEffect == null)
             {
-                Debug.LogError("No VisualEffect component found on " + gameObject.name);
+                ConditionalDebug.LogError("No VisualEffect component found on " + gameObject.name);
             }
         }
     }
@@ -222,14 +222,14 @@ public class EnemyExplodeSetup : BaseBehaviour, IDamageable, IAttackAgent
             }
             else
             {
-                Debug.LogWarning($"No SpawnPool found in parent hierarchy of {gameObject.name}");
+                ConditionalDebug.LogWarning($"No SpawnPool found in parent hierarchy of {gameObject.name}");
             }
         }
     }
 
     public void Damage(float amount)
     {
-        Debug.Log($"Enemy {gameObject.name} received {amount} damage");
+        ConditionalDebug.Log($"Enemy {gameObject.name} received {amount} damage");
 
         HandleDamage(amount);
         if (currentHealth <= 0)
@@ -413,12 +413,12 @@ public class EnemyExplodeSetup : BaseBehaviour, IDamageable, IAttackAgent
             }
             else
             {
-                Debug.LogWarning("Player does not implement IDamageable interface");
+                ConditionalDebug.LogWarning("Player does not implement IDamageable interface");
             }
         }
         else
         {
-            Debug.LogWarning("Player target is null");
+            ConditionalDebug.LogWarning("Player target is null");
         }
     }
 
@@ -430,7 +430,7 @@ public class EnemyExplodeSetup : BaseBehaviour, IDamageable, IAttackAgent
         }
         else
         {
-            Debug.LogWarning("Pulse Visual Effect is not assigned on " + gameObject.name);
+            ConditionalDebug.LogWarning("Pulse Visual Effect is not assigned on " + gameObject.name);
         }
     }
 }

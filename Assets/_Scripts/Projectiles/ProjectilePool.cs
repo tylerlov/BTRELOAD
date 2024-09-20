@@ -53,6 +53,20 @@ public class ProjectilePool : MonoBehaviour
     public void ReturnProjectile(ProjectileStateBased projectile)
     {
         projectile.gameObject.SetActive(false);
+        
+        if (projectile.rb != null)
+        {
+            // Reset velocities only if Rigidbody is not kinematic
+            if (!projectile.rb.isKinematic)
+            {
+                projectile.rb.velocity = Vector3.zero;
+                projectile.rb.angularVelocity = Vector3.zero;
+            }
+
+            // Now set isKinematic to true
+            projectile.rb.isKinematic = true;
+        }
+        
         projectilePool.Enqueue(projectile);
     }
 

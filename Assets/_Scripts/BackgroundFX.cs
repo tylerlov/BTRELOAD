@@ -28,6 +28,7 @@ public class BackgroundFX : MonoBehaviour
         InitializeSkyboxMaterial();
         Koreographer.Instance.RegisterForEvents(eventID, OnMusicalSkybox);
         UpdateCurrentSkyboxColor();
+        ConditionalDebug.Log("BackgroundFX initialized");
     }
 
     void InitializeSkyboxMaterial()
@@ -39,7 +40,7 @@ public class BackgroundFX : MonoBehaviour
         }
         else
         {
-            Debug.LogError("No skybox material set in RenderSettings!");
+            ConditionalDebug.LogError("No skybox material set in RenderSettings!");
         }
     }
 
@@ -58,13 +59,14 @@ public class BackgroundFX : MonoBehaviour
         colorChangeSwitch = !colorChangeSwitch;
         Color targetColor = colorChangeSwitch ? colorOne : colorTwo;
         UpdateSkyboxColor(targetColor);
+        ConditionalDebug.Log($"Skybox color changed to {(colorChangeSwitch ? "colorOne" : "colorTwo")}");
     }
 
     void UpdateSkyboxColor(Color color)
     {
         if (skyboxMaterial == null)
         {
-            Debug.LogError("Skybox material is null! Reinitializing...");
+            ConditionalDebug.LogError("Skybox material is null! Reinitializing...");
             InitializeSkyboxMaterial();
             if (skyboxMaterial == null)
                 return;
@@ -73,12 +75,14 @@ public class BackgroundFX : MonoBehaviour
         string propertyName = GetSkyboxColorProperty();
         if (string.IsNullOrEmpty(propertyName))
         {
-            Debug.LogError("No valid color property found on skybox material!");
+            ConditionalDebug.LogError("No valid color property found on skybox material!");
             return;
         }
 
         skyboxMaterial.SetColor(propertyName, color);
 
+        // Removed this log as it's not very informative
+        // ConditionalDebug.Log($"Skybox color updated to {color}");
         UpdateCurrentSkyboxColor();
         RenderSettings.skybox = skyboxMaterial;
         DynamicGI.UpdateEnvironment();

@@ -250,8 +250,11 @@ public class ProjectileStateBased : MonoBehaviour
 
     private void OnDisable()
     {
-        // Return to pool when disabled
-        ProjectilePool.Instance.ReturnProjectile(this);
+        // Optional: Ensure projectile is returned to the pool only if not already handled
+        if (!rb.isKinematic)
+        {
+            ProjectilePool.Instance.ReturnProjectile(this);
+        }
     }
 
     private void Start()
@@ -325,24 +328,22 @@ public class ProjectileStateBased : MonoBehaviour
 
     public void Death()
     {
-        if (isPlayerShot && !hasHitTarget)
-        {
-            LogProjectileMiss();
-        }
+        // Log death event
+        ConditionalDebug.Log($"[ProjectileStateBased] Projectile {GetInstanceID()} is dying.");
 
-        ConditionalDebug.Log(
-            $"Death called on projectile. Lifetime remaining: {lifetime}. Hit Player: {projHitPlayer}"
-        );
-
+        // Unregister from ProjectileManager
         ProjectileManager.Instance.UnregisterProjectile(this);
-        ProjectilePool.Instance.ReturnProjectileToPool(this);
 
         if (rb != null)
         {
+            // Reset velocities before setting to kinematic
             rb.velocity = Vector3.zero;
             rb.angularVelocity = Vector3.zero;
             rb.isKinematic = true;
         }
+
+        // Return to pool
+        ProjectilePool.Instance.ReturnProjectileToPool(this);
 
         transform.DOKill();
 
@@ -364,7 +365,7 @@ public class ProjectileStateBased : MonoBehaviour
     {
         currentTarget = target;
         homing = (target != null);
-        Debug.Log($"[ProjectileStateBased] Homing target set to {(target != null ? target.name : "None")}. Homing: {homing}");
+        ConditionalDebug.Log($"[ProjectileStateBased] Homing target set to {(target != null ? target.name : "None")}. Homing: {homing}");
     }
 
     public void EnableHoming(bool enable)
@@ -376,6 +377,11 @@ public class ProjectileStateBased : MonoBehaviour
 
     void FixedUpdate()
     {
+        if (rb == null || rb.isKinematic)
+        {
+            return; // Skip processing if Rigidbody is kinematic or null
+        }
+
         float timeScale = TLine.timeScale;
         float deltaTime = Time.fixedDeltaTime * timeScale;
 
@@ -394,11 +400,11 @@ public class ProjectileStateBased : MonoBehaviour
         if (TLine != null)
         {
             TLine.globalClockKey = clockKey;
-            Debug.Log($"SetClock: Timeline's globalClockKey set to '{clockKey}'.");
+            ConditionalDebug.Log($"SetClock: Timeline's globalClockKey set to '{clockKey}'.");
         }
         else
         {
-            Debug.LogWarning("SetClock: Timeline component not found on this projectile.");
+            ConditionalDebug.LogWarning("SetClock: Timeline component not found on this projectile.");
         }
     }
 
@@ -473,9 +479,13 @@ public class ProjectileStateBased : MonoBehaviour
     {
         if (cachedRigidbody != null)
         {
-            cachedRigidbody.isKinematic = false;
-            cachedRigidbody.velocity = Vector3.zero;
-            cachedRigidbody.angularVelocity = Vector3.zero;
+            // Do not change isKinematic here; let the pool handle it
+            // Only reset velocities if needed
+            if (!cachedRigidbody.isKinematic)
+            {
+                cachedRigidbody.velocity = Vector3.zero;
+                cachedRigidbody.angularVelocity = Vector3.zero;
+            }
         }
 
         this.enabled = true;
@@ -509,8 +519,7 @@ public class ProjectileStateBased : MonoBehaviour
 
         if (modelRenderer != null && myMaterial != null)
         {
-            modelRenderer.material = myMaterial;
-            myMaterial.SetColor("_BaseColor", originalProjectileColor);
+            // Reset material or other properties as needed
         }
 
         accuracy = 1f;
@@ -648,7 +657,13 @@ public class ProjectileStateBased : MonoBehaviour
         
         transform.localScale = Vector3.one * scale;
 
-        Debug.Log($"[ProjectileStateBased] Set up projectile with scale: {scale}, Target: {(target != null ? target.name : "None")}, IsStatic: {isStatic}, Speed: {speed}, Lifetime: {lifetime}, Homing: {homing}");
+        // Ensure the Rigidbody is non-kinematic
+        rb.isKinematic = false;
+        
+        // Set velocity
+        rb.velocity = transform.forward * speed;
+
+        ConditionalDebug.Log($"[ProjectileStateBased] Set up projectile with scale: {scale}, Target: {(target != null ? target.name : "None")}, IsStatic: {isStatic}, Speed: {speed}, Lifetime: {lifetime}, Homing: {homing}");
 
         // Only add radar symbol if it's not from a static enemy
         if (!isFromStaticEnemy)

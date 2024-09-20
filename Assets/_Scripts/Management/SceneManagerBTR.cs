@@ -61,7 +61,7 @@ public class SceneManagerBTR : MonoBehaviour
     {
         if (string.IsNullOrEmpty(baseSceneName))
         {
-            Debug.LogError("Base scene name is not set in the inspector.");
+            ConditionalDebug.LogError("Base scene name is not set in the inspector.");
             return;
         }
 
@@ -97,7 +97,7 @@ public class SceneManagerBTR : MonoBehaviour
     {
         if (currentGroup == null || currentGroup.scenes.Length == 0)
         {
-            Debug.LogError("No scenes defined in the current group.");
+            ConditionalDebug.LogError("No scenes defined in the current group.");
             return;
         }
 
@@ -107,12 +107,12 @@ public class SceneManagerBTR : MonoBehaviour
 
     public async Task LoadAdditiveSceneAsync(string sceneName)
     {
-        Debug.Log(
+        ConditionalDebug.Log(
             $"<color=cyan>[SCENE] LoadAdditiveSceneAsync called for scene: {sceneName}</color>"
         );
         if (currentAdditiveScene.IsValid() && currentAdditiveScene.isLoaded)
         {
-            Debug.Log(
+            ConditionalDebug.Log(
                 $"<color=cyan>[SCENE] Unloading current additive scene: {currentAdditiveScene.name}</color>"
             );
             await UnityEngine.SceneManagement.SceneManager.UnloadSceneAsync(currentAdditiveScene);
@@ -120,7 +120,7 @@ public class SceneManagerBTR : MonoBehaviour
 
         try
         {
-            Debug.Log($"<color=cyan>[SCENE] Starting to load additive scene: {sceneName}</color>");
+            ConditionalDebug.Log($"<color=cyan>[SCENE] Starting to load additive scene: {sceneName}</color>");
             AsyncOperation asyncLoad = UnityEngine.SceneManagement.SceneManager.LoadSceneAsync(
                 sceneName,
                 LoadSceneMode.Additive
@@ -135,7 +135,7 @@ public class SceneManagerBTR : MonoBehaviour
                 throw new System.Exception($"Failed to load scene: {sceneName}");
             }
 
-            Debug.Log(
+            ConditionalDebug.Log(
                 $"<color=cyan>[SCENE] Successfully loaded additive scene: {sceneName}</color>"
             );
             UnityEngine.SceneManagement.SceneManager.SetActiveScene(currentAdditiveScene);
@@ -146,7 +146,7 @@ public class SceneManagerBTR : MonoBehaviour
         }
         catch (System.Exception e)
         {
-            Debug.LogError(
+            ConditionalDebug.LogError(
                 $"<color=red>[SCENE] Error loading additive scene {sceneName}: {e.Message}</color>"
             );
             Debug.LogException(e);
@@ -156,10 +156,10 @@ public class SceneManagerBTR : MonoBehaviour
 
     public void updateStatus(string waveEvent)
     {
-        Debug.Log($"<color=cyan>[SCENE] updateStatus called with event: {waveEvent}</color>");
+        ConditionalDebug.Log($"<color=cyan>[SCENE] updateStatus called with event: {waveEvent}</color>");
         if (isTransitioning)
         {
-            Debug.Log(
+            ConditionalDebug.Log(
                 "<color=yellow>[SCENE] Skipping updateStatus due to ongoing transition</color>"
             );
             return;
@@ -168,13 +168,13 @@ public class SceneManagerBTR : MonoBehaviour
         var currentScene = currentGroup.scenes[currentSceneIndex];
         var currentSection = currentScene.songSections[currentSectionIndex];
 
-        Debug.Log(
+        ConditionalDebug.Log(
             $"<color=cyan>[SCENE] Update Status: {waveEvent} - Scene: {currentSceneIndex}, Section: {currentSectionIndex} ({currentSection.name}), Completed Waves: {completedWaves}, Expected Waves: {expectedWaves}</color>"
         );
 
         if (isFirstUpdate && waveEvent == "wavestart")
         {
-            Debug.Log("<color=cyan>[SCENE] First update detected, moving to next section</color>");
+            ConditionalDebug.Log("<color=cyan>[SCENE] First update detected, moving to next section</color>");
             isFirstUpdate = false;
             MoveToNextSection();
             return;
@@ -182,24 +182,24 @@ public class SceneManagerBTR : MonoBehaviour
 
         if (expectedWaves == 0)
         {
-            Debug.Log("<color=cyan>[SCENE] Expected waves is 0, moving to next section</color>");
+            ConditionalDebug.Log("<color=cyan>[SCENE] Expected waves is 0, moving to next section</color>");
             MoveToNextSection();
         }
         else
         {
             if (waveEvent == "wavestart")
             {
-                Debug.Log("<color=cyan>[SCENE] Wave start event, no action taken</color>");
+                ConditionalDebug.Log("<color=cyan>[SCENE] Wave start event, no action taken</color>");
             }
             else if (waveEvent == "waveend")
             {
                 completedWaves++;
-                Debug.Log(
+                ConditionalDebug.Log(
                     $"<color=cyan>[SCENE] Wave end event, completed waves: {completedWaves}</color>"
                 );
                 if (completedWaves >= expectedWaves)
                 {
-                    Debug.Log(
+                    ConditionalDebug.Log(
                         "<color=cyan>[SCENE] All waves completed, moving to next section</color>"
                     );
                     MoveToNextSection();
@@ -207,7 +207,7 @@ public class SceneManagerBTR : MonoBehaviour
             }
         }
 
-        Debug.Log(
+        ConditionalDebug.Log(
             $"<color=cyan>[SCENE] After Update - Scene: {currentSceneIndex}, Section: {currentSectionIndex}, Completed Waves: {completedWaves}, Expected Waves: {expectedWaves}</color>"
         );
 
@@ -216,21 +216,21 @@ public class SceneManagerBTR : MonoBehaviour
             && completedWaves >= expectedWaves
         )
         {
-            Debug.Log("<color=cyan>[SCENE] Final section completed, moving to next scene</color>");
+            ConditionalDebug.Log("<color=cyan>[SCENE] Final section completed, moving to next scene</color>");
             MoveToNextScene();
         }
     }
 
     private void MoveToNextSection()
     {
-        Debug.Log("<color=cyan>[SCENE] MoveToNextSection called</color>");
+        ConditionalDebug.Log("<color=cyan>[SCENE] MoveToNextSection called</color>");
         currentSectionIndex++;
         completedWaves = 0;
 
         var currentScene = currentGroup.scenes[currentSceneIndex];
         if (currentSectionIndex >= currentScene.songSections.Length)
         {
-            Debug.Log(
+            ConditionalDebug.Log(
                 $"<color=cyan>[SCENE] End of sections reached for scene {currentSceneIndex}. Attempting to move to next scene.</color>"
             );
             MoveToNextScene();
@@ -239,7 +239,7 @@ public class SceneManagerBTR : MonoBehaviour
         {
             expectedWaves = currentScene.songSections[currentSectionIndex].waves;
             UpdateMusicSection();
-            Debug.Log(
+            ConditionalDebug.Log(
                 $"<color=cyan>[SCENE] Moved to next section. Scene: {currentSceneIndex}, Section: {currentSectionIndex} ({currentScene.songSections[currentSectionIndex].name}), Expected Waves: {expectedWaves}</color>"
             );
         }
@@ -247,10 +247,10 @@ public class SceneManagerBTR : MonoBehaviour
 
     private async Task MoveToNextScene()
     {
-        Debug.Log("<color=cyan>[SCENE] MoveToNextScene called</color>");
+        ConditionalDebug.Log("<color=cyan>[SCENE] MoveToNextScene called</color>");
         if (isTransitioning)
         {
-            Debug.LogWarning(
+            ConditionalDebug.LogWarning(
                 "<color=orange>[SCENE] Already transitioning to next scene. Aborting.</color>"
             );
             return;
@@ -264,13 +264,13 @@ public class SceneManagerBTR : MonoBehaviour
 
             int initialSceneIndex = currentSceneIndex;
             currentSceneIndex = (currentSceneIndex + 1) % currentGroup.scenes.Length;
-            Debug.Log(
+            ConditionalDebug.Log(
                 $"<color=cyan>[SCENE] Moving to next scene. Current index: {initialSceneIndex}, New index: {currentSceneIndex}</color>"
             );
 
             if (currentSceneIndex == initialSceneIndex)
             {
-                Debug.LogWarning(
+                ConditionalDebug.LogWarning(
                     "<color=orange>[SCENE] Cycled through all scenes, returning to the first scene.</color>"
                 );
             }
@@ -279,7 +279,7 @@ public class SceneManagerBTR : MonoBehaviour
             completedWaves = 0;
 
             string nextSceneName = currentGroup.scenes[currentSceneIndex].sceneName;
-            Debug.Log(
+            ConditionalDebug.Log(
                 $"<color=cyan>[SCENE] Attempting to load next scene: {nextSceneName}</color>"
             );
 
@@ -289,7 +289,7 @@ public class SceneManagerBTR : MonoBehaviour
             }
             else
             {
-                Debug.LogError(
+                ConditionalDebug.LogError(
                     $"<color=red>[SCENE] Next scene name is null or empty. Scene index: {currentSceneIndex}</color>"
                 );
             }
@@ -300,13 +300,13 @@ public class SceneManagerBTR : MonoBehaviour
                 .waves;
             UpdateMusicSection();
 
-            Debug.Log(
+            ConditionalDebug.Log(
                 $"<color=cyan>[SCENE] Moved to next scene. Scene: {currentSceneIndex}, Section: {currentSectionIndex} ({currentGroup.scenes[currentSceneIndex].songSections[currentSectionIndex].name}), Expected Waves: {expectedWaves}</color>"
             );
         }
         catch (System.Exception e)
         {
-            Debug.LogError(
+            ConditionalDebug.LogError(
                 $"<color=red>[SCENE] Error during scene transition: {e.Message}</color>"
             );
             Debug.LogException(e);
@@ -314,7 +314,7 @@ public class SceneManagerBTR : MonoBehaviour
         finally
         {
             isTransitioning = false;
-            Debug.Log("<color=cyan>[SCENE] Scene transition completed</color>");
+            // ConditionalDebug.Log("<color=cyan>[SCENE] Scene transition completed</color>");
         }
     }
 
@@ -330,7 +330,7 @@ public class SceneManagerBTR : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning("EventManager.Instance is null. Unable to unsubscribe from events.");
+            ConditionalDebug.LogWarning("EventManager.Instance is null. Unable to unsubscribe from events.");
         }
 
         // Destroy all enemies and other scene-specific objects
@@ -351,7 +351,7 @@ public class SceneManagerBTR : MonoBehaviour
     {
         if (!isTransitioning)
         {
-            Debug.Log(
+            ConditionalDebug.Log(
                 "<color=cyan>[SCENE] Final spline reached. Transitioning to next scene.</color>"
             );
             MoveToNextScene();
@@ -398,7 +398,7 @@ public class SceneManagerBTR : MonoBehaviour
 
     private void LogCurrentState()
     {
-        Debug.Log(
+        ConditionalDebug.Log(
             $"<color=cyan>[SCENE] Current State - Scene: {currentSceneIndex}, Section: {currentSectionIndex}, Wave: {ScoreManager.Instance.CurrentSceneWaveCount}</color>"
         );
     }
@@ -407,7 +407,7 @@ public class SceneManagerBTR : MonoBehaviour
     {
         if (currentGroup == null || currentGroup.scenes.Length == 0)
         {
-            Debug.LogError("CurrentGroup is null or has no scenes.");
+            ConditionalDebug.LogError("CurrentGroup is null or has no scenes.");
             return;
         }
         // Add any additional initialization logic here if needed
@@ -463,7 +463,7 @@ public class SceneManagerBTR : MonoBehaviour
 
                 if (!setActiveSuccess)
                 {
-                    Debug.LogWarning(
+                    ConditionalDebug.LogWarning(
                         $"<color=orange>[SCENE] Failed to set {currentAdditiveScene.name} as active scene.</color>"
                     );
                     continue;
@@ -526,7 +526,7 @@ public class SceneManagerBTR : MonoBehaviour
         {
             float sectionValue = currentScene.songSections[currentSectionIndex].section;
             string sectionName = currentScene.songSections[currentSectionIndex].name;
-            Debug.Log(
+            ConditionalDebug.Log(
                 $"<color=cyan>[SCENE] Updating music section: Scene {currentSceneIndex}, Section {currentSectionIndex} ({sectionName}), Value {sectionValue}</color>"
             );
             MusicManager.Instance.ChangeSongSection(currentGroup, currentSceneIndex, sectionValue);

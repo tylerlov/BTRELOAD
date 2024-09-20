@@ -1,6 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
-using DG.Tweening;
+using PrimeTween; // Replace DG.Tweening with PrimeTween
 using SonicBloom.Koreo;
 using UnityEngine;
 using UnityEngine.Events;
@@ -114,9 +114,13 @@ public class KoreographerSpinEvent : MonoBehaviour
                 break;
         }
 
-        transform
-            .DOLocalRotate(rotationVector * spinAmount, spinTime, RotateMode.LocalAxisAdd)
-            .SetEase(Ease.OutSine);
+        // Replace DOTween with PrimeTween
+        Tween.Rotation(
+            transform,
+            transform.localRotation * Quaternion.Euler(rotationVector * spinAmount),
+            spinTime,
+            Ease.OutSine
+        );
     }
 
     private void SetRotationVector()

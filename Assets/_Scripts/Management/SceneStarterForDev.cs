@@ -14,7 +14,7 @@ public class SceneStarterForDev : MonoBehaviour
         // Ensure references are assigned        if (adjustSongParameters == null || cinemachineCameraSwitching == null)
         if (cinemachineCameraSwitching == null)
         {
-            Debug.LogError("References to GameManager or CinemachineCameraSwitching are not set.");
+            ConditionalDebug.LogError("References to GameManager or CinemachineCameraSwitching are not set.");
             return;
         }
 

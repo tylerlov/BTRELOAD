@@ -11,6 +11,10 @@ public class ProjectileMovement
     private Vector3 _currentVelocity;
     private bool _accuracyApplied = false;
 
+    // Add these new constants
+    private const float SLOW_DOWN_DISTANCE = 5f; // Distance at which projectile starts slowing down
+    private const float MIN_SPEED_MULTIPLIER = 0.5f; // Minimum speed as a fraction of original speed
+
     public ProjectileMovement(ProjectileStateBased projectile)
     {
         _projectile = projectile;
@@ -26,6 +30,7 @@ public class ProjectileMovement
         {
             // Homing logic
             Vector3 directionToTarget = (_projectile.currentTarget.position - _projectile.transform.position).normalized;
+            float distanceToTarget = Vector3.Distance(_projectile.transform.position, _projectile.currentTarget.position);
 
             // Apply accuracy offset once at the start
             if (!_accuracyApplied)
@@ -39,13 +44,21 @@ public class ProjectileMovement
             _projectile.transform.rotation = Quaternion.LookRotation(newForward);
 
             moveDirection = newForward;
+
+            // Calculate speed multiplier based on distance to target
+            float speedMultiplier = 1f;
+            if (distanceToTarget < SLOW_DOWN_DISTANCE)
+            {
+                speedMultiplier = Mathf.Lerp(MIN_SPEED_MULTIPLIER, 1f, distanceToTarget / SLOW_DOWN_DISTANCE);
+            }
+
+            _currentVelocity = moveDirection * _projectile.bulletSpeed * speedMultiplier;
         }
         else
         {
             moveDirection = _projectile.transform.forward;
+            _currentVelocity = moveDirection * _projectile.bulletSpeed;
         }
-
-        _currentVelocity = moveDirection * _projectile.bulletSpeed;
 
         // Apply movement
         if (_projectile.rb != null)

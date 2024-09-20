@@ -21,7 +21,7 @@ namespace UltimateSpawner.Spawning
             // Check if the exiting collider has the enemy tag
             if (other.CompareTag("Enemy"))
             {
-                Debug.Log("Teleportation attempt started for enemy: " + other.name);
+                ConditionalDebug.Log("Teleportation attempt started for enemy: " + other.name);
                 // Teleport the enemy to a random spawn point
                 TeleportEnemy(other.transform);
             }
@@ -40,11 +40,11 @@ namespace UltimateSpawner.Spawning
 
                 // Teleport the enemy
                 enemyTransform.position = spawnLocation;
-                Debug.Log("Teleportation successful to " + spawnLocation);
+                ConditionalDebug.Log("Teleportation successful to " + spawnLocation);
             }
             else
             {
-                Debug.LogWarning(
+                ConditionalDebug.LogWarning(
                     "Teleportation failed: No SpawnPoints available for teleporting the enemy."
                 );
             }

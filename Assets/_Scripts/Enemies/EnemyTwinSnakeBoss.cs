@@ -286,7 +286,7 @@ public class EnemyTwinSnakeBoss : MonoBehaviour, ILimbDamageReceiver
         }
         else
         {
-            Debug.LogWarning($"Unable to determine which snake the eye '{eyeName}' belongs to.");
+            ConditionalDebug.LogWarning($"Unable to determine which snake the eye '{eyeName}' belongs to.");
         }
     }
 

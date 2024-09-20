@@ -11,7 +11,7 @@ using UnityEngine.Events;
 using UnityEngine.VFX;
 
 [RequireComponent(typeof(Timeline))]
-public class EnemySnakeMidBoss : BaseBehaviour, IDamageable, ILimbDamageReceiver
+public class EnemySnakeMidBoss : BaseBehaviour, IDamageable
 {
     // Serialized fields
     [SerializeField]
@@ -231,12 +231,6 @@ public class EnemySnakeMidBoss : BaseBehaviour, IDamageable, ILimbDamageReceiver
     public void DebugTriggerDeath()
     {
         _ = OnDeath();
-    }
-
-    public void DamageFromLimb(string limbName, float amount)
-    {
-        Debug.Log($"Damaged limb: {limbName}");
-        HandleDamage(amount);
     }
 
     private void InitializeEnemy()

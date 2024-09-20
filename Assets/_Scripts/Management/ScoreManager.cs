@@ -78,7 +78,7 @@ public class ScoreManager : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning("Timeline is null in ScoreManager Update");
+            ConditionalDebug.LogWarning("Timeline is null in ScoreManager Update");
         }
     }
 
@@ -87,7 +87,7 @@ public class ScoreManager : MonoBehaviour
         timeline = GetComponent<Timeline>();
         if (timeline == null)
         {
-            Debug.LogError("Timeline component not found on the ScoreManager object.");
+            ConditionalDebug.LogError("Timeline component not found on the ScoreManager object.");
         }
         lastScoreUpdateTime = timeline.time;
     }
@@ -127,9 +127,7 @@ public class ScoreManager : MonoBehaviour
     {
         CurrentSceneWaveCount++;
         TotalWaveCount++;
-        Debug.Log(
-            $"Wave added. Current scene wave: {CurrentSceneWaveCount}, Total waves: {TotalWaveCount}"
-        );
+        ConditionalDebug.Log($"Wave added. Current scene wave: {CurrentSceneWaveCount}, Total waves: {TotalWaveCount}");
     }
 
     private void UpdateScoreOverTime()

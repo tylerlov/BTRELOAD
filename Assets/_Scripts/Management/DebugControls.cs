@@ -36,7 +36,7 @@ public class DebugControls : MonoBehaviour, IPointerClickHandler
         );
         debugKillPlayerAction.performed += ctx =>
         {
-            Debug.Log("Debug kill player action performed");
+            ConditionalDebug.Log("Debug kill player action performed");
             OnDebugKillPlayer();
         };
         debugKillPlayerAction.Enable();
@@ -49,7 +49,7 @@ public class DebugControls : MonoBehaviour, IPointerClickHandler
         );
         debugKillAllEnemiesAction.performed += ctx =>
         {
-            Debug.Log("Debug kill all enemies action performed");
+            ConditionalDebug.Log("Debug kill all enemies action performed");
             KillAllEnemies();
         };
         debugKillAllEnemiesAction.Enable();
@@ -62,12 +62,12 @@ public class DebugControls : MonoBehaviour, IPointerClickHandler
         );
         debugToggleInvincibilityAction.performed += ctx =>
         {
-            Debug.Log("Debug toggle invincibility action performed");
+            ConditionalDebug.Log("Debug toggle invincibility action performed");
             OnDebugToggleInvincibility();
         };
         debugToggleInvincibilityAction.Enable();
 
-        Debug.Log("DebugControls Awake completed, actions set up");
+        ConditionalDebug.Log("DebugControls Awake completed, actions set up");
     }
 
     private void Start()
@@ -112,14 +112,14 @@ public class DebugControls : MonoBehaviour, IPointerClickHandler
     {
         if (GameManager.Instance == null)
         {
-            Debug.LogError("GameManager instance is null. Cannot initiate player death.");
+            ConditionalDebug.LogError("GameManager instance is null. Cannot initiate player death.");
             return;
         }
 
         PlayerHealth playerHealth = FindObjectOfType<PlayerHealth>();
         if (playerHealth == null)
         {
-            Debug.LogError("PlayerHealth component not found in the scene.");
+            ConditionalDebug.LogError("PlayerHealth component not found in the scene.");
             return;
         }
 
@@ -159,7 +159,7 @@ public class DebugControls : MonoBehaviour, IPointerClickHandler
         if (killedEnemies > 0 && ScoreManager.Instance != null)
         {
             ScoreManager.Instance.AddScore(1000);
-            Debug.Log("Debug: Added 1000 to score for killing all enemies");
+            ConditionalDebug.Log("Debug: Added 1000 to score for killing all enemies");
         }
     }
 
@@ -170,11 +170,11 @@ public class DebugControls : MonoBehaviour, IPointerClickHandler
         if (playerHealth != null)
         {
             playerHealth.SetInvincibleInternal(isPlayerInvincible);
-            Debug.Log($"Debug: Player invincibility set to {isPlayerInvincible}");
+            ConditionalDebug.Log($"Debug: Player invincibility set to {isPlayerInvincible}");
         }
         else
         {
-            Debug.LogError("PlayerHealth component not found");
+            ConditionalDebug.LogError("PlayerHealth component not found");
         }
     }
 
@@ -218,7 +218,7 @@ public class DebugControls : MonoBehaviour, IPointerClickHandler
         if (killedEnemies > 0 && ScoreManager.Instance != null)
         {
             ScoreManager.Instance.AddScore(1000);
-            Debug.Log("Debug: Added 1000 to score for killing all enemies");
+            ConditionalDebug.Log("Debug: Added 1000 to score for killing all enemies");
         }
     }
 
@@ -247,7 +247,7 @@ public class DebugControls : MonoBehaviour, IPointerClickHandler
             .FirstOrDefault(go => go.name == "Score" && go.layer == LayerMask.NameToLayer("UI"));
         if (uiElement == null)
         {
-            Debug.LogError("UI element named 'Score' not found on the 'UI' layer.");
+            ConditionalDebug.LogError("UI element named 'Score' not found on the 'UI' layer.");
         }
     }
 
@@ -268,7 +268,7 @@ public class DebugControls : MonoBehaviour, IPointerClickHandler
         }
         else
         {
-            Debug.LogError("UI element named 'Score' not found.");
+            ConditionalDebug.LogError("UI element named 'Score' not found.");
         }
     }
 

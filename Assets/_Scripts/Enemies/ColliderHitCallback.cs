@@ -12,6 +12,9 @@ public class ColliderHitCallback : BaseBehaviour, IDamageable
 
     public bool enableShakeOnDamage = true; // Public bool to control shake animation
 
+    [SerializeField]
+    private bool lockable = true; // New boolean to determine if this object can be locked onto
+
     private void Awake()
     {
         if (bossObject != null)
@@ -19,14 +22,14 @@ public class ColliderHitCallback : BaseBehaviour, IDamageable
             bossScript = bossObject.GetComponent<ILimbDamageReceiver>();
             if (bossScript == null)
             {
-                Debug.LogWarning(
+                ConditionalDebug.LogWarning(
                     "The assigned GameObject does not have a component that implements ILimbDamageReceiver."
                 );
             }
         }
         else
         {
-            Debug.LogWarning("Boss object is not assigned in ColliderHitCallback.");
+            ConditionalDebug.LogWarning("Boss object is not assigned in ColliderHitCallback.");
         }
         // Optionally initialize the lockedOnIndicator state
         SetLockedStatus(false); // Ensure the indicator is initially disabled
@@ -61,11 +64,21 @@ public class ColliderHitCallback : BaseBehaviour, IDamageable
     // Method to handle the locked status
     public void SetLockedStatus(bool isLocked)
     {
-        // Update the locked status visual or other game logic here
+        if (!lockable)
+        {
+            isLocked = false; // Force unlock if not lockable
+        }
+
         if (lockedOnIndicator != null)
         {
             lockedOnIndicator.SetActive(isLocked);
         }
         // Additional logic for when the object is locked or unlocked can be added here
+    }
+
+    // New method to check if the object is lockable
+    public bool IsLockable()
+    {
+        return lockable;
     }
 }

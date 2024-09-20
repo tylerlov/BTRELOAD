@@ -99,11 +99,15 @@ public class EnemyBasicSetup : BaseBehaviour, IDamageable, IAttackAgent
 
     private bool isLockedOn = false; // Add this field
 
+    // Flag to prevent multiple registrations
+    private bool isRegisteredWithGameManager = false;
+
     // Awake method
     private void Awake()
     {
         CacheComponents();
         Initialize();
+        RegisterWithGameManager(); // Register here
         if (currentHealth <= 0)
         {
             ResetHealth();
@@ -146,6 +150,7 @@ public class EnemyBasicSetup : BaseBehaviour, IDamageable, IAttackAgent
         birthParticles.GetFromPool(cachedTransform.position, Quaternion.identity);
     }
 
+    // OnDisable method
     private void OnDisable()
     {
         UnregisterForEvents();
@@ -186,7 +191,7 @@ public class EnemyBasicSetup : BaseBehaviour, IDamageable, IAttackAgent
 
     public void Damage(float amount)
     {
-        Debug.Log($"Enemy {gameObject.name} received {amount} damage");
+        ConditionalDebug.Log($"Enemy {gameObject.name} received {amount} damage");
 
         HandleDamage(amount);
         if (currentHealth <= 0)
@@ -311,10 +316,10 @@ public class EnemyBasicSetup : BaseBehaviour, IDamageable, IAttackAgent
 
     private void OnMusicalEnemyShoot(KoreographyEvent evt)
     {
-        Debug.Log($"[EnemyBasicSetup] OnMusicalEnemyShoot triggered for {gameObject.name}");
+        ConditionalDebug.Log($"[EnemyBasicSetup] OnMusicalEnemyShoot triggered for {gameObject.name}");
         if (!CanShoot())
         {
-            Debug.Log($"[EnemyBasicSetup] CanShoot returned false for {gameObject.name}");
+            ConditionalDebug.Log($"[EnemyBasicSetup] CanShoot returned false for {gameObject.name}");
             return;
         }
 
@@ -322,7 +327,7 @@ public class EnemyBasicSetup : BaseBehaviour, IDamageable, IAttackAgent
 
         if (ProjectileSpawner.Instance == null)
         {
-            Debug.LogError("[EnemyBasicSetup] ProjectileSpawner.Instance is null!");
+            ConditionalDebug.LogError("[EnemyBasicSetup] ProjectileSpawner.Instance is null!");
             return;
         }
 
@@ -346,11 +351,11 @@ public class EnemyBasicSetup : BaseBehaviour, IDamageable, IAttackAgent
         if (projectile != null)
         {
             projectile.SetHomingTarget(playerTarget.transform); // Explicitly set the homing target
-            Debug.Log($"[EnemyBasicSetup] Projectile successfully created and shot from {gameObject.name} at position {shootPosition} towards {playerTarget.name}. Projectile position: {projectile.transform.position}, Velocity: {projectile.rb?.velocity}, Target: {projectile.currentTarget}");
+            ConditionalDebug.Log($"[EnemyBasicSetup] Projectile successfully created and shot from {gameObject.name} at position {shootPosition} towards {playerTarget.name}. Projectile position: {projectile.transform.position}, Velocity: {projectile.rb?.velocity}, Target: {projectile.currentTarget}");
         }
         else
         {
-            Debug.LogError($"[EnemyBasicSetup] Failed to create projectile for {gameObject.name}");
+            ConditionalDebug.LogError($"[EnemyBasicSetup] Failed to create projectile for {gameObject.name}");
         }
 
         lastAttackTime = Time.time;
@@ -374,7 +379,7 @@ public class EnemyBasicSetup : BaseBehaviour, IDamageable, IAttackAgent
         }
         else
         {
-            Debug.LogWarning("[EnemyBasicSetup] Player target is null in UpdateShootDirection");
+            ConditionalDebug.LogWarning("[EnemyBasicSetup] Player target is null in UpdateShootDirection");
         }
     }
 
@@ -396,5 +401,27 @@ public class EnemyBasicSetup : BaseBehaviour, IDamageable, IAttackAgent
     public bool IsLockedOn()
     {
         return isLockedOn;
+    }
+
+    // New method to register with GameManager
+    private void RegisterWithGameManager()
+    {
+        if (GameManager.Instance != null)
+        {
+            if (!isRegisteredWithGameManager)
+            {
+                GameManager.Instance.RegisterEnemy(cachedTransform);
+                isRegisteredWithGameManager = true;
+                ConditionalDebug.Log($"[EnemyBasicSetup] {gameObject.name} registered with GameManager.");
+            }
+            else
+            {
+                ConditionalDebug.LogWarning($"[EnemyBasicSetup] {gameObject.name} is already registered with GameManager.");
+            }
+        }
+        else
+        {
+            ConditionalDebug.LogError($"[EnemyBasicSetup] GameManager instance is null. Cannot register enemy {gameObject.name}.");
+        }
     }
 }

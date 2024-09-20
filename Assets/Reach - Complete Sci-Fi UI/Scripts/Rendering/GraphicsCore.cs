@@ -56,7 +56,7 @@ namespace Michsky.UI.Reach
                 // If no resolutions are available, use the current screen resolution
                 CurrentResolution = Screen.currentResolution;
                 CurrentResolutionIndex = -1;
-                Debug.LogWarning("No compatible resolutions found. Using current screen resolution.");
+                Debug.Log("No compatible resolutions found. Using current screen resolution.");
             }
 
             if (CurrentResolutionIndex == -1)
@@ -103,7 +103,7 @@ namespace Michsky.UI.Reach
             }
             else
             {
-                Debug.LogWarning($"Invalid resolution index: {resolutionIndex}");
+                Debug.Log($"Invalid resolution index: {resolutionIndex}");
             }
         }
 
@@ -120,7 +120,7 @@ namespace Michsky.UI.Reach
             }
             else
             {
-                Debug.LogWarning("Couldn't find optimal resolution in available resolutions.");
+                Debug.Log("Couldn't find optimal resolution in available resolutions.");
             }
         }
 
@@ -185,7 +185,7 @@ namespace Michsky.UI.Reach
             }
             else
             {
-                Debug.LogWarning($"Invalid window mode index: {windowModeIndex}");
+                Debug.Log($"Invalid window mode index: {windowModeIndex}");
             }
         }
 
@@ -239,15 +239,15 @@ namespace Michsky.UI.Reach
                 }
                 else
                 {
-                    Debug.LogWarning("FSR3_URP component not found on main camera");
+                    Debug.Log("FSR3_URP component not found on main camera");
                 }
 #else
-                Debug.LogWarning("FSR is not available in this build");
+                Debug.Log("FSR is not available in this build");
 #endif
             }
             else
             {
-                Debug.LogWarning("Main camera not found");
+                Debug.Log("Main camera not found");
             }
             Debug.Log($"TAA set to: {enabled}");
         }

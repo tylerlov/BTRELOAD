@@ -155,7 +155,7 @@ public class CrosshairCore : MonoBehaviour
         if (CheckLockProjectilesButtonUp())
         {
             if (Time.time - tapStartTime <= tapThreshold)
-                Debug.Log("Quick tap detected - this would be a parry");
+                ConditionalDebug.Log("Quick tap detected - this would be a parry");
             isQuickTap = false;
         }
     }
@@ -224,11 +224,10 @@ public class CrosshairCore : MonoBehaviour
         }
     }
 
-    private void OnMusicalLock(KoreographyEvent evt)
+    private void OnMusicalLock(KoreographyEvent koreoEvent)
     {
+        ConditionalDebug.Log($"OnMusicalLock called. Projectile targets: {GetComponent<PlayerLocking>().projectileTargetList.Count}, Time scale: {Time.timeScale}");
         PlayerLocking playerLocking = GetComponent<PlayerLocking>();
-
-        Debug.Log($"OnMusicalLock called. Projectile targets: {playerLocking.projectileTargetList.Count}, Time scale: {Time.timeScale}");
 
         if (CheckLockProjectiles() && playerLocking.projectileTargetList.Count > 0 && Time.timeScale != 0f)
         {
@@ -244,13 +243,13 @@ public class CrosshairCore : MonoBehaviour
             playerLocking.Locks++;
             playerLocking.projectileTargetList.RemoveAt(0);
 
-            Debug.Log($"Locked onto projectile. Current locks: {playerLocking.Locks}");
+            ConditionalDebug.Log($"Locked onto projectile. Current locks: {playerLocking.Locks}");
 
             GetComponent<PlayerShooting>().AnimateLockOnEffect();
         }
         else
         {
-            Debug.Log("Failed to lock onto projectile");
+            ConditionalDebug.Log("Failed to lock onto projectile");
         }
     }
 

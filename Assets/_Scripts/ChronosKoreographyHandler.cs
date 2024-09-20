@@ -15,21 +15,21 @@ public class ChronosKoreographyHandler : MonoBehaviour
         koreographer = GetComponent<Koreographer>();
         if (koreographer == null)
         {
-            Debug.LogError("Koreographer component not found on this GameObject.");
+            ConditionalDebug.LogError("Koreographer component not found on this GameObject.");
             return;
         }
 
         Timekeeper timekeeper = FindObjectOfType<Timekeeper>();
         if (timekeeper == null)
         {
-            Debug.LogError("Timekeeper not found in the scene.");
+            ConditionalDebug.LogError("Timekeeper not found in the scene.");
             return;
         }
 
         mainClock = timekeeper.Clock(mainClockKey) as GlobalClock;
         if (mainClock == null)
         {
-            Debug.LogError($"Global clock with key '{mainClockKey}' not found.");
+            ConditionalDebug.LogError($"Global clock with key '{mainClockKey}' not found.");
             return;
         }
 

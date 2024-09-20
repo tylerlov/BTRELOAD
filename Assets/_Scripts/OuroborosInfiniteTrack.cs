@@ -392,6 +392,13 @@ namespace FluffyUnderware.Curvy.Controllers
 
             CurvySplineSegment newControlPoint = TrackSpline.InsertAfter(null, position, true);
 
+            // Manually set the orientation of the new control point
+            newControlPoint.transform.up = Vector3.up;
+            newControlPoint.transform.forward = mDir;
+
+            // Force the spline to recalculate
+            TrackSpline.Refresh();
+
             //Set the last control point of each section as an Orientation Anchor, to avoid that Control Points added beyond this point modify the dynamic orientation of previous Control Points
             if ((TrackSpline.ControlPointCount - 1 - TailCP) % SectionCPCount == 0)
                 newControlPoint.SerializedOrientationAnchor = true;

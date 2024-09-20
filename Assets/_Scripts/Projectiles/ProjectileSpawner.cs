@@ -71,9 +71,15 @@ public class ProjectileSpawner : MonoBehaviour
         // Ensure the projectile is active
         projectile.gameObject.SetActive(true);
         
-        // Set the velocity
         if (projectile.rb != null)
         {
+            // Ensure the Rigidbody is non-kinematic
+            projectile.rb.isKinematic = false;
+
+            // Debug log to confirm Rigidbody state
+            ConditionalDebug.Log($"[ProjectileSpawner] Rigidbody isKinematic: {projectile.rb.isKinematic} for projectile {projectile.gameObject.name}");
+            
+            // Now set the velocity
             projectile.rb.velocity = projectile.transform.forward * request.Speed;
         }
         

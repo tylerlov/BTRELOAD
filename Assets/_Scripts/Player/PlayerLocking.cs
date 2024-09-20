@@ -20,10 +20,10 @@ public class PlayerLocking : MonoBehaviour
     public int maxTargets = 6;
 
     [SerializeField]
-    private int range = 300;
-    public float bulletLockInterval = 0.1f;
+    private int range = 400; // Increased from 300
+    public float bulletLockInterval = 0.05f; // Decreased from 0.1f
     public float enemyLockInterval = 0.2f;
-    public Vector3 bulletLockBoxSize = new Vector3(1, 1, 1);
+    public Vector3 bulletLockBoxSize = new Vector3(2, 2, 2); // Increased from (1, 1, 1)
     public MMF_Player lockFeedback;
     public List<Transform> projectileTargetList = new List<Transform>();
     public Transform enemyTarget;
@@ -33,13 +33,15 @@ public class PlayerLocking : MonoBehaviour
     #endregion
 
     #region References
-    private CrosshairCore crosshairCore;
-    private UILockOnEffect uiLockOnEffect;
-    private StaminaController staminaController;
+    [Header("References")]
+    [SerializeField] private CrosshairCore crosshairCore;
+    [SerializeField] private UILockOnEffect uiLockOnEffect;
+    [SerializeField] private StaminaController staminaController;
+    [SerializeField] private ShooterMovement shooterMovement;
     #endregion
 
-    private float lastBulletTime,
-        lastEnemyTime;
+    private float lastBulletLockTime,
+                  lastEnemyTime;
     private int enemyTargetListIndex;
 
     [SerializeField]
@@ -48,17 +50,42 @@ public class PlayerLocking : MonoBehaviour
     #region Aim Assist
     [Header("Aim Assist")]
     [SerializeField, Range(0f, 1f)]
-    private float aimAssistStrength = 0.5f;
+    private float aimAssistStrength = 0.8f; // Increased from 0.7f
 
     [SerializeField, Range(0f, 45f)]
-    private float maxAimAssistAngle = 10f;
+    private float maxAimAssistAngle = 20f; // Increased from 15f
+
+    [SerializeField, Range(0f, 45f)]
+    private float lockMaintainAngle = 25f; // Increased from 20f
 
     [SerializeField, Range(0f, 1f)]
-    private float lockMaintainAngle = 15f;
-
-    [SerializeField, Range(0f, 1f)]
-    private float lockGracePeriod = 0.5f;
+    private float lockGracePeriod = 0.8f; // Increased from 0.7f
     private Dictionary<Transform, float> enemyLockTimes = new Dictionary<Transform, float>();
+
+    [Header("Aim Assist Stickiness")]
+    [SerializeField, Range(0f, 1f)]
+    private float stickinessStrength = 0.7f; // Increased from 0.5f
+
+    [SerializeField, Range(0f, 1f)]
+    private float stickinessRadius = 0.5f; // Increased from 0.3f
+    #endregion
+
+    #region Locking Stability
+    [Header("Locking Stability")]
+    [SerializeField, Range(0f, 1f)]
+    private float lockSwitchThreshold = 0.5f; // Threshold to switch targets
+
+    private Transform currentLockedEnemy;
+    private float lockTimer;
+    private const float lockDuration = 1f; // Duration to wait before considering a target switch
+    #endregion
+
+    #region Lock Highlight
+    [Header("Lock Highlight")]
+    [SerializeField]
+    private GameObject lockHighlightPrefab;
+
+    private Dictionary<Transform, GameObject> lockHighlights = new Dictionary<Transform, GameObject>();
     #endregion
 
     private void Awake()
@@ -74,9 +101,42 @@ public class PlayerLocking : MonoBehaviour
             return;
         }
 
-        crosshairCore = GetComponent<CrosshairCore>();
-        uiLockOnEffect = FindObjectOfType<UILockOnEffect>();
-        staminaController = FindObjectOfType<StaminaController>();
+        // Ensure references are assigned
+        if (crosshairCore == null)
+        {
+            crosshairCore = GetComponent<CrosshairCore>();
+            if (crosshairCore == null)
+            {
+                Debug.LogError("CrosshairCore component not found on the same GameObject.");
+            }
+        }
+
+        if (uiLockOnEffect == null)
+        {
+            uiLockOnEffect = FindObjectOfType<UILockOnEffect>();
+            if (uiLockOnEffect == null)
+            {
+                Debug.LogError("UILockOnEffect not found in the scene.");
+            }
+        }
+
+        if (staminaController == null)
+        {
+            staminaController = FindObjectOfType<StaminaController>();
+            if (staminaController == null)
+            {
+                Debug.LogError("StaminaController not found in the scene.");
+            }
+        }
+
+        if (shooterMovement == null)
+        {
+            shooterMovement = GetComponent<ShooterMovement>();
+            if (shooterMovement == null)
+            {
+                Debug.LogError("ShooterMovement component not found on the same GameObject.");
+            }
+        }
     }
 
     private void Update()
@@ -96,6 +156,7 @@ public class PlayerLocking : MonoBehaviour
             ConditionalDebug.Log("No locked projectiles, unlocking enemies");
             UnlockEnemies();
             HideLockIndicator();
+            currentLockedEnemy = null;
             return;
         }
 
@@ -150,6 +211,15 @@ public class PlayerLocking : MonoBehaviour
 
         if (nearestEnemyInSight != null)
         {
+            // If no current lock or after cooldown, consider switching
+            if (currentLockedEnemy == null || ShouldSwitchTarget(nearestEnemyInSight.transform))
+            {
+                LockOntoEnemy(nearestEnemyInSight.transform);
+                ShowLockIndicator();
+                currentLockedEnemy = nearestEnemyInSight.transform;
+                lockTimer = Time.time;
+            }
+
             Vector3 directionToEnemy = (
                 nearestEnemyInSight.transform.position - crosshairCore.RaySpawn.transform.position
             ).normalized;
@@ -157,12 +227,6 @@ public class PlayerLocking : MonoBehaviour
                 .ProjectOnPlane(directionToEnemy, crosshairCore.RaySpawn.transform.forward)
                 .normalized;
 
-            if (!enemyTargetList.Contains(nearestEnemyInSight.transform))
-            {
-                ConditionalDebug.Log($"Locking onto new enemy: {nearestEnemyInSight.name}");
-                LockOntoEnemy(nearestEnemyInSight.transform);
-                ShowLockIndicator();
-            }
             enemyLockTimes.Remove(nearestEnemyInSight.transform);
         }
         else if (
@@ -173,10 +237,28 @@ public class PlayerLocking : MonoBehaviour
             ConditionalDebug.Log("No enemies in sight and grace period expired, unlocking all");
             UnlockEnemies();
             HideLockIndicator();
+            currentLockedEnemy = null;
         }
 
         ApplyAimAssist(aimAssistDirection);
         ConditionalDebug.Log($"CheckEnemyLock finished. enemyTargetList count: {enemyTargetList.Count}");
+    }
+
+    private bool ShouldSwitchTarget(Transform newTarget)
+    {
+        if (currentLockedEnemy == null)
+            return true;
+
+        Vector3 currentDirection = currentLockedEnemy.position - crosshairCore.RaySpawn.transform.position;
+        Vector3 newDirection = newTarget.position - crosshairCore.RaySpawn.transform.position;
+
+        float currentAngle = Vector3.Angle(crosshairCore.RaySpawn.transform.forward, currentDirection);
+        float newAngle = Vector3.Angle(crosshairCore.RaySpawn.transform.forward, newDirection);
+
+        float angleDifference = newAngle - currentAngle;
+
+        // Only switch if the new target is significantly more aligned
+        return angleDifference < -lockSwitchThreshold * 1.5f;
     }
 
     private void LockOntoEnemy(Transform enemyTransform)
@@ -190,6 +272,13 @@ public class PlayerLocking : MonoBehaviour
             );
             FMODUnity.RuntimeManager.PlayOneShot("event:/Player/LockEnemy");
             uiLockOnEffect.LockOnTarget(enemyTarget);
+
+            // Instantiate lock highlight
+            if (lockHighlightPrefab != null && !lockHighlights.ContainsKey(enemyTransform))
+            {
+                GameObject highlight = Instantiate(lockHighlightPrefab, enemyTransform);
+                lockHighlights[enemyTransform] = highlight;
+            }
         }
         else
         {
@@ -200,7 +289,7 @@ public class PlayerLocking : MonoBehaviour
     public void UnlockEnemies()
     {
         ConditionalDebug.Log($"UnlockEnemies called. Current enemyTargetList count: {enemyTargetList.Count}");
-        foreach (var enemy in enemyTargetList)
+        foreach (var enemy in enemyTargetList.ToList()) // Use ToList to avoid modification during iteration
         {
             if (enemy != null)
             {
@@ -210,9 +299,17 @@ public class PlayerLocking : MonoBehaviour
                     enemySetup.SetLockOnStatus(false);
                     ConditionalDebug.Log($"Unlocked enemy {enemy.name}");
                 }
+
+                // Destroy lock highlight
+                if (lockHighlights.ContainsKey(enemy))
+                {
+                    Destroy(lockHighlights[enemy]);
+                    lockHighlights.Remove(enemy);
+                }
             }
         }
         enemyTargetList.Clear();
+        currentLockedEnemy = null;
         ConditionalDebug.Log("enemyTargetList cleared");
     }
 
@@ -232,14 +329,22 @@ public class PlayerLocking : MonoBehaviour
             enemyTargetList.Remove(enemy);
             enemyLockTimes.Remove(enemy);
 
+            // Destroy lock highlight
+            if (lockHighlights.ContainsKey(enemy))
+            {
+                Destroy(lockHighlights[enemy]);
+                lockHighlights.Remove(enemy);
+            }
+
             if (enemyTargetList.Count == 0)
             {
                 HideLockIndicator();
+                currentLockedEnemy = null;
             }
         }
         else
         {
-                ConditionalDebug.Log($"Attempted to unlock invalid enemy: {enemy}");
+            ConditionalDebug.Log($"Attempted to unlock invalid enemy: {enemy}");
         }
     }
 
@@ -297,11 +402,11 @@ public class PlayerLocking : MonoBehaviour
         enemyTargetList.Remove(enemy);
     }
 
-    private bool IsTimeToLockBullet() => Time.time >= lastBulletTime + bulletLockInterval;
+    private bool IsTimeToLockBullet() => Time.time >= lastBulletLockTime + bulletLockInterval;
 
     private RaycastHit[] PerformBulletLockBoxCast()
     {
-        RaycastHit[] hits = new RaycastHit[10];
+        RaycastHit[] hits = new RaycastHit[20]; // Increased from 10 for more potential targets
         int hitsCount = Physics.BoxCastNonAlloc(
             crosshairCore.RaySpawn.transform.position,
             bulletLockBoxSize / 2,
@@ -318,7 +423,7 @@ public class PlayerLocking : MonoBehaviour
         hit.collider != null
         && (hit.collider.CompareTag("Bullet") || hit.collider.CompareTag("LaunchableBullet"));
 
-    private void UpdateLastBulletLockTime() => lastBulletTime = Time.time;
+    private void UpdateLastBulletLockTime() => lastBulletLockTime = Time.time;
 
     private bool TryLockOntoBullet(RaycastHit hit)
     {
@@ -511,10 +616,52 @@ public class PlayerLocking : MonoBehaviour
 
     private void ApplyAimAssist(Vector3 aimAssistDirection)
     {
-        ShooterMovement shooterMovement = GetComponent<ShooterMovement>();
-        if (shooterMovement != null)
+        if (shooterMovement == null)
         {
-            shooterMovement.ApplyAimAssist(aimAssistDirection * aimAssistStrength);
+            Debug.LogWarning("ShooterMovement is not assigned in PlayerLocking.");
+            return;
+        }
+
+        if (currentLockedEnemy == null)
+        {
+            // If there's no locked enemy, apply no aim assist
+            shooterMovement.ApplyAimAssist(Vector3.zero);
+            return;
+        }
+
+        // Calculate the direction from the reticle to the enemy in world space
+        Vector3 reticlePosition = transform.position;
+        Vector3 enemyPosition = currentLockedEnemy.position;
+        Vector3 directionToEnemy = (enemyPosition - reticlePosition).normalized;
+
+        // Project the direction on the screen plane (assuming camera is Z-up)
+        Vector3 screenDirection = Camera.main.transform.InverseTransformDirection(directionToEnemy);
+        screenDirection.z = 0;
+        screenDirection = screenDirection.normalized;
+
+        // Calculate the angle between the camera's forward direction and the direction to the enemy
+        float angle = Vector3.Angle(Camera.main.transform.forward, directionToEnemy);
+
+        // If within the maximum aim assist angle, apply the aim assist
+        if (angle <= maxAimAssistAngle)
+        {
+            // Apply stickiness based on proximity
+            float distanceToTarget = Vector3.Distance(crosshairCore.RaySpawn.transform.position, currentLockedEnemy.position);
+            float normalizedDistance = Mathf.Clamp01(distanceToTarget / range);
+            float dynamicStrength = Mathf.Lerp(aimAssistStrength * 2.5f, aimAssistStrength, normalizedDistance);
+
+            // Calculate stickiness factor
+            float stickinessFactor = Mathf.Clamp01(1f - (angle / maxAimAssistAngle));
+            stickinessFactor = Mathf.Pow(stickinessFactor, 2); // Apply a power curve for more pronounced effect
+
+            // Combine stickiness strength and factor
+            Vector3 finalAimAssist = screenDirection * dynamicStrength * stickinessStrength * stickinessFactor;
+
+            shooterMovement.ApplyAimAssist(finalAimAssist);
+        }
+        else
+        {
+            shooterMovement.ApplyAimAssist(Vector3.zero);
         }
     }
 

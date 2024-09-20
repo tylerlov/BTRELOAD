@@ -10,6 +10,7 @@ using UnityEngine.Rendering.PostProcessing;
 
 public class ShooterMovement : MonoBehaviour
 {
+    [Header("Reticle Movement Settings")]
     public float xySpeed = 35f; // Speed of the reticle movement
     private Vector3 startingPosition;
 
@@ -26,7 +27,13 @@ public class ShooterMovement : MonoBehaviour
     private float toleranceX = 15f; // How close the reticle gets to the sides before rotation starts
     private float toleranceY = 20f; // How close the reticle gets to the top/bottom before rotation starts
 
-    public bool enableClamping = false; // New boolean to enable/disable clamping
+    public bool enableClamping = true; // Enable clamping by default
+
+    [Header("Aim Assist")]
+    [SerializeField, Range(0f, 1f)]
+    private float aimAssistInfluence = 0.3f; // Influence of aim assist on reticle movement
+
+    private Vector2 aimAssistVector;
 
     void Awake()
     {
@@ -79,18 +86,29 @@ public class ShooterMovement : MonoBehaviour
         MoveReticle(inputVector);
     }
 
-    void MoveReticle(Vector2 direction)
-    {
-        // Use Chronos' deltaTime if available, otherwise use Unity's Time.deltaTime
-        float deltaTime = timeline != null ? timeline.deltaTime : Time.deltaTime;
+    /// <summary>
+    /// Moves the reticle based on player input and aim assist.
+    /// </summary>
+    public void ApplyAimAssist(Vector3 aimAssistDirection)
+{
+    aimAssistVector = new Vector2(aimAssistDirection.x, aimAssistDirection.y);
+}
 
-        Vector2 movement = (direction + aimAssistVector) * xySpeed * deltaTime;
-        transform.localPosition += new Vector3(movement.x, movement.y, 0);
-        ClampPosition();
+void MoveReticle(Vector2 direction)
+{
+    // Use Chronos' deltaTime if available, otherwise use Unity's Time.deltaTime
+    float deltaTime = timeline != null ? timeline.deltaTime : Time.deltaTime;
 
-        // Reset aim assist vector after applying it
-        aimAssistVector = Vector2.zero;
-    }
+    // Combine player input with aim assist
+    Vector2 movement = (direction + (aimAssistVector * aimAssistInfluence)) * xySpeed * deltaTime;
+
+    // Apply the movement
+    transform.localPosition += new Vector3(movement.x, movement.y, 0);
+    ClampPosition();
+
+    // Reset aim assist vector after applying it
+    aimAssistVector = Vector2.zero;
+}
 
     void ClampPosition()
     {
@@ -161,12 +179,5 @@ public class ShooterMovement : MonoBehaviour
         {
             objectToRotate.transform.localRotation = Quaternion.identity;
         }
-    }
-
-    private Vector2 aimAssistVector;
-
-    public void ApplyAimAssist(Vector3 aimAssistDirection)
-    {
-        aimAssistVector = new Vector2(aimAssistDirection.x, aimAssistDirection.y);
     }
 }

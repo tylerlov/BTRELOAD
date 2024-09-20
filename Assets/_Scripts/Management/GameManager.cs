@@ -58,7 +58,6 @@ public class GameManager : MonoBehaviour
             return;
         }
 
-        InitializeSingleton();
         InitializeManagers();
         PrimeTweenConfig.SetTweensCapacity(1600);
         InitializePlayerHealth();
@@ -71,19 +70,6 @@ public class GameManager : MonoBehaviour
         else
         {
             TimeManager.SetDebugSettings(debugSettings);
-        }
-    }
-
-    private void InitializeSingleton()
-    {
-        if (Instance == null)
-        {
-            Instance = this;
-            DontDestroyOnLoad(gameObject);
-        }
-        else if (Instance != this)
-        {
-            Destroy(gameObject);
         }
     }
 
@@ -285,6 +271,10 @@ public class GameManager : MonoBehaviour
             spawnedEnemies.Add(enemy);
             lockedEnemies[enemy] = false;
             Debug.Log($"Enemy registered: {enemy.name}");
+        }
+        else
+        {
+            Debug.LogWarning($"Enemy already registered: {enemy.name}");
         }
     }
 

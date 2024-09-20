@@ -32,9 +32,7 @@ public class LookAtGameObject : MonoBehaviour
 
             // Rotate this GameObject to look at the player with an offset using PrimeTween
             Vector3 targetPosition = player.transform.position + offset;
-            Quaternion targetRotation = Quaternion.LookRotation(
-                targetPosition - transform.position
-            );
+            Quaternion targetRotation = Quaternion.LookRotation(targetPosition - transform.position);
             lookAtTween = Tween.Rotation(transform, targetRotation, rotationSpeed);
         }
     }

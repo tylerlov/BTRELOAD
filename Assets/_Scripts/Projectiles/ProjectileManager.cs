@@ -54,6 +54,10 @@ public class ProjectileManager : MonoBehaviour
     private int frameCounter = 0;
     private const int UPDATE_INTERVAL = 5; // Update every 5 frames
 
+    // Added member variables for job handling
+    private NativeArray<float> updatedLifetimes;
+    private JobHandle updateJobHandle;
+
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -66,6 +70,7 @@ public class ProjectileManager : MonoBehaviour
 
         projectileIds = new NativeArray<int>(500, Allocator.Persistent);
         projectileLifetimes = new NativeHashMap<int, float>(500, Allocator.Persistent);
+        updatedLifetimes = new NativeArray<float>(500, Allocator.Persistent);
 
         SceneManager.sceneLoaded += OnSceneLoaded;
 
@@ -126,6 +131,8 @@ public class ProjectileManager : MonoBehaviour
             projectileIds.Dispose();
         if (projectileLifetimes.IsCreated)
             projectileLifetimes.Dispose();
+        if (updatedLifetimes.IsCreated)
+            updatedLifetimes.Dispose();
     }
 
     private void Update()
@@ -161,7 +168,7 @@ public class ProjectileManager : MonoBehaviour
             if (frameCounter >= UPDATE_INTERVAL)
             {
                 frameCounter = 0;
-                UpdateProjectiles(Time.deltaTime * UPDATE_INTERVAL, globalTimeScale);
+                ScheduleUpdateProjectiles(Time.deltaTime * UPDATE_INTERVAL, globalTimeScale);
             }
 
             ProcessProjectileRequests(globalTimeScale);
@@ -170,19 +177,27 @@ public class ProjectileManager : MonoBehaviour
 
     private void LateUpdate()
     {
+        // Complete the job here
+        if (updateJobHandle.IsCompleted)
+        {
+            updateJobHandle.Complete();
+        }
+
         projectilePool.CheckAndReplenishPool();
     }
 
-    private void UpdateProjectiles(float deltaTime, float globalTimeScale)
+    private void ScheduleUpdateProjectiles(float deltaTime, float globalTimeScale)
     {
         int activeProjectileCount = projectileLookup.Count;
         if (activeProjectileCount == 0)
             return;
 
-        NativeArray<float> updatedLifetimes = new NativeArray<float>(
-            activeProjectileCount,
-            Allocator.TempJob
-        );
+        // Ensure updatedLifetimes has enough capacity
+        if (updatedLifetimes.Length < activeProjectileCount)
+        {
+            updatedLifetimes.Dispose();
+            updatedLifetimes = new NativeArray<float>(activeProjectileCount, Allocator.Persistent);
+        }
 
         var job = new UpdateProjectilesJob
         {
@@ -193,8 +208,14 @@ public class ProjectileManager : MonoBehaviour
             GlobalTimeScale = globalTimeScale,
         };
 
-        JobHandle jobHandle = job.Schedule(activeProjectileCount, 64);
-        jobHandle.Complete();
+        updateJobHandle = job.Schedule(activeProjectileCount, 64);
+    }
+
+    private void UpdateProjectilesAfterJob(float deltaTime, float globalTimeScale)
+    {
+        int activeProjectileCount = projectileLookup.Count;
+        if (activeProjectileCount == 0)
+            return;
 
         List<int> projectilesToRemove = new List<int>();
 
@@ -225,8 +246,6 @@ public class ProjectileManager : MonoBehaviour
         {
             RemoveProjectile(projectilesToRemove[i]);
         }
-
-        updatedLifetimes.Dispose();
     }
 
     private void ProcessProjectileRequests(float timeScale)
@@ -239,7 +258,7 @@ public class ProjectileManager : MonoBehaviour
         int processCount = Mathf.CeilToInt(staticShootingRequestsPerFrame * timeScale);
         processCount = Mathf.Min(projectilePool.GetProjectileRequestCount(), processCount);
 
-        Debug.Log($"[ProjectileManager] Processing {processCount} projectile requests");
+        ConditionalDebug.Log($"[ProjectileManager] Processing {processCount} projectile requests");
 
         for (int i = 0; i < processCount; i++)
         {
@@ -248,7 +267,7 @@ public class ProjectileManager : MonoBehaviour
                 ProjectileStateBased projectile = projectilePool.GetProjectile();
                 projectileSpawner.ProcessShootProjectile(request, projectile, request.IsStatic);
                 RegisterProjectile(projectile);
-                Debug.Log($"[ProjectileManager] Projectile processed and registered. Position: {projectile.transform.position}, IsStatic: {request.IsStatic}");
+                ConditionalDebug.Log($"[ProjectileManager] Projectile processed and registered. Position: {projectile.transform.position}, IsStatic: {request.IsStatic}");
             }
         }
     }
@@ -291,7 +310,7 @@ public class ProjectileManager : MonoBehaviour
 
             projectile.SetAccuracy(projectileAccuracy);
 
-            Debug.Log($"[ProjectileManager] Registered projectile: {projectile.name} with accuracy: {projectileAccuracy}. Total projectiles: {projectileLookup.Count}, Position: {projectile.transform.position}, Velocity: {projectile.rb?.velocity}");
+            ConditionalDebug.Log($"[ProjectileManager] Registered projectile: {projectile.name} with accuracy: {projectileAccuracy}. Total projectiles: {projectileLookup.Count}, Position: {projectile.transform.position}, Velocity: {projectile.rb?.velocity}");
         }
     }
 
@@ -326,8 +345,9 @@ public class ProjectileManager : MonoBehaviour
                 && projectile.homing
             )
             {
-                Transform playerTransform = GameObject.FindWithTag("Player Aim Target").transform;
-                projectile.currentTarget = playerTransform;
+                Transform playerTransform = GameObject.FindWithTag("Player Aim Target")?.transform;
+                if (playerTransform != null)
+                    projectile.currentTarget = playerTransform;
             }
         }
     }
@@ -469,7 +489,7 @@ public class ProjectileManager : MonoBehaviour
         }
     }
 
- public void PlayOneShotSound(string soundEvent, Vector3 position)
+    public void PlayOneShotSound(string soundEvent, Vector3 position)
     {
         FMODUnity.RuntimeManager.PlayOneShot(soundEvent, position);
     }
@@ -499,7 +519,7 @@ public class ProjectileManager : MonoBehaviour
         int pooledProjectiles = projectilePool.GetPoolSize();
         int enemyCount = enemyTransforms.Count;
 
-        Debug.Log(
+        ConditionalDebug.Log(
             $"[ProjectileManager] Active Projectiles: {activeProjectiles}, "
                 + $"Pooled Projectiles: {pooledProjectiles}, "
                 + $"Enemy Count: {enemyCount}, "

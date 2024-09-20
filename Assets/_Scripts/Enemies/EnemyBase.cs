@@ -106,13 +106,13 @@ public abstract class EnemyBase : MonoBehaviour, IDamageable
     {
         float previousHealth = currentHealth;
         currentHealth = Mathf.Max(currentHealth - amount, 0);
-        Debug.Log(
+        ConditionalDebug.Log(
             $"{gameObject.name} took {amount} damage. Health reduced from {previousHealth} to {currentHealth}"
         );
 
         if (currentHealth <= 0)
         {
-            Debug.Log($"{gameObject.name} health reached 0 or below, initiating Death coroutine");
+            ConditionalDebug.Log($"{gameObject.name} health reached 0 or below, initiating Death coroutine");
             StartCoroutine(Death());
         }
     }
