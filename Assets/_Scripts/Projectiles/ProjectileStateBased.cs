@@ -14,6 +14,7 @@ using Unity.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.VFX;
+using FMODUnity;
 
 public enum ProjectilePoolType
 {
@@ -181,6 +182,16 @@ public class ProjectileStateBased : MonoBehaviour
     public bool isMissing { get; set; }
 
     public bool isFromStaticEnemy = false;
+
+    [SerializeField] private bool isSoundEnabled = true;
+    [SerializeField] private EventReference movingSoundEvent;
+
+    public bool IsSoundEnabled() => isSoundEnabled;
+
+    public EventReference GetMovingSoundEvent()
+    {
+        return movingSoundEvent;
+    }
 
     private void Awake()
     {

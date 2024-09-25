@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<objects serializationModel="Studio.02.03.00">
+	<object class="AudioFile" id="{a7ae8701-9353-45f4-9808-39d5d1a17f3b}">
+		<property name="assetPath">
+			<value>GS_ABYSS_140_FX_SARYSU_02 [2024-09-23 212231].wav</value>
+		</property>
+		<property name="frequencyInKHz">
+			<value>44.0999985</value>
+		</property>
+		<property name="channelCount">
+			<value>2</value>
+		</property>
+		<property name="length">
+			<value>0.69768707482993197</value>
+		</property>
+		<relationship name="masterAssetFolder">
+			<destination>{ade45277-ef5e-405a-b429-ac698260ffc2}</destination>
+		</relationship>
+	</object>
+</objects>

@@ -119,6 +119,26 @@ namespace FluffyUnderware.Curvy.Controllers
         [Tooltip("Determines the offset for the player controller placement point.")]
         public int ControllerPlacementOffset = 6; // Default value is 6
 
+        private bool isSplineReady = false;
+
+        [Header("Player Movement")]
+        [SerializeField]
+        private MonoBehaviour playerMovement; // Add this field
+
+        public void OnSplineReady()
+        {
+            isSplineReady = true;
+            EnablePlayerMovement();
+        }
+
+        private void EnablePlayerMovement()
+        {
+            if (playerMovement != null && isSplineReady)
+            {
+                playerMovement.enabled = true;
+            }
+        }
+
         void Start()
         {
             CacheDeformers();
@@ -211,8 +231,7 @@ namespace FluffyUnderware.Curvy.Controllers
             }
             // and wait until they're initialized
             for (int i = 0; i < Sections; i++)
-                while (!mGenerators[i].IsInitialized)
-                    yield return 0;
+                yield return new WaitUntil(() => mGenerators[i].IsInitialized);
 
             // let all generators do their extrusion
             for (int i = 0; i < Sections; i++)
@@ -225,6 +244,9 @@ namespace FluffyUnderware.Curvy.Controllers
                 );
 
             AddDeformableComponents();
+
+            // Align spline with world up after setup
+            AlignSplineWithWorldUp();
 
             mInitState = 2;
             mUpdateIn = SectionCPCount;
@@ -392,9 +414,8 @@ namespace FluffyUnderware.Curvy.Controllers
 
             CurvySplineSegment newControlPoint = TrackSpline.InsertAfter(null, position, true);
 
-            // Manually set the orientation of the new control point
-            newControlPoint.transform.up = Vector3.up;
-            newControlPoint.transform.forward = mDir;
+            // Set the rotation using Quaternion.LookRotation to ensure alignment with world up
+            newControlPoint.transform.rotation = Quaternion.LookRotation(mDir, Vector3.up);
 
             // Force the spline to recalculate
             TrackSpline.Refresh();
@@ -584,6 +605,23 @@ namespace FluffyUnderware.Curvy.Controllers
             {
                 Debug.LogWarning("Deformer prefab is not assigned in the inspector.");
             }
+        }
+
+        /// <summary>
+        /// Ensures that all control points align with the world up direction.
+        /// </summary>
+        void AlignSplineWithWorldUp()
+        {
+            foreach (var cp in TrackSpline.ControlPointsList)
+            {
+                if (cp.transform.up != Vector3.up)
+                {
+                    Debug.LogWarning($"ControlPoint {cp.name} up vector misaligned. Correcting.");
+                    cp.transform.up = Vector3.up;
+                    cp.transform.rotation = Quaternion.LookRotation(cp.transform.forward, Vector3.up);
+                }
+            }
+            TrackSpline.Refresh();
         }
     }
 }

@@ -68,6 +68,12 @@ public class EnemyBasicSetup : BaseBehaviour, IDamageable, IAttackAgent
 
     public int hitsToKillPart = 3; // Number of hits required to destroy a damageable part
 
+    [SerializeField]
+    private EventReference shootingSound; // Renamed from firingSound
+
+    [SerializeField]
+    private EventReference shootingSound2; // New sound event
+
     private bool enemyPooling = true;
     private StudioEventEmitter musicPlayback;
     private bool particleSwitch;
@@ -350,7 +356,27 @@ public class EnemyBasicSetup : BaseBehaviour, IDamageable, IAttackAgent
 
         if (projectile != null)
         {
-            projectile.SetHomingTarget(playerTarget.transform); // Explicitly set the homing target
+            projectile.SetHomingTarget(playerTarget.transform);
+            
+            // Play both shooting sounds
+            if (shootingSound.IsNull)
+            {
+                ConditionalDebug.LogWarning($"[EnemyBasicSetup] Shooting sound not set for {gameObject.name}");
+            }
+            else
+            {
+                RuntimeManager.PlayOneShot(shootingSound, cachedTransform.position);
+            }
+
+            if (shootingSound2.IsNull)
+            {
+                ConditionalDebug.LogWarning($"[EnemyBasicSetup] Shooting sound 2 not set for {gameObject.name}");
+            }
+            else
+            {
+                RuntimeManager.PlayOneShot(shootingSound2, cachedTransform.position);
+            }
+
             ConditionalDebug.Log($"[EnemyBasicSetup] Projectile successfully created and shot from {gameObject.name} at position {shootPosition} towards {playerTarget.name}. Projectile position: {projectile.transform.position}, Velocity: {projectile.rb?.velocity}, Target: {projectile.currentTarget}");
         }
         else

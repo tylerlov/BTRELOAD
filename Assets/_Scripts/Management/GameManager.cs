@@ -71,6 +71,8 @@ public class GameManager : MonoBehaviour
         {
             TimeManager.SetDebugSettings(debugSettings);
         }
+
+       
     }
 
     private void InitializeManagers()

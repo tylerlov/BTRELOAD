@@ -71,7 +71,7 @@ public class StaticEnemyShooting : MonoBehaviour
         }
 
         ProjectileSpawner.Instance.ShootProjectileFromEnemy(
-            cachedTransform.position,
+            cachedTransform.position, // Use the enemy's position instead of ProjectileStateBased.shootingObject
             Quaternion.LookRotation(Vector3.up),
             shootSpeed,
             projectileLifetime,
@@ -82,7 +82,7 @@ public class StaticEnemyShooting : MonoBehaviour
             "",
             -1f,
             null,
-            true // Add this parameter to indicate it's from a static enemy
+            true // Indicates it's from a static enemy
         );
 
         ConditionalDebug.Log($"[StaticEnemyShooting] Projectile shot from {gameObject.name}");

@@ -1,139 +1,76 @@
-using System.Collections;
-using System.Collections.Generic;
-using SonicBloom.Koreo;
 using UnityEngine;
-using UnityEngine.SceneManagement; // Import the Scene Management namespace
-using UnityEngine.UI;
+using System;
 
 public class StaminaController : MonoBehaviour
 {
-    [Header("Stamina Main Parameters")]
-    [EventID]
-    public string eventIDLocking;
+    public static StaminaController Instance { get; private set; }
 
-    public float playerStamina = 100.0f;
+    [SerializeField] private float maxStamina = 100f;
+    [SerializeField] private float staminaRegenerationTime = 5f; // Time to regenerate from 0 to full
+    [SerializeField] private int maxRicochetsAtFullStamina = 5; // Number of ricochets at full stamina
 
-    [SerializeField]
-    private float maxStamina = 100.0f;
+    private float currentStamina;
+    private float staminaRegenerationRate;
+    private float staminaCostPerRicochet;
 
-    [SerializeField]
-    private float rewindCost = 25;
-    public bool hasRegenerated = true;
-    public bool canRewind = true;
+    public event Action<float> OnStaminaChanged;
 
-    [Header("Stamina Regen Parameters")]
-    [Range(0, 50)]
-    [SerializeField]
-    private float staminaDrain = 0.5f;
-
-    [Range(0, 50)]
-    [SerializeField]
-    private float staminaRegen = 0.5f;
-
-    [Header("Stamina UI Elements")]
-    [SerializeField]
-    private Image staminaProcessUI = null;
-
-    [SerializeField]
-    private CanvasGroup sliderCanvasGroup = null;
-
-    public bool locking;
-
-    void Awake()
+    private void Awake()
     {
-        // Subscribe to the sceneLoaded event
-        SceneManager.sceneLoaded += OnSceneLoaded;
-    }
-
-    void OnDestroy()
-    {
-        // Unsubscribe from the sceneLoaded event to avoid memory leaks
-        SceneManager.sceneLoaded -= OnSceneLoaded;
-        // Ensure to unregister from Koreographer events to clean up
-        if (Koreographer.Instance != null)
+        if (Instance == null)
         {
-            Koreographer.Instance.UnregisterForEvents(eventIDLocking, OnMusicalLocking);
+            Instance = this;
+            DontDestroyOnLoad(gameObject);
         }
-    }
-
-    // This method will be called every time a new scene is loaded
-    private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
-    {
-        // Register for Koreography events with the new scene's Koreographer instance
-        RegisterKoreographyEvents();
-    }
-
-    private void RegisterKoreographyEvents()
-    {
-        // Ensure the Koreographer instance is ready and then register for events
-        if (Koreographer.Instance != null)
+        else
         {
-            Koreographer.Instance.RegisterForEvents(eventIDLocking, OnMusicalLocking);
+            Destroy(gameObject);
+            return;
         }
+
+        currentStamina = maxStamina;
+        staminaRegenerationRate = maxStamina / staminaRegenerationTime;
+        staminaCostPerRicochet = maxStamina / maxRicochetsAtFullStamina;
     }
 
     private void Update()
     {
-        if (playerStamina <= maxStamina - 0.10)
-        {
-            playerStamina += staminaRegen * Time.deltaTime;
-            UpdateStamina(1);
+        RegenerateStamina();
+    }
 
-            if (playerStamina >= maxStamina)
-            {
-                sliderCanvasGroup.alpha = 0;
-                hasRegenerated = true;
-            }
-        }
-
-        if (playerStamina < 5)
+    private void RegenerateStamina()
+    {
+        if (currentStamina < maxStamina)
         {
-            canRewind = false;
-        }
-        else
-        {
-            canRewind = true;
+            currentStamina = Mathf.Min(currentStamina + staminaRegenerationRate * Time.deltaTime, maxStamina);
+            OnStaminaChanged?.Invoke(currentStamina / maxStamina);
         }
     }
 
-    public void StaminaRewind()
+    public bool TryUseStamina()
     {
-        if (playerStamina >= (maxStamina * rewindCost / maxStamina))
+        Debug.Log($"Attempting to use stamina. Current: {currentStamina}, Cost: {staminaCostPerRicochet}");
+        if (currentStamina >= staminaCostPerRicochet)
         {
-            playerStamina -= rewindCost;
-            UpdateStamina(1);
+            currentStamina -= staminaCostPerRicochet;
+            OnStaminaChanged?.Invoke(currentStamina / maxStamina);
+            Debug.Log("Stamina used successfully");
+            return true;
         }
+        Debug.Log("Not enough stamina");
+        return false;
     }
 
-    void OnMusicalLocking(KoreographyEvent evt)
+    public float GetCurrentStaminaPercentage()
     {
-        if (locking && Time.timeScale != 0f)
-        {
-            if (playerStamina >= (maxStamina * rewindCost / maxStamina))
-            {
-                playerStamina -= rewindCost;
-                UpdateStamina(1);
-            }
-        }
+        return currentStamina / maxStamina;
     }
 
-    void UpdateStamina(int value)
-    {
-        staminaProcessUI.fillAmount = playerStamina / maxStamina;
+    public bool canRewind { get; private set; } = true;
+    public bool locking { get; set; } = false;
 
-        if (value == 0)
-        {
-            sliderCanvasGroup.alpha = 0;
-        }
-        else
-        {
-            sliderCanvasGroup.alpha = 1;
-        }
-    }
-
-    public void Reset()
+    public void SetCanRewind(bool value)
     {
-        locking = false;
-        canRewind = true;
+        canRewind = value;
     }
 }

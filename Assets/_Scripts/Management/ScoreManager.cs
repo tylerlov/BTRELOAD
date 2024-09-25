@@ -18,7 +18,7 @@ public class ScoreManager : MonoBehaviour
     private Timeline timeline;
     private float lastScoreUpdateTime;
     private float accumulatedScoreDecrease = 0f;
-    public Score scoreUI; // Change to public
+    public PlayerUI scoreUI; // Change to public
 
     public int Score { get; private set; }
     public int ShotTally { get; private set; }
@@ -67,7 +67,7 @@ public class ScoreManager : MonoBehaviour
 
     private void Start()
     {
-        scoreUI = FindObjectOfType<Score>();
+        scoreUI = FindObjectOfType<PlayerUI>();
     }
 
     private void Update()

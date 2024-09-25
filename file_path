@@ -1,0 +1,41 @@
+public class ProjectileManager : MonoBehaviour
+{
+    // ... existing fields and methods ...
+
+    /// <summary>
+    /// Shoots a projectile from an enemy.
+    /// </summary>
+    public ProjectileStateBased ShootProjectileFromEnemy(
+        Vector3 position,
+        Quaternion rotation,
+        float speed,
+        float lifetime,
+        float uniformScale,
+        float damage,
+        bool enableHoming = false,
+        Material material = null,
+        string clockKey = "",
+        float accuracy = -1f,
+        Transform target = null,
+        bool isStatic = false
+    )
+    {
+        // ... existing projectile spawning logic ...
+
+        ProjectileStateBased projectile = projectilePool.GetProjectile();
+        ProcessShootProjectile(request, projectile, isStatic);
+        ProjectileManager.Instance.RegisterProjectile(projectile);
+
+        // Register the projectile with the Audio Manager if it's an enemy shot
+        if (!isStatic)
+        {
+            ProjectileAudioManager.Instance.RegisterProjectile(projectile);
+        }
+
+        ConditionalDebug.Log($"[ProjectileManager] Projectile spawned at {position}, Enemy Shot: {!isStatic}");
+
+        return projectile;
+    }
+
+    // ... existing code ...
+}
