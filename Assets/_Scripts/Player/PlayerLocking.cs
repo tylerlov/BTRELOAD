@@ -38,6 +38,7 @@ public class PlayerLocking : MonoBehaviour
     [SerializeField] private UILockOnEffect uiLockOnEffect;
     [SerializeField] private StaminaController staminaController;
     [SerializeField] private ShooterMovement shooterMovement;
+    [SerializeField] private AimAssistController aimAssistController;
     #endregion
 
     private float lastBulletLockTime,
@@ -47,29 +48,6 @@ public class PlayerLocking : MonoBehaviour
     [SerializeField]
     private GameObject lockIndicator;
 
-    #region Aim Assist
-    [Header("Aim Assist")]
-    [SerializeField, Range(0f, 1f)]
-    private float aimAssistStrength = 0.8f; // Increased from 0.7f
-
-    [SerializeField, Range(0f, 45f)]
-    private float maxAimAssistAngle = 20f; // Increased from 15f
-
-    [SerializeField, Range(0f, 45f)]
-    private float lockMaintainAngle = 25f; // Increased from 20f
-
-    [SerializeField, Range(0f, 1f)]
-    private float lockGracePeriod = 0.8f; // Increased from 0.7f
-    private Dictionary<Transform, float> enemyLockTimes = new Dictionary<Transform, float>();
-
-    [Header("Aim Assist Stickiness")]
-    [SerializeField, Range(0f, 1f)]
-    private float stickinessStrength = 0.7f; // Increased from 0.5f
-
-    [SerializeField, Range(0f, 1f)]
-    private float stickinessRadius = 0.5f; // Increased from 0.3f
-    #endregion
-
     #region Locking Stability
     [Header("Locking Stability")]
     [SerializeField, Range(0f, 1f)]
@@ -78,6 +56,9 @@ public class PlayerLocking : MonoBehaviour
     private Transform currentLockedEnemy;
     private float lockTimer;
     private const float lockDuration = 1f; // Duration to wait before considering a target switch
+
+    // Add this line to declare the enemyLockTimes dictionary
+    private Dictionary<Transform, float> enemyLockTimes = new Dictionary<Transform, float>();
     #endregion
 
     #region Lock Highlight
@@ -137,6 +118,16 @@ public class PlayerLocking : MonoBehaviour
                 Debug.LogError("ShooterMovement component not found on the same GameObject.");
             }
         }
+
+        if (aimAssistController == null)
+        {
+            aimAssistController = GetComponent<AimAssistController>();
+            if (aimAssistController == null)
+            {
+                aimAssistController = gameObject.AddComponent<AimAssistController>();
+            }
+        }
+        aimAssistController.Initialize(shooterMovement, range);
     }
 
     private void Update()
@@ -178,7 +169,7 @@ public class PlayerLocking : MonoBehaviour
             float angle = Vector3.Angle(crosshairCore.RaySpawn.transform.forward, directionToEnemy);
 
             bool isCurrentlyLocked = enemyTargetList.Contains(enemy.transform);
-            float angleThreshold = isCurrentlyLocked ? lockMaintainAngle : maxAimAssistAngle;
+            float angleThreshold = isCurrentlyLocked ? aimAssistController.GetLockMaintainAngle() : aimAssistController.GetMaxAimAssistAngle();
 
             ConditionalDebug.Log(
                 $"Enemy: {enemy.name}, Angle: {angle}, Threshold: {angleThreshold}, Currently locked: {isCurrentlyLocked}"
@@ -201,7 +192,7 @@ public class PlayerLocking : MonoBehaviour
                     enemyLockTimes[enemy.transform] = Time.time;
                     ConditionalDebug.Log($"Started grace period for {enemy.name}");
                 }
-                else if (Time.time - enemyLockTimes[enemy.transform] > lockGracePeriod)
+                else if (Time.time - enemyLockTimes[enemy.transform] > aimAssistController.GetLockGracePeriod())
                 {
                     ConditionalDebug.Log($"Grace period expired for {enemy.name}, unlocking");
                     UnlockEnemy(enemy.transform);
@@ -231,7 +222,7 @@ public class PlayerLocking : MonoBehaviour
         }
         else if (
             enemyTargetList.Count > 0
-            && !enemyLockTimes.Any(kvp => Time.time - kvp.Value <= lockGracePeriod)
+            && !enemyLockTimes.Any(kvp => Time.time - kvp.Value <= aimAssistController.GetLockGracePeriod())
         )
         {
             ConditionalDebug.Log("No enemies in sight and grace period expired, unlocking all");
@@ -240,7 +231,8 @@ public class PlayerLocking : MonoBehaviour
             currentLockedEnemy = null;
         }
 
-        ApplyAimAssist(aimAssistDirection);
+        aimAssistController.SetCurrentLockedEnemy(currentLockedEnemy);
+        aimAssistController.ApplyAimAssist(crosshairCore.RaySpawn.transform, Camera.main.transform);
         ConditionalDebug.Log($"CheckEnemyLock finished. enemyTargetList count: {enemyTargetList.Count}");
     }
 
@@ -611,57 +603,6 @@ public class PlayerLocking : MonoBehaviour
         if (lockIndicator != null && lockIndicator.activeSelf)
         {
             lockIndicator.SetActive(false);
-        }
-    }
-
-    private void ApplyAimAssist(Vector3 aimAssistDirection)
-    {
-        if (shooterMovement == null)
-        {
-            Debug.LogWarning("ShooterMovement is not assigned in PlayerLocking.");
-            return;
-        }
-
-        if (currentLockedEnemy == null)
-        {
-            // If there's no locked enemy, apply no aim assist
-            shooterMovement.ApplyAimAssist(Vector3.zero);
-            return;
-        }
-
-        // Calculate the direction from the reticle to the enemy in world space
-        Vector3 reticlePosition = transform.position;
-        Vector3 enemyPosition = currentLockedEnemy.position;
-        Vector3 directionToEnemy = (enemyPosition - reticlePosition).normalized;
-
-        // Project the direction on the screen plane (assuming camera is Z-up)
-        Vector3 screenDirection = Camera.main.transform.InverseTransformDirection(directionToEnemy);
-        screenDirection.z = 0;
-        screenDirection = screenDirection.normalized;
-
-        // Calculate the angle between the camera's forward direction and the direction to the enemy
-        float angle = Vector3.Angle(Camera.main.transform.forward, directionToEnemy);
-
-        // If within the maximum aim assist angle, apply the aim assist
-        if (angle <= maxAimAssistAngle)
-        {
-            // Apply stickiness based on proximity
-            float distanceToTarget = Vector3.Distance(crosshairCore.RaySpawn.transform.position, currentLockedEnemy.position);
-            float normalizedDistance = Mathf.Clamp01(distanceToTarget / range);
-            float dynamicStrength = Mathf.Lerp(aimAssistStrength * 2.5f, aimAssistStrength, normalizedDistance);
-
-            // Calculate stickiness factor
-            float stickinessFactor = Mathf.Clamp01(1f - (angle / maxAimAssistAngle));
-            stickinessFactor = Mathf.Pow(stickinessFactor, 2); // Apply a power curve for more pronounced effect
-
-            // Combine stickiness strength and factor
-            Vector3 finalAimAssist = screenDirection * dynamicStrength * stickinessStrength * stickinessFactor;
-
-            shooterMovement.ApplyAimAssist(finalAimAssist);
-        }
-        else
-        {
-            shooterMovement.ApplyAimAssist(Vector3.zero);
         }
     }
 
