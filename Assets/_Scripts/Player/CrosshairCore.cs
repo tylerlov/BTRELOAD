@@ -83,20 +83,8 @@ public class CrosshairCore : MonoBehaviour
 
     private void Awake()
     {
-        if (Instance == null)
-        {
-            Instance = this;
-            DontDestroyOnLoad(gameObject);
-        }
-        else
-        {
-            Destroy(gameObject);
-            return;
-        }
-
-        playerInputActions = new DefaultControls();
-        playerInputActions.Player.Enable();
-        SceneManager.sceneLoaded += GetComponent<PlayerLocking>().OnSceneLoaded;
+        InitializeSingleton();
+        InitializeInputActions();
     }
 
     private void OnEnable()
@@ -139,6 +127,31 @@ public class CrosshairCore : MonoBehaviour
     private void Update()
     {
         HandleInput();
+        UpdatePlayerComponents();
+    }
+
+    private void InitializeSingleton()
+    {
+        if (Instance == null)
+        {
+            Instance = this;
+            DontDestroyOnLoad(gameObject);
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
+    }
+
+    private void InitializeInputActions()
+    {
+        playerInputActions = new DefaultControls();
+        playerInputActions.Player.Enable();
+        SceneManager.sceneLoaded += GetComponent<PlayerLocking>().OnSceneLoaded;
+    }
+
+    private void UpdatePlayerComponents()
+    {
         Debug.DrawRay(RaySpawn.transform.position, RaySpawn.transform.forward, Color.green);
         GetComponent<PlayerLocking>().OnLock();
         GetComponent<PlayerLocking>().CheckEnemyLock();
