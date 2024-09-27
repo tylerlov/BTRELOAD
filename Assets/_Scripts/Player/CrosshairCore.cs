@@ -152,6 +152,31 @@ public class CrosshairCore : MonoBehaviour
     private void Update()
     {
         HandleInput();
+        UpdatePlayerComponents();
+    }
+
+    private void InitializeSingleton()
+    {
+        if (Instance == null)
+        {
+            Instance = this;
+            DontDestroyOnLoad(gameObject);
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
+    }
+
+    private void InitializeInputActions()
+    {
+        playerInputActions = new DefaultControls();
+        playerInputActions.Player.Enable();
+        SceneManager.sceneLoaded += GetComponent<PlayerLocking>().OnSceneLoaded;
+    }
+
+    private void UpdatePlayerComponents()
+    {
         Debug.DrawRay(RaySpawn.transform.position, RaySpawn.transform.forward, Color.green);
         GetComponent<PlayerLocking>().OnLock();
         GetComponent<PlayerLocking>().CheckEnemyLock(); // Make sure this line is present
