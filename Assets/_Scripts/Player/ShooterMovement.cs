@@ -35,6 +35,8 @@ public class ShooterMovement : MonoBehaviour
 
     private Vector2 aimAssistVector;
 
+    private AimAssistController aimAssistController;
+
     void Awake()
     {
         playerInputActions = new DefaultControls();
@@ -54,6 +56,11 @@ public class ShooterMovement : MonoBehaviour
         playerInputActions.Player.ReticleMovement.canceled += OnReticleMovement; // Ensure to handle input stop
         timeline = GetComponent<Timeline>();
         startingPosition = transform.localPosition;
+        aimAssistController = GetComponent<AimAssistController>();
+        if (aimAssistController == null)
+        {
+            Debug.LogError("AimAssistController not found on the same GameObject.");
+        }
     }
 
     private void OnEnable()
@@ -99,8 +106,20 @@ void MoveReticle(Vector2 direction)
     // Use Chronos' deltaTime if available, otherwise use Unity's Time.deltaTime
     float deltaTime = timeline != null ? timeline.deltaTime : Time.deltaTime;
 
-    // Combine player input with aim assist
-    Vector2 movement = (direction + (aimAssistVector * aimAssistInfluence)) * xySpeed * deltaTime;
+    // Calculate aim assist direction
+    Vector3 aimAssistDirection = Vector3.zero;
+    if (aimAssistController != null)
+    {
+        aimAssistDirection = aimAssistController.CalculateAimAssistDirection(transform, Camera.main.transform);
+    }
+    else
+    {
+        Debug.LogWarning("AimAssistController is null in ShooterMovement.MoveReticle");
+    }
+
+    // Convert aimAssistDirection to Vector2 and combine with player input
+    Vector2 aimAssist2D = new Vector2(aimAssistDirection.x, aimAssistDirection.y);
+    Vector2 movement = (direction + (aimAssist2D * aimAssistInfluence)) * xySpeed * deltaTime;
 
     // Apply the movement
     transform.localPosition += new Vector3(movement.x, movement.y, 0);

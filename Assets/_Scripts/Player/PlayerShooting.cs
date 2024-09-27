@@ -8,7 +8,8 @@ using UnityEngine;
 
 public class PlayerShooting : MonoBehaviour
 {
-    public static PlayerShooting Instance { get; private set; }
+    private PlayerLocking playerLocking;
+    private CrosshairCore crosshairCore;
 
     #region Shooting Variables
     [Header("Shooting Settings")]
@@ -23,8 +24,6 @@ public class PlayerShooting : MonoBehaviour
     #endregion
 
     #region References
-    private PlayerLocking playerLocking;
-    private CrosshairCore crosshairCore;
     private float lastFireTime;
     private WaitForSeconds launchDelayWait; // Add this line
     #endregion
@@ -38,19 +37,14 @@ public class PlayerShooting : MonoBehaviour
 
     private void Awake()
     {
-        if (Instance == null)
-        {
-            Instance = this;
-            DontDestroyOnLoad(gameObject);
-        }
-        else
-        {
-            Destroy(gameObject);
-            return;
-        }
-
         playerLocking = GetComponent<PlayerLocking>();
         crosshairCore = GetComponent<CrosshairCore>();
+
+        if (playerLocking == null || crosshairCore == null)
+        {
+            Debug.LogError("Required components not found on the same GameObject.");
+        }
+
         InitializeLockOnEffectPool();
         launchDelayWait = new WaitForSeconds(launchDelay);
     }
@@ -87,36 +81,23 @@ public class PlayerShooting : MonoBehaviour
         yield return new WaitForSeconds(.1f);
     }
 
-    public IEnumerator LaunchProjectilesWithDelay(List<PlayerLockedState> projectilesToLaunch)
+    public IEnumerator LaunchProjectilesWithDelay()
     {
         crosshairCore.lastProjectileLaunchTime = Time.time;
-        Debug.Log($"Projectiles launched at {crosshairCore.lastProjectileLaunchTime}");
 
-        float totalDamage = projectilesToLaunch.Sum(state =>
-            state.GetProjectile()?.damageAmount ?? 0f
-        );
-        List<Transform> enemiesHit = projectilesToLaunch
-            .Select(state => state.GetTarget())
-            .ToList();
+        int lockedProjectileCount = playerLocking.GetLockedProjectileCount();
+        float damagePerProjectile = 10f; // Set this to whatever base damage value you want
+        float totalDamage = lockedProjectileCount * damagePerProjectile;
 
-        foreach (var lockedState in projectilesToLaunch)
+        List<Transform> enemiesHit = playerLocking.enemyTargetList.ToList();
+
+        for (int i = 0; i < lockedProjectileCount; i++)
         {
-            ProjectileStateBased projectile = lockedState.GetProjectile();
-
-            if (projectile != null)
-            {
-                projectile.ReturnToPool();
-                AnimateLockOnEffect();
-                yield return launchDelayWait;
-            }
+            AnimateLockOnEffect();
+            yield return launchDelayWait;
         }
 
-        Debug.Log($"Total damage to be applied: {totalDamage}");
-
-        // Apply damage to locked enemies
         playerLocking.DamageLockedEnemies(totalDamage, enemiesHit);
-
-        // Clear locked targets after applying damage
         playerLocking.ClearLockedTargets();
     }
 

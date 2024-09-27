@@ -81,6 +81,10 @@ public class CrosshairCore : MonoBehaviour
     private float tapStartTime;
     private const float tapThreshold = 0.1f;
 
+    private PlayerLocking playerLocking;
+    private PlayerShooting playerShooting;
+    private PlayerTimeControl playerTimeControl;
+
     private void Awake()
     {
         if (Instance == null)
@@ -97,6 +101,15 @@ public class CrosshairCore : MonoBehaviour
         playerInputActions = new DefaultControls();
         playerInputActions.Player.Enable();
         SceneManager.sceneLoaded += GetComponent<PlayerLocking>().OnSceneLoaded;
+
+        playerLocking = GetComponent<PlayerLocking>();
+        playerShooting = GetComponent<PlayerShooting>();
+        playerTimeControl = GetComponent<PlayerTimeControl>();
+
+        if (playerLocking == null || playerShooting == null || playerTimeControl == null)
+        {
+            Debug.LogError("Required components not found on the same GameObject.");
+        }
     }
 
     private void OnEnable()
@@ -141,8 +154,7 @@ public class CrosshairCore : MonoBehaviour
         HandleInput();
         Debug.DrawRay(RaySpawn.transform.position, RaySpawn.transform.forward, Color.green);
         GetComponent<PlayerLocking>().OnLock();
-        GetComponent<PlayerLocking>().CheckEnemyLock();
-        GetComponent<PlayerTimeControl>().HandleRewindTime();
+        GetComponent<PlayerLocking>().CheckEnemyLock(); // Make sure this line is present
         GetComponent<PlayerTimeControl>().HandleRewindToBeat();
         GetComponent<PlayerTimeControl>().HandleSlowToBeat();
     }
@@ -207,18 +219,11 @@ public class CrosshairCore : MonoBehaviour
 
         if (
             (!CheckLockProjectiles() || playerLocking.triggeredLockFire)
-            && playerLocking.LockedList.Count > 0
+            && playerLocking.GetLockedProjectileCount() > 0
             && Time.timeScale != 0f
         )
         {
-            List<PlayerLockedState> projectilesToLaunch =
-                playerLocking.PrepareProjectilesToLaunch();
-
-            if (projectilesToLaunch.Count > 0)
-                StartCoroutine(playerShooting.LaunchProjectilesWithDelay(projectilesToLaunch));
-            else
-                playerLocking.ClearLockedTargets();
-
+            StartCoroutine(playerShooting.LaunchProjectilesWithDelay());
             playerShooting.HandleShootingEffects();
             musicPlayback.EventInstance.setParameterByName("Lock State", 0);
         }
@@ -226,30 +231,28 @@ public class CrosshairCore : MonoBehaviour
 
     private void OnMusicalLock(KoreographyEvent koreoEvent)
     {
-        ConditionalDebug.Log($"OnMusicalLock called. Projectile targets: {GetComponent<PlayerLocking>().projectileTargetList.Count}, Time scale: {Time.timeScale}");
+        ConditionalDebug.Log($"OnMusicalLock called. Locked projectile count: {GetComponent<PlayerLocking>().GetLockedProjectileCount()}, Time scale: {Time.timeScale}");
         PlayerLocking playerLocking = GetComponent<PlayerLocking>();
 
-        if (CheckLockProjectiles() && playerLocking.projectileTargetList.Count > 0 && Time.timeScale != 0f)
+        if (CheckLockProjectiles() && playerLocking.GetLockedProjectileCount() < playerLocking.maxTargets && Time.timeScale != 0f)
         {
-            var target = playerLocking.projectileTargetList[0];
-            target.transform.GetChild(0).gameObject.SetActive(true);
-            target
-                .GetComponent<ProjectileStateBased>()
-                .ChangeState(new PlayerLockedState(target.GetComponent<ProjectileStateBased>()));
-            playerLocking.LockedList.Add(target);
-            StartCoroutine(playerLocking.LockVibrate());
-            playerLocking.lockFeedback.PlayFeedbacks();
-            playerLocking.PlayRandomLocking();
-            playerLocking.Locks++;
-            playerLocking.projectileTargetList.RemoveAt(0);
+            // Attempt to lock onto a projectile
+            if (playerLocking.TryLockOntoProjectile())
+            {
+                // These lines are now handled in TryLockOntoBullet in PlayerLocking
+                // So we don't need to call them here anymore
+                ConditionalDebug.Log($"Locked onto projectile. Current locks: {playerLocking.Locks}");
 
-            ConditionalDebug.Log($"Locked onto projectile. Current locks: {playerLocking.Locks}");
-
-            GetComponent<PlayerShooting>().AnimateLockOnEffect();
+                GetComponent<PlayerShooting>().AnimateLockOnEffect();
+            }
+            else
+            {
+                ConditionalDebug.Log("Failed to lock onto projectile");
+            }
         }
         else
         {
-            ConditionalDebug.Log("Failed to lock onto projectile");
+            ConditionalDebug.Log("Cannot lock onto projectile: conditions not met");
         }
     }
 

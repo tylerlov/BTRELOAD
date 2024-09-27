@@ -1,5 +1,6 @@
-using PrimeTween;
 using UnityEngine;
+using System.Collections.Generic;
+using PrimeTween;
 
 public class UILockOnEffect : MonoBehaviour
 {
@@ -55,9 +56,9 @@ public class UILockOnEffect : MonoBehaviour
         GUIUtility.RotateAroundPivot(-rotationAngle, boxPos); // End rotation
     }
 
-    public void LockOnTarget(Transform enemy)
+    public void LockOnTarget(Transform target)
     {
-        this.enemy = enemy;
+        this.enemy = target;
 
         // Reset box size and rotation angle
         boxSize = initialBoxSize;
@@ -68,6 +69,25 @@ public class UILockOnEffect : MonoBehaviour
 
         // Animate the box size from initialBoxSize to 0 over 0.6 seconds
         boxSizeTween = Tween.Custom(this, initialBoxSize, 0f, 0.6f, (target, value) => target.boxSize = value);
+    }
+
+    public void UnlockTarget(Transform target)
+    {
+        if (this.enemy == target)
+        {
+            this.enemy = null;
+        }
+    }
+
+    public void ClearAllTargets()
+    {
+        this.enemy = null;
+    }
+
+    public void UpdateTargets(List<Transform> targets)
+    {
+        // This method might not be needed for this implementation
+        // but you can use it to update multiple targets if needed
     }
 
     private void OnDisable()

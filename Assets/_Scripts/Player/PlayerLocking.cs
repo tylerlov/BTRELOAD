@@ -25,7 +25,6 @@ public class PlayerLocking : MonoBehaviour
     public float enemyLockInterval = 0.2f;
     public Vector3 bulletLockBoxSize = new Vector3(2, 2, 2); // Increased from (1, 1, 1)
     public MMF_Player lockFeedback;
-    public List<Transform> projectileTargetList = new List<Transform>();
     public Transform enemyTarget;
     public List<Transform> enemyTargetList = new List<Transform>();
     public List<Transform> LockedList = new List<Transform>();
@@ -34,11 +33,11 @@ public class PlayerLocking : MonoBehaviour
 
     #region References
     [Header("References")]
-    [SerializeField] private CrosshairCore crosshairCore;
-    [SerializeField] private UILockOnEffect uiLockOnEffect;
-    [SerializeField] private StaminaController staminaController;
-    [SerializeField] private ShooterMovement shooterMovement;
-    [SerializeField] private AimAssistController aimAssistController;
+    private CrosshairCore crosshairCore;
+    private UILockOnEffect uiLockOnEffect;
+    private StaminaController staminaController;
+    private ShooterMovement shooterMovement;
+    private AimAssistController aimAssistController;
     #endregion
 
     private float lastBulletLockTime,
@@ -69,6 +68,8 @@ public class PlayerLocking : MonoBehaviour
     private Dictionary<Transform, GameObject> lockHighlights = new Dictionary<Transform, GameObject>();
     #endregion
 
+    private int lockedProjectileCount = 0;
+
     private void Awake()
     {
         if (Instance == null)
@@ -83,51 +84,36 @@ public class PlayerLocking : MonoBehaviour
         }
 
         // Ensure references are assigned
+        crosshairCore = GetComponent<CrosshairCore>();
+        uiLockOnEffect = FindObjectOfType<UILockOnEffect>();
+        staminaController = FindObjectOfType<StaminaController>();
+        shooterMovement = GetComponent<ShooterMovement>();
+        aimAssistController = GetComponent<AimAssistController>();
+
         if (crosshairCore == null)
         {
-            crosshairCore = GetComponent<CrosshairCore>();
-            if (crosshairCore == null)
-            {
-                Debug.LogError("CrosshairCore component not found on the same GameObject.");
-            }
+            Debug.LogError("CrosshairCore component not found on the same GameObject.");
         }
 
         if (uiLockOnEffect == null)
         {
-            uiLockOnEffect = FindObjectOfType<UILockOnEffect>();
-            if (uiLockOnEffect == null)
-            {
-                Debug.LogError("UILockOnEffect not found in the scene.");
-            }
+            Debug.LogError("UILockOnEffect not found in the scene.");
         }
 
         if (staminaController == null)
         {
-            staminaController = FindObjectOfType<StaminaController>();
-            if (staminaController == null)
-            {
-                Debug.LogError("StaminaController not found in the scene.");
-            }
+            Debug.LogError("StaminaController not found in the scene.");
         }
 
         if (shooterMovement == null)
         {
-            shooterMovement = GetComponent<ShooterMovement>();
-            if (shooterMovement == null)
-            {
-                Debug.LogError("ShooterMovement component not found on the same GameObject.");
-            }
+            Debug.LogError("ShooterMovement component not found on the same GameObject.");
         }
 
         if (aimAssistController == null)
         {
-            aimAssistController = GetComponent<AimAssistController>();
-            if (aimAssistController == null)
-            {
-                aimAssistController = gameObject.AddComponent<AimAssistController>();
-            }
+            Debug.LogError("AimAssistController not found on the same GameObject.");
         }
-        aimAssistController.Initialize(shooterMovement, range);
     }
 
     private void Update()
@@ -138,13 +124,8 @@ public class PlayerLocking : MonoBehaviour
 
     public void CheckEnemyLock()
     {
-        ConditionalDebug.Log(
-            $"CheckEnemyLock called. LockedList count: {LockedList.Count}, enemyTargetList count: {enemyTargetList.Count}"
-        );
-
-        if (LockedList.Count == 0)
+        if (lockedProjectileCount == 0)
         {
-            ConditionalDebug.Log("No locked projectiles, unlocking enemies");
             UnlockEnemies();
             HideLockIndicator();
             currentLockedEnemy = null;
@@ -160,7 +141,6 @@ public class PlayerLocking : MonoBehaviour
             range,
             LayerMask.GetMask("Enemy")
         );
-        ConditionalDebug.Log($"Found {nearbyEnemies.Length} nearby enemies");
 
         foreach (Collider enemy in nearbyEnemies)
         {
@@ -171,10 +151,6 @@ public class PlayerLocking : MonoBehaviour
             bool isCurrentlyLocked = enemyTargetList.Contains(enemy.transform);
             float angleThreshold = isCurrentlyLocked ? aimAssistController.GetLockMaintainAngle() : aimAssistController.GetMaxAimAssistAngle();
 
-            ConditionalDebug.Log(
-                $"Enemy: {enemy.name}, Angle: {angle}, Threshold: {angleThreshold}, Currently locked: {isCurrentlyLocked}"
-            );
-
             if (angle <= angleThreshold)
             {
                 float distance = directionToEnemy.magnitude;
@@ -182,7 +158,6 @@ public class PlayerLocking : MonoBehaviour
                 {
                     nearestDistance = distance;
                     nearestEnemyInSight = enemy;
-                    ConditionalDebug.Log($"New nearest enemy: {enemy.name}, Distance: {distance}");
                 }
             }
             else if (isCurrentlyLocked)
@@ -190,11 +165,9 @@ public class PlayerLocking : MonoBehaviour
                 if (!enemyLockTimes.ContainsKey(enemy.transform))
                 {
                     enemyLockTimes[enemy.transform] = Time.time;
-                    ConditionalDebug.Log($"Started grace period for {enemy.name}");
                 }
                 else if (Time.time - enemyLockTimes[enemy.transform] > aimAssistController.GetLockGracePeriod())
                 {
-                    ConditionalDebug.Log($"Grace period expired for {enemy.name}, unlocking");
                     UnlockEnemy(enemy.transform);
                 }
             }
@@ -202,7 +175,6 @@ public class PlayerLocking : MonoBehaviour
 
         if (nearestEnemyInSight != null)
         {
-            // If no current lock or after cooldown, consider switching
             if (currentLockedEnemy == null || ShouldSwitchTarget(nearestEnemyInSight.transform))
             {
                 LockOntoEnemy(nearestEnemyInSight.transform);
@@ -211,13 +183,6 @@ public class PlayerLocking : MonoBehaviour
                 lockTimer = Time.time;
             }
 
-            Vector3 directionToEnemy = (
-                nearestEnemyInSight.transform.position - crosshairCore.RaySpawn.transform.position
-            ).normalized;
-            aimAssistDirection = Vector3
-                .ProjectOnPlane(directionToEnemy, crosshairCore.RaySpawn.transform.forward)
-                .normalized;
-
             enemyLockTimes.Remove(nearestEnemyInSight.transform);
         }
         else if (
@@ -225,7 +190,6 @@ public class PlayerLocking : MonoBehaviour
             && !enemyLockTimes.Any(kvp => Time.time - kvp.Value <= aimAssistController.GetLockGracePeriod())
         )
         {
-            ConditionalDebug.Log("No enemies in sight and grace period expired, unlocking all");
             UnlockEnemies();
             HideLockIndicator();
             currentLockedEnemy = null;
@@ -233,24 +197,6 @@ public class PlayerLocking : MonoBehaviour
 
         aimAssistController.SetCurrentLockedEnemy(currentLockedEnemy);
         aimAssistController.ApplyAimAssist(crosshairCore.RaySpawn.transform, Camera.main.transform);
-        ConditionalDebug.Log($"CheckEnemyLock finished. enemyTargetList count: {enemyTargetList.Count}");
-    }
-
-    private bool ShouldSwitchTarget(Transform newTarget)
-    {
-        if (currentLockedEnemy == null)
-            return true;
-
-        Vector3 currentDirection = currentLockedEnemy.position - crosshairCore.RaySpawn.transform.position;
-        Vector3 newDirection = newTarget.position - crosshairCore.RaySpawn.transform.position;
-
-        float currentAngle = Vector3.Angle(crosshairCore.RaySpawn.transform.forward, currentDirection);
-        float newAngle = Vector3.Angle(crosshairCore.RaySpawn.transform.forward, newDirection);
-
-        float angleDifference = newAngle - currentAngle;
-
-        // Only switch if the new target is significantly more aligned
-        return angleDifference < -lockSwitchThreshold * 1.5f;
     }
 
     private void LockOntoEnemy(Transform enemyTransform)
@@ -259,9 +205,6 @@ public class PlayerLocking : MonoBehaviour
         {
             enemyTarget = enemyTransform;
             enemyTargetList.Add(enemyTarget);
-            ConditionalDebug.Log(
-                $"Locked onto enemy: {enemyTarget.name}. Total locked enemies: {enemyTargetList.Count}"
-            );
             FMODUnity.RuntimeManager.PlayOneShot("event:/Player/LockEnemy");
             uiLockOnEffect.LockOnTarget(enemyTarget);
 
@@ -271,17 +214,15 @@ public class PlayerLocking : MonoBehaviour
                 GameObject highlight = Instantiate(lockHighlightPrefab, enemyTransform);
                 lockHighlights[enemyTransform] = highlight;
             }
-        }
-        else
-        {
-            ConditionalDebug.Log($"Enemy {enemyTransform.name} is already locked.");
+
+            // Play lock-on feedback
+            lockFeedback.PlayFeedbacks();
         }
     }
 
-    public void UnlockEnemies()
+    private void UnlockEnemies()
     {
-        ConditionalDebug.Log($"UnlockEnemies called. Current enemyTargetList count: {enemyTargetList.Count}");
-        foreach (var enemy in enemyTargetList.ToList()) // Use ToList to avoid modification during iteration
+        foreach (var enemy in enemyTargetList.ToList())
         {
             if (enemy != null)
             {
@@ -289,7 +230,6 @@ public class PlayerLocking : MonoBehaviour
                 if (enemySetup != null)
                 {
                     enemySetup.SetLockOnStatus(false);
-                    ConditionalDebug.Log($"Unlocked enemy {enemy.name}");
                 }
 
                 // Destroy lock highlight
@@ -298,18 +238,18 @@ public class PlayerLocking : MonoBehaviour
                     Destroy(lockHighlights[enemy]);
                     lockHighlights.Remove(enemy);
                 }
+
+                uiLockOnEffect.UnlockTarget(enemy);
             }
         }
         enemyTargetList.Clear();
         currentLockedEnemy = null;
-        ConditionalDebug.Log("enemyTargetList cleared");
     }
 
     private void UnlockEnemy(Transform enemy)
     {
         if (enemy != null && enemyTargetList.Contains(enemy))
         {
-            ConditionalDebug.Log($"Unlocking enemy: {enemy.name}");
             EnemyBasicSetup enemySetup = enemy.GetComponent<EnemyBasicSetup>();
             EnemyBasicDamagablePart damagablePart = enemy.GetComponent<EnemyBasicDamagablePart>();
 
@@ -328,21 +268,50 @@ public class PlayerLocking : MonoBehaviour
                 lockHighlights.Remove(enemy);
             }
 
+            uiLockOnEffect.UnlockTarget(enemy);
+
             if (enemyTargetList.Count == 0)
             {
                 HideLockIndicator();
                 currentLockedEnemy = null;
             }
         }
-        else
+    }
+
+    private void ShowLockIndicator()
+    {
+        if (lockIndicator != null && !lockIndicator.activeSelf)
         {
-            ConditionalDebug.Log($"Attempted to unlock invalid enemy: {enemy}");
+            lockIndicator.SetActive(true);
         }
+    }
+
+    private void HideLockIndicator()
+    {
+        if (lockIndicator != null && lockIndicator.activeSelf)
+        {
+            lockIndicator.SetActive(false);
+        }
+    }
+
+    private bool ShouldSwitchTarget(Transform newTarget)
+    {
+        if (currentLockedEnemy == null)
+            return true;
+
+        Vector3 currentDirection = currentLockedEnemy.position - crosshairCore.RaySpawn.transform.position;
+        Vector3 newDirection = newTarget.position - crosshairCore.RaySpawn.transform.position;
+
+        float currentAngle = Vector3.Angle(crosshairCore.RaySpawn.transform.forward, currentDirection);
+        float newAngle = Vector3.Angle(crosshairCore.RaySpawn.transform.forward, newDirection);
+
+        float angleDifference = newAngle - currentAngle;
+
+        return angleDifference < -lockSwitchThreshold;
     }
 
     public void OnLock()
     {
-        ConditionalDebug.Log("OnLock method called");
         if (!IsTimeToLockBullet())
             return;
 
@@ -368,11 +337,9 @@ public class PlayerLocking : MonoBehaviour
 
     public void ClearLockedTargets()
     {
-        ConditionalDebug.Log("Clearing locked targets");
-        LockedList.Clear();
-        enemyTargetList.Clear();
-        projectileTargetList.Clear();
-        ConditionalDebug.Log("All locked targets cleared, including QTE Enemy Lock List");
+        lockedProjectileCount = 0;
+        UnlockEnemies();
+        HideLockIndicator();
     }
 
     public void ReleasePlayerLocks()
@@ -390,7 +357,6 @@ public class PlayerLocking : MonoBehaviour
     public void RemoveLockedEnemy(Transform enemy)
     {
         LockedList.Remove(enemy);
-        projectileTargetList.Remove(enemy);
         enemyTargetList.Remove(enemy);
     }
 
@@ -421,51 +387,32 @@ public class PlayerLocking : MonoBehaviour
     {
         ProjectileStateBased hitPSB = hit.transform.GetComponent<ProjectileStateBased>();
         if (
-            crosshairCore.collectHealthMode
-            && hitPSB
-            && hitPSB.GetCurrentStateType() == typeof(EnemyShotState)
-        )
-        {
-            HandleCollectHealthMode(hit);
-            return true;
-        }
-        else if (
             !crosshairCore.collectHealthMode
             && staminaController.canRewind
             && crosshairCore.CheckLockProjectiles()
         )
         {
-            return TryAddBulletToLockList(hit, hitPSB);
-        }
-        return false;
-    }
-
-    private void HandleCollectHealthMode(RaycastHit hit)
-    {
-        ScoreManager.Instance.AddScore(100);
-        StartCoroutine(LockVibrate());
-        lockFeedback.PlayFeedbacks();
-        PlayRandomLocking();
-        hit.transform.GetComponent<ProjectileStateBased>().Death();
-        UpdateLastBulletLockTime();
-    }
-
-    private bool TryAddBulletToLockList(RaycastHit hit, ProjectileStateBased hitPSB)
-    {
-        if (
-            !projectileTargetList.Contains(hit.transform)
-            && hitPSB
-            && hitPSB.GetCurrentStateType() == typeof(EnemyShotState)
-        )
-        {
-            if (LockedList.Count < maxTargets && projectileTargetList.Count < maxTargets)
+            if (hitPSB && hitPSB.GetCurrentStateType() == typeof(EnemyShotState))
             {
-                hitPSB.ChangeState(new PlayerLockedState(hitPSB));
-                projectileTargetList.Add(hit.transform);
-                crosshairCore.musicPlayback.EventInstance.setParameterByName("Lock State", 1);
-                UpdateLastBulletLockTime();
-                HandleMaxTargetsReached();
-                return true;
+                if (lockedProjectileCount < maxTargets)
+                {
+                    hitPSB.ChangeState(new PlayerLockedState(hitPSB));
+                    lockedProjectileCount++;
+                    crosshairCore.musicPlayback.EventInstance.setParameterByName("Lock State", 1);
+                    UpdateLastBulletLockTime();
+                    HandleMaxTargetsReached();
+
+                    // Restore these lines for feedback
+                    StartCoroutine(LockVibrate());
+                    lockFeedback.PlayFeedbacks();
+                    PlayRandomLocking();
+                    Locks++;
+
+                    // Restore visual feedback
+                    hit.transform.GetChild(0).gameObject.SetActive(true);
+
+                    return true;
+                }
             }
         }
         return false;
@@ -536,11 +483,14 @@ public class PlayerLocking : MonoBehaviour
         return projectilesToLaunch;
     }
 
-    public void PlayRandomLocking() =>
+    public void PlayRandomLocking()
+    {
         FMODUnity.RuntimeManager.PlayOneShot("event:/Player/Locking");
+    }
 
     public IEnumerator LockVibrate()
     {
+        // Implement vibration logic here
         yield return new WaitForSeconds(.2f);
     }
 
@@ -590,29 +540,10 @@ public class PlayerLocking : MonoBehaviour
         ClearLockedTargets();
     }
 
-    private void ShowLockIndicator()
-    {
-        if (lockIndicator != null && !lockIndicator.activeSelf)
-        {
-            lockIndicator.SetActive(true);
-        }
-    }
-
-    private void HideLockIndicator()
-    {
-        if (lockIndicator != null && lockIndicator.activeSelf)
-        {
-            lockIndicator.SetActive(false);
-        }
-    }
-
     public void DamageLockedEnemies(float totalDamage, List<Transform> enemiesHit)
     {
-        ConditionalDebug.Log($"DamageLockedEnemies called. Total damage: {totalDamage}, Enemies hit: {enemiesHit.Count}");
-
         if (enemiesHit.Count == 0)
         {
-            ConditionalDebug.LogWarning("No enemies hit to damage.");
             return;
         }
 
@@ -626,9 +557,26 @@ public class PlayerLocking : MonoBehaviour
                 if (enemy != null)
                 {
                     enemy.Damage(damagePerEnemy);
-                    ConditionalDebug.Log($"Applied {damagePerEnemy} damage to enemy {enemyTransform.name}");
                 }
             }
         }
+    }
+
+    public int GetLockedProjectileCount()
+    {
+        return lockedProjectileCount;
+    }
+
+    public bool TryLockOntoProjectile()
+    {
+        RaycastHit[] hits = PerformBulletLockBoxCast();
+        foreach (var hit in hits)
+        {
+            if (IsValidBulletHit(hit) && TryLockOntoBullet(hit))
+            {
+                return true;
+            }
+        }
+        return false;
     }
 }

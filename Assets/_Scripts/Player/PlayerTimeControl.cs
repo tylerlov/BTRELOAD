@@ -8,7 +8,10 @@ using UnityEngine.VFX;
 
 public class PlayerTimeControl : MonoBehaviour
 {
-    public static PlayerTimeControl Instance { get; private set; }
+    private CrosshairCore crosshairCore;
+    private PlayerLocking playerLocking;
+    private SplineController splineControl;
+    private PlayerMovement pMove;
 
     #region Time Control Variables
     [Header("Time Control Settings")]
@@ -35,14 +38,6 @@ public class PlayerTimeControl : MonoBehaviour
     private float maxRewindDuration = 1f;
     #endregion
 
-    #region References
-    private CrosshairCore crosshairCore;
-    private PlayerLocking playerLocking;
-    private SplineController splineControl;
-    private PlayerMovement pMove;
-    private bool rewindTriggedStillPressed = false;
-    #endregion
-
     #region Feedback and Effects
     public MMF_Player rewindFeedback;
     public MMF_Player longrewindFeedback;
@@ -58,21 +53,15 @@ public class PlayerTimeControl : MonoBehaviour
 
     private void Awake()
     {
-        if (Instance == null)
-        {
-            Instance = this;
-            DontDestroyOnLoad(gameObject);
-        }
-        else
-        {
-            Destroy(gameObject);
-            return;
-        }
-
         crosshairCore = GetComponent<CrosshairCore>();
         playerLocking = GetComponent<PlayerLocking>();
         splineControl = FindObjectOfType<SplineController>();
         pMove = FindObjectOfType<PlayerMovement>();
+
+        if (crosshairCore == null || playerLocking == null || splineControl == null || pMove == null)
+        {
+            Debug.LogError("Required components not found on the same GameObject or in the scene.");
+        }
     }
 
     public void HandleRewindToBeat()
@@ -317,6 +306,8 @@ public class PlayerTimeControl : MonoBehaviour
         }
     }
 
+    // Remove or comment out this method as it's not being used
+    /*
     public void HandleRewindTime()
     {
         if (rewindTriggedStillPressed && Time.time - lastRewindTime > rewindCooldown)
@@ -325,4 +316,5 @@ public class PlayerTimeControl : MonoBehaviour
             TriggerQTE(rewindDuration);
         }
     }
+    */
 }
