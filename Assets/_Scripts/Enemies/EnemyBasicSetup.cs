@@ -195,11 +195,15 @@ public class EnemyBasicSetup : BaseBehaviour, IDamageable, IAttackAgent
         }
     }
 
-    public void Damage(float amount)
+    public void Damage(float damage)
     {
-        ConditionalDebug.Log($"Enemy {gameObject.name} received {amount} damage");
+        if (!gameObject.activeInHierarchy)
+        {
+            Debug.LogWarning($"Attempted to damage inactive enemy: {gameObject.name}");
+            return;
+        }
 
-        HandleDamage(amount);
+        HandleDamage(damage);
         if (currentHealth <= 0)
         {
             SetLockOnStatus(false); // Unlock when the enemy is hit and health is depleted
@@ -276,12 +280,18 @@ public class EnemyBasicSetup : BaseBehaviour, IDamageable, IAttackAgent
         return null;
     }
 
-    private void HandleDamage(float amount)
+    private void HandleDamage(float damage)
     {
-        currentHealth = Mathf.Max(currentHealth - amount, 0);
+        if (!gameObject.activeInHierarchy)
+        {
+            Debug.LogWarning($"Attempted to handle damage on inactive enemy: {gameObject.name}");
+            return;
+        }
+
+        currentHealth = Mathf.Max(currentHealth - damage, 0);
         SetLockOnStatus(false);
 
-        ConditionalDebug.Log($"{gameObject} is taking damage of {amount}");
+        ConditionalDebug.Log($"{gameObject} is taking damage of {damage}");
 
         if (currentHealth <= 0)
         {
@@ -294,21 +304,47 @@ public class EnemyBasicSetup : BaseBehaviour, IDamageable, IAttackAgent
         SetLockOnStatus(false);
         ConditionalDebug.Log("Enemy has died");
 
+        // Store the death position
+        Vector3 deathPosition = cachedTransform.position;
+
         // Add this line to update the score
         ScoreManager.Instance.AddScore(CalculateScoreValue());
 
-        deathParticles.GetFromPool(cachedTransform.position, Quaternion.identity);
+        // Spawn death particles at the death position
+        GameObject deathParticleInstance = deathParticles.GetFromPool(deathPosition, Quaternion.identity);
+
         FMODUnity.RuntimeManager.PlayOneShot(
             "event:/Enemy/" + enemyType + "/Death",
-            cachedTransform.position
+            deathPosition
         );
 
-        yield return StartCoroutine(TimeManager.Instance.RewindTime(-1f, 0.5f, 0f));
+        // Trigger time rewind
+        yield return StartCoroutine(TimeManager.Instance.RewindTime());
 
+        // Wait for a short duration after time rewind
         yield return new WaitForSeconds(0.5f);
+
+        // Disable the enemy model
         enemyModel.SetActive(false);
-        yield return new WaitForSeconds(0.5f);
 
+        // Wait for particles to finish (adjust time as needed)
+        yield return new WaitForSeconds(2f);
+
+        // Despawn the death particle instance if it's still active
+        if (deathParticleInstance != null && deathParticleInstance.activeInHierarchy)
+        {
+            OccaSoftware.BOP.Instance particleInstance = deathParticleInstance.GetComponent<OccaSoftware.BOP.Instance>();
+            if (particleInstance != null)
+            {
+                deathParticles.ReturnToPool(particleInstance);
+            }
+            else
+            {
+                ConditionalDebug.LogWarning("Death particle instance does not have an Instance component.");
+            }
+        }
+
+        // Reset position and despawn
         cachedTransform.position = Vector3.zero;
         SpawnableItems.InformSpawnableDestroyed(cachedTransform);
         PoolManager.Pools[associatedPool].Despawn(cachedTransform);

@@ -10,8 +10,8 @@ using UnityEngine.Animations;
 using UnityEngine.Events;
 using UnityEngine.VFX;
 
-[RequireComponent(typeof(Timeline))]
-public class EnemySnakeMidBoss : BaseBehaviour, IDamageable
+[RequireComponent(typeof(Timeline), typeof(NonLockableEnemy))]
+public class EnemySnakeMidBoss : BaseBehaviour, IDamageable, ILimbDamageReceiver
 {
     // Serialized fields
     [SerializeField]
@@ -73,6 +73,9 @@ public class EnemySnakeMidBoss : BaseBehaviour, IDamageable
     [SerializeField]
     private GameObject shootEffectPrefab; // Changed to GameObject
 
+    [SerializeField]
+    private Collider hitCollider;
+
     private List<GameObject> shootEffectPool;
     private const int ShootEffectPoolSize = 5;
 
@@ -96,6 +99,9 @@ public class EnemySnakeMidBoss : BaseBehaviour, IDamageable
     private Vector3 cachedShootDirection;
     private Quaternion cachedShootRotation;
 
+    [SerializeField]
+    private List<ColliderHitCallback> limbColliders = new List<ColliderHitCallback>();
+
     private void Awake()
     {
         // Find the DestroyEffect component
@@ -116,6 +122,22 @@ public class EnemySnakeMidBoss : BaseBehaviour, IDamageable
         playerTarget = GameObject.FindGameObjectWithTag("Player");
 
         InitializeShootEffectPool();
+
+        // Ensure we have a valid hitCollider
+        if (hitCollider == null)
+        {
+            hitCollider = GetComponent<Collider>();
+            if (hitCollider == null)
+            {
+                Debug.LogError("EnemySnakeMidBoss requires a Collider component. Please add one to the GameObject.");
+            }
+        }
+
+        // Ensure the collider is not a trigger
+        if (hitCollider != null)
+        {
+            hitCollider.isTrigger = false;
+        }
     }
 
     private void InitializeVFXPool()
@@ -213,11 +235,55 @@ public class EnemySnakeMidBoss : BaseBehaviour, IDamageable
         // Initialize material and original power
         enemyMaterial = enemyRenderer.material;
         originalFinalPower = enemyMaterial.GetFloat("_FinalPower");
+
+        // Validate hitCollider
+        if (hitCollider == null)
+        {
+            Debug.LogWarning("Hit collider is not set for EnemySnakeMidBoss. Please assign it in the inspector.");
+        }
+
+        // Check and set the layer
+        if (gameObject.layer != LayerMask.NameToLayer("Enemy"))
+        {
+            Debug.LogWarning($"EnemySnakeMidBoss was not on the Enemy layer. Setting it now. Was on layer: {LayerMask.LayerToName(gameObject.layer)}");
+            gameObject.layer = LayerMask.NameToLayer("Enemy");
+        }
+
+        // Log collider information
+        if (hitCollider != null)
+        {
+            Debug.Log($"EnemySnakeMidBoss hitCollider: {hitCollider.GetType()}, isTrigger: {hitCollider.isTrigger}, bounds: {hitCollider.bounds}");
+        }
+        else
+        {
+            Debug.LogError("EnemySnakeMidBoss hitCollider is null!");
+        }
+
+        // Initialize limbColliders if not set in inspector
+        if (limbColliders.Count == 0)
+        {
+            limbColliders.AddRange(GetComponentsInChildren<ColliderHitCallback>());
+        }
+
+        // Set up each ColliderHitCallback
+        foreach (var limbCollider in limbColliders)
+        {
+            limbCollider.bossObject = gameObject;
+        }
     }
 
+    // This method will now be called only by ColliderHitCallback scripts
+    public void DamageFromLimb(string limbName, float amount)
+    {
+        Debug.Log($"EnemySnakeMidBoss received damage from limb {limbName}: {amount}. Current health: {currentHealth}");
+        HandleDamage(amount);
+    }
+
+    // Implement IDamageable interface
     public void Damage(float amount)
     {
-        HandleDamage(amount);
+        // This method is now empty to prevent direct damage
+        Debug.LogWarning("Attempted to damage EnemySnakeMidBoss directly. Use ColliderHitCallback instead.");
     }
 
     public bool IsAlive() => currentHealth > 0;
@@ -246,15 +312,14 @@ public class EnemySnakeMidBoss : BaseBehaviour, IDamageable
 
     private async void HandleDamage(float amount)
     {
-        if (this == null || gameObject == null)
+        if (this == null || gameObject == null || hitCollider == null)
         {
-            Debug.LogWarning(
-                "EnemySnakeMidBoss or its GameObject has been destroyed. Skipping damage handling."
-            );
+            Debug.LogWarning("EnemySnakeMidBoss, its GameObject, or hitCollider has been destroyed. Skipping damage handling.");
             return;
         }
 
         currentHealth = Mathf.Max(currentHealth - amount, 0);
+        Debug.Log($"EnemySnakeMidBoss health after damage: {currentHealth}");
 
         // Play hit sound
         FMODUnity.RuntimeManager.PlayOneShot(hitSoundEventPath, transform.position);

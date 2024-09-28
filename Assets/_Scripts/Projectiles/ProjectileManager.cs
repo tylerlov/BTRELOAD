@@ -58,6 +58,9 @@ public class ProjectileManager : MonoBehaviour
     private NativeArray<float> updatedLifetimes;
     private JobHandle updateJobHandle;
 
+    private JobHandle _updateProjectilesJobHandle;
+    private bool _isJobRunning = false;
+
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -137,6 +140,12 @@ public class ProjectileManager : MonoBehaviour
 
     private void Update()
     {
+        if (_isJobRunning)
+        {
+            _updateProjectilesJobHandle.Complete();
+            _isJobRunning = false;
+        }
+
         float currentFrameTime = Time.realtimeSinceStartup;
         float deltaTime = currentFrameTime - _lastFrameTime;
         _lastFrameTime = currentFrameTime;
@@ -208,7 +217,8 @@ public class ProjectileManager : MonoBehaviour
             GlobalTimeScale = globalTimeScale,
         };
 
-        updateJobHandle = job.Schedule(activeProjectileCount, 64);
+        _updateProjectilesJobHandle = job.Schedule(activeProjectileCount, 64);
+        _isJobRunning = true;
     }
 
     private void UpdateProjectilesAfterJob(float deltaTime, float globalTimeScale)
@@ -294,6 +304,12 @@ public class ProjectileManager : MonoBehaviour
 
     public void RegisterProjectile(ProjectileStateBased projectile)
     {
+        if (_isJobRunning)
+        {
+            _updateProjectilesJobHandle.Complete();
+            _isJobRunning = false;
+        }
+
         int projectileId = projectile.GetInstanceID();
         if (!projectileLookup.ContainsKey(projectileId))
         {
@@ -316,6 +332,12 @@ public class ProjectileManager : MonoBehaviour
 
     public void UnregisterProjectile(ProjectileStateBased projectile)
     {
+        if (_isJobRunning)
+        {
+            _updateProjectilesJobHandle.Complete();
+            _isJobRunning = false;
+        }
+
         if (projectile == null)
             return;
 
@@ -559,6 +581,15 @@ public class ProjectileManager : MonoBehaviour
 
             lifetime -= DeltaTime * GlobalTimeScale;
             UpdatedLifetimes[index] = lifetime;
+        }
+    }
+
+    public void CompleteRunningJobs()
+    {
+        if (_isJobRunning)
+        {
+            _updateProjectilesJobHandle.Complete();
+            _isJobRunning = false;
         }
     }
 }

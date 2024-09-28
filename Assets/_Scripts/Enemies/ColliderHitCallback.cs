@@ -12,7 +12,6 @@ public class ColliderHitCallback : BaseBehaviour, IDamageable
 
     public bool enableShakeOnDamage = true; // Public bool to control shake animation
 
-    [SerializeField]
     private bool lockable = true; // New boolean to determine if this object can be locked onto
 
     private void Awake()
@@ -31,34 +30,48 @@ public class ColliderHitCallback : BaseBehaviour, IDamageable
         {
             ConditionalDebug.LogWarning("Boss object is not assigned in ColliderHitCallback.");
         }
+
+        // Check for NonLockableEnemy component
+        if (GetComponent<NonLockableEnemy>() != null)
+        {
+            lockable = false;
+        }
+
         // Optionally initialize the lockedOnIndicator state
         SetLockedStatus(false); // Ensure the indicator is initially disabled
     }
 
     public void Damage(float amount)
     {
-        bossScript.DamageFromLimb(gameObject.name, amount); // Pass the name of the limb being hit and the damage amount
-        SetLockedStatus(false); // Disable the lockedOnIndicator when hit
-
-        // Conditional shake animation based on enableShakeOnDamage
-        if (enableShakeOnDamage)
+        if (bossScript != null && bossScript.IsAlive())
         {
-            // Convert DOTween shake to PrimeTween shake
-            Tween.ShakeLocalPosition(
-                transform,
-                duration: 0.5f,
-                strength: new Vector3(0.1f, 0.1f, 0.1f),
-                frequency: 10,
-                easeBetweenShakes: Ease.InOutQuad
-            );
+            bossScript.DamageFromLimb(gameObject.name, amount);
+            
+            if (enableShakeOnDamage)
+            {
+                // Convert DOTween shake to PrimeTween shake
+                Tween.ShakeLocalPosition(
+                    transform,
+                    duration: 0.5f,
+                    strength: new Vector3(0.1f, 0.1f, 0.1f),
+                    frequency: 10,
+                    easeBetweenShakes: Ease.InOutQuad
+                );
+            }
         }
+        else
+        {
+            ConditionalDebug.LogWarning("Cannot apply damage: bossScript is null or boss is not alive.");
+        }
+
+        SetLockedStatus(false); // Disable the lockedOnIndicator when hit
     }
 
     public bool IsAlive()
     {
         // Implement logic to determine if the object is alive
         // For example, return false if health <= 0
-        return true; // Placeholder return value, adjust based on your game logic
+        return bossScript != null && bossScript.IsAlive(); // Placeholder return value, adjust based on your game logic
     }
 
     // Method to handle the locked status

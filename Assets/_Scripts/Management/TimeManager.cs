@@ -91,7 +91,7 @@ public class TimeManager : MonoBehaviour
             $"Rewinding time... Start time: {startTime}, Rewind scale: {rewindTimeScale}, Duration: {rewindDuration}"
         );
 
-        yield return new WaitForSeconds(Mathf.Abs(rewindDuration));
+        yield return new WaitForSeconds(rewindDuration);
 
         float rewoundTime = globalClock.time;
         globalClock.LerpTimeScale(1f, returnToNormalDuration);

@@ -70,6 +70,11 @@ public class PlayerLocking : MonoBehaviour
 
     private int lockedProjectileCount = 0;
 
+    [Header("Debug Visualization")]
+    public bool showDebugVisuals = true;
+    public Color rayColor = Color.red;
+    public Color boxCastColor = Color.blue;
+
     private void Awake()
     {
         if (Instance == null)
@@ -144,6 +149,12 @@ public class PlayerLocking : MonoBehaviour
 
         foreach (Collider enemy in nearbyEnemies)
         {
+            // Check if the enemy has the NonLockableEnemy component
+            if (enemy.GetComponent<NonLockableEnemy>() != null)
+            {
+                continue; // Skip this enemy if it has the NonLockableEnemy component
+            }
+
             Vector3 directionToEnemy =
                 enemy.transform.position - crosshairCore.RaySpawn.transform.position;
             float angle = Vector3.Angle(crosshairCore.RaySpawn.transform.forward, directionToEnemy);
@@ -220,8 +231,10 @@ public class PlayerLocking : MonoBehaviour
         }
     }
 
-    private void UnlockEnemies()
+    public void UnlockEnemies()
     {
+        ProjectileManager.Instance.CompleteRunningJobs();
+        
         foreach (var enemy in enemyTargetList.ToList())
         {
             if (enemy != null)
@@ -246,8 +259,10 @@ public class PlayerLocking : MonoBehaviour
         currentLockedEnemy = null;
     }
 
-    private void UnlockEnemy(Transform enemy)
+    public void UnlockEnemy(Transform enemy)
     {
+        ProjectileManager.Instance.CompleteRunningJobs();
+        
         if (enemy != null && enemyTargetList.Contains(enemy))
         {
             EnemyBasicSetup enemySetup = enemy.GetComponent<EnemyBasicSetup>();
@@ -439,48 +454,59 @@ public class PlayerLocking : MonoBehaviour
             return projectilesToLaunch;
         }
 
-        for (int i = LockedList.Count - 1; i >= 0; i--)
+        int projectilesToCreate = lockedProjectileCount;
+        lockedProjectileCount = 0; // Reset the count as we're creating new projectiles
+
+        for (int i = 0; i < projectilesToCreate; i++)
         {
-            if (LockedList[i] == null)
-                continue;
-
-            ProjectileStateBased projectile = LockedList[i].GetComponent<ProjectileStateBased>();
-            if (projectile == null)
-                continue;
-
-            if (!(projectile.GetCurrentState() is PlayerLockedState))
-                projectile.ChangeState(new PlayerLockedState(projectile));
-
-            PlayerLockedState lockedState = projectile.GetCurrentState() as PlayerLockedState;
-            if (lockedState != null)
+            if (enemyTargetList.Count > 0)
             {
-                if (enemyTargetList.Count > 0)
+                enemyTargetListIndex = Mathf.Clamp(enemyTargetListIndex, 1, enemyTargetList.Count);
+                Transform currEnemyTarg = enemyTargetList[enemyTargetListIndex - 1];
+
+                if (currEnemyTarg != null && currEnemyTarg.gameObject.activeSelf)
                 {
-                    enemyTargetListIndex = Mathf.Clamp(
-                        enemyTargetListIndex,
-                        1,
-                        enemyTargetList.Count
-                    );
-                    Transform currEnemyTarg = enemyTargetList[enemyTargetListIndex - 1];
-
-                    if (currEnemyTarg != null && currEnemyTarg.gameObject.activeSelf)
-                        lockedState.LaunchAtEnemy(currEnemyTarg);
-                    else
-                        enemyTargetList.Remove(currEnemyTarg);
-
-                    projectilesToLaunch.Add(lockedState);
-                    enemyTargetListIndex--;
+                    ProjectileStateBased newProjectile = ProjectilePool.Instance.GetProjectile();
+                    if (newProjectile != null)
+                    {
+                        SetupNewProjectile(newProjectile, currEnemyTarg);
+                        projectilesToLaunch.Add(newProjectile.GetCurrentState() as PlayerLockedState);
+                    }
                 }
                 else
-                    projectilesToLaunch.Add(lockedState);
+                {
+                    enemyTargetList.Remove(currEnemyTarg);
+                }
 
-                staminaController.locking = false;
+                enemyTargetListIndex--;
             }
-
-            LockedList.RemoveAt(i);
         }
 
+        staminaController.locking = false;
         return projectilesToLaunch;
+    }
+
+    private void SetupNewProjectile(ProjectileStateBased projectile, Transform target)
+    {
+        if (ProjectileStateBased.shootingObject != null)
+        {
+            projectile.transform.position = ProjectileStateBased.shootingObject.transform.position;
+            Vector3 directionToTarget = (target.position - projectile.transform.position).normalized;
+            projectile.transform.rotation = Quaternion.LookRotation(directionToTarget);
+            
+            // Assuming these values are available or can be set appropriately
+            float damage = 10f; // Set an appropriate damage value
+            float speed = 50f;  // Set an appropriate speed
+            float lifetime = 5f; // Set an appropriate lifetime
+            
+            projectile.SetupProjectile(damage, speed, lifetime, true, 1f, target, false);
+            projectile.ChangeState(new PlayerShotState(projectile, 1f, target, true));
+            ProjectileManager.Instance.RegisterProjectile(projectile);
+        }
+        else
+        {
+            Debug.LogError("Shooting object is not assigned.");
+        }
     }
 
     public void PlayRandomLocking()
@@ -551,7 +577,7 @@ public class PlayerLocking : MonoBehaviour
 
         foreach (Transform enemyTransform in enemiesHit)
         {
-            if (enemyTransform != null)
+            if (enemyTransform != null && enemyTransform.gameObject.activeInHierarchy)
             {
                 EnemyBasicSetup enemy = enemyTransform.GetComponent<EnemyBasicSetup>();
                 if (enemy != null)
@@ -569,14 +595,34 @@ public class PlayerLocking : MonoBehaviour
 
     public bool TryLockOntoProjectile()
     {
+        Debug.Log("TryLockOntoProjectile called");
         RaycastHit[] hits = PerformBulletLockBoxCast();
         foreach (var hit in hits)
         {
             if (IsValidBulletHit(hit) && TryLockOntoBullet(hit))
             {
+                Debug.Log("Successfully locked onto projectile");
                 return true;
             }
         }
+        Debug.Log("Failed to lock onto projectile");
         return false;
+    }
+
+    private void OnDrawGizmos()
+    {
+        if (!showDebugVisuals || crosshairCore == null || crosshairCore.RaySpawn == null)
+            return;
+
+        // Draw the raycast
+        Gizmos.color = rayColor;
+        Vector3 rayDirection = crosshairCore.RaySpawn.transform.forward * range;
+        Gizmos.DrawRay(crosshairCore.RaySpawn.transform.position, rayDirection);
+
+        // Draw the box cast
+        Gizmos.color = boxCastColor;
+        Vector3 boxCenter = crosshairCore.RaySpawn.transform.position + (crosshairCore.RaySpawn.transform.forward * range / 2f);
+        Gizmos.matrix = Matrix4x4.TRS(boxCenter, crosshairCore.RaySpawn.transform.rotation, Vector3.one);
+        Gizmos.DrawWireCube(Vector3.zero, new Vector3(bulletLockBoxSize.x, bulletLockBoxSize.y, range));
     }
 }

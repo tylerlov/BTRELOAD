@@ -21,11 +21,16 @@ public class PlayerShooting : MonoBehaviour
 
     [SerializeField]
     private EventReference shootTagEvent;
+
+    [SerializeField] private float projectileDamage = 10f;
+    [SerializeField] private float projectileSpeed = 50f;
+    [SerializeField] private float projectileScale = 1f;
+    [SerializeField] private float nonTargetedSpeedMultiplier = 2f; // New field for speed multiplier
     #endregion
 
     #region References
     private float lastFireTime;
-    private WaitForSeconds launchDelayWait; // Add this line
+    private WaitForSeconds launchDelayWait;
     #endregion
 
     #region Object Pooling
@@ -83,21 +88,41 @@ public class PlayerShooting : MonoBehaviour
 
     public IEnumerator LaunchProjectilesWithDelay()
     {
+        ProjectileManager.Instance.CompleteRunningJobs();
+        
         crosshairCore.lastProjectileLaunchTime = Time.time;
 
         int lockedProjectileCount = playerLocking.GetLockedProjectileCount();
-        float damagePerProjectile = 10f; // Set this to whatever base damage value you want
-        float totalDamage = lockedProjectileCount * damagePerProjectile;
-
-        List<Transform> enemiesHit = playerLocking.enemyTargetList.ToList();
-
-        for (int i = 0; i < lockedProjectileCount; i++)
+        
+        if (lockedProjectileCount > 0)
         {
-            AnimateLockOnEffect();
-            yield return launchDelayWait;
+            if (playerLocking.enemyTargetList.Count > 0)
+            {
+                // Targeted enemy shooting
+                float damagePerProjectile = 10f;
+                float totalDamage = lockedProjectileCount * damagePerProjectile;
+                List<Transform> enemiesHit = playerLocking.enemyTargetList.ToList();
+
+                for (int i = 0; i < lockedProjectileCount; i++)
+                {
+                    AnimateLockOnEffect();
+                    yield return launchDelayWait;
+                }
+
+                playerLocking.DamageLockedEnemies(totalDamage, enemiesHit);
+            }
+            else
+            {
+                // Non-targeted shooting
+                for (int i = 0; i < lockedProjectileCount; i++)
+                {
+                    ShootNonTargetedProjectile();
+                    AnimateLockOnEffect();
+                    yield return launchDelayWait;
+                }
+            }
         }
 
-        playerLocking.DamageLockedEnemies(totalDamage, enemiesHit);
         playerLocking.ClearLockedTargets();
     }
 
@@ -129,6 +154,29 @@ public class PlayerShooting : MonoBehaviour
                     lockOnInstance.SetActive(false);
                     lockOnEffectPool.Enqueue(lockOnInstance);
                 });
+        }
+    }
+
+    private void ShootNonTargetedProjectile()
+    {
+        if (ProjectileSpawner.Instance != null)
+        {
+            float nonTargetedSpeed = projectileSpeed * nonTargetedSpeedMultiplier; // Calculate the increased speed
+            ProjectileStateBased projectile = ProjectileSpawner.Instance.ShootPlayerProjectile(
+                projectileDamage,
+                nonTargetedSpeed, // Use the increased speed for non-targeted projectiles
+                projectileScale
+            );
+
+            if (projectile != null)
+            {
+                // Handle any additional effects or feedback for shooting
+                HandleShootingEffects();
+            }
+        }
+        else
+        {
+            ConditionalDebug.LogError("[PlayerShooting] ProjectileSpawner.Instance is null!");
         }
     }
 }

@@ -13,6 +13,9 @@ public abstract class ProjectileState
 
     public virtual void OnTriggerEnter(Collider other) { }
 
+    // Add this new virtual method
+    public virtual void OnCollisionEnter(Collision collision) { }
+
     public virtual void OnDeath() { }
 
     public virtual void OnStateEnter() { }

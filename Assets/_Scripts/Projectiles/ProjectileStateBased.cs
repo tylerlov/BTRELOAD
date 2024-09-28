@@ -337,6 +337,11 @@ public class ProjectileStateBased : MonoBehaviour
         currentState?.OnTriggerEnter(other);
     }
 
+    private void OnCollisionEnter(Collision collision)
+    {
+        currentState?.OnCollisionEnter(collision);
+    }
+
     public void Death()
     {
         // Log death event
@@ -545,7 +550,9 @@ public class ProjectileStateBased : MonoBehaviour
 
     public void ApplyDamage(IDamageable target)
     {
-        _combat.ApplyDamage(target);
+        float finalDamage = damageAmount * damageMultiplier;
+        Debug.Log($"Applying damage: {finalDamage} to target {target.GetType().Name}");
+        target.Damage(finalDamage);
     }
 
     public void ChangeState(ProjectileState newState)
@@ -669,12 +676,18 @@ public class ProjectileStateBased : MonoBehaviour
         transform.localScale = Vector3.one * scale;
 
         // Ensure the Rigidbody is non-kinematic
-        rb.isKinematic = false;
-        
-        // Set velocity
-        rb.velocity = transform.forward * speed;
+        if (rb != null)
+        {
+            rb.isKinematic = false;
+            rb.velocity = transform.forward * speed;
+            rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
+        }
+        else
+        {
+            Debug.LogWarning("Rigidbody is null on ProjectileStateBased");
+        }
 
-        ConditionalDebug.Log($"[ProjectileStateBased] Set up projectile with scale: {scale}, Target: {(target != null ? target.name : "None")}, IsStatic: {isStatic}, Speed: {speed}, Lifetime: {lifetime}, Homing: {homing}");
+        ConditionalDebug.Log($"[ProjectileStateBased] Set up projectile with scale: {scale}, Target: {(target != null ? target.name : "None")}, IsStatic: {isStatic}, Speed: {speed}, Lifetime: {lifetime}, Homing: {homing}, isKinematic: {rb?.isKinematic}");
 
         // Only add radar symbol if it's not from a static enemy
         if (!isFromStaticEnemy)

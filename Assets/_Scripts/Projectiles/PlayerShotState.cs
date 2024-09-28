@@ -66,6 +66,8 @@ public class PlayerShotState : ProjectileState
                 : _lastKnownTargetPosition;
         float distanceToTarget = Vector3.Distance(_projectile.transform.position, targetPosition);
 
+        Debug.Log($"Projectile {_projectile.GetInstanceID()} - Position: {_projectile.transform.position}, Target: {targetPosition}, Distance: {distanceToTarget}, Velocity: {_projectile.rb.velocity}");
+
         if (distanceToTarget <= CLOSE_PROXIMITY_THRESHOLD)
         {
             EnsureHit();
@@ -144,31 +146,42 @@ public class PlayerShotState : ProjectileState
 
     public override void OnTriggerEnter(Collider other)
     {
-        if (other.gameObject.layer == LayerMask.NameToLayer("Enemy"))
+        HandleCollision(other.gameObject);
+    }
+
+    public override void OnCollisionEnter(Collision collision)
+    {
+        HandleCollision(collision.gameObject);
+    }
+
+    private void HandleCollision(GameObject hitObject)
+    {
+        Debug.Log($"PlayerShotState projectile collided with: {hitObject.name}, Tag: {hitObject.tag}");
+        
+        if (hitObject.CompareTag("Enemy"))
         {
-            bool isTargetedEnemy = (
-                _projectile.currentTarget != null && other.transform == _projectile.currentTarget
-            );
-            IDamageable damageable = other.gameObject.GetComponent<IDamageable>();
+            IDamageable damageable = hitObject.GetComponent<IDamageable>();
             if (damageable != null)
             {
+                Debug.Log($"Applying damage to: {hitObject.name}");
                 _projectile.ApplyDamage(damageable);
                 _projectile.hasHitTarget = true;
-                _projectile.ReportPlayerProjectileHit(isTargetedEnemy, other.gameObject.name);
+                
+                _projectile.ReportPlayerProjectileHit(_projectile.currentTarget == hitObject.transform, hitObject.name);
 
                 _projectile.Death();
-                ProjectileManager.Instance.NotifyEnemyHit(other.gameObject, _projectile);
-                PlayerLocking.Instance.RemoveLockedEnemy(other.transform);
+                ProjectileManager.Instance.NotifyEnemyHit(hitObject, _projectile);
             }
-            GameManager.Instance.LogProjectileHit(
-                _projectile.isPlayerShot,
-                true,
-                other.gameObject.tag
-            );
+            else
+            {
+                Debug.LogWarning($"Enemy does not implement IDamageable interface: {hitObject.name}");
+            }
+
+            GameManager.Instance.LogProjectileHit(_projectile.isPlayerShot, damageable != null, hitObject.tag);
         }
         else
         {
-            _projectile.LogProjectileHit(other.gameObject.name);
+            Debug.Log($"Projectile hit non-enemy object: {hitObject.name}");
         }
     }
 

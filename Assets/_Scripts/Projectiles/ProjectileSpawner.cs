@@ -427,4 +427,48 @@ public class ProjectileSpawner : MonoBehaviour
             projectile.modelRenderer.material = request.Material;
         }
     }
+
+    public ProjectileStateBased ShootPlayerProjectile(float damage, float speed, float scale)
+    {
+        if (CrosshairCore.Instance == null)
+        {
+            ConditionalDebug.LogError("[ProjectileSpawner] CrosshairCore.Instance is null!");
+            return null;
+        }
+
+        Vector3 shootPosition = CrosshairCore.Instance.RaySpawn.transform.position;
+        Quaternion shootRotation = CrosshairCore.Instance.RaySpawn.transform.rotation;
+
+        ConditionalDebug.Log($"[ProjectileSpawner] ShootPlayerProjectile called. Position: {shootPosition}, Rotation: {shootRotation}");
+
+        ProjectileStateBased projectile = ProjectilePool.Instance.GetProjectile();
+        
+        if (projectile != null)
+        {
+            projectile.transform.position = shootPosition;
+            projectile.transform.rotation = shootRotation;
+            projectile.transform.localScale = Vector3.one * scale;
+            projectile.SetupProjectile(damage, speed, 10f, false, scale, null, false);
+            projectile.gameObject.SetActive(true);
+
+            if (projectile.rb != null)
+            {
+                projectile.rb.isKinematic = false;
+                projectile.rb.velocity = shootRotation * Vector3.forward * speed;
+            }
+
+            ProjectileManager.Instance.RegisterProjectile(projectile);
+
+            // Set the projectile state to PlayerShotState
+            projectile.ChangeState(new PlayerShotState(projectile, 1f, null, false));
+
+            ConditionalDebug.Log($"[ProjectileSpawner] Player projectile created and shot. Position: {shootPosition}, Speed: {speed}, Velocity: {projectile.rb?.velocity}");
+        }
+        else
+        {
+            ConditionalDebug.LogError("[ProjectileSpawner] Failed to get projectile from pool for player shot.");
+        }
+
+        return projectile;
+    }
 }
