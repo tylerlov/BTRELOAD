@@ -15,6 +15,10 @@ public class EnemyShootingManager : MonoBehaviour
 
     private Timeline managerTimeline;
 
+    private int koreographerEventCount = 0;
+    private float lastLogTime = 0f;
+    private const float LOG_INTERVAL = 5f; // Log every 5 seconds
+
     private void Awake()
     {
         if (Instance == null)
@@ -77,24 +81,38 @@ public class EnemyShootingManager : MonoBehaviour
         return managerTimeline != null ? managerTimeline.time : Time.time;
     }
 
+    private void Update()
+    {
+        if (Time.time - lastLogTime >= LOG_INTERVAL)
+        {
+            ConditionalDebug.Log($"[EnemyShootingManager] Koreographer events in the last {LOG_INTERVAL} seconds: {koreographerEventCount}");
+            ConditionalDebug.Log($"[EnemyShootingManager] Current registered StaticEnemyShooting count: {staticEnemyShootings.Count}");
+            lastLogTime = Time.time;
+            koreographerEventCount = 0;
+        }
+    }
+
     private void OnMusicalEnemyShoot(KoreographyEvent evt)
     {
+        koreographerEventCount++;
         ConditionalDebug.Log($"[EnemyShootingManager] OnMusicalEnemyShoot triggered. Time: {Time.time}");
         if (managerTimeline != null && managerTimeline.timeScale != 0f)
         {
             ConditionalDebug.Log($"[EnemyShootingManager] Registered shootings: {staticEnemyShootings.Count}");
+            int successfulShots = 0;
             foreach (var shooting in staticEnemyShootings)
             {
                 if (shooting != null)
                 {
                     shooting.Shoot();
-                    ConditionalDebug.Log($"[EnemyShootingManager] Shoot called on {shooting.name}");
+                    successfulShots++;
                 }
                 else
                 {
                     ConditionalDebug.LogWarning("[EnemyShootingManager] Null StaticEnemyShooting found in list");
                 }
             }
+            ConditionalDebug.Log($"[EnemyShootingManager] Successful shots: {successfulShots}/{staticEnemyShootings.Count}");
         }
         else
         {

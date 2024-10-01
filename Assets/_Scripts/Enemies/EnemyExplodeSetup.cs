@@ -18,43 +18,48 @@ using UnityEngine.VFX;
 [RequireComponent(typeof(Timeline))]
 public class EnemyExplodeSetup : BaseBehaviour, IDamageable, IAttackAgent
 {
-    private float currentHealth;
-
-    // Serialized fields
+    [Header("Enemy Properties")]
     [SerializeField] private string enemyType;
-    [SerializeField, EventID] private string eventID;
     [SerializeField] private float startHealth = 100;
-    [SerializeField] private float repeatAttackDelay;
-    [Space]
     [SerializeField] private GameObject enemyModel;
+    [SerializeField] private Renderer enemyRenderer;
+
+    [Header("Explosion Settings")]
+    [SerializeField] private float explosionDamage = 50f;
+    [SerializeField] private float explosionRadius = 3f;
+
+    [Header("Attack Settings")]
+    [SerializeField] private float repeatAttackDelay;
+
+    [Header("Visual Effects")]
     [SerializeField] private Pooler birthParticles;
     [SerializeField] private Pooler deathParticles;
     [SerializeField] private Pooler lockOnDisabledParticles;
     [SerializeField] private GameObject lockedonAnim;
     [SerializeField] private ParticleSystem trails;
-
-    [SerializeField] private float explosionDamage = 50f;
-    [SerializeField] private float explosionRadius = 3f;
-
-    [SerializeField] private Renderer enemyRenderer;
-    [SerializeField] private Color pulseColor = Color.red;
-    [SerializeField] private float maxPulseIntensity = 1.5f;
-    [SerializeField, EventID] private string farPulseEventID;
-    [SerializeField, EventID] private string mediumPulseEventID;
-    [SerializeField, EventID] private string closePulseEventID;
-    [SerializeField] private float farDistance = 10f;
-    [SerializeField] private float mediumDistance = 5f;
-
-    // Add these new fields
-    [SerializeField, EventID] private string pulseEventID; // Use this for the pulse event
     [SerializeField] private VisualEffect pulseVisualEffect;
 
-
+    [Header("Pulse Settings")]
+    [SerializeField] private Color pulseColor = Color.red;
+    [SerializeField] private float maxPulseIntensity = 1.5f;
     [SerializeField] private float maxPulseInterval = 2f;
     [SerializeField] private float minPulseInterval = 0.5f;
     [SerializeField] private float pulseDuration = 0.1f;
 
+    [Header("Distance Settings")]
+    [SerializeField] private float farDistance = 10f;
+    [SerializeField] private float mediumDistance = 5f;
 
+    [Header("Audio Events")]
+    [SerializeField, EventID] private string eventID;
+    [SerializeField, EventID] private string farPulseEventID;
+    [SerializeField, EventID] private string mediumPulseEventID;
+    [SerializeField, EventID] private string closePulseEventID;
+    [SerializeField] private EventReference pulseSound;
+    [SerializeField] private EventReference explosionSound;
+
+    // Private fields (not visible in inspector)
+    private float currentHealth;
     private bool enemyPooling = true;
     private StudioEventEmitter musicPlayback;
     private bool particleSwitch;
@@ -87,10 +92,16 @@ public class EnemyExplodeSetup : BaseBehaviour, IDamageable, IAttackAgent
 
     private Coroutine pulseCoroutine;
 
+    private EventInstance pulseSoundInstance;
+    private EventInstance explosionSoundInstance;
+
+    private bool isRegisteredWithGameManager = false;
+
     private void Awake()
     {
         CacheComponents();
         Initialize();
+        RegisterWithGameManager();
         if (currentHealth <= 0)
         {
             ResetHealth();
@@ -103,6 +114,49 @@ public class EnemyExplodeSetup : BaseBehaviour, IDamageable, IAttackAgent
             {
                 ConditionalDebug.LogError("No VisualEffect component found on " + gameObject.name);
             }
+        }
+
+        // Initialize the pulse sound instance
+        if (!pulseSound.IsNull)
+        {
+            pulseSoundInstance = RuntimeManager.CreateInstance(pulseSound);
+        }
+        else
+        {
+            ConditionalDebug.LogWarning("Pulse sound event is not assigned on " + gameObject.name);
+        }
+
+        // Initialize the explosion sound instance
+        if (!explosionSound.IsNull)
+        {
+            explosionSoundInstance = RuntimeManager.CreateInstance(explosionSound);
+        }
+        else
+        {
+            ConditionalDebug.LogWarning("Explosion sound event is not assigned on " + gameObject.name);
+        }
+    }
+
+    private void RegisterWithGameManager()
+    {
+        if (GameManager.Instance != null && !isRegisteredWithGameManager)
+        {
+            GameManager.Instance.RegisterEnemy(cachedTransform);
+            isRegisteredWithGameManager = true;
+            ConditionalDebug.Log($"[EnemyExplodeSetup] {gameObject.name} registered with GameManager.");
+        }
+    }
+
+    private void OnDestroy()
+    {
+        // Release the FMOD event instances when the object is destroyed
+        if (pulseSoundInstance.isValid())
+        {
+            pulseSoundInstance.release();
+        }
+        if (explosionSoundInstance.isValid())
+        {
+            explosionSoundInstance.release();
         }
     }
 
@@ -126,10 +180,10 @@ public class EnemyExplodeSetup : BaseBehaviour, IDamageable, IAttackAgent
 
     private void OnEnable()
     {
-        RegisterForEvents();
         ActivateEnemy();
         ResetHealth();
         StartPulsing();
+        UpdatePulseEvent(); // Initial update of the pulse event
     }
 
     private void OnDisable()
@@ -160,17 +214,20 @@ public class EnemyExplodeSetup : BaseBehaviour, IDamageable, IAttackAgent
         }
     }
 
-       private IEnumerator ContinuousPulsing()
+    private IEnumerator ContinuousPulsing()
     {
         while (true)
         {
             if (pulseVisualEffect != null && playerTarget != null)
             {
+                UpdatePulseEvent(); // Update the pulse event before each pulse
+
                 float distanceToPlayer = Vector3.Distance(cachedTransform.position, playerTarget.transform.position);
                 float t = Mathf.InverseLerp(farDistance, 0, distanceToPlayer);
                 float interval = Mathf.Lerp(maxPulseInterval, minPulseInterval, t);
 
                 pulseVisualEffect.Play();
+                PlayPulseSound();
                 yield return new WaitForSeconds(pulseDuration);
                 pulseVisualEffect.Stop();
 
@@ -182,6 +239,20 @@ public class EnemyExplodeSetup : BaseBehaviour, IDamageable, IAttackAgent
             }
         }
     }
+
+    private void PlayPulseSound()
+    {
+        if (pulseSoundInstance.isValid())
+        {
+            pulseSoundInstance.set3DAttributes(RuntimeUtils.To3DAttributes(gameObject));
+            pulseSoundInstance.start();
+        }
+        else
+        {
+            ConditionalDebug.LogWarning("Pulse sound instance is not valid on " + gameObject.name);
+        }
+    }
+
     private void ActivateEnemy()
     {
         enemyModel.SetActive(true);
@@ -192,23 +263,24 @@ public class EnemyExplodeSetup : BaseBehaviour, IDamageable, IAttackAgent
 
     private void RegisterForEvents()
     {
-        if (Koreographer.Instance != null)
+        if (Koreographer.Instance != null && !string.IsNullOrEmpty(currentEventID))
         {
-            Koreographer.Instance.RegisterForEvents(pulseEventID, OnPulseEvent);
+            Koreographer.Instance.RegisterForEvents(currentEventID, OnPulseEvent);
         }
     }
 
     private void UnregisterForEvents()
     {
-        if (Koreographer.Instance != null)
+        if (Koreographer.Instance != null && !string.IsNullOrEmpty(currentEventID))
         {
-            Koreographer.Instance.UnregisterForEvents(pulseEventID, OnPulseEvent);
+            Koreographer.Instance.UnregisterForEvents(currentEventID, OnPulseEvent);
         }
     }
 
     private void OnPulseEvent(KoreographyEvent evt)
     {
         PlayPulseVFX();
+        PlayPulseSound();
     }
 
     public void AssignPool()
@@ -325,10 +397,17 @@ public class EnemyExplodeSetup : BaseBehaviour, IDamageable, IAttackAgent
 
         // Play death effects
         deathParticles.GetFromPool(cachedTransform.position, Quaternion.identity);
-        FMODUnity.RuntimeManager.PlayOneShot(
-            "event:/Enemy/" + enemyType + "/Explosion",
-            cachedTransform.position
-        );
+        
+        // Play explosion sound
+        if (explosionSoundInstance.isValid())
+        {
+            explosionSoundInstance.set3DAttributes(RuntimeUtils.To3DAttributes(gameObject));
+            explosionSoundInstance.start();
+        }
+        else
+        {
+            ConditionalDebug.LogWarning("Explosion sound instance is not valid on " + gameObject.name);
+        }
 
         yield return StartCoroutine(TimeManager.Instance.RewindTime(-1f, 0.5f, 0f));
 
@@ -361,15 +440,18 @@ public class EnemyExplodeSetup : BaseBehaviour, IDamageable, IAttackAgent
         StartCoroutine(PulseEffect());
     }
 
-    private void UpdatePulseEvent(float distance)
+    private void UpdatePulseEvent()
     {
+        if (playerTarget == null) return;
+
+        float distanceToPlayer = Vector3.Distance(cachedTransform.position, playerTarget.transform.position);
         string newEventID;
 
-        if (distance > farDistance)
+        if (distanceToPlayer > farDistance)
         {
             newEventID = farPulseEventID;
         }
-        else if (distance > mediumDistance)
+        else if (distanceToPlayer > mediumDistance)
         {
             newEventID = mediumPulseEventID;
         }

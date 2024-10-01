@@ -43,17 +43,14 @@ public class StaticEnemyShooting : MonoBehaviour
 
     public void Shoot()
     {
-        ConditionalDebug.Log($"[StaticEnemyShooting] Shoot method called on {gameObject.name}");
         if (this == null || !gameObject.activeInHierarchy || EnemyShootingManager.Instance == null)
         {
-            ConditionalDebug.LogWarning($"[StaticEnemyShooting] Shoot conditions not met for {gameObject.name}");
             return;
         }
 
         float currentTime = EnemyShootingManager.Instance.GetCurrentTime();
         if (currentTime - lastShootTime < minTimeBetweenShots)
         {
-            ConditionalDebug.Log($"[StaticEnemyShooting] Skipped shot due to rapid firing at {currentTime}");
             return;
         }
 
@@ -63,15 +60,13 @@ public class StaticEnemyShooting : MonoBehaviour
 
     private void PerformShoot()
     {
-        ConditionalDebug.Log($"[StaticEnemyShooting] PerformShoot called for {gameObject.name}");
         if (ProjectileSpawner.Instance == null)
         {
-            ConditionalDebug.LogError("[StaticEnemyShooting] ProjectileSpawner instance is null.");
             return;
         }
 
         ProjectileSpawner.Instance.ShootProjectileFromEnemy(
-            cachedTransform.position, // Use the enemy's position instead of ProjectileStateBased.shootingObject
+            cachedTransform.position,
             Quaternion.LookRotation(Vector3.up),
             shootSpeed,
             projectileLifetime,
@@ -84,9 +79,5 @@ public class StaticEnemyShooting : MonoBehaviour
             null,
             true // Indicates it's from a static enemy
         );
-
-        ConditionalDebug.Log($"[StaticEnemyShooting] Projectile shot from {gameObject.name}");
     }
-
-    // Remove the UpdateDirectionToTarget() method as it's no longer needed
 }

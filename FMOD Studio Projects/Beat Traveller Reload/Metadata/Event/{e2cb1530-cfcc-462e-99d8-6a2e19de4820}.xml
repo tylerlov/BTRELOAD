@@ -416,6 +416,9 @@
 		<property name="length">
 			<value>11.16281179138322</value>
 		</property>
+		<property name="name">
+			<value>172 Flux Drum Part</value>
+		</property>
 		<property name="volume">
 			<value>6.5</value>
 		</property>
@@ -429,6 +432,9 @@
 		</property>
 		<property name="length">
 			<value>11.162834467120177</value>
+		</property>
+		<property name="name">
+			<value>172 Flux Drum Part</value>
 		</property>
 		<property name="volume">
 			<value>7</value>

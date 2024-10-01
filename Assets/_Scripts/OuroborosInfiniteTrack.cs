@@ -212,8 +212,16 @@ namespace FluffyUnderware.Curvy.Controllers
             TrackSpline.InsertAfter(null, Vector3.zero, true);
             mDir = Vector3.forward;
 
-            int num = TailCP + HeadCP + Sections * SectionCPCount;
-            for (int i = 0; i < num; i++)
+            // Ensure the first few control points are aligned with world up
+            int initialAlignedPoints = 5; // Adjust this number as needed
+            for (int i = 0; i < initialAlignedPoints; i++)
+            {
+                addAlignedTrackCP();
+            }
+
+            // Continue with the rest of the control points
+            int remainingPoints = TailCP + HeadCP + Sections * SectionCPCount - initialAlignedPoints;
+            for (int i = 0; i < remainingPoints; i++)
                 addTrackCP();
 
             TrackSpline.Refresh();
@@ -622,6 +630,24 @@ namespace FluffyUnderware.Curvy.Controllers
                 }
             }
             TrackSpline.Refresh();
+        }
+
+        // New method to add aligned control points
+        void addAlignedTrackCP()
+        {
+            Vector3 p = TrackSpline.ControlPointsList[TrackSpline.ControlPointCount - 1].transform.localPosition;
+            Vector3 position = TrackSpline.transform.localToWorldMatrix.MultiplyPoint3x4(p + Vector3.forward * CPStepSize);
+
+            CurvySplineSegment newControlPoint = TrackSpline.InsertAfter(null, position, true);
+
+            // Ensure the control point is aligned with world up
+            newControlPoint.transform.rotation = Quaternion.LookRotation(Vector3.forward, Vector3.up);
+
+            // Force the spline to recalculate
+            TrackSpline.Refresh();
+
+            if ((TrackSpline.ControlPointCount - 1 - TailCP) % SectionCPCount == 0)
+                newControlPoint.SerializedOrientationAnchor = true;
         }
     }
 }
