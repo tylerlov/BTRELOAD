@@ -8,6 +8,7 @@ public class StaminaController : MonoBehaviour
     [SerializeField] private float maxStamina = 100f;
     [SerializeField] private float staminaRegenerationTime = 5f; // Time to regenerate from 0 to full
     [SerializeField] private int maxRicochetsAtFullStamina = 5; // Number of ricochets at full stamina
+    [SerializeField] private float staminaCostPerDodge = 20f; // New field for dodge cost
 
     private float currentStamina;
     private float staminaRegenerationRate;
@@ -15,14 +16,16 @@ public class StaminaController : MonoBehaviour
 
     public event Action<float> OnStaminaChanged;
 
+    private GameManager gameManager;
+
     private void Awake()
     {
         if (Instance == null)
         {
             Instance = this;
-            DontDestroyOnLoad(gameObject);
+            // Don't use DontDestroyOnLoad here if it's on the same object as PlayerMovement
         }
-        else
+        else if (Instance != this)
         {
             Destroy(gameObject);
             return;
@@ -31,6 +34,7 @@ public class StaminaController : MonoBehaviour
         currentStamina = maxStamina;
         staminaRegenerationRate = maxStamina / staminaRegenerationTime;
         staminaCostPerRicochet = maxStamina / maxRicochetsAtFullStamina;
+        gameManager = GameManager.Instance;
     }
 
     private void Update()
@@ -44,6 +48,7 @@ public class StaminaController : MonoBehaviour
         {
             currentStamina = Mathf.Min(currentStamina + staminaRegenerationRate * Time.deltaTime, maxStamina);
             OnStaminaChanged?.Invoke(currentStamina / maxStamina);
+            gameManager.UpdateStaminaUI(currentStamina / maxStamina);
         }
     }
 
@@ -72,5 +77,20 @@ public class StaminaController : MonoBehaviour
     public void SetCanRewind(bool value)
     {
         canRewind = value;
+    }
+
+    public bool TryUseDodgeStamina()
+    {
+        Debug.Log($"Attempting to use dodge stamina. Current: {currentStamina}, Cost: {staminaCostPerDodge}"); // New debug log
+        if (currentStamina >= staminaCostPerDodge)
+        {
+            currentStamina -= staminaCostPerDodge;
+            OnStaminaChanged?.Invoke(currentStamina / maxStamina);
+            gameManager.UpdateStaminaUI(currentStamina / maxStamina);
+            Debug.Log("Dodge stamina used successfully"); // New debug log
+            return true;
+        }
+        Debug.Log("Not enough stamina for dodge"); // New debug log
+        return false;
     }
 }

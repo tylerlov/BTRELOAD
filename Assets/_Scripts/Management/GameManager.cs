@@ -45,6 +45,8 @@ public class GameManager : MonoBehaviour
     public static readonly string StartingTransitionEvent = EventManager.StartingTransitionEvent;
     public static readonly string TransCamOffEvent = "TransCamOff";
 
+    private PlayerUI playerUI;
+
     private void Awake()
     {
         if (Instance == null)
@@ -72,7 +74,11 @@ public class GameManager : MonoBehaviour
             TimeManager.SetDebugSettings(debugSettings);
         }
 
-       
+        playerUI = FindObjectOfType<PlayerUI>();
+        if (playerUI == null)
+        {
+            Debug.LogError("PlayerUI not found in the scene.");
+        }
     }
 
     private void InitializeManagers()
@@ -415,6 +421,14 @@ public class GameManager : MonoBehaviour
         else
         {
             Debug.LogWarning("PlayerLocking instance not found. Unable to clear locks.");
+        }
+    }
+
+    public void UpdateStaminaUI(float staminaPercentage)
+    {
+        if (playerUI != null)
+        {
+            playerUI.UpdateStaminaBar(staminaPercentage);
         }
     }
 }

@@ -41,17 +41,13 @@ public class EnemyExplodeSetup : BaseBehaviour, IDamageable, IAttackAgent
 
     [Header("Pulse Settings")]
     [SerializeField] private Color pulseColor = Color.red;
-    [SerializeField] private float maxPulseIntensity = 1.5f;
-    [SerializeField] private float maxPulseInterval = 2f;
-    [SerializeField] private float minPulseInterval = 0.5f;
     [SerializeField] private float pulseDuration = 0.1f;
 
     [Header("Distance Settings")]
     [SerializeField] private float farDistance = 10f;
     [SerializeField] private float mediumDistance = 5f;
 
-    [Header("Audio Events")]
-    [SerializeField, EventID] private string eventID;
+    [Header("Pulse Timings")]
     [SerializeField, EventID] private string farPulseEventID;
     [SerializeField, EventID] private string mediumPulseEventID;
     [SerializeField, EventID] private string closePulseEventID;
@@ -89,8 +85,6 @@ public class EnemyExplodeSetup : BaseBehaviour, IDamageable, IAttackAgent
     private Material enemyMaterial;
     private Color originalColor;
     private string currentEventID;
-
-    private Coroutine pulseCoroutine;
 
     private EventInstance pulseSoundInstance;
     private EventInstance explosionSoundInstance;
@@ -182,61 +176,45 @@ public class EnemyExplodeSetup : BaseBehaviour, IDamageable, IAttackAgent
     {
         ActivateEnemy();
         ResetHealth();
-        StartPulsing();
-        UpdatePulseEvent(); // Initial update of the pulse event
+        UpdatePulseEvent(); // This will now register for events
     }
 
     private void OnDisable()
     {
         UnregisterForEvents();
-        StopPulsing();
     }
 
-    private void StartPulsing()
+    private void RegisterForEvents()
     {
-        if (pulseCoroutine != null)
+        if (Koreographer.Instance != null && !string.IsNullOrEmpty(currentEventID))
         {
-            StopCoroutine(pulseCoroutine);
+            Koreographer.Instance.RegisterForEvents(currentEventID, OnPulseEvent);
+            ConditionalDebug.Log($"Registered for event: {currentEventID} on {gameObject.name}");
         }
-        pulseCoroutine = StartCoroutine(ContinuousPulsing());
     }
 
-    private void StopPulsing()
+    private void UnregisterForEvents()
     {
-        if (pulseCoroutine != null)
+        if (Koreographer.Instance != null && !string.IsNullOrEmpty(currentEventID))
         {
-            StopCoroutine(pulseCoroutine);
-            pulseCoroutine = null;
+            Koreographer.Instance.UnregisterForEvents(currentEventID, OnPulseEvent);
+            ConditionalDebug.Log($"Unregistered from event: {currentEventID} on {gameObject.name}");
         }
+    }
+
+    private void OnPulseEvent(KoreographyEvent evt)
+    {
+        StartCoroutine(PulseEffect());
+        PlayPulseSound();
+    }
+
+    private IEnumerator PulseEffect()
+    {
         if (pulseVisualEffect != null)
         {
+            pulseVisualEffect.Play();
+            yield return new WaitForSeconds(pulseDuration);
             pulseVisualEffect.Stop();
-        }
-    }
-
-    private IEnumerator ContinuousPulsing()
-    {
-        while (true)
-        {
-            if (pulseVisualEffect != null && playerTarget != null)
-            {
-                UpdatePulseEvent(); // Update the pulse event before each pulse
-
-                float distanceToPlayer = Vector3.Distance(cachedTransform.position, playerTarget.transform.position);
-                float t = Mathf.InverseLerp(farDistance, 0, distanceToPlayer);
-                float interval = Mathf.Lerp(maxPulseInterval, minPulseInterval, t);
-
-                pulseVisualEffect.Play();
-                PlayPulseSound();
-                yield return new WaitForSeconds(pulseDuration);
-                pulseVisualEffect.Stop();
-
-                yield return new WaitForSeconds(interval - pulseDuration);
-            }
-            else
-            {
-                yield return null;
-            }
         }
     }
 
@@ -259,28 +237,6 @@ public class EnemyExplodeSetup : BaseBehaviour, IDamageable, IAttackAgent
         SetLockOnStatus(false);
         FMODUnity.RuntimeManager.PlayOneShotAttached($"event:/Enemy/{enemyType}/Birth", gameObject);
         birthParticles.GetFromPool(cachedTransform.position, Quaternion.identity);
-    }
-
-    private void RegisterForEvents()
-    {
-        if (Koreographer.Instance != null && !string.IsNullOrEmpty(currentEventID))
-        {
-            Koreographer.Instance.RegisterForEvents(currentEventID, OnPulseEvent);
-        }
-    }
-
-    private void UnregisterForEvents()
-    {
-        if (Koreographer.Instance != null && !string.IsNullOrEmpty(currentEventID))
-        {
-            Koreographer.Instance.UnregisterForEvents(currentEventID, OnPulseEvent);
-        }
-    }
-
-    private void OnPulseEvent(KoreographyEvent evt)
-    {
-        PlayPulseVFX();
-        PlayPulseSound();
     }
 
     public void AssignPool()
@@ -442,8 +398,6 @@ public class EnemyExplodeSetup : BaseBehaviour, IDamageable, IAttackAgent
 
     private void UpdatePulseEvent()
     {
-        if (playerTarget == null) return;
-
         float distanceToPlayer = Vector3.Distance(cachedTransform.position, playerTarget.transform.position);
         string newEventID;
 
@@ -465,17 +419,7 @@ public class EnemyExplodeSetup : BaseBehaviour, IDamageable, IAttackAgent
             UnregisterForEvents();
             currentEventID = newEventID;
             RegisterForEvents();
-        }
-    }
-
-    private IEnumerator PulseEffect()
-    {
-        if (pulseVisualEffect != null)
-        {
-            pulseVisualEffect.Play();
-            // You might want to adjust this wait time based on your visual effect
-            yield return new WaitForSeconds(0.1f);
-            pulseVisualEffect.Stop();
+            ConditionalDebug.Log($"Updated pulse event for {gameObject.name}. Distance: {distanceToPlayer}, New Event: {newEventID}");
         }
     }
 
@@ -514,5 +458,19 @@ public class EnemyExplodeSetup : BaseBehaviour, IDamageable, IAttackAgent
         {
             ConditionalDebug.LogWarning("Pulse Visual Effect is not assigned on " + gameObject.name);
         }
+    }
+
+    private void Update()
+    {
+        if (playerTarget == null)
+        {
+            playerTarget = GameObject.FindGameObjectWithTag("Player");
+            if (playerTarget == null)
+            {
+                ConditionalDebug.LogWarning($"Player not found for {gameObject.name}");
+                return;
+            }
+        }
+        UpdatePulseEvent();
     }
 }

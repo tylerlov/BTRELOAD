@@ -107,6 +107,8 @@ public class PlayerMovement : MonoBehaviour
 
     private RangeSensor rangeSensor;
 
+    private StaminaController staminaController;
+
     #endregion
 
     private void Awake()
@@ -138,6 +140,12 @@ public class PlayerMovement : MonoBehaviour
         playerHealth = GetComponent<PlayerHealth>();
         timeline = GetComponent<Timeline>();
         cinemachineBrain = Camera.main.GetComponent<CinemachineBrain>();
+
+        staminaController = GetComponent<StaminaController>();
+        if (staminaController == null)
+        {
+            Debug.LogError("StaminaController component not found on the same GameObject as PlayerMovement!");
+        }
     }
 
     private void OnDestroy()
@@ -356,14 +364,27 @@ public class PlayerMovement : MonoBehaviour
 
     private bool CheckRicochetDodge()
     {
-        return playerInputActions.Player.Dodge.ReadValue<float>() > 0;
+        bool isDodgePressed = playerInputActions.Player.Dodge.ReadValue<float>() > 0;
+        if (isDodgePressed)
+        {
+            Debug.Log("Dodge input detected"); // New debug log
+        }
+        return isDodgePressed;
     }
 
     private void TryRicochetDodge()
     {
+        Debug.Log("TryRicochetDodge called"); // New debug log
+
         if (isDodging || Time.time - lastDodgeTime < dodgeCooldown)
         {
             Debug.Log("Dodge attempted, but either already dodging or on cooldown.");
+            return;
+        }
+
+        if (staminaController == null)
+        {
+            Debug.LogError("StaminaController is not initialized!");
             return;
         }
 
@@ -372,6 +393,14 @@ public class PlayerMovement : MonoBehaviour
 
     private IEnumerator PerformRicochetDodge()
     {
+        Debug.Log("PerformRicochetDodge started"); // New debug log
+
+        if (!staminaController.TryUseDodgeStamina())
+        {
+            Debug.Log("Not enough stamina to dodge.");
+            yield break;
+        }
+
         isDodging = true;
         lastDodgeTime = Time.time;
 

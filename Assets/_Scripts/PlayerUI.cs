@@ -230,7 +230,7 @@ public class PlayerUI : MonoBehaviour
         textElement.gameObject.SetActive(false);
     }
 
-    private void UpdateStaminaBar(float staminaPercentage)
+    public void UpdateStaminaBar(float staminaPercentage)
     {
         if (staminaBarFill != null)
         {
