@@ -2,8 +2,7 @@ using System.Linq;
 using Pathfinding;
 using UnityEngine;
 
-[RequireComponent(typeof(EnemyBasicSetup))]
-[RequireComponent(typeof(CustomAIPathAlignedToSurface))]
+
 public class EnemySpeedController : MonoBehaviour
 {
     [SerializeField]

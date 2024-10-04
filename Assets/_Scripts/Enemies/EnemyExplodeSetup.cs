@@ -1,6 +1,5 @@
 using System;
 using System.Collections;
-using BehaviorDesigner.Runtime.Tactical;
 using Chronos;
 using DG.Tweening;
 using FMOD.Studio;
@@ -336,7 +335,7 @@ public class EnemyExplodeSetup : BaseBehaviour, IDamageable, IAttackAgent
         }
     }
 
-    private void Explode()
+    public void Explode()
     {
         if (hasExploded) return; // Prevent multiple explosions
         hasExploded = true;

@@ -1,7 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using BehaviorDesigner.Runtime.Tactical;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;

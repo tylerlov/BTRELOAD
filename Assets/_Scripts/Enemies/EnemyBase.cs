@@ -1,5 +1,4 @@
 using System.Collections;
-using BehaviorDesigner.Runtime.Tactical;
 using Chronos;
 using OccaSoftware.BOP;
 using PathologicalGames;

@@ -1,6 +1,5 @@
 using System;
 using System.Collections;
-using BehaviorDesigner.Runtime.Tactical;
 using Chronos;
 using DG.Tweening;
 using FMOD.Studio;

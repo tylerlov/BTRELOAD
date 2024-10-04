@@ -1,7 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq; // Add this for LINQ methods like OfType
-using BehaviorDesigner.Runtime.Tactical; // Add this to access IDamageable
 using UnityEngine;
 using UnityEngine.EventSystems; // Add this
 using UnityEngine.UI; // Add this

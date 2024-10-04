@@ -1,0 +1,17 @@
+{
+    "name": "PerfectCullingEditor",
+    "references": [
+        "GUID:218b863c69c76454bbcf67d85ab468df"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
