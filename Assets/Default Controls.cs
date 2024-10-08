@@ -28,19 +28,19 @@ public partial class @DefaultControls: IInputActionCollection2, IDisposable
             ""id"": ""5515e098-65b7-411b-9536-a31e26a86900"",
             ""actions"": [
                 {
-                    ""name"": ""Rotate Left"",
+                    ""name"": ""RotateLeft"",
                     ""type"": ""Button"",
                     ""id"": ""5f078def-5452-432a-9322-9bef001238b4"",
-                    ""expectedControlType"": ""Button"",
+                    ""expectedControlType"": """",
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
                 },
                 {
-                    ""name"": ""Rotate Right"",
+                    ""name"": ""RotateRight"",
                     ""type"": ""Button"",
                     ""id"": ""2e33d982-b23a-4ff1-bc83-53e240e76def"",
-                    ""expectedControlType"": ""Button"",
+                    ""expectedControlType"": """",
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
@@ -76,7 +76,7 @@ public partial class @DefaultControls: IInputActionCollection2, IDisposable
                     ""name"": ""Rewind Time"",
                     ""type"": ""Button"",
                     ""id"": ""dfbb8bb8-16fa-4249-9367-25dc77214f34"",
-                    ""expectedControlType"": ""Button"",
+                    ""expectedControlType"": """",
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
@@ -85,7 +85,7 @@ public partial class @DefaultControls: IInputActionCollection2, IDisposable
                     ""name"": ""Slow Time"",
                     ""type"": ""Button"",
                     ""id"": ""101bda80-f0f3-45ef-abca-3d0120d58c8e"",
-                    ""expectedControlType"": ""Button"",
+                    ""expectedControlType"": """",
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
@@ -103,7 +103,7 @@ public partial class @DefaultControls: IInputActionCollection2, IDisposable
                     ""name"": ""ReverseDirection"",
                     ""type"": ""Button"",
                     ""id"": ""de81e5d8-830f-419c-8da9-7fd9a6a479ab"",
-                    ""expectedControlType"": ""Button"",
+                    ""expectedControlType"": """",
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
@@ -139,7 +139,7 @@ public partial class @DefaultControls: IInputActionCollection2, IDisposable
                     ""name"": ""Right"",
                     ""type"": ""Button"",
                     ""id"": ""35e97b87-23e3-428a-b199-a4ba7e0657b9"",
-                    ""expectedControlType"": ""Button"",
+                    ""expectedControlType"": """",
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
@@ -153,7 +153,7 @@ public partial class @DefaultControls: IInputActionCollection2, IDisposable
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": ""Controller"",
-                    ""action"": ""Rotate Left"",
+                    ""action"": ""RotateLeft"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 },
@@ -164,7 +164,7 @@ public partial class @DefaultControls: IInputActionCollection2, IDisposable
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": ""Keyboard"",
-                    ""action"": ""Rotate Left"",
+                    ""action"": ""RotateLeft"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 },
@@ -175,7 +175,29 @@ public partial class @DefaultControls: IInputActionCollection2, IDisposable
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": ""Controller"",
-                    ""action"": ""Rotate Left"",
+                    ""action"": ""RotateLeft"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""ab110d40-6ab0-4018-a9e2-fde0b67400a2"",
+                    ""path"": ""<XInputController>/leftShoulder"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": "";Controller"",
+                    ""action"": ""RotateLeft"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""7a342a1f-fff1-48cb-9ea1-2a55010541eb"",
+                    ""path"": ""<XInputController>/rightStick/left"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": "";Controller"",
+                    ""action"": ""RotateLeft"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 },
@@ -186,7 +208,7 @@ public partial class @DefaultControls: IInputActionCollection2, IDisposable
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": ""Controller"",
-                    ""action"": ""Rotate Right"",
+                    ""action"": ""RotateRight"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 },
@@ -197,7 +219,7 @@ public partial class @DefaultControls: IInputActionCollection2, IDisposable
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": ""Keyboard"",
-                    ""action"": ""Rotate Right"",
+                    ""action"": ""RotateRight"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 },
@@ -208,7 +230,29 @@ public partial class @DefaultControls: IInputActionCollection2, IDisposable
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": ""Controller"",
-                    ""action"": ""Rotate Right"",
+                    ""action"": ""RotateRight"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""3ca22ea4-3343-4a1d-bc0b-744844c78f3d"",
+                    ""path"": ""<XInputController>/rightShoulder"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": "";Controller"",
+                    ""action"": ""RotateRight"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""b760ab46-6e86-4baf-9b36-2162ccf6e2bb"",
+                    ""path"": ""<XInputController>/rightStick/right"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": "";Controller"",
+                    ""action"": ""RotateRight"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 },
@@ -934,8 +978,8 @@ public partial class @DefaultControls: IInputActionCollection2, IDisposable
 }");
         // Player
         m_Player = asset.FindActionMap("Player", throwIfNotFound: true);
-        m_Player_RotateLeft = m_Player.FindAction("Rotate Left", throwIfNotFound: true);
-        m_Player_RotateRight = m_Player.FindAction("Rotate Right", throwIfNotFound: true);
+        m_Player_RotateLeft = m_Player.FindAction("RotateLeft", throwIfNotFound: true);
+        m_Player_RotateRight = m_Player.FindAction("RotateRight", throwIfNotFound: true);
         m_Player_ReticleMovement = m_Player.FindAction("Reticle Movement", throwIfNotFound: true);
         m_Player_LockProjectiles = m_Player.FindAction("Lock Projectiles", throwIfNotFound: true);
         m_Player_LockEnemies = m_Player.FindAction("Lock Enemies", throwIfNotFound: true);

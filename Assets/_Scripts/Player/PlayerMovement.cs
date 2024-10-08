@@ -127,6 +127,8 @@ public class PlayerMovement : MonoBehaviour
         playerInputActions = new DefaultControls();
         playerInputActions.Player.Enable();
         playerInputActions.Player.ReverseDirection.performed += OnReverseDirection;
+        playerInputActions.Player.RotateLeft.performed += ctx => RotateLeft();
+        playerInputActions.Player.RotateRight.performed += ctx => RotateRight();
 
         rigidbody = GetComponent<Rigidbody>();
         rigidbody.constraints = RigidbodyConstraints.FreezeRotationY | rigidbody.constraints;
@@ -292,7 +294,7 @@ public class PlayerMovement : MonoBehaviour
         return 270;
     }
 
-    public void RotateLeft()
+    private void RotateLeft()
     {
         if (isRotating || Time.time - lastRotationTime < rotationCooldown)
             return;
@@ -302,7 +304,7 @@ public class PlayerMovement : MonoBehaviour
         Rotate(-90);
     }
 
-    public void RotateRight()
+    private void RotateRight()
     {
         if (isRotating || Time.time - lastRotationTime < rotationCooldown)
             return;
