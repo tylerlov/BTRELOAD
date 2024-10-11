@@ -137,7 +137,7 @@ public class PlayerShotState : ProjectileState
         }
         else
         {
-            _projectile.Death();
+            _projectile.Death(true);
         }
     }
 
@@ -166,7 +166,7 @@ public class PlayerShotState : ProjectileState
                 
                 _projectile.ReportPlayerProjectileHit(_projectile.currentTarget == hitObject.transform, hitObject.name);
 
-                _projectile.Death();
+                _projectile.Death(true);
                 ProjectileManager.Instance.NotifyEnemyHit(hitObject, _projectile);
             }
             else

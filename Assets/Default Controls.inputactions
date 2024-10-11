@@ -45,7 +45,7 @@
                     "name": "Lock Enemies",
                     "type": "Button",
                     "id": "3dcdb9b3-2a46-4aa7-8c3a-dc8397baebca",
-                    "expectedControlType": "Button",
+                    "expectedControlType": "",
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
@@ -90,7 +90,7 @@
                     "name": "Up",
                     "type": "Button",
                     "id": "10343071-2dad-4b82-9dfa-17f1c781f8fd",
-                    "expectedControlType": "Button",
+                    "expectedControlType": "",
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
@@ -108,7 +108,7 @@
                     "name": "Left",
                     "type": "Button",
                     "id": "f62aff89-d502-4347-acd5-e88ac4672b29",
-                    "expectedControlType": "Button",
+                    "expectedControlType": "",
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
@@ -912,6 +912,54 @@
                     "processors": "",
                     "groups": "",
                     "action": "TrackedDeviceOrientation",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                }
+            ]
+        },
+        {
+            "name": "Debug",
+            "id": "d0232290-a38b-4684-9e57-8955f980dc26",
+            "actions": [
+                {
+                    "name": "Next Scene",
+                    "type": "Button",
+                    "id": "885cffdf-663e-4cce-8efe-dcb76cc5d85a",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "Kill All Enemies",
+                    "type": "Button",
+                    "id": "08e23944-a4b7-4b9b-9714-01a3c66d4c6d",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                }
+            ],
+            "bindings": [
+                {
+                    "name": "",
+                    "id": "66ecf008-5bd7-4030-94df-8e44ea6b1517",
+                    "path": "<Keyboard>/n",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": ";Keyboard;Controller;Mouse",
+                    "action": "Next Scene",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "038b77d0-c0e4-414e-8134-8242bd882b60",
+                    "path": "<Keyboard>/0",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": ";Controller;Keyboard;Mouse",
+                    "action": "Kill All Enemies",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

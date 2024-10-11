@@ -102,8 +102,9 @@ namespace FluffyUnderware.Curvy.Controllers
 
         [Header("Deformer Settings")]
         [SerializeField]
-        private GameObject deformerPrefab; // Changed to GameObject
-        private List<Deformer> cachedDeformers = new List<Deformer>(); // New list to cache Deformers
+        private GameObject deformerPrefab;
+        private List<Deformer> cachedDeformers = new List<Deformer>();
+        private bool useDeformers = false; // New flag to check if deformers should be used
 
         private int mInitState = 0;
         private bool mUpdateSpline;
@@ -179,8 +180,11 @@ namespace FluffyUnderware.Curvy.Controllers
             if (mInitState == 2 && mUpdateSpline)
                 advanceTrack();
 
-            // Add this line to continuously check and add Deformable components
-            AddDeformableComponents();
+            // Only add Deformable components if deformers are being used
+            if (useDeformers)
+            {
+                AddDeformableComponents();
+            }
 
             // Check if the number of active prefabs exceeds the limit
             if (activePrefabs.Count > maxActivePrefabs)
@@ -552,6 +556,8 @@ namespace FluffyUnderware.Curvy.Controllers
 
         private void AddDeformableComponents()
         {
+            if (!useDeformers) return;
+
             foreach (var generator in mGenerators)
             {
                 AddDeformableComponentsToGenerator(generator);
@@ -560,6 +566,8 @@ namespace FluffyUnderware.Curvy.Controllers
 
         private void AddDeformableComponentsToGenerator(CurvyGenerator generator)
         {
+            if (!useDeformers) return;
+
             List<CreateMesh> createMeshModules = generator.FindModules<CreateMesh>(true);
 
             foreach (var createMeshModule in createMeshModules)
@@ -596,7 +604,6 @@ namespace FluffyUnderware.Curvy.Controllers
             }
         }
 
-        // New method to cache Deformers from the prefab
         private void CacheDeformers()
         {
             if (deformerPrefab != null)
@@ -607,11 +614,17 @@ namespace FluffyUnderware.Curvy.Controllers
                 if (cachedDeformers.Count == 0)
                 {
                     Debug.LogWarning("No Deformer components found on the assigned prefab.");
+                    useDeformers = false;
+                }
+                else
+                {
+                    useDeformers = true;
                 }
             }
             else
             {
-                Debug.LogWarning("Deformer prefab is not assigned in the inspector.");
+                Debug.LogWarning("Deformer prefab is not assigned in the inspector. Deformers will not be used.");
+                useDeformers = false;
             }
         }
 

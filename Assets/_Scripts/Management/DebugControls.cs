@@ -24,7 +24,10 @@ public class DebugControls : MonoBehaviour, IPointerClickHandler
             type: InputActionType.Button,
             binding: "<Keyboard>/n"
         );
-        debugNextSceneAction.performed += ctx => OnDebugNextScene();
+        debugNextSceneAction.performed += ctx => {
+            ConditionalDebug.Log("Debug next scene action performed");
+            OnDebugNextScene();
+        };
         debugNextSceneAction.Enable();
 
         // Initialize the InputAction for the 'K' key to kill the player
@@ -86,25 +89,27 @@ public class DebugControls : MonoBehaviour, IPointerClickHandler
 
     private void OnDebugNextScene()
     {
-        if (isSceneTransitioning)
-            return; // Prevent multiple scene transitions
+        if (isSceneTransitioning || SceneManagerBTR.Instance == null)
+            return;
 
-        isSceneTransitioning = true; // Set the flag to true to indicate a scene transition is in progress
+        isSceneTransitioning = true;
 
-        GameManager.Instance.DebugMoveToNextScene();
+        // Log the current scene index for debugging
+        ConditionalDebug.Log($"Debug: Requesting next scene. Current scene: {SceneManagerBTR.Instance.GetCurrentSceneName()}");
 
-        GameManager.Instance.HandleDebugSceneTransition();
+        // Use SceneManagerBTR to change to the next scene
+        SceneManagerBTR.Instance.DebugChangeToNextScene();
 
-        // Subscribe to the sceneLoaded event to reset the flag after the scene is loaded
+        // Subscribe to the sceneLoaded event
         SceneManager.sceneLoaded += OnSceneLoaded;
     }
 
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
-        // Re-initialize components after scene transition
+        ConditionalDebug.Log($"Debug: New scene loaded: {scene.name}");
+        isSceneTransitioning = false;
+        SceneManager.sceneLoaded -= OnSceneLoaded;
         InitializeComponents();
-        isSceneTransitioning = false; // Reset the flag
-        SceneManager.sceneLoaded -= OnSceneLoaded; // Unsubscribe from the event
     }
 
     private void OnDebugKillPlayer()

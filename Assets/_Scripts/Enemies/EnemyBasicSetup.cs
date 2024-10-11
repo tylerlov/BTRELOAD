@@ -12,6 +12,9 @@ using PathologicalGames;
 using SonicBloom.Koreo;
 using UltimateSpawner.Spawning;
 using UnityEngine;
+using Unity.Jobs;
+using Unity.Collections;
+using Unity.Mathematics;
 
 [RequireComponent(typeof(Timeline))]
 public class EnemyBasicSetup : BaseBehaviour, IDamageable, IAttackAgent
@@ -46,9 +49,6 @@ public class EnemyBasicSetup : BaseBehaviour, IDamageable, IAttackAgent
 
     [SerializeField]
     private GameObject lockedonAnim;
-
-    [SerializeField]
-    private ParticleSystem trails;
 
     [SerializeField]
     private float shootSpeed; // Default value, adjust in Inspector
@@ -107,6 +107,11 @@ public class EnemyBasicSetup : BaseBehaviour, IDamageable, IAttackAgent
     // Flag to prevent multiple registrations
     private bool isRegisteredWithGameManager = false;
 
+    private ParticleSystem trails;
+
+    private NativeArray<float3> particlePositions;
+    private NativeArray<float3> particleVelocities;
+
     // Awake method
     private void Awake()
     {
@@ -137,6 +142,8 @@ public class EnemyBasicSetup : BaseBehaviour, IDamageable, IAttackAgent
         InitializeDamagableParts();
         AssignPool();
         ResetHealth();
+        InitializeTrails();
+        OptimizeParticleSystems(); // Add this line
     }
 
     // OnEnable method
@@ -145,6 +152,12 @@ public class EnemyBasicSetup : BaseBehaviour, IDamageable, IAttackAgent
         RegisterForEvents();
         ActivateEnemy();
         ResetHealth(); // Add this line
+        // Disable trails particle system if it's not immediately needed
+        if (trails != null)
+        {
+            trails.Stop();
+            trails.Clear();
+        }
     }
 
     private void ActivateEnemy()
@@ -484,5 +497,145 @@ public class EnemyBasicSetup : BaseBehaviour, IDamageable, IAttackAgent
         {
             ConditionalDebug.LogError($"[EnemyBasicSetup] GameManager instance is null. Cannot register enemy {gameObject.name}.");
         }
+    }
+
+    // Only start the trails when necessary
+    private void StartTrails()
+    {
+        if (trails != null && !trails.isPlaying)
+        {
+            trails.Play();
+        }
+    }
+
+    private void InitializeTrails()
+    {
+        if (trails == null)
+        {
+            trails = GetComponentInChildren<ParticleSystem>();
+            if (trails != null)
+            {
+                var main = trails.main;
+                main.maxParticles = 50; // Reduce max particles
+                main.startLifetime = 0.5f; // Shorter lifetime
+                main.startSpeed = 5f; // Adjust speed as needed
+                main.simulationSpace = ParticleSystemSimulationSpace.World;
+
+                var emission = trails.emission;
+                emission.rateOverTime = 10f; // Lower emission rate
+
+                var renderer = trails.GetComponent<ParticleSystemRenderer>();
+                if (renderer != null)
+                {
+                    renderer.renderMode = ParticleSystemRenderMode.Mesh;
+                    renderer.mesh = null; // Use a simple mesh or null for billboard
+                }
+
+                trails.Stop(); // Ensure it starts stopped
+
+                // Initialize native arrays for particle data
+                int maxParticles = trails.main.maxParticles;
+                particlePositions = new NativeArray<float3>(maxParticles, Allocator.Persistent);
+                particleVelocities = new NativeArray<float3>(maxParticles, Allocator.Persistent);
+            }
+        }
+    }
+
+    private void OptimizeParticleSystems()
+    {
+        if (trails != null)
+        {
+            var main = trails.main;
+            main.simulationSpace = ParticleSystemSimulationSpace.World;
+            trails.useAutoRandomSeed = false;
+            
+            // Additional optimizations
+            var emission = trails.emission;
+            emission.rateOverTime = 10f; // Adjust as needed
+            
+            var renderer = trails.GetComponent<ParticleSystemRenderer>();
+            if (renderer != null)
+            {
+                renderer.renderMode = ParticleSystemRenderMode.Mesh;
+                renderer.mesh = null; // Use a simple mesh or null for billboard
+            }
+        }
+        // Apply similar optimizations to other particle systems if needed
+    }
+
+    private void Start()
+    {
+        if (trails != null)
+        {
+            var main = trails.main;
+            main.simulationSpeed = 0.5f; // Slow down the simulation
+        }
+    }
+
+    private void LateUpdate()
+    {
+        if (trails != null && trails.isPlaying)
+        {
+            UpdateTrailsWithJobs();
+        }
+    }
+
+    private void UpdateTrailsWithJobs()
+    {
+        int particleCount = trails.particleCount;
+        
+        // Copy particle data to native arrays
+        ParticleSystem.Particle[] particles = new ParticleSystem.Particle[particleCount];
+        trails.GetParticles(particles);
+        for (int i = 0; i < particleCount; i++)
+        {
+            particlePositions[i] = particles[i].position;
+            particleVelocities[i] = particles[i].velocity;
+        }
+
+        // Create and schedule the job
+        ParticleUpdateJob job = new ParticleUpdateJob
+        {
+            deltaTime = Time.deltaTime,
+            positions = particlePositions,
+            velocities = particleVelocities
+        };
+
+        JobHandle jobHandle = job.Schedule(particleCount, 64);
+        jobHandle.Complete();
+
+        // Copy data back to particles
+        for (int i = 0; i < particleCount; i++)
+        {
+            particles[i].position = particlePositions[i];
+            particles[i].velocity = particleVelocities[i];
+        }
+        trails.SetParticles(particles, particleCount);
+    }
+
+    private void OnDestroy()
+    {
+        if (particlePositions.IsCreated) particlePositions.Dispose();
+        if (particleVelocities.IsCreated) particleVelocities.Dispose();
+    }
+}
+
+public struct ParticleUpdateJob : IJobParallelFor
+{
+    public float deltaTime;
+    public NativeArray<float3> positions;
+    public NativeArray<float3> velocities;
+
+    public void Execute(int index)
+    {
+        float3 position = positions[index];
+        float3 velocity = velocities[index];
+
+        // Simple update logic (can be expanded)
+        position += velocity * deltaTime;
+        velocity += new float3(0, -9.8f, 0) * deltaTime; // Apply gravity
+
+        positions[index] = position;
+        velocities[index] = velocity;
     }
 }

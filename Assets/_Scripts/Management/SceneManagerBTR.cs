@@ -592,4 +592,56 @@ public class SceneManagerBTR : MonoBehaviour
     {
         return currentGroup.scenes[currentSceneIndex].sceneName;
     }
+
+    // Add this method to the SceneManagerBTR class
+
+    public async void DebugChangeToNextScene()
+    {
+        ConditionalDebug.Log("<color=cyan>[SCENE] Debug change to next scene requested</color>");
+        if (isTransitioning)
+        {
+            ConditionalDebug.LogWarning("<color=orange>[SCENE] Already transitioning to next scene. Aborting debug change.</color>");
+            return;
+        }
+
+        isTransitioning = true;
+
+        try
+        {
+            await CleanupCurrentScene();
+
+            int initialSceneIndex = currentSceneIndex;
+            currentSceneIndex = (currentSceneIndex + 1) % currentGroup.scenes.Length;
+            ConditionalDebug.Log($"<color=cyan>[SCENE] Debug moving to next scene. Current index: {initialSceneIndex}, New index: {currentSceneIndex}</color>");
+
+            currentSectionIndex = 0;
+            completedWaves = 0;
+
+            string nextSceneName = currentGroup.scenes[currentSceneIndex].sceneName;
+            ConditionalDebug.Log($"<color=cyan>[SCENE] Debug attempting to load next scene: {nextSceneName}</color>");
+
+            if (!string.IsNullOrEmpty(nextSceneName))
+            {
+                await LoadAdditiveSceneAsync(nextSceneName);
+            }
+            else
+            {
+                ConditionalDebug.LogError($"<color=red>[SCENE] Next scene name is null or empty. Scene index: {currentSceneIndex}</color>");
+            }
+
+            expectedWaves = currentGroup.scenes[currentSceneIndex].songSections[currentSectionIndex].waves;
+            UpdateMusicSection();
+
+            ConditionalDebug.Log($"<color=cyan>[SCENE] Debug moved to next scene. Scene: {currentSceneIndex}, Section: {currentSectionIndex} ({currentGroup.scenes[currentSceneIndex].songSections[currentSectionIndex].name}), Expected Waves: {expectedWaves}</color>");
+        }
+        catch (System.Exception e)
+        {
+            ConditionalDebug.LogError($"<color=red>[SCENE] Error during debug scene transition: {e.Message}</color>");
+            Debug.LogException(e);
+        }
+        finally
+        {
+            isTransitioning = false;
+        }
+    }
 }

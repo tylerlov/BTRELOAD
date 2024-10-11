@@ -77,8 +77,19 @@ public class MeshPrefabPlacer : MonoBehaviour
                 normal = -normal;
             }
 
-            // Check if the normal is within the acceptable ground angle
-            if (Vector3.Angle(normal, Vector3.up) <= maxGroundAngle)
+            bool isValidPlacement;
+            if (placeOnOutside)
+            {
+                // When placing on outside, consider all surfaces valid
+                isValidPlacement = true;
+            }
+            else
+            {
+                // When placing on inside, use the ground angle check
+                isValidPlacement = Vector3.Angle(normal, Vector3.up) <= maxGroundAngle;
+            }
+
+            if (isValidPlacement)
             {
                 GameObject newPrefab = Instantiate(prefabToPlace, randomPoint + normal * yOffset, Quaternion.identity, prefabsContainer);
                 

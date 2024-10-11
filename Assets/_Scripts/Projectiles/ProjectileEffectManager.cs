@@ -30,6 +30,11 @@ public class ProjectileEffectManager : MonoBehaviour
     private int initialLockedFXPoolSize = 10;
     private Queue<VisualEffect> lockedFXPool = new Queue<VisualEffect>();
 
+    [SerializeField]
+    private int maxDeathEffectPoolSize = 50;
+    [SerializeField]
+    private float poolWarningThreshold = 0.8f;
+
     private void Start()
     {
         InitializeDeathEffectPool();
@@ -48,10 +53,16 @@ public class ProjectileEffectManager : MonoBehaviour
     {
         for (int i = 0; i < initialDeathEffectPoolSize; i++)
         {
-            ParticleSystem effect = Instantiate(deathEffectPrefab, transform);
-            effect.gameObject.SetActive(false);
-            deathEffectPool.Enqueue(effect);
+            CreateAndAddDeathEffectToPool();
         }
+    }
+
+    private ParticleSystem CreateAndAddDeathEffectToPool()
+    {
+        ParticleSystem effect = Instantiate(deathEffectPrefab, transform);
+        DisableEffect(effect);
+        deathEffectPool.Enqueue(effect);
+        return effect;
     }
 
     private void InitializeRadarSymbolPool()
@@ -85,28 +96,63 @@ public class ProjectileEffectManager : MonoBehaviour
 
     public void PlayDeathEffect(Vector3 position)
     {
+        ParticleSystem effect;
         if (deathEffectPool.Count == 0)
         {
-            ConditionalDebug.LogWarning("No death effect available in pool, skipping effect.");
-            return;
+            if (transform.childCount < maxDeathEffectPoolSize)
+            {
+                effect = CreateAndAddDeathEffectToPool();
+                ConditionalDebug.LogWarning($"Death effect pool empty. Created new effect. Current pool size: {transform.childCount}");
+            }
+            else
+            {
+                ConditionalDebug.LogError("Maximum death effect pool size reached. Cannot create more effects.");
+                return;
+            }
+        }
+        else
+        {
+            effect = deathEffectPool.Dequeue();
         }
 
-        ParticleSystem effect = deathEffectPool.Dequeue();
         effect.transform.position = position;
-        effect.gameObject.SetActive(true);
-        effect.Play();
+        EnableAndPlayEffect(effect);
 
         StartCoroutine(ReturnEffectToPoolAfterFinished(effect));
+
+        // Check if pool is close to empty
+        if ((float)deathEffectPool.Count / maxDeathEffectPoolSize < (1 - poolWarningThreshold))
+        {
+            ConditionalDebug.LogWarning($"Death effect pool is running low. Current count: {deathEffectPool.Count}");
+        }
     }
 
     private IEnumerator ReturnEffectToPoolAfterFinished(ParticleSystem effect)
     {
-        yield return new WaitWhile(() => effect.isPlaying);
-
-        effect.Stop();
-        effect.gameObject.SetActive(false);
-        effect.transform.SetParent(transform);
+        float checkInterval = 0.5f; // Check every half second
+        while (effect.IsAlive(true))
+        {
+            yield return new WaitForSeconds(checkInterval);
+        }
+        DisableEffect(effect);
         deathEffectPool.Enqueue(effect);
+    }
+
+    private void EnableAndPlayEffect(ParticleSystem effect)
+    {
+        effect.gameObject.SetActive(true);
+        var mainModule = effect.main;
+        mainModule.stopAction = ParticleSystemStopAction.None;
+        effect.Clear();
+        effect.Play();
+    }
+
+    private void DisableEffect(ParticleSystem effect)
+    {
+        effect.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+        var mainModule = effect.main;
+        mainModule.stopAction = ParticleSystemStopAction.Disable;
+        effect.gameObject.SetActive(false);
     }
 
     public GameObject GetRadarSymbolFromPool()

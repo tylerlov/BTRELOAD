@@ -55,7 +55,7 @@ public class EnemyShotState : ProjectileState
             {
                 _projectile.ApplyDamage(damageable);
                 _projectile.projHitPlayer = true;
-                _projectile.Death();
+                _projectile.Death(true);
                 ProjectileManager.Instance.PlayOneShotSound(
                     "event:/Projectile/Basic/Impact",
                     _projectile.transform.position

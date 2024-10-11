@@ -15,9 +15,12 @@ public class ProjectileVisualEffects
         // This method can be expanded to handle any continuous visual updates
     }
 
-    public void PlayDeathEffect()
+    public void PlayDeathEffect(bool hitSomething)
     {
-        ProjectileEffectManager.Instance.PlayDeathEffect(_projectile.transform.position);
+        if (hitSomething)
+        {
+            ProjectileEffectManager.Instance.PlayDeathEffect(_projectile.transform.position);
+        }
 
         if (_projectile.playerProjPath != null)
         {

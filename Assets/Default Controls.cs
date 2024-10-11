@@ -67,7 +67,7 @@ public partial class @DefaultControls: IInputActionCollection2, IDisposable
                     ""name"": ""Lock Enemies"",
                     ""type"": ""Button"",
                     ""id"": ""3dcdb9b3-2a46-4aa7-8c3a-dc8397baebca"",
-                    ""expectedControlType"": ""Button"",
+                    ""expectedControlType"": """",
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
@@ -112,7 +112,7 @@ public partial class @DefaultControls: IInputActionCollection2, IDisposable
                     ""name"": ""Up"",
                     ""type"": ""Button"",
                     ""id"": ""10343071-2dad-4b82-9dfa-17f1c781f8fd"",
-                    ""expectedControlType"": ""Button"",
+                    ""expectedControlType"": """",
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
@@ -130,7 +130,7 @@ public partial class @DefaultControls: IInputActionCollection2, IDisposable
                     ""name"": ""Left"",
                     ""type"": ""Button"",
                     ""id"": ""f62aff89-d502-4347-acd5-e88ac4672b29"",
-                    ""expectedControlType"": ""Button"",
+                    ""expectedControlType"": """",
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
@@ -938,6 +938,54 @@ public partial class @DefaultControls: IInputActionCollection2, IDisposable
                     ""isPartOfComposite"": false
                 }
             ]
+        },
+        {
+            ""name"": ""Debug"",
+            ""id"": ""d0232290-a38b-4684-9e57-8955f980dc26"",
+            ""actions"": [
+                {
+                    ""name"": ""Next Scene"",
+                    ""type"": ""Button"",
+                    ""id"": ""885cffdf-663e-4cce-8efe-dcb76cc5d85a"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Kill All Enemies"",
+                    ""type"": ""Button"",
+                    ""id"": ""08e23944-a4b7-4b9b-9714-01a3c66d4c6d"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                }
+            ],
+            ""bindings"": [
+                {
+                    ""name"": """",
+                    ""id"": ""66ecf008-5bd7-4030-94df-8e44ea6b1517"",
+                    ""path"": ""<Keyboard>/n"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": "";Keyboard;Controller;Mouse"",
+                    ""action"": ""Next Scene"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""038b77d0-c0e4-414e-8134-8242bd882b60"",
+                    ""path"": ""<Keyboard>/0"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": "";Controller;Keyboard;Mouse"",
+                    ""action"": ""Kill All Enemies"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                }
+            ]
         }
     ],
     ""controlSchemes"": [
@@ -1003,12 +1051,17 @@ public partial class @DefaultControls: IInputActionCollection2, IDisposable
         m_UI_RightClick = m_UI.FindAction("RightClick", throwIfNotFound: true);
         m_UI_TrackedDevicePosition = m_UI.FindAction("TrackedDevicePosition", throwIfNotFound: true);
         m_UI_TrackedDeviceOrientation = m_UI.FindAction("TrackedDeviceOrientation", throwIfNotFound: true);
+        // Debug
+        m_Debug = asset.FindActionMap("Debug", throwIfNotFound: true);
+        m_Debug_NextScene = m_Debug.FindAction("Next Scene", throwIfNotFound: true);
+        m_Debug_KillAllEnemies = m_Debug.FindAction("Kill All Enemies", throwIfNotFound: true);
     }
 
     ~@DefaultControls()
     {
         UnityEngine.Debug.Assert(!m_Player.enabled, "This will cause a leak and performance issues, DefaultControls.Player.Disable() has not been called.");
         UnityEngine.Debug.Assert(!m_UI.enabled, "This will cause a leak and performance issues, DefaultControls.UI.Disable() has not been called.");
+        UnityEngine.Debug.Assert(!m_Debug.enabled, "This will cause a leak and performance issues, DefaultControls.Debug.Disable() has not been called.");
     }
 
     public void Dispose()
@@ -1326,6 +1379,60 @@ public partial class @DefaultControls: IInputActionCollection2, IDisposable
         }
     }
     public UIActions @UI => new UIActions(this);
+
+    // Debug
+    private readonly InputActionMap m_Debug;
+    private List<IDebugActions> m_DebugActionsCallbackInterfaces = new List<IDebugActions>();
+    private readonly InputAction m_Debug_NextScene;
+    private readonly InputAction m_Debug_KillAllEnemies;
+    public struct DebugActions
+    {
+        private @DefaultControls m_Wrapper;
+        public DebugActions(@DefaultControls wrapper) { m_Wrapper = wrapper; }
+        public InputAction @NextScene => m_Wrapper.m_Debug_NextScene;
+        public InputAction @KillAllEnemies => m_Wrapper.m_Debug_KillAllEnemies;
+        public InputActionMap Get() { return m_Wrapper.m_Debug; }
+        public void Enable() { Get().Enable(); }
+        public void Disable() { Get().Disable(); }
+        public bool enabled => Get().enabled;
+        public static implicit operator InputActionMap(DebugActions set) { return set.Get(); }
+        public void AddCallbacks(IDebugActions instance)
+        {
+            if (instance == null || m_Wrapper.m_DebugActionsCallbackInterfaces.Contains(instance)) return;
+            m_Wrapper.m_DebugActionsCallbackInterfaces.Add(instance);
+            @NextScene.started += instance.OnNextScene;
+            @NextScene.performed += instance.OnNextScene;
+            @NextScene.canceled += instance.OnNextScene;
+            @KillAllEnemies.started += instance.OnKillAllEnemies;
+            @KillAllEnemies.performed += instance.OnKillAllEnemies;
+            @KillAllEnemies.canceled += instance.OnKillAllEnemies;
+        }
+
+        private void UnregisterCallbacks(IDebugActions instance)
+        {
+            @NextScene.started -= instance.OnNextScene;
+            @NextScene.performed -= instance.OnNextScene;
+            @NextScene.canceled -= instance.OnNextScene;
+            @KillAllEnemies.started -= instance.OnKillAllEnemies;
+            @KillAllEnemies.performed -= instance.OnKillAllEnemies;
+            @KillAllEnemies.canceled -= instance.OnKillAllEnemies;
+        }
+
+        public void RemoveCallbacks(IDebugActions instance)
+        {
+            if (m_Wrapper.m_DebugActionsCallbackInterfaces.Remove(instance))
+                UnregisterCallbacks(instance);
+        }
+
+        public void SetCallbacks(IDebugActions instance)
+        {
+            foreach (var item in m_Wrapper.m_DebugActionsCallbackInterfaces)
+                UnregisterCallbacks(item);
+            m_Wrapper.m_DebugActionsCallbackInterfaces.Clear();
+            AddCallbacks(instance);
+        }
+    }
+    public DebugActions @Debug => new DebugActions(this);
     private int m_ControllerSchemeIndex = -1;
     public InputControlScheme ControllerScheme
     {
@@ -1381,5 +1488,10 @@ public partial class @DefaultControls: IInputActionCollection2, IDisposable
         void OnRightClick(InputAction.CallbackContext context);
         void OnTrackedDevicePosition(InputAction.CallbackContext context);
         void OnTrackedDeviceOrientation(InputAction.CallbackContext context);
+    }
+    public interface IDebugActions
+    {
+        void OnNextScene(InputAction.CallbackContext context);
+        void OnKillAllEnemies(InputAction.CallbackContext context);
     }
 }

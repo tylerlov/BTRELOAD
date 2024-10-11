@@ -61,6 +61,9 @@ public class ProjectileManager : MonoBehaviour
     private JobHandle _updateProjectilesJobHandle;
     private bool _isJobRunning = false;
 
+    private const int INITIAL_CAPACITY = 1000;
+    private const int GROWTH_FACTOR = 2;
+
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -71,9 +74,9 @@ public class ProjectileManager : MonoBehaviour
 
         Instance = this;
 
-        projectileIds = new NativeArray<int>(500, Allocator.Persistent);
-        projectileLifetimes = new NativeHashMap<int, float>(500, Allocator.Persistent);
-        updatedLifetimes = new NativeArray<float>(500, Allocator.Persistent);
+        projectileIds = new NativeArray<int>(INITIAL_CAPACITY, Allocator.Persistent);
+        projectileLifetimes = new NativeHashMap<int, float>(INITIAL_CAPACITY, Allocator.Persistent);
+        updatedLifetimes = new NativeArray<float>(INITIAL_CAPACITY, Allocator.Persistent);
 
         SceneManager.sceneLoaded += OnSceneLoaded;
 
@@ -180,7 +183,37 @@ public class ProjectileManager : MonoBehaviour
                 ScheduleUpdateProjectiles(Time.deltaTime * UPDATE_INTERVAL, globalTimeScale);
             }
 
-            ProcessProjectileRequests(globalTimeScale);
+            // Use coroutine for processing projectile requests
+            StartCoroutine(ProcessProjectileRequestsCoroutine(globalTimeScale));
+        }
+    }
+
+    private IEnumerator ProcessProjectileRequestsCoroutine(float timeScale)
+    {
+        if (timeScale <= 0 || projectilePool.GetProjectileRequestCount() == 0)
+        {
+            yield break;
+        }
+
+        int processCount = Mathf.CeilToInt(staticShootingRequestsPerFrame * timeScale);
+        processCount = Mathf.Min(projectilePool.GetProjectileRequestCount(), processCount);
+
+        ConditionalDebug.Log($"[ProjectileManager] Processing {processCount} projectile requests");
+
+        for (int i = 0; i < processCount; i++)
+        {
+            if (projectilePool.TryDequeueProjectileRequest(out ProjectileRequest request))
+            {
+                ProjectileStateBased projectile = projectilePool.GetProjectile();
+                projectileSpawner.ProcessShootProjectile(request, projectile, request.IsStatic);
+                RegisterProjectile(projectile);
+                ConditionalDebug.Log($"[ProjectileManager] Projectile processed and registered. Position: {projectile.transform.position}, IsStatic: {request.IsStatic}");
+            }
+
+            if (i % 10 == 0) // Process 10 requests per frame
+            {
+                yield return null;
+            }
         }
     }
 
@@ -232,6 +265,8 @@ public class ProjectileManager : MonoBehaviour
         for (int i = 0; i < activeProjectileCount; i++)
         {
             int projectileId = projectileIds[i];
+            if (projectileId == 0) continue; // Skip inactive slots
+
             if (projectileLookup.TryGetValue(projectileId, out ProjectileStateBased projectile))
             {
                 float updatedLifetime = updatedLifetimes[i];
@@ -255,30 +290,6 @@ public class ProjectileManager : MonoBehaviour
         for (int i = projectilesToRemove.Count - 1; i >= 0; i--)
         {
             RemoveProjectile(projectilesToRemove[i]);
-        }
-    }
-
-    private void ProcessProjectileRequests(float timeScale)
-    {
-        if (timeScale <= 0 || projectilePool.GetProjectileRequestCount() == 0)
-        {
-            return; // Don't process requests when time is stopped, rewinding, or no requests are available
-        }
-
-        int processCount = Mathf.CeilToInt(staticShootingRequestsPerFrame * timeScale);
-        processCount = Mathf.Min(projectilePool.GetProjectileRequestCount(), processCount);
-
-        ConditionalDebug.Log($"[ProjectileManager] Processing {processCount} projectile requests");
-
-        for (int i = 0; i < processCount; i++)
-        {
-            if (projectilePool.TryDequeueProjectileRequest(out ProjectileRequest request))
-            {
-                ProjectileStateBased projectile = projectilePool.GetProjectile();
-                projectileSpawner.ProcessShootProjectile(request, projectile, request.IsStatic);
-                RegisterProjectile(projectile);
-                ConditionalDebug.Log($"[ProjectileManager] Projectile processed and registered. Position: {projectile.transform.position}, IsStatic: {request.IsStatic}");
-            }
         }
     }
 
@@ -314,10 +325,9 @@ public class ProjectileManager : MonoBehaviour
         if (!projectileLookup.ContainsKey(projectileId))
         {
             int currentCount = projectileLookup.Count;
-            if (projectileIds.Length <= currentCount)
+            if (currentCount >= projectileIds.Length)
             {
-                int newSize = Mathf.Max(currentCount + 1, projectileIds.Length * 2);
-                ResizeNativeArray(ref projectileIds, newSize);
+                ResizeNativeArrays(projectileIds.Length * GROWTH_FACTOR);
             }
 
             projectileIds[currentCount] = projectileId;
@@ -591,5 +601,19 @@ public class ProjectileManager : MonoBehaviour
             _updateProjectilesJobHandle.Complete();
             _isJobRunning = false;
         }
+    }
+
+    private void ResizeNativeArrays(int newSize)
+    {
+        ResizeNativeArray(ref projectileIds, newSize);
+        ResizeNativeArray(ref updatedLifetimes, newSize);
+        
+        NativeHashMap<int, float> newLifetimes = new NativeHashMap<int, float>(newSize, Allocator.Persistent);
+        foreach (var kvp in projectileLifetimes)
+        {
+            newLifetimes.Add(kvp.Key, kvp.Value);
+        }
+        projectileLifetimes.Dispose();
+        projectileLifetimes = newLifetimes;
     }
 }

@@ -339,10 +339,10 @@ public class ProjectileStateBased : MonoBehaviour
         currentState?.OnCollisionEnter(collision);
     }
 
-    public void Death()
+    public void Death(bool hitSomething = false)
     {
         // Log death event
-        ConditionalDebug.Log($"[ProjectileStateBased] Projectile {GetInstanceID()} is dying.");
+        ConditionalDebug.Log($"[ProjectileStateBased] Projectile {GetInstanceID()} is dying. Hit something: {hitSomething}");
 
         // Unregister from ProjectileManager
         ProjectileManager.Instance.UnregisterProjectile(this);
@@ -360,7 +360,7 @@ public class ProjectileStateBased : MonoBehaviour
 
         transform.DOKill();
 
-        _visualEffects.PlayDeathEffect();
+        _visualEffects.PlayDeathEffect(hitSomething);
     }
 
     public void SetLifetime(float seconds)
