@@ -329,7 +329,7 @@ public class ProjectileStateBased : MonoBehaviour
         }
     }
 
-    private void OnTriggerEnter(Collider other)
+    public void OnTriggerEnter(Collider other)
     {
         currentState?.OnTriggerEnter(other);
     }

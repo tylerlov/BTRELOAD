@@ -1,6 +1,5 @@
 using System;
-
-using OccaSoftware.BOP;
+using Typooling;
 using UnityEngine;
 
 [RequireComponent(typeof(Collider))]

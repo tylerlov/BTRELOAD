@@ -8,6 +8,7 @@ using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.Jobs;
 
 public class ProjectileManager : MonoBehaviour
 {
@@ -64,6 +65,17 @@ public class ProjectileManager : MonoBehaviour
     private const int INITIAL_CAPACITY = 1000;
     private const int GROWTH_FACTOR = 2;
 
+    [SerializeField] private int maxRaycastsPerJob = 10000;
+    [SerializeField] private int subSteps = 4;
+    [SerializeField] private float maxRaycastDistance = 10f;
+
+    private NativeArray<RaycastCommand> raycastCommands;
+    private NativeArray<RaycastHit> raycastResults;
+    private TransformAccessArray transformAccessArray;
+
+    [SerializeField] private LayerMask enemyLayerMask;
+    [SerializeField] private LayerMask playerLayerMask;
+
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -89,6 +101,14 @@ public class ProjectileManager : MonoBehaviour
         {
             ConditionalDebug.LogWarning("Player GameObject not found during initialization.");
         }
+
+        // Initialize layer masks
+        enemyLayerMask = LayerMask.GetMask("Enemy");
+        playerLayerMask = LayerMask.GetMask("Player");
+
+        // Initialize the NativeArrays
+        raycastCommands = new NativeArray<RaycastCommand>(INITIAL_CAPACITY, Allocator.Persistent);
+        raycastResults = new NativeArray<RaycastHit>(INITIAL_CAPACITY, Allocator.Persistent);
     }
 
     private void Start()
@@ -139,93 +159,75 @@ public class ProjectileManager : MonoBehaviour
             projectileLifetimes.Dispose();
         if (updatedLifetimes.IsCreated)
             updatedLifetimes.Dispose();
+        if (raycastCommands.IsCreated) raycastCommands.Dispose();
+        if (raycastResults.IsCreated) raycastResults.Dispose();
+        if (transformAccessArray.isCreated) transformAccessArray.Dispose();
     }
 
     private void Update()
     {
-        if (_isJobRunning)
+        float subStepTime = Time.deltaTime / subSteps;
+
+        for (int step = 0; step < subSteps; step++)
         {
-            _updateProjectilesJobHandle.Complete();
-            _isJobRunning = false;
+            // Handle collisions
+            HandleCollisions();
         }
 
-        float currentFrameTime = Time.realtimeSinceStartup;
-        float deltaTime = currentFrameTime - _lastFrameTime;
-        _lastFrameTime = currentFrameTime;
-
-        if (deltaTime > 0.1f)
-        {
-            ConditionalDebug.LogWarning($"[ProjectileManager] High frame time detected: {deltaTime * 1000}ms");
-        }
-
-        if (globalClock == null)
-        {
-            InitializeGlobalClock();
-            if (globalClock == null)
-            {
-                return;
-            }
-        }
-
-        float globalTimeScale = globalClock.timeScale;
-        float currentTime = Time.time;
-
-        if (globalTimeScale <= 0)
-        {
-            HandleRewind(currentTime);
-        }
-        else
-        {
-            frameCounter++;
-            if (frameCounter >= UPDATE_INTERVAL)
-            {
-                frameCounter = 0;
-                ScheduleUpdateProjectiles(Time.deltaTime * UPDATE_INTERVAL, globalTimeScale);
-            }
-
-            // Use coroutine for processing projectile requests
-            StartCoroutine(ProcessProjectileRequestsCoroutine(globalTimeScale));
-        }
+        // Process results and clean up
+        ProcessCollisionResults();
     }
 
-    private IEnumerator ProcessProjectileRequestsCoroutine(float timeScale)
+    private void HandleCollisions()
     {
-        if (timeScale <= 0 || projectilePool.GetProjectileRequestCount() == 0)
+        int projectileCount = projectileLookup.Count;
+
+        // Resize arrays if needed
+        if (raycastCommands.Length < projectileCount)
         {
-            yield break;
+            if (raycastCommands.IsCreated) raycastCommands.Dispose();
+            if (raycastResults.IsCreated) raycastResults.Dispose();
+            raycastCommands = new NativeArray<RaycastCommand>(projectileCount, Allocator.Persistent);
+            raycastResults = new NativeArray<RaycastHit>(projectileCount, Allocator.Persistent);
         }
 
-        int processCount = Mathf.CeilToInt(staticShootingRequestsPerFrame * timeScale);
-        processCount = Mathf.Min(projectilePool.GetProjectileRequestCount(), processCount);
-
-        ConditionalDebug.Log($"[ProjectileManager] Processing {processCount} projectile requests");
-
-        for (int i = 0; i < processCount; i++)
+        // Set up raycast commands
+        int index = 0;
+        foreach (var projectile in projectileLookup.Values)
         {
-            if (projectilePool.TryDequeueProjectileRequest(out ProjectileRequest request))
-            {
-                ProjectileStateBased projectile = projectilePool.GetProjectile();
-                projectileSpawner.ProcessShootProjectile(request, projectile, request.IsStatic);
-                RegisterProjectile(projectile);
-                ConditionalDebug.Log($"[ProjectileManager] Projectile processed and registered. Position: {projectile.transform.position}, IsStatic: {request.IsStatic}");
-            }
-
-            if (i % 10 == 0) // Process 10 requests per frame
-            {
-                yield return null;
-            }
+            LayerMask layerMask = GetLayerMaskForProjectile(projectile);
+            raycastCommands[index] = new RaycastCommand(
+                projectile.transform.position,
+                projectile.transform.forward,
+                maxRaycastDistance,
+                layerMask
+            );
+            index++;
         }
+
+        // Schedule the raycast job
+        JobHandle raycastJobHandle = RaycastCommand.ScheduleBatch(raycastCommands, raycastResults, 1, default(JobHandle));
+
+        // Wait for the job to complete
+        raycastJobHandle.Complete();
     }
 
-    private void LateUpdate()
+    private LayerMask GetLayerMaskForProjectile(ProjectileStateBased projectile)
     {
-        // Complete the job here
-        if (updateJobHandle.IsCompleted)
-        {
-            updateJobHandle.Complete();
-        }
+        return projectile.isPlayerShot ? enemyLayerMask : playerLayerMask;
+    }
 
-        projectilePool.CheckAndReplenishPool();
+    private void ProcessCollisionResults()
+    {
+        for (int i = 0; i < raycastResults.Length; i++)
+        {
+            if (raycastResults[i].collider != null)
+            {
+                // Handle collision
+                ProjectileStateBased projectile = projectileLookup[projectileIds[i]];
+                projectile.OnTriggerEnter(raycastResults[i].collider);
+            }
+        }
     }
 
     private void ScheduleUpdateProjectiles(float deltaTime, float globalTimeScale)

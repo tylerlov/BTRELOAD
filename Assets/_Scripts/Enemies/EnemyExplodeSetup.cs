@@ -4,7 +4,7 @@ using Chronos;
 using DG.Tweening;
 using FMOD.Studio;
 using FMODUnity;
-using OccaSoftware.BOP;
+using Typooling;
 using Pathfinding;
 using Pathfinding.Examples;
 using Pathfinding.RVO;
@@ -52,6 +52,24 @@ public class EnemyExplodeSetup : BaseBehaviour, IDamageable, IAttackAgent
     [SerializeField, EventID] private string closePulseEventID;
     [SerializeField] private EventReference pulseSound;
     [SerializeField] private EventReference explosionSound;
+
+    [SerializeField] private GameObject birthParticlesPrefab;
+    [SerializeField] private GameObject deathParticlesPrefab;
+    [SerializeField] private GameObject lockOnDisabledParticlesPrefab;
+
+    [SerializeField] private int birthParticlesInitialCount = 10;
+    [SerializeField] private int deathParticlesInitialCount = 10;
+    [SerializeField] private int lockOnDisabledParticlesInitialCount = 10;
+
+    private const string birthParticlesKey = "EnemyExplodeBirth";
+    private const string deathParticlesKey = "EnemyExplodeDeath";
+    private const string lockOnDisabledParticlesKey = "EnemyExplodeLockOnDisabled";
+
+    private ParticleSystem currentBirthParticleInstance;
+    private ParticleSystem currentDeathParticleInstance;
+    private ParticleSystem currentLockDisabledParticleInstance;
+
+    private bool wasLockedOn = false;
 
     // Private fields (not visible in inspector)
     private float currentHealth;
@@ -128,6 +146,8 @@ public class EnemyExplodeSetup : BaseBehaviour, IDamageable, IAttackAgent
         {
             ConditionalDebug.LogWarning("Explosion sound event is not assigned on " + gameObject.name);
         }
+
+        RegisterParticleSystems();
     }
 
     private void RegisterWithGameManager()
@@ -181,6 +201,24 @@ public class EnemyExplodeSetup : BaseBehaviour, IDamageable, IAttackAgent
     private void OnDisable()
     {
         UnregisterForEvents();
+
+        if (currentBirthParticleInstance != null)
+        {
+            ParticleSystemManager.Instance.StopAndReturnToPool(currentBirthParticleInstance, birthParticlesKey);
+            currentBirthParticleInstance = null;
+        }
+
+        if (currentDeathParticleInstance != null)
+        {
+            ParticleSystemManager.Instance.StopAndReturnToPool(currentDeathParticleInstance, deathParticlesKey);
+            currentDeathParticleInstance = null;
+        }
+
+        if (currentLockDisabledParticleInstance != null)
+        {
+            ParticleSystemManager.Instance.StopAndReturnToPool(currentLockDisabledParticleInstance, lockOnDisabledParticlesKey);
+            currentLockDisabledParticleInstance = null;
+        }
     }
 
     private void RegisterForEvents()
@@ -235,7 +273,35 @@ public class EnemyExplodeSetup : BaseBehaviour, IDamageable, IAttackAgent
         enemyModel.SetActive(true);
         SetLockOnStatus(false);
         FMODUnity.RuntimeManager.PlayOneShotAttached($"event:/Enemy/{enemyType}/Birth", gameObject);
-        birthParticles.GetFromPool(cachedTransform.position, Quaternion.identity);
+        ConditionalDebug.Log($"[EnemyExplodeSetup] Activating enemy {gameObject.name} and getting birth particles from pool");
+        PlayBirthParticles();
+    }
+
+    private void PlayBirthParticles()
+    {
+        if (currentBirthParticleInstance != null)
+        {
+            ParticleSystemManager.Instance.StopAndReturnToPool(currentBirthParticleInstance, birthParticlesKey);
+        }
+        currentBirthParticleInstance = ParticleSystemManager.Instance.PlayParticleSystem(birthParticlesKey, cachedTransform.position, Quaternion.identity);
+    }
+
+    private void PlayDeathParticles()
+    {
+        if (currentDeathParticleInstance != null)
+        {
+            ParticleSystemManager.Instance.StopAndReturnToPool(currentDeathParticleInstance, deathParticlesKey);
+        }
+        currentDeathParticleInstance = ParticleSystemManager.Instance.PlayParticleSystem(deathParticlesKey, cachedTransform.position, Quaternion.identity);
+    }
+
+    private void PlayLockDisabledParticles()
+    {
+        if (currentLockDisabledParticleInstance != null)
+        {
+            ParticleSystemManager.Instance.StopAndReturnToPool(currentLockDisabledParticleInstance, lockOnDisabledParticlesKey);
+        }
+        currentLockDisabledParticleInstance = ParticleSystemManager.Instance.PlayParticleSystem(lockOnDisabledParticlesKey, cachedTransform.position, Quaternion.identity);
     }
 
     public void AssignPool()
@@ -267,9 +333,13 @@ public class EnemyExplodeSetup : BaseBehaviour, IDamageable, IAttackAgent
 
     public void SetLockOnStatus(bool status)
     {
-        isLockedOn = status;
-        UpdateLockOnVisuals();
-        GameManager.Instance.SetEnemyLockState(cachedTransform, status);
+        if (isLockedOn != status)
+        {
+            wasLockedOn = isLockedOn;
+            isLockedOn = status;
+            UpdateLockOnVisuals();
+            GameManager.Instance.SetEnemyLockState(cachedTransform, status);
+        }
     }
 
     private void UpdateLockOnVisuals()
@@ -279,9 +349,9 @@ public class EnemyExplodeSetup : BaseBehaviour, IDamageable, IAttackAgent
             lockedonAnim.SetActive(isLockedOn);
         }
 
-        if (!isLockedOn && lockOnDisabledParticles != null)
+        if (wasLockedOn && !isLockedOn)
         {
-            lockOnDisabledParticles.GetFromPool(cachedTransform.position, Quaternion.identity);
+            PlayLockDisabledParticles();
         }
     }
 
@@ -351,7 +421,7 @@ public class EnemyExplodeSetup : BaseBehaviour, IDamageable, IAttackAgent
         ScoreManager.Instance.AddScore(CalculateScoreValue());
 
         // Play death effects
-        deathParticles.GetFromPool(cachedTransform.position, Quaternion.identity);
+        PlayDeathParticles();
         
         // Play explosion sound
         if (explosionSoundInstance.isValid())
@@ -471,5 +541,12 @@ public class EnemyExplodeSetup : BaseBehaviour, IDamageable, IAttackAgent
             }
         }
         UpdatePulseEvent();
+    }
+
+    private void RegisterParticleSystems()
+    {
+        ParticleSystemManager.Instance.RegisterParticleSystem(birthParticlesKey, birthParticlesPrefab, birthParticlesInitialCount);
+        ParticleSystemManager.Instance.RegisterParticleSystem(deathParticlesKey, deathParticlesPrefab, deathParticlesInitialCount);
+        ParticleSystemManager.Instance.RegisterParticleSystem(lockOnDisabledParticlesKey, lockOnDisabledParticlesPrefab, lockOnDisabledParticlesInitialCount);
     }
 }

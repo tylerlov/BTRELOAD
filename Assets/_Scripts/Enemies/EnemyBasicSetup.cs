@@ -1,10 +1,11 @@
 using System;
 using System.Collections;
+using System.Linq;
 using Chronos;
 using DG.Tweening;
 using FMOD.Studio;
 using FMODUnity;
-using OccaSoftware.BOP;
+using Typooling;
 using Pathfinding;
 using Pathfinding.Examples;
 using Pathfinding.RVO;
@@ -12,9 +13,6 @@ using PathologicalGames;
 using SonicBloom.Koreo;
 using UltimateSpawner.Spawning;
 using UnityEngine;
-using Unity.Jobs;
-using Unity.Collections;
-using Unity.Mathematics;
 
 [RequireComponent(typeof(Timeline))]
 public class EnemyBasicSetup : BaseBehaviour, IDamageable, IAttackAgent
@@ -39,13 +37,22 @@ public class EnemyBasicSetup : BaseBehaviour, IDamageable, IAttackAgent
     private GameObject enemyModel;
 
     [SerializeField]
-    private Pooler birthParticles;
+    private GameObject birthParticlesPrefab;
 
     [SerializeField]
-    private Pooler deathParticles;
+    private GameObject deathParticlesPrefab;
 
     [SerializeField]
-    private Pooler lockOnDisabledParticles; // Reference to the Pooler for the particle effect
+    private GameObject lockOnDisabledParticlesPrefab;
+
+    [SerializeField]
+    private int birthParticlesInitialCount = 10;
+
+    [SerializeField]
+    private int deathParticlesInitialCount = 10;
+
+    [SerializeField]
+    private int lockOnDisabledParticlesInitialCount = 10;
 
     [SerializeField]
     private GameObject lockedonAnim;
@@ -107,10 +114,18 @@ public class EnemyBasicSetup : BaseBehaviour, IDamageable, IAttackAgent
     // Flag to prevent multiple registrations
     private bool isRegisteredWithGameManager = false;
 
-    private ParticleSystem trails;
+    [SerializeField]
+    private ParticleSystem trailParticleSystem;
 
-    private NativeArray<float3> particlePositions;
-    private NativeArray<float3> particleVelocities;
+    private const string birthParticlesKey = "EnemyBirth";
+    private const string deathParticlesKey = "EnemyDeath";
+    private const string lockOnDisabledParticlesKey = "LockOnDisabled";
+
+    private ParticleSystem currentBirthParticleInstance;
+    private ParticleSystem currentDeathParticleInstance;
+    private ParticleSystem currentLockDisabledParticleInstance;
+
+    private bool wasLockedOn = false;
 
     // Awake method
     private void Awake()
@@ -122,6 +137,7 @@ public class EnemyBasicSetup : BaseBehaviour, IDamageable, IAttackAgent
         {
             ResetHealth();
         }
+        RegisterParticleSystems();
     }
 
     private void CacheComponents()
@@ -142,8 +158,40 @@ public class EnemyBasicSetup : BaseBehaviour, IDamageable, IAttackAgent
         InitializeDamagableParts();
         AssignPool();
         ResetHealth();
-        InitializeTrails();
-        OptimizeParticleSystems(); // Add this line
+        InitializeTrail();
+    }
+
+    private void InitializeTrail()
+    {
+        if (trailParticleSystem != null)
+        {
+            trailParticleSystem.Stop();
+            var main = trailParticleSystem.main;
+            main.simulationSpace = ParticleSystemSimulationSpace.World;
+            trailParticleSystem.useAutoRandomSeed = false;
+        }
+    }
+
+    public void EnableTrail(bool enable)
+    {
+        if (trailParticleSystem != null)
+        {
+            if (enable)
+            {
+                if (!trailParticleSystem.isPlaying)
+                {
+                    trailParticleSystem.Clear(); // Clear any existing particles
+                    trailParticleSystem.Play();
+                }
+            }
+            else
+            {
+                if (trailParticleSystem.isPlaying)
+                {
+                    trailParticleSystem.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+                }
+            }
+        }
     }
 
     // OnEnable method
@@ -151,13 +199,8 @@ public class EnemyBasicSetup : BaseBehaviour, IDamageable, IAttackAgent
     {
         RegisterForEvents();
         ActivateEnemy();
-        ResetHealth(); // Add this line
-        // Disable trails particle system if it's not immediately needed
-        if (trails != null)
-        {
-            trails.Stop();
-            trails.Clear();
-        }
+        ResetHealth();
+        EnableTrail(true); // Enable the trail when the enemy becomes active
     }
 
     private void ActivateEnemy()
@@ -165,13 +208,61 @@ public class EnemyBasicSetup : BaseBehaviour, IDamageable, IAttackAgent
         enemyModel.SetActive(true);
         SetLockOnStatus(false);
         FMODUnity.RuntimeManager.PlayOneShotAttached($"event:/Enemy/{enemyType}/Birth", gameObject);
-        birthParticles.GetFromPool(cachedTransform.position, Quaternion.identity);
+        Debug.Log($"[EnemyBasicSetup] Activating enemy {gameObject.name} and getting birth particles from pool");
+        PlayBirthParticles();
+        EnableTrail(true);
+    }
+
+    private void PlayBirthParticles()
+    {
+        if (currentBirthParticleInstance != null)
+        {
+            ParticleSystemManager.Instance.StopAndReturnToPool(currentBirthParticleInstance, birthParticlesKey);
+        }
+        currentBirthParticleInstance = ParticleSystemManager.Instance.PlayParticleSystem(birthParticlesKey, cachedTransform.position, Quaternion.identity);
+    }
+
+    private void PlayDeathParticles()
+    {
+        if (currentDeathParticleInstance != null)
+        {
+            ParticleSystemManager.Instance.StopAndReturnToPool(currentDeathParticleInstance, deathParticlesKey);
+        }
+        currentDeathParticleInstance = ParticleSystemManager.Instance.PlayParticleSystem(deathParticlesKey, cachedTransform.position, Quaternion.identity);
+    }
+
+    private void PlayLockDisabledParticles()
+    {
+        if (currentLockDisabledParticleInstance != null)
+        {
+            ParticleSystemManager.Instance.StopAndReturnToPool(currentLockDisabledParticleInstance, lockOnDisabledParticlesKey);
+        }
+        currentLockDisabledParticleInstance = ParticleSystemManager.Instance.PlayParticleSystem(lockOnDisabledParticlesKey, cachedTransform.position, Quaternion.identity);
     }
 
     // OnDisable method
     private void OnDisable()
     {
         UnregisterForEvents();
+        EnableTrail(false);
+
+        if (currentBirthParticleInstance != null)
+        {
+            ParticleSystemManager.Instance.StopAndReturnToPool(currentBirthParticleInstance, birthParticlesKey);
+            currentBirthParticleInstance = null;
+        }
+
+        if (currentDeathParticleInstance != null)
+        {
+            ParticleSystemManager.Instance.StopAndReturnToPool(currentDeathParticleInstance, deathParticlesKey);
+            currentDeathParticleInstance = null;
+        }
+
+        if (currentLockDisabledParticleInstance != null)
+        {
+            ParticleSystemManager.Instance.StopAndReturnToPool(currentLockDisabledParticleInstance, lockOnDisabledParticlesKey);
+            currentLockDisabledParticleInstance = null;
+        }
     }
 
     private void RegisterForEvents()
@@ -225,9 +316,13 @@ public class EnemyBasicSetup : BaseBehaviour, IDamageable, IAttackAgent
     // Rename this method from lockedStatus to SetLockOnStatus
     public void SetLockOnStatus(bool status)
     {
-        isLockedOn = status;
-        UpdateLockOnVisuals();
-        GameManager.Instance.SetEnemyLockState(cachedTransform, status);
+        if (isLockedOn != status)
+        {
+            wasLockedOn = isLockedOn;
+            isLockedOn = status;
+            UpdateLockOnVisuals();
+            GameManager.Instance.SetEnemyLockState(cachedTransform, status);
+        }
     }
 
     // Keep this method for GameManager compatibility
@@ -243,9 +338,9 @@ public class EnemyBasicSetup : BaseBehaviour, IDamageable, IAttackAgent
             lockedonAnim.SetActive(isLockedOn);
         }
 
-        if (!isLockedOn && lockOnDisabledParticles != null)
+        if (wasLockedOn && !isLockedOn)
         {
-            lockOnDisabledParticles.GetFromPool(cachedTransform.position, Quaternion.identity);
+            PlayLockDisabledParticles();
         }
     }
 
@@ -314,21 +409,18 @@ public class EnemyBasicSetup : BaseBehaviour, IDamageable, IAttackAgent
     private IEnumerator Death()
     {
         SetLockOnStatus(false);
-        ConditionalDebug.Log("Enemy has died");
+        ConditionalDebug.Log($"[EnemyBasicSetup] Enemy {gameObject.name} has died");
 
         // Store the death position
         Vector3 deathPosition = cachedTransform.position;
 
-        // Add this line to update the score
+        // Update the score
         ScoreManager.Instance.AddScore(CalculateScoreValue());
 
-        // Spawn death particles at the death position
-        GameObject deathParticleInstance = deathParticles.GetFromPool(deathPosition, Quaternion.identity);
+        PlayDeathParticles();
 
-        FMODUnity.RuntimeManager.PlayOneShot(
-            "event:/Enemy/" + enemyType + "/Death",
-            deathPosition
-        );
+        // Play death sound
+        FMODUnity.RuntimeManager.PlayOneShot($"event:/Enemy/{enemyType}/Death", deathPosition);
 
         // Trigger time rewind
         yield return StartCoroutine(TimeManager.Instance.RewindTime());
@@ -338,23 +430,6 @@ public class EnemyBasicSetup : BaseBehaviour, IDamageable, IAttackAgent
 
         // Disable the enemy model
         enemyModel.SetActive(false);
-
-        // Wait for particles to finish (adjust time as needed)
-        yield return new WaitForSeconds(2f);
-
-        // Despawn the death particle instance if it's still active
-        if (deathParticleInstance != null && deathParticleInstance.activeInHierarchy)
-        {
-            OccaSoftware.BOP.Instance particleInstance = deathParticleInstance.GetComponent<OccaSoftware.BOP.Instance>();
-            if (particleInstance != null)
-            {
-                deathParticles.ReturnToPool(particleInstance);
-            }
-            else
-            {
-                ConditionalDebug.LogWarning("Death particle instance does not have an Instance component.");
-            }
-        }
 
         // Reset position and despawn
         cachedTransform.position = Vector3.zero;
@@ -499,143 +574,16 @@ public class EnemyBasicSetup : BaseBehaviour, IDamageable, IAttackAgent
         }
     }
 
-    // Only start the trails when necessary
-    private void StartTrails()
-    {
-        if (trails != null && !trails.isPlaying)
-        {
-            trails.Play();
-        }
-    }
-
-    private void InitializeTrails()
-    {
-        if (trails == null)
-        {
-            trails = GetComponentInChildren<ParticleSystem>();
-            if (trails != null)
-            {
-                var main = trails.main;
-                main.maxParticles = 50; // Reduce max particles
-                main.startLifetime = 0.5f; // Shorter lifetime
-                main.startSpeed = 5f; // Adjust speed as needed
-                main.simulationSpace = ParticleSystemSimulationSpace.World;
-
-                var emission = trails.emission;
-                emission.rateOverTime = 10f; // Lower emission rate
-
-                var renderer = trails.GetComponent<ParticleSystemRenderer>();
-                if (renderer != null)
-                {
-                    renderer.renderMode = ParticleSystemRenderMode.Mesh;
-                    renderer.mesh = null; // Use a simple mesh or null for billboard
-                }
-
-                trails.Stop(); // Ensure it starts stopped
-
-                // Initialize native arrays for particle data
-                int maxParticles = trails.main.maxParticles;
-                particlePositions = new NativeArray<float3>(maxParticles, Allocator.Persistent);
-                particleVelocities = new NativeArray<float3>(maxParticles, Allocator.Persistent);
-            }
-        }
-    }
-
-    private void OptimizeParticleSystems()
-    {
-        if (trails != null)
-        {
-            var main = trails.main;
-            main.simulationSpace = ParticleSystemSimulationSpace.World;
-            trails.useAutoRandomSeed = false;
-            
-            // Additional optimizations
-            var emission = trails.emission;
-            emission.rateOverTime = 10f; // Adjust as needed
-            
-            var renderer = trails.GetComponent<ParticleSystemRenderer>();
-            if (renderer != null)
-            {
-                renderer.renderMode = ParticleSystemRenderMode.Mesh;
-                renderer.mesh = null; // Use a simple mesh or null for billboard
-            }
-        }
-        // Apply similar optimizations to other particle systems if needed
-    }
-
-    private void Start()
-    {
-        if (trails != null)
-        {
-            var main = trails.main;
-            main.simulationSpeed = 0.5f; // Slow down the simulation
-        }
-    }
-
-    private void LateUpdate()
-    {
-        if (trails != null && trails.isPlaying)
-        {
-            UpdateTrailsWithJobs();
-        }
-    }
-
-    private void UpdateTrailsWithJobs()
-    {
-        int particleCount = trails.particleCount;
-        
-        // Copy particle data to native arrays
-        ParticleSystem.Particle[] particles = new ParticleSystem.Particle[particleCount];
-        trails.GetParticles(particles);
-        for (int i = 0; i < particleCount; i++)
-        {
-            particlePositions[i] = particles[i].position;
-            particleVelocities[i] = particles[i].velocity;
-        }
-
-        // Create and schedule the job
-        ParticleUpdateJob job = new ParticleUpdateJob
-        {
-            deltaTime = Time.deltaTime,
-            positions = particlePositions,
-            velocities = particleVelocities
-        };
-
-        JobHandle jobHandle = job.Schedule(particleCount, 64);
-        jobHandle.Complete();
-
-        // Copy data back to particles
-        for (int i = 0; i < particleCount; i++)
-        {
-            particles[i].position = particlePositions[i];
-            particles[i].velocity = particleVelocities[i];
-        }
-        trails.SetParticles(particles, particleCount);
-    }
-
     private void OnDestroy()
     {
-        if (particlePositions.IsCreated) particlePositions.Dispose();
-        if (particleVelocities.IsCreated) particleVelocities.Dispose();
+        // Remove any trail-related cleanup if it existed
     }
-}
 
-public struct ParticleUpdateJob : IJobParallelFor
-{
-    public float deltaTime;
-    public NativeArray<float3> positions;
-    public NativeArray<float3> velocities;
-
-    public void Execute(int index)
+    // In the Awake or Start method, register the particle systems
+    private void RegisterParticleSystems()
     {
-        float3 position = positions[index];
-        float3 velocity = velocities[index];
-
-        // Simple update logic (can be expanded)
-        position += velocity * deltaTime;
-        velocity += new float3(0, -9.8f, 0) * deltaTime; // Apply gravity
-
-        positions[index] = position;
-        velocities[index] = velocity;
+        ParticleSystemManager.Instance.RegisterParticleSystem(birthParticlesKey, birthParticlesPrefab, birthParticlesInitialCount);
+        ParticleSystemManager.Instance.RegisterParticleSystem(deathParticlesKey, deathParticlesPrefab, deathParticlesInitialCount);
+        ParticleSystemManager.Instance.RegisterParticleSystem(lockOnDisabledParticlesKey, lockOnDisabledParticlesPrefab, lockOnDisabledParticlesInitialCount);
     }
 }

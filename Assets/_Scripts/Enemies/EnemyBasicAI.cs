@@ -1,6 +1,5 @@
 using UnityEngine;
 using Pathfinding;
-using System.Collections;
 
 [RequireComponent(typeof(FollowerEntity))]
 [RequireComponent(typeof(EnemyBasicSetup))]
@@ -32,16 +31,32 @@ public class EnemyBasicAI : MonoBehaviour
 
     private FollowerEntity followerEntity;
     private EnemyBasicSetup enemySetup;
-    private Transform playerTransform;
+    private static Transform playerTransform;
     private float lastAttackTime;
     private float lastPositionChangeTime;
     private Vector3 currentDestination;
+    private float pathUpdateInterval = 0.5f; // Add this line
+    private float lastPathUpdateTime;
+    private float lineOfSightCheckInterval = 0.2f; // Check line of sight every 0.2 seconds
+    private float lastLineOfSightCheckTime;
+    private bool cachedLineOfSight;
+    private RaycastHit[] raycastHits = new RaycastHit[1];
+    private bool hasLineOfSightToPlayer;
 
     private void Awake()
     {
         followerEntity = GetComponent<FollowerEntity>();
         enemySetup = GetComponent<EnemyBasicSetup>();
-        playerTransform = GameObject.FindGameObjectWithTag("Player").transform;
+        if (playerTransform == null)
+        {
+            playerTransform = GameObject.FindGameObjectWithTag("Player").transform;
+        }
+        EnemyShootingManager.Instance.RegisterBasicEnemy(this);
+    }
+
+    private void OnDestroy()
+    {
+        EnemyShootingManager.Instance.UnregisterBasicEnemy(this);
     }
 
     private void Start()
@@ -58,11 +73,15 @@ public class EnemyBasicAI : MonoBehaviour
             ChooseNewPosition();
         }
 
-        // Move towards the current destination
-        followerEntity.destination = currentDestination;
+        // Update path less frequently
+        if (Time.time - lastPathUpdateTime > pathUpdateInterval)
+        {
+            followerEntity.destination = currentDestination;
+            lastPathUpdateTime = Time.time;
+        }
 
         // Attack if possible
-        if (Time.time - lastAttackTime > attackCooldown && HasLineOfSightToPlayer())
+        if (Time.time - lastAttackTime > attackCooldown && hasLineOfSightToPlayer)
         {
             Attack();
         }
@@ -94,27 +113,41 @@ public class EnemyBasicAI : MonoBehaviour
 
     private Vector3 FindPositionWithLineOfSight()
     {
+        Vector3 bestPosition = GetRandomPositionAroundPlayer();
+        float bestDistance = float.MaxValue;
+
         for (int i = 0; i < lineOfSightAttempts; i++)
         {
             Vector3 potentialPosition = GetRandomPositionAroundPlayer();
             if (HasLineOfSight(potentialPosition))
             {
-                return potentialPosition;
+                float distance = Vector3.Distance(potentialPosition, playerTransform.position);
+                if (distance < bestDistance)
+                {
+                    bestPosition = potentialPosition;
+                    bestDistance = distance;
+                }
             }
         }
-        // If no position with line of sight is found, return a random position
-        return GetRandomPositionAroundPlayer();
+
+        return bestPosition;
     }
 
     private bool HasLineOfSight(Vector3 fromPosition)
     {
         Vector3 direction = playerTransform.position - fromPosition;
-        return !Physics.Raycast(fromPosition, direction, direction.magnitude, obstacleLayerMask);
+        int hitCount = Physics.RaycastNonAlloc(fromPosition, direction, raycastHits, direction.magnitude, obstacleLayerMask);
+        return hitCount == 0;
     }
 
     private bool HasLineOfSightToPlayer()
     {
-        return HasLineOfSight(transform.position);
+        if (Time.time - lastLineOfSightCheckTime > lineOfSightCheckInterval)
+        {
+            cachedLineOfSight = HasLineOfSight(transform.position);
+            lastLineOfSightCheckTime = Time.time;
+        }
+        return cachedLineOfSight;
     }
 
     private void Attack()
@@ -128,5 +161,24 @@ public class EnemyBasicAI : MonoBehaviour
     public void ForceNewPosition()
     {
         ChooseNewPosition();
+    }
+
+    public void HandleLineOfSightResult(bool hasLineOfSight)
+    {
+        hasLineOfSightToPlayer = hasLineOfSight;
+
+        if (hasLineOfSight)
+        {
+            // Enemy can see the player, maybe prepare to attack
+            if (Time.time - lastAttackTime > attackCooldown)
+            {
+                Attack();
+            }
+        }
+        else
+        {
+            // Enemy can't see the player, maybe move to a better position
+            ForceNewPosition();
+        }
     }
 }

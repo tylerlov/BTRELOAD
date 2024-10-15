@@ -8,61 +8,58 @@ public class ProjectileEffectManager : MonoBehaviour
     public static ProjectileEffectManager Instance { get; private set; }
 
     [SerializeField]
-    private ParticleSystem deathEffectPrefab;
+    private GameObject deathEffectPrefab;
 
     [SerializeField]
     private int initialDeathEffectPoolSize = 10;
-    private Queue<ParticleSystem> deathEffectPool = new Queue<ParticleSystem>(50);
+    private const string deathEffectKey = "DeathEffect";
 
     [SerializeField]
     private GameObject enemyShotFXPrefab;
 
-    public GameObject projectileRadarSymbol;
+    [SerializeField]
+    private int initialEnemyShotFXPoolSize = 10;
+    private const string enemyShotFXKey = "EnemyShotFX";
 
+    public GameObject projectileRadarSymbol;
     [SerializeField]
     private int radarSymbolPoolSize = 50;
-    private Queue<GameObject> radarSymbolPool = new Queue<GameObject>(50);
+    private Queue<GameObject> radarSymbolPool = new Queue<GameObject>();
 
     [SerializeField]
-    private VisualEffect lockedFXPrefab;
+    private GameObject lockedFXPrefab;
 
     [SerializeField]
     private int initialLockedFXPoolSize = 10;
-    private Queue<VisualEffect> lockedFXPool = new Queue<VisualEffect>();
+    private const string lockedFXKey = "LockedFX";
 
-    [SerializeField]
-    private int maxDeathEffectPoolSize = 50;
     [SerializeField]
     private float poolWarningThreshold = 0.8f;
 
+    private void Awake()
+    {
+        if (Instance == null)
+        {
+            Instance = this;
+            DontDestroyOnLoad(gameObject);
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
+    }
+
     private void Start()
     {
-        InitializeDeathEffectPool();
-        InitializeRadarSymbolPool();
-        InitializeLockedFXPool();
+        InitializeAllPools();
     }
 
     public void InitializeAllPools()
     {
-        InitializeDeathEffectPool();
+        ParticleSystemManager.Instance.RegisterParticleSystem(deathEffectKey, deathEffectPrefab, initialDeathEffectPoolSize);
+        ParticleSystemManager.Instance.RegisterParticleSystem(enemyShotFXKey, enemyShotFXPrefab, initialEnemyShotFXPoolSize);
+        ParticleSystemManager.Instance.RegisterParticleSystem(lockedFXKey, lockedFXPrefab, initialLockedFXPoolSize);
         InitializeRadarSymbolPool();
-        InitializeLockedFXPool();
-    }
-
-    private void InitializeDeathEffectPool()
-    {
-        for (int i = 0; i < initialDeathEffectPoolSize; i++)
-        {
-            CreateAndAddDeathEffectToPool();
-        }
-    }
-
-    private ParticleSystem CreateAndAddDeathEffectToPool()
-    {
-        ParticleSystem effect = Instantiate(deathEffectPrefab, transform);
-        DisableEffect(effect);
-        deathEffectPool.Enqueue(effect);
-        return effect;
     }
 
     private void InitializeRadarSymbolPool()
@@ -75,84 +72,13 @@ public class ProjectileEffectManager : MonoBehaviour
         }
     }
 
-    private void InitializeLockedFXPool()
-    {
-        for (int i = 0; i < initialLockedFXPoolSize; i++)
-        {
-            VisualEffect effect = Instantiate(lockedFXPrefab, transform);
-            effect.gameObject.SetActive(false);
-            lockedFXPool.Enqueue(effect);
-        }
-    }
-
-    private void SetChildrenScale(GameObject parent, Vector3 scale)
-    {
-        foreach (Transform child in parent.transform)
-        {
-            child.localScale = scale;
-            SetChildrenScale(child.gameObject, scale);
-        }
-    }
-
     public void PlayDeathEffect(Vector3 position)
     {
-        ParticleSystem effect;
-        if (deathEffectPool.Count == 0)
+        ParticleSystem effect = ParticleSystemManager.Instance.PlayParticleSystem(deathEffectKey, position, Quaternion.identity);
+        if (effect == null)
         {
-            if (transform.childCount < maxDeathEffectPoolSize)
-            {
-                effect = CreateAndAddDeathEffectToPool();
-                ConditionalDebug.LogWarning($"Death effect pool empty. Created new effect. Current pool size: {transform.childCount}");
-            }
-            else
-            {
-                ConditionalDebug.LogError("Maximum death effect pool size reached. Cannot create more effects.");
-                return;
-            }
+            ConditionalDebug.LogWarning($"Death effect pool is empty. Consider increasing pool size.");
         }
-        else
-        {
-            effect = deathEffectPool.Dequeue();
-        }
-
-        effect.transform.position = position;
-        EnableAndPlayEffect(effect);
-
-        StartCoroutine(ReturnEffectToPoolAfterFinished(effect));
-
-        // Check if pool is close to empty
-        if ((float)deathEffectPool.Count / maxDeathEffectPoolSize < (1 - poolWarningThreshold))
-        {
-            ConditionalDebug.LogWarning($"Death effect pool is running low. Current count: {deathEffectPool.Count}");
-        }
-    }
-
-    private IEnumerator ReturnEffectToPoolAfterFinished(ParticleSystem effect)
-    {
-        float checkInterval = 0.5f; // Check every half second
-        while (effect.IsAlive(true))
-        {
-            yield return new WaitForSeconds(checkInterval);
-        }
-        DisableEffect(effect);
-        deathEffectPool.Enqueue(effect);
-    }
-
-    private void EnableAndPlayEffect(ParticleSystem effect)
-    {
-        effect.gameObject.SetActive(true);
-        var mainModule = effect.main;
-        mainModule.stopAction = ParticleSystemStopAction.None;
-        effect.Clear();
-        effect.Play();
-    }
-
-    private void DisableEffect(ParticleSystem effect)
-    {
-        effect.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
-        var mainModule = effect.main;
-        mainModule.stopAction = ParticleSystemStopAction.Disable;
-        effect.gameObject.SetActive(false);
     }
 
     public GameObject GetRadarSymbolFromPool()
@@ -168,60 +94,57 @@ public class ProjectileEffectManager : MonoBehaviour
 
     public void ReturnRadarSymbolToPool(GameObject radarSymbol)
     {
-        radarSymbol.SetActive(false);
-        radarSymbol.transform.SetParent(transform);
-        radarSymbolPool.Enqueue(radarSymbol);
+        if (radarSymbol != null)
+        {
+            radarSymbol.SetActive(false);
+            radarSymbol.transform.SetParent(transform);
+            radarSymbolPool.Enqueue(radarSymbol);
+        }
     }
 
     public VisualEffect GetLockedFXFromPool()
     {
-        if (lockedFXPool.Count == 0)
-        {
-            VisualEffect newEffect = Instantiate(lockedFXPrefab, transform);
-            return newEffect;
-        }
-        return lockedFXPool.Dequeue();
+        ParticleSystem lockedFX = ParticleSystemManager.Instance.PlayParticleSystem(lockedFXKey, Vector3.zero, Quaternion.identity);
+        return lockedFX?.GetComponent<VisualEffect>();
     }
 
     public void ReturnLockedFXToPool(VisualEffect effect)
     {
-        effect.Stop();
-        effect.gameObject.SetActive(false);
-        effect.transform.SetParent(transform);
-        lockedFXPool.Enqueue(effect);
-    }
-
-    public void ClearPools()
-    {
-        deathEffectPool.Clear();
-        radarSymbolPool.Clear();
-        lockedFXPool.Clear();
+        if (effect != null)
+        {
+            ParticleSystem ps = effect.GetComponent<ParticleSystem>();
+            if (ps != null)
+            {
+                ParticleSystemManager.Instance.StopAndReturnToPool(ps, lockedFXKey);
+            }
+        }
     }
 
     public GameObject CreateEnemyShotFX(Transform parent, Vector3 localPosition, Vector3 scale)
     {
-        if (enemyShotFXPrefab != null)
+        ParticleSystem enemyShotFX = ParticleSystemManager.Instance.PlayParticleSystem(enemyShotFXKey, parent.TransformPoint(localPosition), Quaternion.identity);
+        if (enemyShotFX != null)
         {
-            GameObject enemyShotFX = Instantiate(enemyShotFXPrefab, parent);
+            enemyShotFX.transform.SetParent(parent);
             enemyShotFX.transform.localPosition = localPosition;
             enemyShotFX.transform.localScale = scale;
-            SetChildrenScale(enemyShotFX, scale);
-            enemyShotFX.SetActive(true);
-            return enemyShotFX;
+            SetChildrenScale(enemyShotFX.gameObject, scale);
+            return enemyShotFX.gameObject;
         }
         return null;
     }
 
-    private void Awake()
+    private void SetChildrenScale(GameObject parent, Vector3 scale)
     {
-        if (Instance == null)
+        foreach (Transform child in parent.transform)
         {
-            Instance = this;
-            DontDestroyOnLoad(gameObject);
+            child.localScale = scale;
+            SetChildrenScale(child.gameObject, scale);
         }
-        else
-        {
-            Destroy(gameObject);
-        }
+    }
+
+    public void ClearPools()
+    {
+        // This method is no longer needed as ParticleSystemManager handles the pools
     }
 }

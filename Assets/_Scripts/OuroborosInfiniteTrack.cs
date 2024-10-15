@@ -12,7 +12,7 @@ using FluffyUnderware.Curvy.Generator;
 using FluffyUnderware.Curvy.Generator.Modules;
 using FluffyUnderware.Curvy.Shapes;
 using FluffyUnderware.DevTools;
-using OccaSoftware.BOP;
+using Typooling;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -65,7 +65,7 @@ namespace FluffyUnderware.Curvy.Controllers
 
         [Header("Pooling Settings")]
         [SerializeField]
-        private OccaSoftware.BOP.Pooler prefabPooler;
+        private Typooling.Pooler prefabPooler;
 
         [SerializeField]
         private int prefabsPerSection = 5;

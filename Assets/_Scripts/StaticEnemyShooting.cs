@@ -65,9 +65,12 @@ public class StaticEnemyShooting : MonoBehaviour
             return;
         }
 
+        // Use the local up direction of the GameObject
+        Vector3 shootDirection = cachedTransform.up;
+
         ProjectileSpawner.Instance.ShootProjectileFromEnemy(
             cachedTransform.position,
-            Quaternion.LookRotation(Vector3.up),
+            Quaternion.LookRotation(shootDirection),
             shootSpeed,
             projectileLifetime,
             projectileScale,
