@@ -191,7 +191,10 @@ float4 AD_CutoutSource = 0;
 
     InputData inputData;
     InitializeInputData(input, surfaceData.normalTS, inputData);
-    SETUP_DEBUG_TEXTURE_DATA(inputData, input.texcoord, _BaseMap);
+
+    #if defined(DEBUG_DISPLAY)
+        SETUP_DEBUG_TEXTURE_DATA(inputData, input.texcoord, _BaseMap);
+    #endif
 
     half4 color = half4(inputData.bakedGI * surfaceData.albedo + surfaceData.emission, surfaceData.alpha);
 

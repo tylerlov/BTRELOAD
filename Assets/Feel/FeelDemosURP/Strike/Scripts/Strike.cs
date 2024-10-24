@@ -4,6 +4,7 @@ using System.Collections;
 using System.Collections.Generic;
 using MoreMountains.Tools;
 using UnityEngine;
+#if MM_UI
 using UnityEngine.UI;
 
 namespace MoreMountains.Feel
@@ -18,7 +19,7 @@ namespace MoreMountains.Feel
 		{
 			Rb.transform.position = InitialPosition;
 			Rb.transform.rotation = InitialRotation;
-			Rb.velocity = Vector3.zero;
+			Rb.linearVelocity = Vector3.zero;
 			Rb.angularVelocity = Vector3.zero;
 		}
 	}
@@ -27,6 +28,7 @@ namespace MoreMountains.Feel
 	/// An example class part of the Feel demos
 	/// This class handles the strike demo, detecting input and applying force to the ball
 	/// </summary>
+	[AddComponentMenu("")]
 	public class Strike : MonoBehaviour
 	{
 		[Header("Input")]
@@ -266,7 +268,7 @@ namespace MoreMountains.Feel
 			// we reset the ball's position and forces
 			BowlingBallRb.MovePosition(_initialBallPosition);
 			BowlingBallRb.transform.localRotation = _initialBallRotation;
-			BowlingBallRb.velocity = Vector3.zero;
+			BowlingBallRb.linearVelocity = Vector3.zero;
 			BowlingBallRb.angularVelocity = Vector3.zero;
 
 			yield return MMCoroutine.WaitForFrames(1);
@@ -317,3 +319,4 @@ namespace MoreMountains.Feel
 		}
 	}
 }
+#endif

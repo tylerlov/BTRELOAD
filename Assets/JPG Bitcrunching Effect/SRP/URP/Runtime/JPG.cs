@@ -9,6 +9,8 @@ namespace JPG.Universal
     [ExecuteInEditMode, VolumeComponentMenu("JPG - Bitcrunching Effect")] //JPG - Bitcrunching / JPEG / H264 Effect
     public class JPG : VolumeComponent, IPostProcessComponent
     {
+        private float currentIntensity;  // Add this field
+
         public enum _BlockSize { [InspectorName("4x4 Fast")]_4x4, [InspectorName("8x8 Medium")]_8x8, [InspectorName("16x16 Slow")]_16x16 }
         [Serializable] public sealed class BlockSizeParameter : VolumeParameter<_BlockSize> { public BlockSizeParameter(_BlockSize value, bool overrideState = false) : base(value, overrideState) { } }
         
@@ -41,6 +43,11 @@ namespace JPG.Universal
         public bool IsActive() => EffectIntensity.value > 0f;
 
         public bool IsTileCompatible() => true;
+
+        public float GetCurrentIntensity()
+        {
+            return EffectIntensity.value; // Changed to return the actual effect intensity instead of the undefined field
+        }
     }
 }
 #endif

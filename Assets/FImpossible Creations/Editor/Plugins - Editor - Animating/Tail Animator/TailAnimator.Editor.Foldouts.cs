@@ -280,7 +280,7 @@ namespace FIMSpace.FTail
 
                 EditorGUILayout.BeginHorizontal();
 
-                if (animator) if (animator.updateMode == AnimatorUpdateMode.AnimatePhysics) GUI.color = new Color(0.6f, 1f, 0.6f, 1f);
+                if (animator) if (animator.updateMode == AnimatorUpdateMode.Fixed) GUI.color = new Color(0.6f, 1f, 0.6f, 1f);
                 EditorGUIUtility.labelWidth = 135;
                 EditorGUILayout.PropertyField(sp_AnimatePhysics);
                 GUILayout.FlexibleSpace();

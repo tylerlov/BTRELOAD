@@ -70,7 +70,7 @@ namespace MirzaBeig
 
                 void LateUpdate()
                 {
-                    float speed = rb.velocity.magnitude;
+                    float speed = rb.linearVelocity.magnitude;
                     float lerpTimePosition = speed / maxSpeed;
 
                     lerpTimePosition = Mathf.Clamp01(lerpTimePosition);

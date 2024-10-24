@@ -30,6 +30,7 @@ namespace MoreMountains.Feedbacks
 
 		#if (MM_TEXTMESHPRO || MM_UGUI2)
 		public override bool HasAutomatedTargetAcquisition => true;
+		public override bool CanForceInitialValue => true;
 		protected override void AutomateTargetAcquisition() => TargetTMPText = FindAutomatedTarget<TMP_Text>();
 
 		[MMFInspectorGroup("Target", true, 12, true)]

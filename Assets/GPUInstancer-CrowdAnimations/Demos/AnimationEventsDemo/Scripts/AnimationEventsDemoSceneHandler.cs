@@ -48,7 +48,7 @@ namespace GPUInstancer.CrowdAnimations
             Rigidbody spitRb = spitTransform.GetComponent<Rigidbody>();
 
             spitRb.isKinematic = false;
-            spitRb.velocity = crowdInstance.GetInstanceTransform().rotation * spitVector;
+            spitRb.linearVelocity = crowdInstance.GetInstanceTransform().rotation * spitVector;
             spitRb.detectCollisions = false;
         }
     }

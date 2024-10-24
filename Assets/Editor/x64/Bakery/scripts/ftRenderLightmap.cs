@@ -143,7 +143,7 @@ public class ftRenderLightmap : EditorWindow//ScriptableWizard
 #endif
 
 #if UNITY_2017_3_OR_NEWER
-    const LightmapEditorSettings.Lightmapper BUILTIN_RADIOSITY = LightmapEditorSettings.Lightmapper.Enlighten;
+    const LightmapEditorSettings.Lightmapper BUILTIN_RADIOSITY = LightmapEditorSettings.Lightmapper.ProgressiveCPU;
     const LightmapEditorSettings.Lightmapper BUILTIN_PT = LightmapEditorSettings.Lightmapper.ProgressiveCPU;
 #else
     #if UNITY_2017_2_OR_NEWER
@@ -3671,7 +3671,7 @@ public class ftRenderLightmap : EditorWindow//ScriptableWizard
                     var tr = obj.GetComponent<Terrain>();
 #endif
                     //if (((GameObjectUtility.GetStaticEditorFlags(obj) & StaticEditorFlags.LightmapStatic) == 0) && areaLight==null) continue; // skip dynamic
-                    if ((GameObjectUtility.GetStaticEditorFlags(obj) & StaticEditorFlags.LightmapStatic) == 0) continue; // skip dynamic
+                    if ((GameObjectUtility.GetStaticEditorFlags(obj) & StaticEditorFlags.ContributeGI) == 0) continue; // skip dynamic
 
                     var sharedMesh = ftBuildGraphics.GetSharedMesh(mr);
 
@@ -4032,7 +4032,7 @@ public class ftRenderLightmap : EditorWindow//ScriptableWizard
                 if (path != "") continue; // must belond to scene
                 //if ((obj.hideFlags & (HideFlags.DontSave|HideFlags.HideAndDontSave)) != 0) continue; // skip temp objects
                 //if (obj.tag == "EditorOnly") continue; // skip temp objects
-                if ((GameObjectUtility.GetStaticEditorFlags(obj) & StaticEditorFlags.LightmapStatic) != 0) continue; // skip static
+                if ((GameObjectUtility.GetStaticEditorFlags(obj) & StaticEditorFlags.ContributeGI) != 0) continue; // skip static
                 var mr = ftBuildGraphics.GetValidRenderer(obj);
                 if (mr == null) continue; // must have visible mesh
                 if (!mr.enabled) continue; // renderer must be on
@@ -7711,7 +7711,7 @@ public class ftRenderLightmap : EditorWindow//ScriptableWizard
                     if (rendererSet.Contains(renderer)) continue;
                     if (renderer != null)
                     {
-                        if ((GameObjectUtility.GetStaticEditorFlags(renderer.gameObject) & StaticEditorFlags.LightmapStatic) == 0)
+                        if ((GameObjectUtility.GetStaticEditorFlags(renderer.gameObject) & StaticEditorFlags.ContributeGI) == 0)
                         {
                             renderer.lightmapIndex = -1;
                             continue; // skip dynamic
@@ -7747,7 +7747,7 @@ public class ftRenderLightmap : EditorWindow//ScriptableWizard
                     if (terrainSet.Contains(terrain)) continue;
                     if (terrain != null)
                     {
-                        if ((GameObjectUtility.GetStaticEditorFlags(terrain.gameObject) & StaticEditorFlags.LightmapStatic) == 0) continue; // skip dynamic
+                        if ((GameObjectUtility.GetStaticEditorFlags(terrain.gameObject) & StaticEditorFlags.ContributeGI) == 0) continue; // skip dynamic
                         var so = new SerializedObject(terrain);
                         var prop = so.FindProperty("m_ScaleInLightmap");
                         var scaleInLm = prop.floatValue;
@@ -10604,9 +10604,9 @@ public class ftRenderLightmap : EditorWindow//ScriptableWizard
 
         int maxValue = 1024;
 #if UNITY_2019_1_OR_NEWER
-        if (GraphicsSettings.renderPipelineAsset != null)
+        if (GraphicsSettings.defaultRenderPipeline != null)
         {
-             var srpType = GraphicsSettings.renderPipelineAsset.GetType().ToString();
+             var srpType = GraphicsSettings.defaultRenderPipeline.GetType().ToString();
              if (srpType.Contains("HDRenderPipelineAsset"))
              {
                 maxValue = 64000;

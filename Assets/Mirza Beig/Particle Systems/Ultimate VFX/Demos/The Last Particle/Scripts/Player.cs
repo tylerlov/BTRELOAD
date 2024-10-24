@@ -128,7 +128,7 @@ namespace MirzaBeig
 
                     // ...
 
-                    float currentSpeed = rb.velocity.magnitude;
+                    float currentSpeed = rb.linearVelocity.magnitude;
                     float cameraFieldOfViewSpeedTime = currentSpeed / cameraFieldOfViewMaxSpeed;
 
                     cameraFieldOfViewSpeedTime = Mathf.Clamp01(cameraFieldOfViewSpeedTime);

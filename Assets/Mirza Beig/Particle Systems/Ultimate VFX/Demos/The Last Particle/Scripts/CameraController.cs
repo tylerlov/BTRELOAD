@@ -220,7 +220,7 @@ namespace MirzaBeig
 
                         // Offset framing.
 
-                        float playerSpeed = player.rb.velocity.magnitude;
+                        float playerSpeed = player.rb.linearVelocity.magnitude;
 
                         if (playerSpeed < minPlayerSpeedForOffsetFraming)
                         {

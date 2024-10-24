@@ -6,3 +6,10 @@ NativeFormatImporter:
   userData: 
   assetBundleName: 
   assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 275021
+  packageName: JPG - Bitcrunching / Datamosh Effect (Built-In/URP)
+  packageVersion: 1.0.1
+  assetPath: Assets/JPG Bitcrunching Effect/SRP/URP/Demo_URP/materials_urp/hills_urp.mat
+  uploadId: 665985

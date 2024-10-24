@@ -453,9 +453,7 @@ namespace MoreMountains.Feedbacks
 			#endif
 		  
 			MMF_CameraClippingPlanes.FeedbackTypeAuthorized = ClippingPlanes;
-			MMF_Fade.FeedbackTypeAuthorized = Fade;
 			MMF_CameraFieldOfView.FeedbackTypeAuthorized = FieldOfView;
-			MMF_Flash.FeedbackTypeAuthorized = Flash;
 			MMF_CameraOrthographicSize.FeedbackTypeAuthorized = OrthographicSize;
 			MMF_DebugComment.FeedbackTypeAuthorized = Comment;
 			MMF_DebugLog.FeedbackTypeAuthorized = Log;
@@ -493,7 +491,6 @@ namespace MoreMountains.Feedbacks
 			MMF_Material.FeedbackTypeAuthorized = Material;
 			MMF_Blink.FeedbackTypeAuthorized = MMBlink;
 			MMF_ShaderGlobal.FeedbackTypeAuthorized = ShaderGlobal;
-			MMF_ShaderController.FeedbackTypeAuthorized = ShaderController;
 			MMF_Skybox.FeedbackTypeAuthorized = Skybox;
 			MMF_SpriteRenderer.FeedbackTypeAuthorized = SpriteRenderer;
 			MMF_TextureOffset.FeedbackTypeAuthorized = TextureOffset;
@@ -516,6 +513,14 @@ namespace MoreMountains.Feedbacks
 			MMF_CanvasGroupBlocksRaycasts.FeedbackTypeAuthorized = CanvasGroupBlocksRaycasts;
 			  
 			MMF_FloatingText.FeedbackTypeAuthorized = FloatingText;
+			MMF_RectTransformAnchor.FeedbackTypeAuthorized = RectTransformAnchor;
+			MMF_RectTransformOffset.FeedbackTypeAuthorized = RectTransformOffset;
+			MMF_RectTransformPivot.FeedbackTypeAuthorized = RectTransformPivot;
+			MMF_RectTransformSizeDelta.FeedbackTypeAuthorized = RectTransformSizeDelta;
+			MMF_VideoPlayer.FeedbackTypeAuthorized = VideoPlayer;
+			
+			#if MM_UI
+			MMF_ShaderController.FeedbackTypeAuthorized = ShaderController;
 			MMF_Graphic.FeedbackTypeAuthorized = Graphic;
 			MMF_GraphicCrossFade.FeedbackTypeAuthorized = GraphicCrossFade;
 			MMF_Image.FeedbackTypeAuthorized = Image;
@@ -524,14 +529,12 @@ namespace MoreMountains.Feedbacks
 			MMF_ImageRaycastTarget.FeedbackTypeAuthorized = ImageRaycastTarget;
 			MMF_ImageTextureOffset.FeedbackTypeAuthorized = ImageTextureOffset;
 			MMF_ImageTextureScale.FeedbackTypeAuthorized = ImageTextureScale;
-			MMF_RectTransformAnchor.FeedbackTypeAuthorized = RectTransformAnchor;
-			MMF_RectTransformOffset.FeedbackTypeAuthorized = RectTransformOffset;
-			MMF_RectTransformPivot.FeedbackTypeAuthorized = RectTransformPivot;
-			MMF_RectTransformSizeDelta.FeedbackTypeAuthorized = RectTransformSizeDelta;
 			MMF_Text.FeedbackTypeAuthorized = Text;
 			MMF_TextColor.FeedbackTypeAuthorized = TextColor;
 			MMF_TextFontSize.FeedbackTypeAuthorized = TextFontSize;
-			MMF_VideoPlayer.FeedbackTypeAuthorized = VideoPlayer;
+			MMF_Fade.FeedbackTypeAuthorized = Fade;
+			MMF_Flash.FeedbackTypeAuthorized = Flash;
+			#endif
 			
 			#if MM_POSTPROCESSING
 			MMF_Bloom.FeedbackTypeAuthorized = Bloom;

@@ -250,7 +250,13 @@ public class CrosshairCore : MonoBehaviour
         {
             StartCoroutine(playerShooting.LaunchProjectilesWithDelay());
             playerShooting.HandleShootingEffects();
-            musicPlayback.EventInstance.setParameterByName("Lock State", 0);
+            
+            // Reset both parameters
+            if (musicPlayback != null && musicPlayback.EventInstance.isValid())
+            {
+                musicPlayback.EventInstance.setParameterByName("Lock State", 0);
+                musicPlayback.EventInstance.setParameterByName("Player_Lock_State", 0);
+            }
         }
     }
 
@@ -261,12 +267,18 @@ public class CrosshairCore : MonoBehaviour
 
         if (CheckLockProjectiles() && playerLocking.GetLockedProjectileCount() < playerLocking.maxTargets && Time.timeScale != 0f)
         {
-            // Attempt to lock onto a projectile
             if (playerLocking.TryLockOntoProjectile())
             {
-                // These lines are now handled in TryLockOntoBullet in PlayerLocking
-                // So we don't need to call them here anymore
                 ConditionalDebug.Log($"Locked onto projectile. Current locks: {playerLocking.Locks}");
+                
+                // Set FMOD parameter but don't let it affect enemy shooting
+                if (musicPlayback != null && musicPlayback.EventInstance.isValid())
+                {
+                    musicPlayback.EventInstance.setParameterByName("Lock State", 1);
+                    
+                    // Add a new parameter specifically for player lock state
+                    musicPlayback.EventInstance.setParameterByName("Player_Lock_State", 1);
+                }
 
                 GetComponent<PlayerShooting>().AnimateLockOnEffect();
             }
@@ -274,10 +286,6 @@ public class CrosshairCore : MonoBehaviour
             {
                 ConditionalDebug.Log("Failed to lock onto projectile");
             }
-        }
-        else
-        {
-            ConditionalDebug.Log("Cannot lock onto projectile: conditions not met");
         }
     }
 

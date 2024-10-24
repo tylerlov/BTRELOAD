@@ -65,6 +65,7 @@ namespace MoreMountains.FeedbacksForThirdParty
 		/// if the property is a gradient, the new gradient to set
 		[Tooltip("if the property is a gradient, the new gradient to set")] 
 		[MMFEnumCondition("PropertyType", (int)PropertyTypes.Gradient)]
+		[GradientUsage(true)]
 		public Gradient NewGradient = new Gradient();
 		/// if the property is an int, the new int to set
 		[Tooltip("if the property is an int, the new int to set")]
@@ -97,6 +98,18 @@ namespace MoreMountains.FeedbacksForThirdParty
 
 		protected int _propertyID;
 
+		protected AnimationCurve _initialAnimationCurve;
+		protected bool _initialBool;
+		protected float _initialFloat;
+		protected Gradient _initialGradient;
+		protected int _initialInt;
+		protected Mesh _initialMesh;
+		protected Texture _initialTexture;
+		protected uint _initialUInt;
+		protected Vector2 _initialVector2;
+		protected Vector3 _initialVector3;
+		protected Vector4 _initialVector4;
+		
 		/// <summary>
 		/// On init we cache our property ID
 		/// </summary>
@@ -106,6 +119,50 @@ namespace MoreMountains.FeedbacksForThirdParty
 			base.CustomInitialization(owner);
 
 			_propertyID = Shader.PropertyToID(PropertyID);
+			GetInitialValue();
+		}
+
+		/// <summary>
+		/// Grabs and stores the initial value of the target property
+		/// </summary>
+		protected virtual void GetInitialValue()
+		{
+			switch (PropertyType)
+			{
+				case PropertyTypes.AnimationCurve:
+					_initialAnimationCurve = TargetVisualEffect.GetAnimationCurve(_propertyID);
+					break;
+				case PropertyTypes.Bool:
+					_initialBool = TargetVisualEffect.GetBool(_propertyID);
+					break;
+				case PropertyTypes.Float:
+					_initialFloat = TargetVisualEffect.GetFloat(_propertyID);
+					break;
+				case PropertyTypes.Gradient:
+					_initialGradient = TargetVisualEffect.GetGradient(_propertyID);
+					break;
+				case PropertyTypes.Int:
+					_initialInt = TargetVisualEffect.GetInt(_propertyID);
+					break;
+				case PropertyTypes.Mesh:
+					_initialMesh = TargetVisualEffect.GetMesh(_propertyID);
+					break;
+				case PropertyTypes.Texture:
+					_initialTexture = TargetVisualEffect.GetTexture(_propertyID);
+					break;
+				case PropertyTypes.UInt:
+					_initialUInt = TargetVisualEffect.GetUInt(_propertyID);
+					break;
+				case PropertyTypes.Vector2:
+					_initialVector2 = TargetVisualEffect.GetVector2(_propertyID);
+					break;
+				case PropertyTypes.Vector3:
+					_initialVector3 = TargetVisualEffect.GetVector3(_propertyID);
+					break;
+				case PropertyTypes.Vector4:
+					_initialVector4 = TargetVisualEffect.GetVector4(_propertyID);
+					break;
+			}
 		}
 
 		/// <summary>
@@ -155,10 +212,58 @@ namespace MoreMountains.FeedbacksForThirdParty
 				case PropertyTypes.Vector4:
 					TargetVisualEffect.SetVector4(_propertyID, NewVector4);
 					break;
-				default:
-					throw new ArgumentOutOfRangeException();
 			}
 		}
+		
+		
+		/// <summary>
+		/// On restore, we put our object back at its initial position
+		/// </summary>
+		protected override void CustomRestoreInitialValues()
+		{
+			if (!Active || !FeedbackTypeAuthorized)
+			{
+				return;
+			}
+			
+			switch (PropertyType)
+			{
+				case PropertyTypes.AnimationCurve:
+					TargetVisualEffect.SetAnimationCurve(_propertyID, _initialAnimationCurve);
+					break;
+				case PropertyTypes.Bool:
+					TargetVisualEffect.SetBool(_propertyID, _initialBool);
+					break;
+				case PropertyTypes.Float:
+					TargetVisualEffect.SetFloat(_propertyID, _initialFloat);
+					break;
+				case PropertyTypes.Gradient:
+					TargetVisualEffect.SetGradient(_propertyID, _initialGradient);
+					break;
+				case PropertyTypes.Int:
+					TargetVisualEffect.SetInt(_propertyID, _initialInt);
+					break;
+				case PropertyTypes.Mesh:
+					TargetVisualEffect.SetMesh(_propertyID, _initialMesh);
+					break;
+				case PropertyTypes.Texture:
+					TargetVisualEffect.SetTexture(_propertyID, _initialTexture);
+					break;
+				case PropertyTypes.UInt:
+					TargetVisualEffect.SetUInt(_propertyID, _initialUInt);
+					break;
+				case PropertyTypes.Vector2:
+					TargetVisualEffect.SetVector2(_propertyID, _initialVector2);
+					break;
+				case PropertyTypes.Vector3:
+					TargetVisualEffect.SetVector3(_propertyID, _initialVector3);
+					break;
+				case PropertyTypes.Vector4:
+					TargetVisualEffect.SetVector4(_propertyID, _initialVector4);
+					break;
+			}
+		}
+		
 		#else
 		protected override void CustomPlayFeedback(Vector3 position, float attenuation = 1.0f) { }
 		#endif

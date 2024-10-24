@@ -13,7 +13,7 @@ internal class BlitTexturePass : ScriptableRenderPass {
     private ProfilingSampler _profilingSampler;
     private Material _effectMaterial;
     private Material _copyMaterial;
-    private RenderTargetHandle _temporaryColorTexture;
+    private RTHandle _temporaryColorTexture;
 
     public void Setup(Material effectMaterial, bool useDepth, bool useNormals, bool useColor) {
         _copyMaterial = CoreUtils.CreateEngineMaterial(CopyEffectShaderName);
@@ -40,39 +40,31 @@ internal class BlitTexturePass : ScriptableRenderPass {
         if (_effectMaterial == null) return;
         if (renderingData.cameraData.camera.cameraType != CameraType.Game) return;
 
-        _temporaryColorTexture = new RenderTargetHandle();
-
         CommandBuffer cmd = CommandBufferPool.Get();
         using (new ProfilingScope(cmd, _profilingSampler)) {
             RenderTextureDescriptor descriptor = renderingData.cameraData.cameraTargetDescriptor;
-            // descriptor.depthBufferBits = 0;
             SetSourceSize(cmd, descriptor);
 
-#if UNITY_2022_1_OR_NEWER
             var cameraTargetHandle = renderingData.cameraData.renderer.cameraColorTargetHandle;
-#else
-            var cameraTargetHandle = renderingData.cameraData.renderer.cameraColorTarget;
-#endif
-            cmd.GetTemporaryRT(_temporaryColorTexture.id, descriptor);
 
-            // Also seen as `renderingData.cameraData.xr.enabled` and `#if ENABLE_VR && ENABLE_XR_MODULE`.
+            // Create and allocate the temporary RTHandle
+            RenderingUtils.ReAllocateIfNeeded(ref _temporaryColorTexture, descriptor, FilterMode.Bilinear, TextureWrapMode.Clamp, name: "_TemporaryColorTexture");
+
             if (renderingData.cameraData.xrRendering) {
-                _effectMaterial.EnableKeyword("_USE_DRAW_PROCEDURAL"); // `UniversalRenderPipelineCore.cs`.
-                cmd.SetRenderTarget(_temporaryColorTexture.Identifier());
+                _effectMaterial.EnableKeyword("_USE_DRAW_PROCEDURAL");
+                cmd.SetRenderTarget(_temporaryColorTexture);
                 cmd.DrawMesh(RenderingUtils.fullscreenMesh, Matrix4x4.identity, _effectMaterial, 0, 0);
-                cmd.SetGlobalTexture("_EffectTexture", _temporaryColorTexture.Identifier());
-                cmd.SetRenderTarget(new RenderTargetIdentifier(cameraTargetHandle, 0, CubemapFace.Unknown, -1));
+                cmd.SetGlobalTexture("_EffectTexture", _temporaryColorTexture);
+                cmd.SetRenderTarget(cameraTargetHandle);
                 cmd.DrawMesh(RenderingUtils.fullscreenMesh, Matrix4x4.identity, _copyMaterial, 0, 0);
             } else {
                 _effectMaterial.DisableKeyword("_USE_DRAW_PROCEDURAL");
-                // Note: `FinalBlitPass` has `cmd.SetRenderTarget` at this point, but it's unclear what that does.
-                cmd.Blit(cameraTargetHandle, _temporaryColorTexture.Identifier(), _effectMaterial, 0);
-                cmd.Blit(_temporaryColorTexture.Identifier(), cameraTargetHandle);
+                Blitter.BlitCameraTexture(cmd, cameraTargetHandle, _temporaryColorTexture, _effectMaterial, 0);
+                Blitter.BlitCameraTexture(cmd, _temporaryColorTexture, cameraTargetHandle);
             }
         }
 
         context.ExecuteCommandBuffer(cmd);
-        cmd.Clear();
         CommandBufferPool.Release(cmd);
     }
 
@@ -86,6 +78,12 @@ internal class BlitTexturePass : ScriptableRenderPass {
         }
 
         cmd.SetGlobalVector("_SourceSize", new Vector4(width, height, 1.0f / width, 1.0f / height));
+    }
+
+    // Add a cleanup method to release the RTHandle
+    public void Cleanup()
+    {
+        _temporaryColorTexture?.Release();
     }
 }
 }

@@ -94,9 +94,14 @@ public class WaveEventSubscriptions : MonoBehaviour
 
     private void OnWaveStarted()
     {
-        Debug.Log(
-            $"<color=blue>[WAVE] Wave Started! Current Scene: {SceneManagerBTR.Instance.GetCurrentSceneName()}, Section: {SceneManagerBTR.Instance.GetCurrentSongSectionName()}</color>"
-        );
+        Debug.Log($"<color=blue>[WAVE] Wave Started! Current Scene: {SceneManagerBTR.Instance.GetCurrentSceneName()}, Section: {SceneManagerBTR.Instance.GetCurrentSongSectionName()}</color>");
+        
+        // Notify ProjectileManager of wave start
+        if (ProjectileManager.Instance != null)
+        {
+            ProjectileManager.Instance.OnWaveStart();
+        }
+        
         SceneManagerBTR.Instance.updateStatus("wavestart");
 
         // Clear all player locks at the start of a wave
@@ -132,9 +137,14 @@ public class WaveEventSubscriptions : MonoBehaviour
 
     private void OnWaveEnded()
     {
-        Debug.Log(
-            $"<color=blue>[WAVE] Wave Ended! Current Scene: {SceneManagerBTR.Instance.GetCurrentSceneName()}, Section: {SceneManagerBTR.Instance.GetCurrentSongSectionName()}</color>"
-        );
+        Debug.Log($"<color=blue>[WAVE] Wave Ended! Current Scene: {SceneManagerBTR.Instance.GetCurrentSceneName()}, Section: {SceneManagerBTR.Instance.GetCurrentSongSectionName()}</color>");
+        
+        // Clean up projectiles at wave end
+        if (ProjectileManager.Instance != null)
+        {
+            ProjectileManager.Instance.OnWaveEnd();
+        }
+        
         ScoreManager.Instance.waveCounterAdd();
         SceneManagerBTR.Instance.updateStatus("waveend");
 

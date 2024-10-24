@@ -80,7 +80,7 @@ public class ProjectileSpawner : MonoBehaviour
             ConditionalDebug.Log($"[ProjectileSpawner] Rigidbody isKinematic: {projectile.rb.isKinematic} for projectile {projectile.gameObject.name}");
             
             // Now set the velocity
-            projectile.rb.velocity = projectile.transform.forward * request.Speed;
+            projectile.rb.linearVelocity = projectile.transform.forward * request.Speed;
         }
         
         if (request.EnableHoming && request.Target != null)
@@ -88,7 +88,7 @@ public class ProjectileSpawner : MonoBehaviour
             projectile.SetHomingTarget(request.Target);
         }
         
-        ConditionalDebug.Log($"[ProjectileSpawner] Processed projectile. Position: {request.Position}, Target: {(request.Target != null ? request.Target.name : "None")}, IsStatic: {isStatic}, Velocity: {projectile.rb?.velocity}, Homing: {request.EnableHoming}");
+        ConditionalDebug.Log($"[ProjectileSpawner] Processed projectile. Position: {request.Position}, Target: {(request.Target != null ? request.Target.name : "None")}, IsStatic: {isStatic}, Velocity: {projectile.rb?.linearVelocity}, Homing: {request.EnableHoming}");
     }
 
     private void SetupProjectile(ProjectileStateBased projectile, ProjectileRequest request)
@@ -102,7 +102,7 @@ public class ProjectileSpawner : MonoBehaviour
             projectile.transform.localScale = Vector3.one * request.UniformScale;
 
             projectile.rb.isKinematic = false;
-            projectile.rb.velocity = request.Rotation * Vector3.forward * request.Speed;
+            projectile.rb.linearVelocity = request.Rotation * Vector3.forward * request.Speed;
             projectile.bulletSpeed = request.Speed;
             projectile.SetLifetime(request.Lifetime);
             projectile.EnableHoming(request.EnableHoming);
@@ -201,14 +201,14 @@ public class ProjectileSpawner : MonoBehaviour
                     shotsInCurrentInterval++;
                     ConditionalDebug.Log($"[ProjectileSpawner] Processing enemy shot from queue. Remaining in queue: {enemyShotQueue.Count}");
 
-                    // Calculate time to next shot
-                    float timeToNextShot = scaledInterval / maxEnemyShotsPerInterval;
+                    // Calculate time to next shot, adjusted for time scale
+                    float timeToNextShot = (scaledInterval / maxEnemyShotsPerInterval) / timeScale;
                     yield return new WaitForSeconds(timeToNextShot);
                 }
                 else
                 {
-                    // Wait for the next interval
-                    yield return new WaitForSeconds(scaledInterval - (Time.time - lastShotTime));
+                    // Wait for the next interval, adjusted for time scale
+                    yield return new WaitForSeconds((scaledInterval - (Time.time - lastShotTime)) / timeScale);
                 }
             }
             else
@@ -454,7 +454,7 @@ public class ProjectileSpawner : MonoBehaviour
             if (projectile.rb != null)
             {
                 projectile.rb.isKinematic = false;
-                projectile.rb.velocity = shootRotation * Vector3.forward * speed;
+                projectile.rb.linearVelocity = shootRotation * Vector3.forward * speed;
             }
 
             ProjectileManager.Instance.RegisterProjectile(projectile);
@@ -462,7 +462,7 @@ public class ProjectileSpawner : MonoBehaviour
             // Set the projectile state to PlayerShotState
             projectile.ChangeState(new PlayerShotState(projectile, 1f, null, false));
 
-            ConditionalDebug.Log($"[ProjectileSpawner] Player projectile created and shot. Position: {shootPosition}, Speed: {speed}, Velocity: {projectile.rb?.velocity}");
+            ConditionalDebug.Log($"[ProjectileSpawner] Player projectile created and shot. Position: {shootPosition}, Speed: {speed}, Velocity: {projectile.rb?.linearVelocity}");
         }
         else
         {

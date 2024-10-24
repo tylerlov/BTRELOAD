@@ -9,6 +9,7 @@ namespace MoreMountains.Feedbacks
 	/// A class handling the lifecycle of the balls included in the MMFeedbacks demo
 	/// It waits for 2 seconds after the spawn of the ball, and destroys it, playing a MMFeedbacks while it does so
 	/// </summary>
+	[AddComponentMenu("")]
 	public class DemoBall : MonoBehaviour
 	{
 		/// the duration (in seconds) of the life of the ball

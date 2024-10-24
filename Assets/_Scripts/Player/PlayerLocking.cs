@@ -45,6 +45,8 @@ public class PlayerLocking : MonoBehaviour
     private int enemyTargetListIndex;
 
     [SerializeField]
+    private GameObject normalReticle;  // Add this line before lockIndicator
+    [SerializeField]
     private GameObject lockIndicator;
 
     #region Locking Stability
@@ -298,6 +300,10 @@ public class PlayerLocking : MonoBehaviour
         if (lockIndicator != null && !lockIndicator.activeSelf)
         {
             lockIndicator.SetActive(true);
+            if (normalReticle != null)
+            {
+                normalReticle.SetActive(false);
+            }
         }
     }
 
@@ -306,6 +312,10 @@ public class PlayerLocking : MonoBehaviour
         if (lockIndicator != null && lockIndicator.activeSelf)
         {
             lockIndicator.SetActive(false);
+            if (normalReticle != null)
+            {
+                normalReticle.SetActive(true);
+            }
         }
     }
 

@@ -1,7 +1,6 @@
-using Cinemachine;
+using Unity.Cinemachine;
 using UnityEngine;
 
-[SaveDuringPlay]
 [AddComponentMenu("Cinemachine/WorldUpY Extension")]
 public class CinemachineWorldUpYExtension : CinemachineExtension
 {
@@ -37,13 +36,13 @@ public class CinemachineWorldUpYExtension : CinemachineExtension
         if (stage == CinemachineCore.Stage.Finalize)
         {
             Vector3 lookAtPoint = state.ReferenceLookAt;
-            Vector3 cameraPosition = state.FinalPosition;
+            Vector3 cameraPosition = state.RawPosition;
             Vector3 directionToTarget = (lookAtPoint - cameraPosition).normalized;
 
             // Project the direction onto the camera's view plane
-            Vector3 cameraForward = state.FinalOrientation * Vector3.forward;
-            Vector3 cameraRight = state.FinalOrientation * Vector3.right;
-            Vector3 cameraUp = state.FinalOrientation * Vector3.up;
+            Vector3 cameraForward = state.RawOrientation * Vector3.forward;
+            Vector3 cameraRight = state.RawOrientation * Vector3.right;
+            Vector3 cameraUp = state.RawOrientation * Vector3.up;
 
             float rightDot = Vector3.Dot(directionToTarget, cameraRight);
             float upDot = Vector3.Dot(directionToTarget, cameraUp);
@@ -85,8 +84,7 @@ public class CinemachineWorldUpYExtension : CinemachineExtension
             );
 
             // Apply the new rotation
-            state.OrientationCorrection =
-                Quaternion.Inverse(state.FinalOrientation) * limitedRotation;
+            state.OrientationCorrection = Quaternion.Inverse(state.RawOrientation) * limitedRotation;
 
             // Store the new rotation for the next frame
             lastRotation = limitedRotation;

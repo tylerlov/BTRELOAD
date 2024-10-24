@@ -13,43 +13,54 @@ public class PlayerTimeControl : MonoBehaviour
     private SplineController splineControl;
     private PlayerMovement pMove;
 
-    #region Time Control Variables
+    [Header("Component References")]
+    [SerializeField] private MMF_Player rewindFeedback;
+    [SerializeField] private MMF_Player longrewindFeedback;
+    [SerializeField] private ParticleSystem temporalBlast;
+    [SerializeField] private ParticleSystem RewindFXScan;
+    [SerializeField] private VisualEffect RewindFX;
+    [SerializeField] private VisualEffect slowTime;
+
     [Header("Time Control Settings")]
-    [SerializeField]
-    private float rewindTimeScale = -2f;
+    [Tooltip("Time scale during rewind")]
+    [SerializeField] private float rewindTimeScale = -2f;
 
-    [SerializeField]
-    private float rewindDuration = 3f;
-    private Coroutine currentRewindCoroutine;
+    [Tooltip("Duration of the rewind effect")]
+    [SerializeField] private float rewindDuration = 3f;
 
-    [SerializeField]
-    private float returnToNormalDuration = 0.25f;
+    [Tooltip("Duration to return to normal time")]
+    [SerializeField] private float returnToNormalDuration = 0.25f;
 
-    [SerializeField]
-    private float slowTimeScale = 0.1f;
+    [Tooltip("Time scale during slow motion")]
+    [SerializeField] private float slowTimeScale = 0.1f;
 
-    [SerializeField]
-    private float slowTimeDuration = 5f;
+    [Tooltip("Duration of the slow motion effect")]
+    [SerializeField] private float slowTimeDuration = 5f;
 
-    [SerializeField]
-    private float rewindCooldown = 0.5f;
+    [Tooltip("Cooldown between rewind actions")]
+    [SerializeField] private float rewindCooldown = 0.5f;
 
-    [SerializeField]
-    private float maxRewindDuration = 1f;
-    #endregion
+    [Tooltip("Maximum duration for rewind")]
+    [SerializeField] private float maxRewindDuration = 1f;
 
-    #region Feedback and Effects
-    public MMF_Player rewindFeedback;
-    public MMF_Player longrewindFeedback;
-    public ParticleSystem temporalBlast;
-    public ParticleSystem RewindFXScan;
-    public VisualEffect RewindFX;
-    public VisualEffect slowTime;
-    #endregion
+    [Header("JPG Effect Settings")]
+    [Tooltip("JPG effect intensity during rewind")]
+    [SerializeField] private float rewindJPGIntensity = 0.2f;
+
+    [Tooltip("JPG effect intensity during slow motion")]
+    [SerializeField] private float slowJPGIntensity = 0.4f;
+
+    [Tooltip("Duration to apply JPG effect")]
+    [SerializeField] private float jpgEffectDuration = 0.5f;
 
     private float lastRewindTime = 0f;
     private bool delayLoop = false;
     private float originalSpeed;
+
+    // Add this line near the top of the class, with the other private variables
+    private Coroutine currentRewindCoroutine;
+
+    private float baselineJPGIntensity;
 
     private void Awake()
     {
@@ -57,6 +68,12 @@ public class PlayerTimeControl : MonoBehaviour
         playerLocking = GetComponent<PlayerLocking>();
         splineControl = FindObjectOfType<SplineController>();
         pMove = FindObjectOfType<PlayerMovement>();
+
+        // Store the baseline JPG intensity on startup
+        if (JPGEffectController.Instance != null)
+        {
+            baselineJPGIntensity = JPGEffectController.Instance.GetCurrentIntensity();
+        }
 
         if (crosshairCore == null || playerLocking == null || splineControl == null || pMove == null)
         {
@@ -189,7 +206,7 @@ public class PlayerTimeControl : MonoBehaviour
         crosshairCore.TriggerRewindStart(rewindTimeScale);
         rewindFeedback.PlayFeedbacks();
 
-        JPGEffectController.Instance.SetJPGIntensity(0.2f, 0.5f);
+        JPGEffectController.Instance.SetJPGIntensity(rewindJPGIntensity, jpgEffectDuration);
 
         // Use TimeManager to set the time scale
         TimeManager.Instance.SetTimeScale(-1f);
@@ -215,7 +232,7 @@ public class PlayerTimeControl : MonoBehaviour
         pMove.UpdateAnimation();
         splineControl.MovementDirection = MovementDirection.Forward;
 
-        JPGEffectController.Instance.SetJPGIntensity(0f, 0.5f);
+        JPGEffectController.Instance.SetJPGIntensity(baselineJPGIntensity, 0.5f);
         DeactivateRewindEffects();
         crosshairCore.TriggerRewindEnd();
 
@@ -244,7 +261,7 @@ public class PlayerTimeControl : MonoBehaviour
         splineControl.Speed = slowedSpeed;
         crosshairCore.TriggerRewindStart(slowTimeScale);
         rewindFeedback.PlayFeedbacks();
-        JPGEffectController.Instance.SetJPGIntensity(0.4f, 0.5f);
+        JPGEffectController.Instance.SetJPGIntensity(slowJPGIntensity, jpgEffectDuration);
 
         // Set music state to Slow
         MusicManager.Instance.SetMusicParameter("Time State", 2f); // 2 represents Slow state
@@ -267,7 +284,7 @@ public class PlayerTimeControl : MonoBehaviour
         pMove.UpdateAnimation();
         splineControl.MovementDirection = MovementDirection.Forward;
 
-        JPGEffectController.Instance.SetJPGIntensity(0f, 0.5f);
+        JPGEffectController.Instance.SetJPGIntensity(baselineJPGIntensity, 0.5f);
         DeactivateRewindEffects();
         crosshairCore.TriggerRewindEnd();
 

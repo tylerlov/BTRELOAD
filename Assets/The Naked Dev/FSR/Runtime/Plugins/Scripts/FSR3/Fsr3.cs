@@ -25,6 +25,7 @@ using UnityEngine.Rendering;
 
 namespace FidelityFX
 {
+
     /// <summary>
     /// A collection of helper functions and data structures required by the FSR3 Upscaler process.
     /// </summary>
@@ -51,7 +52,7 @@ namespace FidelityFX
                 MaxRenderSize = maxRenderSize,
                 Shaders = shaders,
             };
-            
+
             var context = new Fsr3UpscalerContext();
             context.Create(contextDescription);
             return context;
@@ -63,6 +64,8 @@ namespace FidelityFX
             {
                 case QualityMode.NativeAA:
                     return 1.0f;
+                case QualityMode.UltraQuality:
+                    return 1.2f;
                 case QualityMode.Quality:
                     return 1.5f;
                 case QualityMode.Balanced:
@@ -84,7 +87,7 @@ namespace FidelityFX
             renderWidth = Mathf.RoundToInt(displayWidth / ratio);
             renderHeight = Mathf.RoundToInt(displayHeight / ratio);
         }
-        
+
         public static float GetMipmapBiasOffset(int renderWidth, int displayWidth)
         {
             return Mathf.Log((float)renderWidth / displayWidth, 2.0f) - 1.0f;
@@ -102,13 +105,14 @@ namespace FidelityFX
             outX = Halton((index % phaseCount) + 1, 2) - 0.5f;
             outY = Halton((index % phaseCount) + 1, 3) - 0.5f;
         }
-        
+
         // Calculate halton number for index and base.
         private static float Halton(int index, int @base)
         {
             float f = 1.0f, result = 0.0f;
 
-            for (int currentIndex = index; currentIndex > 0;) {
+            for (int currentIndex = index; currentIndex > 0;)
+            {
 
                 f /= @base;
                 result += f * (currentIndex % @base);
@@ -117,23 +121,23 @@ namespace FidelityFX
 
             return result;
         }
-        
+
         public static float Lanczos2(float value)
         {
             return Mathf.Abs(value) < Mathf.Epsilon ? 1.0f : Mathf.Sin(Mathf.PI * value) / (Mathf.PI * value) * (Mathf.Sin(0.5f * Mathf.PI * value) / (0.5f * Mathf.PI * value));
         }
-        
+
 #if !UNITY_2021_1_OR_NEWER
         internal static void SetBufferData(this CommandBuffer commandBuffer, ComputeBuffer computeBuffer, Array data)
         {
             commandBuffer.SetComputeBufferData(computeBuffer, data);
         }
 #endif
-        
+
         public enum QualityMode
         {
-            Off = 0,
-            NativeAA = 1,
+            NativeAA = 0,
+            UltraQuality = 1,
             Quality = 2,
             Balanced = 3,
             Performance = 4,
@@ -233,7 +237,7 @@ namespace FidelityFX
             ApplyThreshold = 1 << 2,
             UseComponentsMax = 1 << 3,
         }
-        
+
         [Serializable, StructLayout(LayoutKind.Sequential)]
         internal struct UpscalerConstants
         {
@@ -242,28 +246,28 @@ namespace FidelityFX
 
             public Vector2Int upscaleSize;
             public Vector2Int previousFrameUpscaleSize;
-            
+
             public Vector2Int maxRenderSize;
             public Vector2Int maxUpscaleSize;
-            
+
             public Vector4 deviceToViewDepth;
-            
+
             public Vector2 jitterOffset;
             public Vector2 previousFrameJitterOffset;
-            
+
             public Vector2 motionVectorScale;
             public Vector2 downscaleFactor;
-            
+
             public Vector2 motionVectorJitterCancellation;
             public float tanHalfFOV;
             public float jitterPhaseCount;
-            
+
             public float deltaTime;
             public float deltaPreExposure;
             public float viewSpaceToMetersFactor;
             public float frameIndex;
         }
-        
+
         [Serializable, StructLayout(LayoutKind.Sequential)]
         internal struct SpdConstants
         {
@@ -290,7 +294,7 @@ namespace FidelityFX
             public float autoReactiveScale;
             public float autoReactiveMax;
         }
-        
+
         [Serializable, StructLayout(LayoutKind.Sequential)]
         internal struct RcasConstants
         {
@@ -300,14 +304,14 @@ namespace FidelityFX
                 this.halfSharp = halfSharp;
                 dummy0 = dummy1 = 0;
             }
-        
+
             public readonly uint sharpness;
             public readonly uint halfSharp;
             public readonly uint dummy0;
             public readonly uint dummy1;
         }
     }
-    
+
     /// <summary>
     /// An immutable structure wrapping all of the necessary information to bind a specific buffer or attachment of a render target to a compute shader.
     /// </summary>
@@ -318,22 +322,22 @@ namespace FidelityFX
         /// It does not refer to a valid texture, therefore any variable set to this value should be checked for IsValid and reassigned before being bound to a shader.
         /// </summary>
         public static readonly ResourceView Unassigned = new ResourceView(default);
-            
+
         /// <summary>
         /// This value contains a valid texture reference that can be bound to a shader, however it is just an empty placeholder texture.
         /// Binding this to a shader can be seen as setting the texture variable inside the shader to null.
         /// </summary>
         public static readonly ResourceView None = new ResourceView(BuiltinRenderTextureType.None);
-            
+
         public ResourceView(in RenderTargetIdentifier renderTarget, RenderTextureSubElement subElement = RenderTextureSubElement.Default, int mipLevel = 0)
         {
             RenderTarget = renderTarget;
             SubElement = subElement;
             MipLevel = mipLevel;
         }
-            
+
         public bool IsValid => !RenderTarget.Equals(default);
-            
+
         public readonly RenderTargetIdentifier RenderTarget;
         public readonly RenderTextureSubElement SubElement;
         public readonly int MipLevel;

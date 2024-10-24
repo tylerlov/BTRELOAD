@@ -13,7 +13,6 @@ namespace TND.FSR
     public class FSR3_URP : FSR3_BASE
     {
         //Rendertextures
-        private RTHandleSystem RTHandleS;
         public RTHandle m_opaqueOnlyColorBuffer;
         public RTHandle m_afterOpaqueOnlyColorBuffer;
         public RTHandle m_reactiveMaskOutput;
@@ -38,14 +37,12 @@ namespace TND.FSR
         public Fsr3UpscalerContext[] m_context;
         private Fsr3UpscalerAssets m_assets;
 
-
-
         public bool m_cameraStacking = false;
         public Camera m_topCamera;
         private int m_prevCameraStackCount;
         private bool m_isBaseCamera;
         private List<FSR3_URP> m_prevCameraStack = new List<FSR3_URP>();
-        private FSR_Quality m_prevStackQuality = (FSR_Quality)(-1);
+        private FSR3_Quality m_prevStackQuality = (FSR3_Quality)(-1);
 
         private int prevDisplayWidth, prevDisplayHeight;
 
@@ -130,16 +127,16 @@ namespace TND.FSR
                 m_displayHeight = (int)(XRSettings.eyeTextureHeight / XRSettings.eyeTextureResolutionScale);
             }
 
-            m_fsrOutput = RTHandleS.Alloc(m_displayWidth, m_displayHeight, enableRandomWrite: true, colorFormat: m_graphicsFormat, msaaSamples: MSAASamples.None, name: "FSR OUTPUT");
+            m_fsrOutput = RTHandles.Alloc(m_displayWidth, m_displayHeight, enableRandomWrite: true, colorFormat: m_graphicsFormat, msaaSamples: MSAASamples.None, name: "FSR OUTPUT");
 
             m_dispatchDescription.RenderSize = new Vector2Int(m_renderWidth, m_renderHeight);
             m_dispatchDescription.Output = new ResourceView(m_fsrOutput);
 
             if (generateReactiveMask)
             {
-                m_opaqueOnlyColorBuffer = RTHandleS.Alloc(m_renderWidth, m_renderHeight, enableRandomWrite: false, colorFormat: m_graphicsFormat, msaaSamples: MSAASamples.None, name: "OPAQUE ONLY BUFFER");
-                m_afterOpaqueOnlyColorBuffer = RTHandleS.Alloc(m_renderWidth, m_renderHeight, enableRandomWrite: false, colorFormat: m_graphicsFormat, msaaSamples: MSAASamples.None, name: "AFTER OPAQUE ONLY BUFFER");
-                m_reactiveMaskOutput = RTHandleS.Alloc(m_renderWidth, m_renderHeight, enableRandomWrite: true, colorFormat: m_graphicsFormat, msaaSamples: MSAASamples.None, name: "FSR REACTIVE MASK OUTPUT");
+                m_opaqueOnlyColorBuffer = RTHandles.Alloc(m_renderWidth, m_renderHeight, enableRandomWrite: false, colorFormat: m_graphicsFormat, msaaSamples: MSAASamples.None, name: "OPAQUE ONLY BUFFER");
+                m_afterOpaqueOnlyColorBuffer = RTHandles.Alloc(m_renderWidth, m_renderHeight, enableRandomWrite: false, colorFormat: m_graphicsFormat, msaaSamples: MSAASamples.None, name: "AFTER OPAQUE ONLY BUFFER");
+                m_reactiveMaskOutput = RTHandles.Alloc(m_renderWidth, m_renderHeight, enableRandomWrite: true, colorFormat: m_graphicsFormat, msaaSamples: MSAASamples.None, name: "FSR REACTIVE MASK OUTPUT");
 
                 m_genReactiveDescription.ColorOpaqueOnly = new ResourceView(m_opaqueOnlyColorBuffer);
                 m_genReactiveDescription.ColorPreUpscale = new ResourceView(m_afterOpaqueOnlyColorBuffer);
@@ -345,7 +342,7 @@ namespace TND.FSR
             jitterY += UnityEngine.Random.Range(-0.0001f * antiGhosting, 0.0001f * antiGhosting);
 
             m_usePhysicalProperties = m_mainCamera.usePhysicalProperties;
-             
+
             if (m_mainCamera.stereoEnabled)
             {
                 // We only need to configure all of this once for stereo, during OnPreCull
@@ -367,7 +364,7 @@ namespace TND.FSR
             var m_projectionMatrix = camera.projectionMatrix;
             camera.nonJitteredProjectionMatrix = m_projectionMatrix;
             camera.projectionMatrix = jitterTranslationMatrix * camera.nonJitteredProjectionMatrix;
-            camera.useJitteredProjectionMatrixForTransparentRendering = false;
+            camera.useJitteredProjectionMatrixForTransparentRendering = true;
         }
 
         /// <summary>
@@ -391,7 +388,7 @@ namespace TND.FSR
             // jitter has to be scaled for the actual eye texture size, not just the intermediate texture size
             // which could be double-wide in certain stereo rendering scenarios
             //jitter = new Vector2(jitter.x / context.screenWidth, jitter.y / context.screenHeight);
-            camera.useJitteredProjectionMatrixForTransparentRendering = false;
+            camera.useJitteredProjectionMatrixForTransparentRendering = true;
         }
 
         /// <summary>
@@ -470,9 +467,6 @@ namespace TND.FSR
             m_previousHDR = m_autoHDR;
 
             m_prevGraphicsFormat = m_graphicsFormat;
-
-            RTHandleS = new RTHandleSystem();
-            RTHandleS.Initialize(m_displayWidth, m_displayHeight);
 
             Fsr3.InitializationFlags flags = Fsr3.InitializationFlags.EnableMotionVectorsJitterCancellation
                                            | Fsr3.InitializationFlags.EnableHighDynamicRange
@@ -572,7 +566,7 @@ namespace TND.FSR
             }
             CleanupOverlayCameras();
             m_previousScaleFactor = -1;
-            m_prevStackQuality = (FSR_Quality)(-1);
+            m_prevStackQuality = (FSR3_Quality)(-1);
 
             if (m_fsrOutput != null)
             {

@@ -1,15 +1,22 @@
 using System;
-using System.Runtime.CompilerServices;
+//using System.Runtime.CompilerServices;
 
 using UnityEngine;
 using FidelityFX;
 
-//[assembly: InternalsVisibleTo("com.thenakeddev.fsr.Runtime.BIRP")]
-//[assembly: InternalsVisibleTo("com.thenakeddev.fsr.Runtime.URP")]
-//[assembly: InternalsVisibleTo("com.thenakeddev.fsr.Runtime.HDRP")]
-
 namespace TND.FSR 
 {
+    public enum FSR3_Quality
+    {
+        Off = 0,
+        NativeAA = 1,
+        UltraQuality = 2,
+        Quality = 3,
+        Balanced = 4,
+        Performance = 5,
+        UltraPerformance = 6,
+    }
+
     /// <summary>
     /// Base script for FSR
     /// </summary>
@@ -17,7 +24,7 @@ namespace TND.FSR
     public abstract class FSR3_BASE : MonoBehaviour
     {
         //Public Variables
-        public FSR_Quality FSRQuality = FSR_Quality.Balanced;
+        public FSR3_Quality FSRQuality = FSR3_Quality.Balanced;
         [Range(0, 1)]
         public float antiGhosting = 0.0f;
         public static float FSRScaleFactor;
@@ -51,15 +58,15 @@ namespace TND.FSR
 
         //Protected Variables
         protected bool m_fsrInitialized = false;
-        protected Camera m_mainCamera;
+        public Camera m_mainCamera;
 
         protected float m_scaleFactor = 1.5f;
         protected int m_renderWidth, m_renderHeight;
-        protected int m_displayWidth, m_displayHeight;
+        public int m_displayWidth, m_displayHeight;
 
         protected float m_nearClipPlane, m_farClipPlane, m_fieldOfView;
 
-        protected FSR_Quality m_previousFsrQuality;
+        protected FSR3_Quality m_previousFsrQuality;
         protected bool m_previousHDR;
 
         protected bool m_previousReactiveMask;
@@ -81,29 +88,32 @@ namespace TND.FSR
         /// Set FSR Quality settings.
         /// Quality = 1.5, Balanced = 1.7, Performance = 2, Ultra Performance = 3
         /// </summary>
-        public void OnSetQuality(FSR_Quality value) {
+        public void OnSetQuality(FSR3_Quality value) {
             m_previousFsrQuality = value;
             FSRQuality = value;
 
-            if(value == FSR_Quality.Off) {
+            if(value == FSR3_Quality.Off) {
                 Initialize();
                 DisableFSR();
                 m_scaleFactor = 1;
             } else {
                 switch(value) {
-                    case FSR_Quality.TemporalAntiAliasingOnly:
+                    case FSR3_Quality.NativeAA:
                         m_scaleFactor = 1.0f;
                         break;
-                    case FSR_Quality.Quality:
+                    case FSR3_Quality.UltraQuality:
+                        m_scaleFactor = 1.2f;
+                        break;
+                    case FSR3_Quality.Quality:
                         m_scaleFactor = 1.5f;
                         break;
-                    case FSR_Quality.Balanced:
+                    case FSR3_Quality.Balanced:
                         m_scaleFactor = 1.7f;
                         break;
-                    case FSR_Quality.Performance:
+                    case FSR3_Quality.Performance:
                         m_scaleFactor = 2.0f;
                         break;
-                    case FSR_Quality.UltraPerformance:
+                    case FSR3_Quality.UltraPerformance:
                         m_scaleFactor = 3.0f;
                         break;
                 }

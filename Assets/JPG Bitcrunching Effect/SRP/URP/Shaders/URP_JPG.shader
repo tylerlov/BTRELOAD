@@ -18,8 +18,9 @@
     TEXTURE2D_X(_PrevScreen);
     TEXTURE2D_X(_CameraDepthTexture);
     TEXTURE2D_X(_MotionVectorTexture);
-    SAMPLER(sampler_LinearClamp);
-    SAMPLER(sampler_PointClamp);
+    // Remove these two lines since they're already defined in URP
+    // SAMPLER(sampler_LinearClamp);
+    // SAMPLER(sampler_PointClamp);
 
     CBUFFER_START(FrequentlyUpdatedUniforms)
     float4 _Screen_TexelSize;

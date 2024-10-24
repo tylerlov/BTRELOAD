@@ -94,7 +94,7 @@ namespace FluffyUnderware.Curvy.Generator
         /// <param name="material">The collider's material</param>
         /// <param name="meshCookingOptions">Used only when mode is CGColliderEnum.Mesh</param>
         /// <returns></returns>
-        public bool UpdateCollider(CGColliderEnum mode, bool convex, bool isTrigger, PhysicMaterial material
+        public bool UpdateCollider(CGColliderEnum mode, bool convex, bool isTrigger, PhysicsMaterial material
             , MeshColliderCookingOptions meshCookingOptions = EverMeshColliderCookingOptions
             )
         {

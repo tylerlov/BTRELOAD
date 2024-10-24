@@ -1,8 +1,4 @@
 ﻿using UnityEngine;
-using System.Collections;
-using System;
-using UnityEngine.UI;
-using MoreMountains.Tools;
 
 namespace MoreMountains.Tools
 {
@@ -11,11 +7,11 @@ namespace MoreMountains.Tools
 	/// </summary>
 	[RequireComponent(typeof(CanvasGroup))]
 	[AddComponentMenu("More Mountains/Tools/GUI/MMFaderRound")]
-	public class MMFaderRound : MonoBehaviour, MMEventListener<MMFadeEvent>, MMEventListener<MMFadeInEvent>, MMEventListener<MMFadeOutEvent>, MMEventListener<MMFadeStopEvent>
+	public class MMFaderRound : MMMonoBehaviour, MMEventListener<MMFadeEvent>, MMEventListener<MMFadeInEvent>, MMEventListener<MMFadeOutEvent>, MMEventListener<MMFadeStopEvent>
 	{
 		public enum CameraModes { Main, Override }
 
-		[Header("Bindings")]
+		[MMInspectorGroup("Bindings", true, 121)] 
 		public CameraModes CameraMode = CameraModes.Main;
 		[MMEnumCondition("CameraMode",(int)CameraModes.Override)]
 		/// the camera to pick the position from (usually the "regular" game camera)
@@ -25,34 +21,34 @@ namespace MoreMountains.Tools
 		/// the mask used to draw a hole in the background that will get faded / scaled
 		public RectTransform FaderMask;
 
-		[Header("Identification")]
+		[MMInspectorGroup("Identification", true, 122)] 
 		/// the ID for this fader (0 is default), set more IDs if you need more than one fader
 		public int ID;
-		[Header("Mask")]
+		
+		[MMInspectorGroup("Mask", true, 127)]
 		[MMVector("min", "max")]
 		/// the mask's scale at minimum and maximum opening
 		public Vector2 MaskScale;
-		[Header("Timing")]
+		
+		[MMInspectorGroup("Timing", true, 124)]
 		/// the default duration of the fade in/out
 		public float DefaultDuration = 0.2f;
 		/// the default curve to use for this fader
 		public MMTweenType DefaultTween = new MMTweenType(MMTween.MMTweenCurve.LinearTween);
 		/// whether or not the fade should happen in unscaled time 
 		public bool IgnoreTimescale = true;
-		[Header("Interaction")]
+		
+		[MMInspectorGroup("Interaction", true, 125)]
 		/// whether or not the fader should block raycasts when visible
 		public bool ShouldBlockRaycasts = false;
-		[Header("Debug")]
+		
+		[MMInspectorGroup("Debug", true, 126)]
 		public Transform DebugWorldPositionTarget;
-		[MMInspectorButton("FadeIn1Second")]
-		public bool FadeIn1SecondButton;
-		[MMInspectorButton("FadeOut1Second")]
-		public bool FadeOut1SecondButton;
-		[MMInspectorButton("DefaultFade")]
-		public bool DefaultFadeButton;
-		[MMInspectorButton("ResetFader")]
-		public bool ResetFaderButton;
-
+		[MMInspectorButtonBar(new string[] { "FadeIn1Second", "FadeOut1Second", "DefaultFade", "ResetFader" }, 
+			new string[] { "FadeIn1Second", "FadeOut1Second", "DefaultFade", "ResetFader" }, 
+			new bool[] { true, true, true, true },
+			new string[] { "main-call-to-action", "", "", "" })]
+		public bool DebugToolbar;
 		protected CanvasGroup _canvasGroup;
 
 		protected float _initialScale;

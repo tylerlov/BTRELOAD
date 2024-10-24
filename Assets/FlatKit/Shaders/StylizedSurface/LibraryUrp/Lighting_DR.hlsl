@@ -2,6 +2,7 @@
 #define FLATKIT_LIGHTING_DR_INCLUDED
 
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
+#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
 inline half NdotLTransition(half3 normal, half3 lightDir, half selfShadingSize, half shadowEdgeSize, half flatness) {
     const half NdotL = dot(normal, lightDir);
@@ -157,7 +158,7 @@ half4 UniversalFragment_DSTRM(InputData inputData, half3 albedo, half3 emission,
 #endif
 
     BRDFData brdfData;
-    InitializeBRDFData(albedo, 1.0 - 1.0 / kDieletricSpec.a, 0, 0, alpha, brdfData);
+    InitializeBRDFData(albedo, 1.0 - 1.0 / 1.5, 0, 0, alpha, brdfData);
     half3 color = GlobalIllumination(brdfData, inputData.bakedGI, 1.0, inputData.normalWS, inputData.viewDirectionWS);
     color += LightingPhysicallyBased_DSTRM(mainLight, inputData.normalWS, inputData.viewDirectionWS, inputData.positionWS);
 

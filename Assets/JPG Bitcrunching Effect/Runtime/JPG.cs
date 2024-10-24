@@ -53,7 +53,7 @@ namespace JPG
 
         void CheckParameters()
         {
-            if (GraphicsSettings.renderPipelineAsset != null)
+            if (GraphicsSettings.defaultRenderPipeline != null)
             {
                 Debug.LogWarning("Please follow the SRP usage instructions.");
                 enabled = false;

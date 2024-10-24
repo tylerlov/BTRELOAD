@@ -4,8 +4,8 @@ using UnityEngine.Rendering.Universal;
 
 public class CustomRenderPass : ScriptableRenderPass
 {
-    RenderTargetIdentifier source;
-    RenderTargetHandle destination;
+    RTHandle source;
+    RTHandle destination;
 
     CustomRenderPassFeature.CustomRenderPassSettings settings;
 
@@ -23,8 +23,9 @@ public class CustomRenderPass : ScriptableRenderPass
 
     public override void OnCameraSetup(CommandBuffer cmd, ref RenderingData renderingData)
     {
-        source = renderingData.cameraData.renderer.cameraColorTarget;
-        cmd.GetTemporaryRT(destination.id, renderingData.cameraData.cameraTargetDescriptor);
+        // Use cameraColorTargetHandle instead of cameraColorTarget
+        source = renderingData.cameraData.renderer.cameraColorTargetHandle;
+        destination = RTHandles.Alloc(renderingData.cameraData.cameraTargetDescriptor, name: "CustomRenderPassDestination");
     }
 
     // Here you can implement the rendering logic.
@@ -36,8 +37,9 @@ public class CustomRenderPass : ScriptableRenderPass
     {
         CommandBuffer cmd = CommandBufferPool.Get();
 
-        cmd.Blit(source, destination.Identifier(), settings.material, 0);
-        cmd.Blit(destination.Identifier(), source);
+        // Use Blitter.BlitCameraTexture instead of cmd.Blit for RTHandle compatibility
+        Blitter.BlitCameraTexture(cmd, source, destination, settings.material, 0);
+        Blitter.BlitCameraTexture(cmd, destination, source);
 
         context.ExecuteCommandBuffer(cmd);
         CommandBufferPool.Release(cmd);
@@ -47,8 +49,9 @@ public class CustomRenderPass : ScriptableRenderPass
 
     public override void OnCameraCleanup(CommandBuffer cmd)
     {
-        cmd.ReleaseTemporaryRT(destination.id);
+        destination?.Release();
     }
 }
+
 
 

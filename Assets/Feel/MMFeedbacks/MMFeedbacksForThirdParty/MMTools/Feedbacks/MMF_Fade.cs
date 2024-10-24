@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿#if MM_UI
+using UnityEngine;
 using MoreMountains.Tools;
 using UnityEngine.Scripting.APIUpdating;
 using UnityEngine.UI;
@@ -70,6 +71,11 @@ namespace MoreMountains.Feedbacks
 		[Tooltip("the position offset to apply when centering the fade")]
 		public Vector3 PositionOffset;
 
+		[Header("Optional Target")] 
+		/// this field lets you bind a specific MMFader to this feedback. If left empty, the feedback will trigger a MMFadeEvent instead, targeting all matching faders. If you fill it, only that specific fader will be targeted.
+		[Tooltip("this field lets you bind a specific MMFader to this feedback. If left empty, the feedback will trigger a MMFadeEvent instead, targeting all matching faders. If you fill it, only that specific fader will be targeted.")]
+		public MMFader TargetFader;
+
 		/// the duration of this feedback is the duration of the fade
 		public override float FeedbackDuration { get { return ApplyTimeMultiplier(Duration); } set { Duration = value;  } }
 
@@ -101,17 +107,36 @@ namespace MoreMountains.Feedbacks
 					_fadeType = FadeTypes.FadeIn;
 				}
 			}
-			switch (_fadeType)
+
+			if (TargetFader != null)
 			{
-				case FadeTypes.Custom:
-					MMFadeEvent.Trigger(FeedbackDuration, TargetAlpha, Curve, ID, IgnoreTimeScale, _position);
-					break;
-				case FadeTypes.FadeIn:
-					MMFadeInEvent.Trigger(FeedbackDuration, Curve, ID, IgnoreTimeScale, _position);
-					break;
-				case FadeTypes.FadeOut:
-					MMFadeOutEvent.Trigger(FeedbackDuration, Curve, ID, IgnoreTimeScale, _position);
-					break;
+				switch (_fadeType)
+				{
+					case FadeTypes.Custom:
+						TargetFader.Fade(TargetAlpha, FeedbackDuration, Curve, IgnoreTimeScale);
+						break;
+					case FadeTypes.FadeIn:
+						TargetFader.FadeIn(FeedbackDuration, Curve, IgnoreTimeScale);
+						break;
+					case FadeTypes.FadeOut:
+						TargetFader.FadeOut(FeedbackDuration, Curve, IgnoreTimeScale);
+						break;
+				}
+			}
+			else
+			{
+				switch (_fadeType)
+				{
+					case FadeTypes.Custom:
+						MMFadeEvent.Trigger(FeedbackDuration, TargetAlpha, Curve, ID, IgnoreTimeScale, _position);
+						break;
+					case FadeTypes.FadeIn:
+						MMFadeInEvent.Trigger(FeedbackDuration, Curve, ID, IgnoreTimeScale, _position);
+						break;
+					case FadeTypes.FadeOut:
+						MMFadeOutEvent.Trigger(FeedbackDuration, Curve, ID, IgnoreTimeScale, _position);
+						break;
+				}
 			}
 		}
 
@@ -194,3 +219,4 @@ namespace MoreMountains.Feedbacks
 		}
 	}
 }
+#endif

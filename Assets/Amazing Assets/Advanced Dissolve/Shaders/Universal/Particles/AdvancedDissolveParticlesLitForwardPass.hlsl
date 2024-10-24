@@ -163,8 +163,9 @@ float4 AD_CutoutSource = 0;
 
     InputData inputData;
     InitializeInputData(input, surfaceData.normalTS, inputData);
-    SETUP_DEBUG_TEXTURE_DATA(inputData, input.texcoord, _BaseMap);
 
+// Remove or comment out the following line:
+// SETUP_DEBUG_TEXTURE_DATA(inputData, input.texcoord, _BaseMap);
 
 //Advanced Dissolve/////////////////////////////////////////
 #if defined(_AD_STATE_ENABLED)

@@ -19,7 +19,7 @@ public class FlatKitFog : ScriptableRendererFeature {
 
     private BlitTexturePass _blitTexturePass;
 
-    private RenderTargetHandle _fogTexture;
+    private RTHandle _fogTexture;
 
     private Texture2D _lutDepth;
     private Texture2D _lutHeight;
@@ -52,7 +52,8 @@ public class FlatKitFog : ScriptableRendererFeature {
             renderPassEvent = settings.renderEvent
         };
 
-        _fogTexture.Init("_EffectTexture");
+        // Update this line
+        _fogTexture = RTHandles.Alloc(Vector2.one, TextureXR.slices, dimension: TextureDimension.Tex2D, name: "_EffectTexture");
     }
 
     public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData) {
@@ -78,6 +79,7 @@ public class FlatKitFog : ScriptableRendererFeature {
     protected override void Dispose(bool disposing) {
         CoreUtils.Destroy(_effectMaterial);
         CoreUtils.Destroy(_copyMaterial);
+        _fogTexture?.Release();
     }
 #endif
 

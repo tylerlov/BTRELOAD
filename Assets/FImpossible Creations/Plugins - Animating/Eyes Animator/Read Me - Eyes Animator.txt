@@ -1,7 +1,7 @@
 ﻿__________________________________________________________________________________________
 
 Package "Eyes Animator"
-Version 2.0.3.2
+Version 2.0.3.3
 
 Made by FImpossible Creations - Filip Moeglich
 https://www.FilipMoeglich.pl
@@ -41,6 +41,9 @@ Main features:
 
 __________________________________________________________________________________________
 Changelog:
+
+v2.0.3.3
+- Moved 'auto find' methods from editor to runtime plugin
 
 v2.0.3.2
 - added possiblity to use additional blenshapes for blinking

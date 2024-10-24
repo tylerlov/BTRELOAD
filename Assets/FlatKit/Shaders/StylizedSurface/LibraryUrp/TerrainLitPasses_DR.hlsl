@@ -65,19 +65,20 @@ half4 SplatmapFragment_DSTRM(Varyings IN) : SV_TARGET
     InitializeInputData(IN, normalTS, inputData);
 
 #if VERSION_GREATER_EQUAL(12, 1)
-    SETUP_DEBUG_TEXTURE_DATA(inputData, IN.uvMainAndLM.xy, _BaseMap);
+    // Remove the SETUP_DEBUG_TEXTURE_DATA macro call
+    // SETUP_DEBUG_TEXTURE_DATA(inputData, IN.uvMainAndLM.xy, _BaseMap);
 #endif
 
-    #if defined(_DBUFFER)
-    half3 specular = half3(0.0h, 0.0h, 0.0h);
-    ApplyDecal(IN.clipPos,
-        albedo,
-        specular,
-        inputData.normalWS,
-        metallic,
-        occlusion,
-        smoothness);
-    #endif
+#if defined(_DBUFFER)
+half3 specular = half3(0.0h, 0.0h, 0.0h);
+ApplyDecal(IN.clipPos,
+    albedo,
+    specular,
+    inputData.normalWS,
+    metallic,
+    occlusion,
+    smoothness);
+#endif
 
 #ifdef TERRAIN_GBUFFER
 

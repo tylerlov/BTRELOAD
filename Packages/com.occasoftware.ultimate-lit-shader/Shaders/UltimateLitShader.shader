@@ -37,6 +37,11 @@ Shader"OccaSoftware/UltimateLitShader"
         [Enum(UnityEngine.Rendering.CompareFunction)] _ZTest("Depth Test", Float) = 4 // Default to "LEqual"
         [Enum(UnityEngine.Rendering.CullMode)] _Culling ("Culling", Float) = 2 // Default to "Cull Back"
 
+        // Add these properties near the start of the Properties block
+        [Toggle(_EXCLUDE_FROM_JPG)] _ExcludeFromJPG("Exclude from JPG", Float) = 0
+        _QueueOffset("Queue offset", Float) = 10.0
+
+
         
 
         ////////////////////////
@@ -142,8 +147,13 @@ Shader"OccaSoftware/UltimateLitShader"
     
     SubShader
     {
-        Tags { "RenderType"="Opaque" "RenderPipeline"="UniversalPipeline" }
-        
+        // Modify the Tags line to be conditional based on _ExcludeFromJPG
+        Tags 
+        { 
+            "RenderPipeline"="UniversalPipeline" 
+            "Queue"="Geometry"  // Default queue
+            "RenderType"="Opaque"
+        }
         
         Pass
         {
@@ -157,6 +167,9 @@ Shader"OccaSoftware/UltimateLitShader"
             ZClip Off
             
             HLSLPROGRAM
+
+            // Add this with the other pragma directives in the ForwardLit pass
+            #pragma shader_feature_local _ExcludeFromJPG
 
 
             // Render Paths
@@ -198,6 +211,9 @@ Shader"OccaSoftware/UltimateLitShader"
             
             #pragma vertex Vert
             #pragma fragment Frag
+
+            
+
             
             #include "UltimateLitPass.hlsl"
             ENDHLSL

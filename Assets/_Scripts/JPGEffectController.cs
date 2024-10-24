@@ -35,11 +35,22 @@ public class JPGEffectController : MonoBehaviour
         if (globalVolume != null && globalVolume.profile.TryGet(out JPG.Universal.JPG effect))
         {
             jpgEffect = effect;
+            // Remove any default override that might reset the value
+            if (jpgEffect.EffectIntensity.overrideState)
+            {
+                float currentValue = jpgEffect.EffectIntensity.value;
+                jpgEffect.EffectIntensity.Override(currentValue);
+            }
         }
         else
         {
             Debug.LogError("JPG effect not found in the global volume profile.");
         }
+    }
+
+    public float GetCurrentIntensity()
+    {
+        return jpgEffect != null ? jpgEffect.EffectIntensity.value : 0f;
     }
 
     public void SetJPGIntensity(float targetIntensity, float duration)

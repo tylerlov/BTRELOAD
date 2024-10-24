@@ -69,7 +69,7 @@ public class ProjectileMovement
             }
             else
             {
-                _projectile.rb.velocity = _currentVelocity;
+                _projectile.rb.linearVelocity = _currentVelocity;
             }
         }
     }

@@ -1,7 +1,7 @@
 using UnityEngine;
-using Cinemachine;
+using Unity.Cinemachine;
 
-[ExecuteInEditMode]
+[ExecuteAlways]
 [SaveDuringPlay]
 [AddComponentMenu("")]
 public class CinemachineColliderExtension : CinemachineExtension
@@ -24,25 +24,24 @@ public class CinemachineColliderExtension : CinemachineExtension
         if (stage == CinemachineCore.Stage.Body)
         {
             Vector3 displacement = ResolveCameraCollisions(state);
-            state.PositionCorrection += displacement;
+            state.RawPosition += displacement;
         }
     }
 
     private Vector3 ResolveCameraCollisions(CameraState state)
     {
-        Vector3 cameraPosition = state.CorrectedPosition;
+        Vector3 cameraPosition = state.RawPosition;
         Vector3 lookAtPosition = state.ReferenceLookAt;
-        Vector3 cameraForward = state.CorrectedOrientation * Vector3.forward;
+        Vector3 cameraForward = state.RawOrientation * Vector3.forward;
 
         Vector3 displacement = Vector3.zero;
 
         // Check for collisions
-        RaycastHit hit;
         if (Physics.SphereCast(
             lookAtPosition,
-            0.2f, // Adjust this radius as needed
+             0.2f, // Adjust this radius as needed
             cameraForward,
-            out hit,
+            out RaycastHit hit,
             Vector3.Distance(lookAtPosition, cameraPosition),
             ~ignoreLayerMask,
             QueryTriggerInteraction.Ignore))

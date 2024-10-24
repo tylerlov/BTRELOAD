@@ -295,11 +295,11 @@ namespace GPUInstancer
                         {
                             rigidbody = prefabPrototype.prefabObject.AddComponent<Rigidbody>();
                             rigidbody.useGravity = rigidbodyData.useGravity;
-                            rigidbody.angularDrag = rigidbodyData.angularDrag;
+                            rigidbody.angularDamping = rigidbodyData.angularDrag;
                             rigidbody.mass = rigidbodyData.mass;
                             rigidbody.constraints = rigidbodyData.constraints;
                             rigidbody.detectCollisions = true;
-                            rigidbody.drag = rigidbodyData.drag;
+                            rigidbody.linearDamping = rigidbodyData.drag;
                             rigidbody.isKinematic = rigidbodyData.isKinematic;
                             rigidbody.interpolation = rigidbodyData.interpolation;
                         }
@@ -449,10 +449,10 @@ namespace GPUInstancer
                     if (prototype.rigidbodyData == null)
                         prototype.rigidbodyData = new GPUInstancerPrefabPrototype.RigidbodyData();
                     prototype.rigidbodyData.useGravity = rigidbody.useGravity;
-                    prototype.rigidbodyData.angularDrag = rigidbody.angularDrag;
+                    prototype.rigidbodyData.angularDrag = rigidbody.angularDamping;
                     prototype.rigidbodyData.mass = rigidbody.mass;
                     prototype.rigidbodyData.constraints = rigidbody.constraints;
-                    prototype.rigidbodyData.drag = rigidbody.drag;
+                    prototype.rigidbodyData.drag = rigidbody.linearDamping;
                     prototype.rigidbodyData.isKinematic = rigidbody.isKinematic;
                     prototype.rigidbodyData.interpolation = rigidbody.interpolation;
                 }

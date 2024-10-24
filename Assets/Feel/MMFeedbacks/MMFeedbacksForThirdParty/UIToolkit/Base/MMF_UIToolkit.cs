@@ -5,7 +5,6 @@ using MoreMountains.Feedbacks;
 using UnityEngine;
 using UnityEngine.Serialization;
 using UnityEngine.UIElements;
-using Image = UnityEngine.UI.Image;
 
 namespace MoreMountains.FeedbacksForThirdParty
 {

@@ -170,7 +170,7 @@ namespace FluffyUnderware.Curvy.Generator.Modules
         [FieldCondition(nameof(CanUpdate), true, false, ConditionalAttribute.OperatorEnum.AND, "m_Collider", CGColliderEnum.None, true, Action = ConditionalAttribute.ActionEnum.Enable)]
 #endif
         [SerializeField]
-        private PhysicMaterial m_Material;
+        private PhysicsMaterial m_Material;
 
         #endregion
 
@@ -478,7 +478,7 @@ namespace FluffyUnderware.Curvy.Generator.Modules
             }
         }
 
-        public PhysicMaterial Material
+        public PhysicsMaterial Material
         {
             get { return m_Material; }
             set

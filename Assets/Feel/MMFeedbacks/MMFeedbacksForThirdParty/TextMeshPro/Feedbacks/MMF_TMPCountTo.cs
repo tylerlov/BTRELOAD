@@ -71,6 +71,7 @@ namespace MoreMountains.Feedbacks
 		protected float _startTime;
 		protected float _lastRefreshAt;
 		protected string _initialText;
+		protected Coroutine _coroutine;
         
 		/// <summary>
 		/// On play we change the text of our target TMPText over time
@@ -92,7 +93,7 @@ namespace MoreMountains.Feedbacks
 
 			_initialText = TargetTMPText.text;
 			#endif
-			Owner.StartCoroutine(CountCo());
+			_coroutine = Owner.StartCoroutine(CountCo());
 		}
 
 		/// <summary>
@@ -149,6 +150,22 @@ namespace MoreMountains.Feedbacks
 			float currentTime = FeedbackTime - _startTime;
 			float currentValue = MMTween.Tween(currentTime, 0f, Duration, CountFrom, CountTo, CountingCurve);
 			return currentValue;
+		}
+		
+		/// <summary>
+		/// On stop, we interrupt counting if it was active
+		/// </summary>
+		/// <param name="position"></param>
+		/// <param name="feedbacksIntensity"></param>
+		protected override void CustomStopFeedback(Vector3 position, float feedbacksIntensity = 1.0f)
+		{
+			if (!Active || !FeedbackTypeAuthorized || (_coroutine == null))
+			{
+				return;
+			}
+			IsPlaying = false;
+			Owner.StopCoroutine(_coroutine);
+			_coroutine = null;
 		}
 		
 		/// <summary>

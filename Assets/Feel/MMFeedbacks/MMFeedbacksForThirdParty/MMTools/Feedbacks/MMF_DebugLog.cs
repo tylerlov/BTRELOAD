@@ -36,7 +36,7 @@ namespace MoreMountains.Feedbacks
 		/// the message to display 
 		[Tooltip("the message to display")]
 		[TextArea] 
-		public string DebugMessage;
+		public string DebugMessage = "YOUR DEBUG MESSAGE GOES HERE";
 		/// the color of the message when in DebugLogTime mode
 		[Tooltip("the color of the message when in DebugLogTime mode")]
 		[MMFEnumCondition("DebugLogMode", (int) DebugLogModes.DebugLogTime)]

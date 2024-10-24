@@ -180,15 +180,15 @@ public class ProjectileStateBased : MonoBehaviour
 
     public bool isFromStaticEnemy = false;
 
-    [SerializeField] private bool isSoundEnabled = true;
-    [SerializeField] private EventReference movingSoundEvent;
+    // Add these fields if you want to control targeting range
+    [Header("Targeting")]
+    public float maxTargetingRange = 100f;  // How far it can see/track targets
+    public float minTargetingRange = 0f;    // Minimum range to start tracking
 
-    public bool IsSoundEnabled() => isSoundEnabled;
+    // Add this field instead
+    [SerializeField] private string soundEventPath; // Reference the FMOD event path as a string
 
-    public EventReference GetMovingSoundEvent()
-    {
-        return movingSoundEvent;
-    }
+    private FMOD.Studio.EventInstance soundInstance;
 
     private void Awake()
     {
@@ -254,6 +254,12 @@ public class ProjectileStateBased : MonoBehaviour
             ProjectileEffectManager.Instance.ReturnLockedFXToPool(currentLockedFX);
             currentLockedFX = null;
         }
+
+        // Only create sound instance if needed
+        if (!string.IsNullOrEmpty(soundEventPath) && soundInstance.isValid())
+        {
+            soundInstance = FMODUnity.RuntimeManager.CreateInstance(soundEventPath);
+        }
     }
 
     private void OnDisable()
@@ -262,6 +268,13 @@ public class ProjectileStateBased : MonoBehaviour
         if (!rb.isKinematic)
         {
             ProjectilePool.Instance.ReturnProjectile(this);
+        }
+
+        // Clean up sound instance
+        if (soundInstance.isValid())
+        {
+            soundInstance.stop(FMOD.Studio.STOP_MODE.IMMEDIATE);
+            soundInstance.release();
         }
     }
 
@@ -285,7 +298,7 @@ public class ProjectileStateBased : MonoBehaviour
             transform.rotation = Quaternion.RotateTowards(transform.rotation, Quaternion.LookRotation(directionToTarget), turnRate * Time.deltaTime * timeScale);
         }
 
-        ConditionalDebug.Log($"[ProjectileStateBased] ID: {GetInstanceID()}, State: {CurrentStateName}, Position: {transform.position}, Velocity: {rb.velocity}, TimeScale: {timeScale}");
+        ConditionalDebug.Log($"[ProjectileStateBased] ID: {GetInstanceID()}, State: {CurrentStateName}, Position: {transform.position}, Velocity: {rb.linearVelocity}, TimeScale: {timeScale}");
 
         currentState?.CustomUpdate(timeScale);
 
@@ -315,7 +328,7 @@ public class ProjectileStateBased : MonoBehaviour
         if (currentTarget != null)
         {
             transform.position = currentTarget.position;
-            rb.velocity = Vector3.zero;
+            rb.linearVelocity = Vector3.zero;
 
             Collider targetCollider = currentTarget.GetComponent<Collider>();
             if (targetCollider != null)
@@ -350,7 +363,7 @@ public class ProjectileStateBased : MonoBehaviour
         if (rb != null)
         {
             // Reset velocities before setting to kinematic
-            rb.velocity = Vector3.zero;
+            rb.linearVelocity = Vector3.zero;
             rb.angularVelocity = Vector3.zero;
             rb.isKinematic = true;
         }
@@ -457,7 +470,7 @@ public class ProjectileStateBased : MonoBehaviour
 
         // Draw a line in the direction of the projectile's velocity
         Gizmos.color = Color.cyan;
-        Gizmos.DrawLine(transform.position, transform.position + rb.velocity.normalized * 2f);
+        Gizmos.DrawLine(transform.position, transform.position + rb.linearVelocity.normalized * 2f);
     }
 
     public void OnPlayerRicochetDodge()
@@ -496,7 +509,7 @@ public class ProjectileStateBased : MonoBehaviour
             // Only reset velocities if needed
             if (!cachedRigidbody.isKinematic)
             {
-                cachedRigidbody.velocity = Vector3.zero;
+                cachedRigidbody.linearVelocity = Vector3.zero;
                 cachedRigidbody.angularVelocity = Vector3.zero;
             }
         }
@@ -580,32 +593,35 @@ public class ProjectileStateBased : MonoBehaviour
 
     public void UpdatePredictedPosition()
     {
-        if (currentTarget == null)
-            return;
-
-        // Calculate target velocity
-        Vector3 targetVelocity = Vector3.zero;
-        Rigidbody targetRb = currentTarget.GetComponent<Rigidbody>();
-        if (targetRb != null)
-        {
-            targetVelocity = targetRb.velocity;
-        }
-        else
-        {
-            // If no Rigidbody, estimate velocity based on position change
-            Vector3 currentTargetPosition = currentTarget.position;
-            targetVelocity = (currentTargetPosition - _lastTargetPosition) / Time.deltaTime;
-            _lastTargetPosition = currentTargetPosition;
-        }
+        if (currentTarget == null) return;
 
         float distanceToTarget = Vector3.Distance(transform.position, currentTarget.position);
-        float predictionTime = Mathf.Min(distanceToTarget / bulletSpeed, _maxTimePrediction);
+        
+        // Only update targeting if within range
+        if (distanceToTarget <= maxTargetingRange && distanceToTarget >= minTargetingRange)
+        {
+            // Calculate target velocity
+            Vector3 targetVelocity = Vector3.zero;
+            Rigidbody targetRb = currentTarget.GetComponent<Rigidbody>();
+            if (targetRb != null)
+            {
+                targetVelocity = targetRb.linearVelocity;
+            }
+            else
+            {
+                Vector3 currentTargetPosition = currentTarget.position;
+                targetVelocity = (currentTargetPosition - _lastTargetPosition) / Time.deltaTime;
+                _lastTargetPosition = currentTargetPosition;
+            }
 
-        predictedPosition = new ProjectileVector3(
-            currentTarget.position.x + targetVelocity.x * predictionTime,
-            currentTarget.position.y + targetVelocity.y * predictionTime,
-            currentTarget.position.z + targetVelocity.z * predictionTime
-        );
+            float predictionTime = Mathf.Min(distanceToTarget / bulletSpeed, _maxTimePrediction);
+
+            predictedPosition = new ProjectileVector3(
+                currentTarget.position.x + targetVelocity.x * predictionTime,
+                currentTarget.position.y + targetVelocity.y * predictionTime,
+                currentTarget.position.z + targetVelocity.z * predictionTime
+            );
+        }
     }
 
     public void LogProjectileHit(string hitObject)
@@ -642,6 +658,16 @@ public class ProjectileStateBased : MonoBehaviour
      public void Initialize()
     {
         creationTime = Time.time;
+        ResetForPool();
+        
+        // Ensure components are properly set up
+        if (rb == null) rb = GetComponent<Rigidbody>();
+        if (TLine == null) TLine = GetComponent<Timeline>();
+        
+        // Initialize state
+        ChangeState(new EnemyShotState(this));
+        
+        ConditionalDebug.Log($"Initialized projectile {GetInstanceID()}");
     }
 
     // Add this method to check if the projectile should be deactivated
@@ -653,7 +679,7 @@ public class ProjectileStateBased : MonoBehaviour
     public void ReturnToPool()
     {
         // Reset any necessary properties
-        rb.velocity = Vector3.zero;
+        rb.linearVelocity = Vector3.zero;
         transform.position = Vector3.zero;
         gameObject.SetActive(false);
 
@@ -676,7 +702,7 @@ public class ProjectileStateBased : MonoBehaviour
         if (rb != null)
         {
             rb.isKinematic = false;
-            rb.velocity = transform.forward * speed;
+            rb.linearVelocity = transform.forward * speed;
             rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
         }
         else
@@ -700,5 +726,11 @@ public class ProjectileStateBased : MonoBehaviour
 
         // Ensure the projectile is in the correct state
         ChangeState(new EnemyShotState(this, target));
+    }
+
+    void Update()
+    {
+        // Instead of managing FMOD events directly
+        ProjectileAudioManager.Instance.UpdateProjectileSound(transform.position, rb.linearVelocity.magnitude);
     }
 }

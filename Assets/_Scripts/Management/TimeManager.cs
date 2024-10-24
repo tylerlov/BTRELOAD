@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using Chronos;
 using UnityEngine;
@@ -21,6 +22,8 @@ public class TimeManager : MonoBehaviour
 
     private GlobalClock globalClock;
     private DebugSettings debugSettings;
+
+    public event Action<float> OnTimeScaleChanged;
 
     private void Awake()
     {
@@ -136,14 +139,18 @@ public class TimeManager : MonoBehaviour
         if (globalClock != null)
         {
             globalClock.localTimeScale = timeScale;
-            Debug.Log(
-                $"Time scale set to {timeScale} on global clock '{debugSettings.globalClockName}'"
-            );
+            OnTimeScaleChanged?.Invoke(timeScale);
+            Debug.Log($"Time scale set to {timeScale} on global clock '{debugSettings.globalClockName}'");
         }
         else
         {
             Debug.LogError("Global clock is not initialized. Cannot set time scale.");
         }
+    }
+
+    public float GetCurrentTimeScale()
+    {
+        return globalClock != null ? globalClock.localTimeScale : 1f;
     }
 
     public void SetDebugSettings(DebugSettings settings)

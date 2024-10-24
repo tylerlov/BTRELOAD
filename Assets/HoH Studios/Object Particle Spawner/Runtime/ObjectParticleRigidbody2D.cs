@@ -67,7 +67,7 @@ namespace HohStudios.Tools.ObjectParticleSpawner
                     var gravityVelocity = _physicsGravity * _gravityScale * deltaTime;
                     _rigidbody2D.AddForce((_rigidbodyMass *
                                            ((Vector2)particleInfo.GetWorldVelocity(spawner) -
-                                            (_rigidbody2D.velocity + gravityVelocity))) / deltaTime);
+                                            (_rigidbody2D.linearVelocity + gravityVelocity))) / deltaTime);
                 }
 
                 else // If the particle is not being updated, freeze the objects pos

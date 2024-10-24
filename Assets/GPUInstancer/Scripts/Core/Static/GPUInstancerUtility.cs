@@ -1960,11 +1960,11 @@ namespace GPUInstancer
 
                 float rotateAngle = 360f / prototype.billboard.frameCount;
 
-                RenderPipelineAsset renderPipelineAsset = GraphicsSettings.renderPipelineAsset;
+                RenderPipelineAsset renderPipelineAsset = GraphicsSettings.defaultRenderPipeline;
                 RenderPipelineAsset qualityPipelineAsset = QualitySettings.renderPipeline;
                 if (!GPUInstancerConstants.gpuiSettings.IsStandardRenderPipeline())
                 {
-                    GraphicsSettings.renderPipelineAsset = null;
+                    GraphicsSettings.defaultRenderPipeline = null;
                     QualitySettings.renderPipeline = null;
                 }
 
@@ -1982,7 +1982,7 @@ namespace GPUInstancer
                 }
                 if (!GPUInstancerConstants.gpuiSettings.IsStandardRenderPipeline())
                 {
-                    GraphicsSettings.renderPipelineAsset = renderPipelineAsset;
+                    GraphicsSettings.defaultRenderPipeline = renderPipelineAsset;
                     QualitySettings.renderPipeline = qualityPipelineAsset;
                 }
 

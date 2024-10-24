@@ -201,6 +201,8 @@ namespace MoreMountains.Feedbacks
 					FeedbacksList[i].Initialization(this, i);
 				}
 			}
+			
+			Events.TriggerOnInitializationComplete(this);
 
 			_initialized = true;
 		}
@@ -552,7 +554,7 @@ namespace MoreMountains.Feedbacks
 					if (GetTime() - _startTime > TotalDuration)
 					{
 						_shouldStop = true;
-					}    
+					}
 				}
 			}
 			else
@@ -611,7 +613,7 @@ namespace MoreMountains.Feedbacks
 				{
 					Events.TriggerOnPause(this);
 					// we stay here until all previous feedbacks have finished
-					while ((GetTime() - _lastStartAt < _holdingMax) && !SkippingToTheEnd)
+					while ((GetTime() - _lastStartAt < _holdingMax / TimescaleMultiplier) && !SkippingToTheEnd)
 					{
 						yield return null;
 					}
@@ -1093,9 +1095,10 @@ namespace MoreMountains.Feedbacks
 			int count = FeedbacksList.Count;
 			for (int i = 0; i < count; i++)
 			{
-				if ((FeedbacksList[i].IsPlaying 
+				if ((FeedbacksList[i].IsPlaying
 				     && !FeedbacksList[i].Timing.ExcludeFromHoldingPauses)
-				    || FeedbacksList[i].Timing.RepeatForever)
+				    || FeedbacksList[i].Timing.RepeatForever
+				    || ((FeedbacksList[i].Timing.NumberOfRepeats > 0) && (FeedbacksList[i].PlaysLeft > 0)))
 				{
 					return true;
 				}
@@ -1215,7 +1218,7 @@ namespace MoreMountains.Feedbacks
 		/// <returns></returns>
 		public override float ApplyTimeMultiplier(float duration)
 		{
-			return duration * Mathf.Clamp(DurationMultiplier, _smallValue, float.MaxValue) * _randomDurationMultiplier;
+			return duration * Mathf.Clamp(DurationMultiplier, _smallValue, float.MaxValue) * _randomDurationMultiplier / TimescaleMultiplier;
 		}
 
 		/// <summary>
@@ -1642,6 +1645,7 @@ namespace MoreMountains.Feedbacks
 				total += intermediateTotal;
 			}
 			_cachedTotalDuration = ComputedInitialDelay + total;
+			_cachedTotalDuration /= TimescaleMultiplier;
 		}
 
 		/// <summary>

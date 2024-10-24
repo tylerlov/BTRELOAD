@@ -344,14 +344,14 @@ public class ReadmeEditor : Editor {
 
         Debug.Log(
             $"<b>[{AssetName}]</b> Set the render pipeline asset in the Graphics settings to the {AssetName} example.");
-        GraphicsSettings.renderPipelineAsset = pipelineAsset;
+        GraphicsSettings.defaultRenderPipeline = pipelineAsset;
         GraphicsSettings.defaultRenderPipeline = pipelineAsset;
 
         ChangePipelineAssetAllQualityLevels(pipelineAsset);
     }
 
     private void ConfigureBuiltIn() {
-        GraphicsSettings.renderPipelineAsset = null;
+        GraphicsSettings.defaultRenderPipeline = null;
         Debug.Log($"<b>[{AssetName}]</b> Cleared the render pipeline asset in the Graphics settings.");
 
         ChangePipelineAssetAllQualityLevels(null);

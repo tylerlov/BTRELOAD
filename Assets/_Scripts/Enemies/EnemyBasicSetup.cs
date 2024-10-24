@@ -500,7 +500,7 @@ public class EnemyBasicSetup : BaseBehaviour, IDamageable, IAttackAgent
                 RuntimeManager.PlayOneShot(shootingSound2, cachedTransform.position);
             }
 
-            ConditionalDebug.Log($"[EnemyBasicSetup] Projectile successfully created and shot from {gameObject.name} at position {shootPosition} towards {playerTarget.name}. Projectile position: {projectile.transform.position}, Velocity: {projectile.rb?.velocity}, Target: {projectile.currentTarget}");
+            ConditionalDebug.Log($"[EnemyBasicSetup] Projectile successfully created and shot from {gameObject.name} at position {shootPosition} towards {playerTarget.name}. Projectile position: {projectile.transform.position}, Velocity: {projectile.rb?.linearVelocity}, Target: {projectile.currentTarget}");
         }
         else
         {

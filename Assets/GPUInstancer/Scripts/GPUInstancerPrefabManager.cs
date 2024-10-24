@@ -425,11 +425,11 @@ namespace GPUInstancer
                     {
                         rigidbody = prefabInstance.gameObject.AddComponent<Rigidbody>();
                         rigidbody.useGravity = rigidbodyData.useGravity;
-                        rigidbody.angularDrag = rigidbodyData.angularDrag;
+                        rigidbody.angularDamping = rigidbodyData.angularDrag;
                         rigidbody.mass = rigidbodyData.mass;
                         rigidbody.constraints = rigidbodyData.constraints;
                         rigidbody.detectCollisions = true;
-                        rigidbody.drag = rigidbodyData.drag;
+                        rigidbody.linearDamping = rigidbodyData.drag;
                         rigidbody.isKinematic = rigidbodyData.isKinematic;
                         rigidbody.interpolation = rigidbodyData.interpolation;
                     }

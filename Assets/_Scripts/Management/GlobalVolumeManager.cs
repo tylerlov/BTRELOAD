@@ -51,12 +51,13 @@ public class GlobalVolumeManager : MonoBehaviour
     {
         if (jpgEffect != null)
         {
+            float currentValue = jpgEffect.EffectIntensity.value;
             Tween.Custom(
-                1f,
-                0f,
+                1f,              // start at 1
+                currentValue,    // end at current value instead of 0
                 duration,
                 onValueChange: v => jpgEffect.EffectIntensity.Override(v)
-            ); // Updated property name
+            );
         }
     }
 }

@@ -66,13 +66,13 @@ Varyings LitPassVertex(Attributes input)
     #endif
 
     #if UNITY_VERSION >= 202318
-    OUTPUT_SH4(vertexInput.positionWS, output.normalWS.xyz, GetWorldSpaceNormalizeViewDir(vertexInput.positionWS), output.vertexSH);
-    #else
-    #if UNITY_VERSION >= 202310
-    OUTPUT_SH(vertexInput.positionWS, output.normalWS.xyz, GetWorldSpaceNormalizeViewDir(vertexInput.positionWS), output.vertexSH);
-    #else
     OUTPUT_SH(output.normalWS.xyz, output.vertexSH);
-    #endif
+    #else
+#if UNITY_VERSION >= 202310
+    OUTPUT_SH(vertexInput.positionWS, output.normalWS.xyz, GetWorldSpaceNormalizeViewDir(vertexInput.positionWS), output.vertexSH);
+#else
+    OUTPUT_SH(output.normalWS.xyz, output.vertexSH);
+#endif
     #endif
 
     #ifdef _ADDITIONAL_LIGHTS_VERTEX

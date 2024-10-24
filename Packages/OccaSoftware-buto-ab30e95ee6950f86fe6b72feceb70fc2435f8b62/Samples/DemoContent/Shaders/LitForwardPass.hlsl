@@ -203,6 +203,7 @@ void LitPassFragment(
 #ifdef _WRITE_RENDERING_LAYERS
     , out float4 outRenderingLayers : SV_Target1
 #endif
+
 )
 {
     UNITY_SETUP_INSTANCE_ID(input);
@@ -225,9 +226,11 @@ void LitPassFragment(
     LODFadeCrossFade(input.positionCS);
 #endif
 
-    InputData inputData;
-    InitializeInputData(input, surfaceData.normalTS, inputData);
-    SETUP_DEBUG_TEXTURE_DATA(inputData, input.uv, _BaseMap);
+InputData inputData;
+InitializeInputData(input, surfaceData.normalTS, inputData);
+// Remove the third argument from SETUP_DEBUG_TEXTURE_DATA
+SETUP_DEBUG_TEXTURE_DATA(inputData, input.uv);
+
 
 #ifdef _DBUFFER
     ApplyDecalToSurfaceData(input.positionCS, surfaceData, inputData);

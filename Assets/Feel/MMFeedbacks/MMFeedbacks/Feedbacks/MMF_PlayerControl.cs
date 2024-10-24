@@ -24,6 +24,57 @@ namespace MoreMountains.Feedbacks
 		
 		public override bool HasChannel => false;
 
+		public override float FeedbackDuration
+		{
+			get
+			{
+				if (TargetPlayers == null)
+				{
+					return 0f;
+				}
+
+				if (!WaitForTargetPlayersToFinish)
+				{
+					return 0f;
+				}
+
+				if ((Mode == Modes.PlayFeedbacks) && (TargetPlayers.Count > 0))
+				{
+					float totalDuration = 0f;
+					foreach (MMF_Player player in TargetPlayers)
+					{
+						if ((player != null) && (totalDuration < player.TotalDuration))
+						{
+							totalDuration = player.TotalDuration;	
+						}
+					}
+
+					return totalDuration;
+				}
+
+				return 0f;
+			}
+		}
+
+		public override bool IsPlaying
+		{
+			get
+			{
+				if (WaitForTargetPlayersToFinish)
+				{
+					foreach (MMF_Player player in TargetPlayers)
+					{
+						if (player.IsPlaying)
+						{
+							return true;
+						}
+					}	
+				}
+				
+				return false;
+			}
+		}
+
 		public enum Modes
 		{
 			PlayFeedbacks,
@@ -49,6 +100,9 @@ namespace MoreMountains.Feedbacks
 		/// a list of target MMF_Players to play
 		[Tooltip("a specific MMFeedbacks / MMF_Player to play")]
 		public List<MMF_Player> TargetPlayers;
+		/// if this is true, this feedback will be considered as Playing while any of the target players are still Playing
+		[Tooltip("if this is true, this feedback will be considered as Playing while any of the target players are still Playing")]
+		public bool WaitForTargetPlayersToFinish = true;
 
 		public Modes Mode = Modes.PlayFeedbacks;
 

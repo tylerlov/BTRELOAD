@@ -183,8 +183,7 @@ FragmentOutput LitPassFragmentSimple(Varyings input)
     UNITY_SETUP_INSTANCE_ID(input);
     UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
 
-
-//Advanced Dissolve////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    //Advanced Dissolve////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #if defined(_AD_STATE_ENABLED)
 
     float4 dissolveBase = 0;
@@ -216,18 +215,9 @@ FragmentOutput LitPassFragmentSimple(Varyings input)
 
     InputData inputData;
     InitializeInputData(input, surfaceData.normalTS, inputData);
-	SETUP_DEBUG_TEXTURE_DATA(inputData, input.uv, _BaseMap);
-
-
-//Advanced Dissolve/////////////////////////////////////////
-#if defined(_AD_STATE_ENABLED)
-    surfaceData.albedo = lerp(surfaceData.albedo, dissolveAlbedo, dissolveBlend);
-    surfaceData.emission = lerp(surfaceData.emission, dissolveEmission, dissolveBlend);
-#endif
-
-	#ifdef _DBUFFER
-	    ApplyDecalToSurfaceData(input.positionCS, surfaceData, inputData);
-	#endif
+    
+    // Remove or comment out the following line:
+    // SETUP_DEBUG_TEXTURE_DATA(inputData, input.uv, _BaseMap);
 
     Light mainLight = GetMainLight(inputData.shadowCoord, inputData.positionWS, inputData.shadowMask);
     MixRealtimeAndBakedGI(mainLight, inputData.normalWS, inputData.bakedGI, inputData.shadowMask);

@@ -5,6 +5,8 @@ using UnityEngine;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Burst;
+using FMODUnity;  // Add this for StudioEventEmitter
+using FMOD.Studio; // Add this for EventInstance
 
 public class EnemyShootingManager : MonoBehaviour
 {
@@ -29,6 +31,19 @@ public class EnemyShootingManager : MonoBehaviour
     [SerializeField]
     private int maxRaycastsPerJob = 1024;
 
+    private StudioEventEmitter musicEmitter;
+    private bool isInLockLoop = false;
+    private float lastLoopPosition = 0f;
+    private float loopLength = 0f;
+    private const float LOOP_THRESHOLD = 0.1f; // Threshold to detect loop points
+
+    [SerializeField]
+    private float defaultLoopLength = 2000f; // Default value in milliseconds
+
+    private const float MINIMUM_SHOOT_INTERVAL = 700f; // 700ms
+    private bool shouldSkipNextShot = false;
+    private float currentLoopDuration = 0f;
+
     private void Awake()
     {
         if (Instance == null)
@@ -42,6 +57,105 @@ public class EnemyShootingManager : MonoBehaviour
         {
             ConditionalDebug.Log("Duplicate EnemyShootingManager found, destroying");
             Destroy(gameObject);
+        }
+    }
+
+    private void Start()
+    {
+        musicEmitter = GameObject.Find("FMOD Music")?.GetComponent<StudioEventEmitter>();
+        if (musicEmitter == null)
+        {
+            ConditionalDebug.LogError("[EnemyShootingManager] Could not find FMOD Music emitter");
+            return;
+        }
+
+        // Instead of trying to get loop points from FMOD, we'll use position tracking
+        loopLength = defaultLoopLength;
+        ConditionalDebug.Log($"[EnemyShootingManager] Using default loop length: {loopLength}ms");
+
+        StartCoroutine(CheckMusicLoopStateRoutine());
+    }
+
+    private System.Collections.IEnumerator CheckMusicLoopStateRoutine()
+    {
+        WaitForSeconds waitTime = new WaitForSeconds(0.1f);
+        int lastPosition = 0;
+        bool positionDecreased = false;
+        int loopStartPosition = 0;
+
+        while (true)
+        {
+            if (musicEmitter != null && musicEmitter.EventInstance.isValid())
+            {
+                int currentPosition = 0;
+                musicEmitter.EventInstance.getTimelinePosition(out currentPosition);
+                
+                float lockState = 0f;
+                musicEmitter.EventInstance.getParameterByName("Lock State", out lockState);
+                bool isLocked = lockState > 0.5f;
+
+                if (isLocked)
+                {
+                    if (!isInLockLoop)
+                    {
+                        // Just entered lock state
+                        isInLockLoop = true;
+                        lastPosition = currentPosition;
+                        loopStartPosition = currentPosition;
+                        ConditionalDebug.Log($"[EnemyShootingManager] Entered lock loop at position: {currentPosition}ms");
+                        TriggerAllStaticEnemies();
+                    }
+                    else
+                    {
+                        // Detect if position has decreased (indicating a loop)
+                        if (currentPosition < lastPosition)
+                        {
+                            positionDecreased = true;
+                            currentLoopDuration = lastPosition - loopStartPosition;
+                            loopStartPosition = currentPosition;
+                            
+                            ConditionalDebug.Log($"[EnemyShootingManager] Loop detected. Duration: {currentLoopDuration}ms");
+
+                            if (currentLoopDuration < MINIMUM_SHOOT_INTERVAL)
+                            {
+                                if (!shouldSkipNextShot)
+                                {
+                                    TriggerAllStaticEnemies();
+                                    shouldSkipNextShot = true;
+                                    ConditionalDebug.Log("[EnemyShootingManager] Shot triggered, skipping next loop");
+                                }
+                                else
+                                {
+                                    shouldSkipNextShot = false;
+                                    ConditionalDebug.Log("[EnemyShootingManager] Skipping shot this loop");
+                                }
+                            }
+                            else
+                            {
+                                TriggerAllStaticEnemies();
+                                ConditionalDebug.Log("[EnemyShootingManager] Loop duration sufficient, shooting normally");
+                            }
+                        }
+                        else if (positionDecreased && (currentPosition - lastPosition) > 1000)
+                        {
+                            positionDecreased = false;
+                            lastPosition = currentPosition;
+                        }
+                    }
+                }
+                else if (isInLockLoop)
+                {
+                    // Reset state when exiting lock loop
+                    isInLockLoop = false;
+                    positionDecreased = false;
+                    shouldSkipNextShot = false;
+                    ConditionalDebug.Log("[EnemyShootingManager] Exited lock loop");
+                }
+
+                lastPosition = currentPosition;
+            }
+
+            yield return waitTime;
         }
     }
 
@@ -125,31 +239,142 @@ public class EnemyShootingManager : MonoBehaviour
         CheckLineOfSightBatched();
     }
 
+    private void TriggerAllStaticEnemies()
+    {
+        string debugInfo = "[EnemyShootingManager] Triggering all static enemies on loop:\n";
+        
+        if (staticEnemyShootings == null || staticEnemyShootings.Count == 0)
+        {
+            ConditionalDebug.Log($"{debugInfo} No static enemies to trigger");
+            return;
+        }
+
+        int successfulShots = 0;
+        int inactiveCount = 0;
+        int nullCount = 0;
+        int errorCount = 0;
+
+        foreach (var shooting in staticEnemyShootings.ToArray())
+        {
+            if (shooting == null)
+            {
+                nullCount++;
+                continue;
+            }
+
+            if (!shooting.gameObject.activeInHierarchy)
+            {
+                inactiveCount++;
+                continue;
+            }
+
+            try
+            {
+                shooting.Shoot();
+                successfulShots++;
+            }
+            catch (System.Exception e)
+            {
+                errorCount++;
+                ConditionalDebug.LogError($"[EnemyShootingManager] Error triggering enemy: {e.Message}");
+            }
+        }
+
+        ConditionalDebug.Log($"{debugInfo}Results: Success={successfulShots}, Inactive={inactiveCount}, Null={nullCount}, Errors={errorCount}");
+    }
+
     private void OnMusicalEnemyShoot(KoreographyEvent evt)
     {
-        koreographerEventCount++;
-        ConditionalDebug.Log($"[EnemyShootingManager] OnMusicalEnemyShoot triggered. Time: {Time.time}");
-        if (managerTimeline != null && managerTimeline.timeScale != 0f)
+        // Process this event if we're not in a lock loop
+        if (!isInLockLoop)
         {
-            ConditionalDebug.Log($"[EnemyShootingManager] Registered shootings: {staticEnemyShootings.Count}");
-            int successfulShots = 0;
-            foreach (var shooting in staticEnemyShootings)
+            try
             {
-                if (shooting != null)
+                koreographerEventCount++;
+                string debugInfo = "[EnemyShootingManager] OnMusicalEnemyShoot triggered:\n";
+                
+                if (managerTimeline == null)
                 {
-                    shooting.Shoot();
-                    successfulShots++;
+                    ConditionalDebug.LogWarning($"{debugInfo} Timeline is null");
+                    return;
                 }
-                else
+
+                if (managerTimeline.timeScale == 0f)
                 {
-                    ConditionalDebug.LogWarning("[EnemyShootingManager] Null StaticEnemyShooting found in list");
+                    ConditionalDebug.Log($"{debugInfo} Timeline is paused");
+                    return;
                 }
+
+                if (staticEnemyShootings == null)
+                {
+                    ConditionalDebug.LogError($"{debugInfo} staticEnemyShootings list is null");
+                    return;
+                }
+
+                debugInfo += $"- Registered shooters count: {staticEnemyShootings.Count}\n";
+                if (staticEnemyShootings.Count == 0)
+                {
+                    ConditionalDebug.Log($"{debugInfo} No static enemies registered");
+                    return;
+                }
+
+                // Remove any null entries and log removed count
+                int beforeCount = staticEnemyShootings.Count;
+                staticEnemyShootings.RemoveAll(x => x == null);
+                int removedCount = beforeCount - staticEnemyShootings.Count;
+                if (removedCount > 0)
+                {
+                    debugInfo += $"- Removed {removedCount} null entries\n";
+                }
+
+                int successfulShots = 0;
+                int inactiveCount = 0;
+                int nullCount = 0;
+                int errorCount = 0;
+
+                // Create copy to avoid modification during iteration
+                var shooters = staticEnemyShootings.ToArray();
+                foreach (var shooting in shooters)
+                {
+                    if (shooting == null)
+                    {
+                        nullCount++;
+                        continue;
+                    }
+
+                    if (!shooting.gameObject.activeInHierarchy)
+                    {
+                        inactiveCount++;
+                        debugInfo += $"- Shooter {shooting.name} is inactive\n";
+                        continue;
+                    }
+
+                    try
+                    {
+                        ConditionalDebug.Log($"[EnemyShootingManager] Attempting to shoot with {shooting.name}");
+                        shooting.Shoot();
+                        successfulShots++;
+                    }
+                    catch (System.Exception e)
+                    {
+                        errorCount++;
+                        debugInfo += $"- Error with shooter {shooting.name}: {e.Message}\n";
+                        ConditionalDebug.LogError($"[EnemyShootingManager] Error during shooting with {shooting.name}: {e.Message}");
+                    }
+                }
+
+                debugInfo += $"- Results: Success={successfulShots}, Inactive={inactiveCount}, Null={nullCount}, Errors={errorCount}";
+                ConditionalDebug.Log(debugInfo);
+                TriggerAllStaticEnemies();
             }
-            ConditionalDebug.Log($"[EnemyShootingManager] Successful shots: {successfulShots}/{staticEnemyShootings.Count}");
+            catch (System.Exception e)
+            {
+                ConditionalDebug.LogError($"[EnemyShootingManager] Critical error in OnMusicalEnemyShoot: {e.Message}\n{e.StackTrace}");
+            }
         }
         else
         {
-            ConditionalDebug.Log("[EnemyShootingManager] Timeline is null or timeScale is 0");
+            ConditionalDebug.Log("[EnemyShootingManager] Skipping Koreographer event during lock loop");
         }
     }
 

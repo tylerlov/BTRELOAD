@@ -86,9 +86,9 @@ namespace TND.FSR
 #if UNITY_2019_1_OR_NEWER
             var srpType = "BIRP";
 
-            if (GraphicsSettings.renderPipelineAsset != null)
+            if (GraphicsSettings.defaultRenderPipeline != null)
             {
-                srpType = GraphicsSettings.renderPipelineAsset.GetType().ToString();
+                srpType = GraphicsSettings.defaultRenderPipeline.GetType().ToString();
             }
             else if (QualitySettings.renderPipeline != null)
             {

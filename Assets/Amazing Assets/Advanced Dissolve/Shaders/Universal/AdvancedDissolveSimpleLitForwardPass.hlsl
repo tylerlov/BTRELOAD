@@ -220,8 +220,6 @@ half4 LitPassFragmentSimple(Varyings input) : SV_Target
 
     InputData inputData;
     InitializeInputData(input, surfaceData.normalTS, inputData);
-    SETUP_DEBUG_TEXTURE_DATA(inputData, input.uv, _BaseMap);
-
 
 //Advanced Dissolve/////////////////////////////////////////
 #if defined(_AD_STATE_ENABLED)

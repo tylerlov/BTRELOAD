@@ -94,5 +94,143 @@ namespace FIMSpace.FEyes
 
         [HideInInspector] public List<EyeSetup> EyeSetups = new List<EyeSetup>();
 
+
+
+
+        /// <summary>
+        /// Searching through component's owner to find head or neck bone
+        /// </summary>
+        public virtual void FindHeadBone()
+        {
+            // First let's check if it's humanoid character, then we can get head bone transform from it
+            Animator animator = GetComponent<Animator>();
+            Transform animatorHeadBone = null;
+            if( animator )
+            {
+                if( animator.isHuman )
+                {
+                    animatorHeadBone = animator.GetBoneTransform( HumanBodyBones.Head );
+                }
+            }
+
+
+            Transform headBone = null;
+            Transform probablyWrongTransform = null;
+
+            foreach( Transform t in GetComponentsInChildren<Transform>() )
+            {
+                if( t == transform ) continue;
+
+                if( t.name.ToLower().Contains( "head" ) )
+                {
+                    if( t.GetComponent<SkinnedMeshRenderer>() )
+                    {
+                        if( t.parent == transform ) continue; // If it's just mesh object from first depths
+                        probablyWrongTransform = t;
+                        continue;
+                    }
+
+                    headBone = t;
+                    break;
+                }
+            }
+
+            if( !headBone )
+                foreach( Transform t in GetComponentsInChildren<Transform>() )
+                {
+                    if( t.name.ToLower().Contains( "neck" ) )
+                    {
+                        headBone = t;
+                        break;
+                    }
+                }
+
+            if( headBone == null && animatorHeadBone != null )
+                headBone = animatorHeadBone;
+            else
+            if( headBone != null && animatorHeadBone != null )
+            {
+                if( animatorHeadBone.name.ToLower().Contains( "head" ) ) headBone = animatorHeadBone;
+                else
+                    if( !headBone.name.ToLower().Contains( "head" ) ) headBone = animatorHeadBone;
+            }
+
+            if( headBone )
+            {
+                HeadReference = headBone;
+                FindingEyes();
+            }
+            else
+            {
+                if( probablyWrongTransform ) HeadReference = probablyWrongTransform;
+                Debug.LogWarning( "Found " + probablyWrongTransform + " but it's probably wrong transform" );
+            }
+        }
+
+        /// <summary> Searching through component's owner to find eye bones </summary>
+        public virtual void FindingEyes()
+        {
+            if( HeadReference == null ) return;
+
+            // Trying to find eye bones inside head bone
+            Transform[] children = HeadReference.GetComponentsInChildren<Transform>();
+
+            for( int i = 0; i < children.Length; i++ )
+            {
+                string lowerName = children[i].name.ToLower();
+                if( lowerName.Contains( "eye" ) )
+                {
+                    if( lowerName.Contains( "brow" ) || lowerName.Contains( "lid" ) || lowerName.Contains( "las" ) ) continue;
+
+                    if( lowerName.Contains( "left" ) ) { if( !Eyes.Contains( children[i] ) ) Eyes.Add( children[i] ); continue; }
+                    else
+                        if( lowerName.Contains( "l" ) ) { if( !Eyes.Contains( children[i] ) ) Eyes.Add( children[i] ); continue; }
+
+                    if( lowerName.Contains( "right" ) ) { if( !Eyes.Contains( children[i] ) ) Eyes.Add( children[i] ); continue; }
+                    else
+                        if( lowerName.Contains( "r" ) ) { if( !Eyes.Contains( children[i] ) ) Eyes.Add( children[i] ); continue; }
+                }
+            }
+
+
+            if( HeadReference )
+            {
+                if( HeadReference == null ) return;
+
+                if( EyeLids == null ) EyeLids = new List<Transform>();
+                if( DownEyelids == null ) DownEyelids = new List<Transform>();
+                if( UpEyelids == null ) UpEyelids = new List<Transform>();
+
+                // Trying to find eyelid bones inside eyes bones
+                for( int e = 0; e < Eyes.Count; e++ )
+                {
+                    children = Eyes[e].GetComponentsInChildren<Transform>();
+
+                    for( int i = 0; i < children.Length; i++ )
+                    {
+                        string lowerName = children[i].name.ToLower();
+                        if( lowerName.Contains( "lid" ) )
+                        {
+                            if( lowerName.Contains( "low" ) || lowerName.Contains( "down" ) || lowerName.Contains( "bot" ) )
+                            {
+                                if( !DownEyelids.Contains( children[i] ) ) DownEyelids.Add( children[i] );
+                            }
+                            else
+                            if( lowerName.Contains( "up" ) || lowerName.Contains( "top" ) )
+                            {
+                                if( !UpEyelids.Contains( children[i] ) ) UpEyelids.Add( children[i] );
+                            }
+                            else
+                            {
+                                if( !EyeLids.Contains( children[i] ) ) EyeLids.Add( children[i] );
+                            }
+                        }
+                    }
+
+                    UpdateLists();
+                }
+            }
+        }
+
     }
 }

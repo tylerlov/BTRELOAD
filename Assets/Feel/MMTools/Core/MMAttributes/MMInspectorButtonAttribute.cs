@@ -33,7 +33,7 @@ namespace MoreMountains.Tools
 
 			if (GUI.Button(buttonRect, inspectorButtonAttribute.MethodName))
 			{
-				System.Type eventOwnerType = prop.serializedObject.targetObject.GetType();
+				System.Type eventOwnerType = prop.serializedObject.targetObject.GetType(); 
 				string eventName = inspectorButtonAttribute.MethodName;
 
 				if (_eventMethodInfo == null)

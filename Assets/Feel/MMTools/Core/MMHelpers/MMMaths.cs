@@ -1,7 +1,4 @@
 ﻿using UnityEngine;
-using UnityEngine.UI;
-using System.Collections;
-using System;
 
 namespace MoreMountains.Tools
 {	
@@ -22,12 +19,15 @@ namespace MoreMountains.Tools
 		/// <param name="speed"></param>
 		/// <param name="deltaTime"></param>
 		/// <returns></returns>
-		private static float SpringVelocity(float currentValue, float targetValue, float velocity, float damping, float frequency, float speed, float deltaTime)
+		private static float SpringVelocity(float currentValue, float targetValue, float velocity, float damping, float frequency, float deltaTime)
 		{
-			float maxDeltaTime = Mathf.Min(1.0f / (frequency * 10.0f), deltaTime); 
 			frequency = frequency * 2f * Mathf.PI;
-			deltaTime = Mathf.Min(deltaTime, maxDeltaTime);
-			return velocity + (deltaTime * frequency * frequency * (targetValue - currentValue)) + (-2.0f * deltaTime * frequency * damping * velocity);
+			float f2 = frequency * frequency;
+			float d2 = 2.0f * damping * frequency;
+			float x = currentValue - targetValue;
+			float acceleration = -f2 * x - d2 * velocity;
+			velocity += deltaTime * acceleration;
+			return velocity;
 		}
 		
 
@@ -41,12 +41,17 @@ namespace MoreMountains.Tools
 		/// <param name="frequency">the frequency, in Hz, so the amount of periods the spring should go over in 1 second</param>
 		/// <param name="speed">the speed (between 0 and 1) at which the spring should operate</param>
 		/// <param name="deltaTime">the delta time (usually Time.deltaTime or Time.unscaledDeltaTime)</param>
-		public static void Spring(ref float currentValue, float targetValue, ref float velocity, float damping, float frequency, float speed, float deltaTime)
+		public static void Spring(ref float currentValue, float targetValue, ref float velocity, float damping, float frequency, float deltaTime)
 		{
-			float initialVelocity = velocity;
-			velocity = SpringVelocity(currentValue, targetValue, velocity, damping, frequency, speed, deltaTime);
-			velocity = MMMaths.Lerp(initialVelocity, velocity, speed, Time.deltaTime);
-			currentValue += deltaTime * velocity;
+			float fixedDeltaTime = 1.0f / 60.0f; 
+			float accumulator = deltaTime;
+			while (accumulator > 0f)
+			{
+				float step = Mathf.Min(accumulator, fixedDeltaTime);
+				velocity = SpringVelocity(currentValue, targetValue, velocity, damping, frequency, step);
+				currentValue += step * velocity; 
+				accumulator -= step;
+			}
 		}
 
 		/// <summary>
@@ -59,14 +64,18 @@ namespace MoreMountains.Tools
 		/// <param name="frequency">the frequency, in Hz, so the amount of periods the spring should go over in 1 second</param>
 		/// <param name="speed">the speed (between 0 and 1) at which the spring should operate</param>
 		/// <param name="deltaTime">the delta time (usually Time.deltaTime or Time.unscaledDeltaTime)</param>
-		public static void Spring(ref Vector2 currentValue, Vector2 targetValue, ref Vector2 velocity, float damping, float frequency, float speed, float deltaTime)
+		public static void Spring(ref Vector2 currentValue, Vector2 targetValue, ref Vector2 velocity, float damping, float frequency, float deltaTime)
 		{
-			Vector2 initialVelocity = velocity;
-			velocity.x = SpringVelocity(currentValue.x, targetValue.x, velocity.x, damping, frequency, speed, deltaTime);
-			velocity.y = SpringVelocity(currentValue.y, targetValue.y, velocity.y, damping, frequency, speed, deltaTime);
-			velocity.x = MMMaths.Lerp(initialVelocity.x, velocity.x, speed, Time.deltaTime);
-			velocity.y = MMMaths.Lerp(initialVelocity.y, velocity.y, speed, Time.deltaTime);
-			currentValue += deltaTime * velocity;
+			float fixedDeltaTime = 1.0f / 60.0f; 
+			float accumulator = deltaTime;
+			while (accumulator > 0f)
+			{
+				float step = Mathf.Min(accumulator, fixedDeltaTime);
+				velocity.x = SpringVelocity(currentValue.x, targetValue.x, velocity.x, damping, frequency, step);
+				velocity.y = SpringVelocity(currentValue.y, targetValue.y, velocity.y, damping, frequency, step);
+				currentValue += step * velocity; 
+				accumulator -= step;
+			}
 		}
 
 		/// <summary>
@@ -79,16 +88,19 @@ namespace MoreMountains.Tools
 		/// <param name="frequency">the frequency, in Hz, so the amount of periods the spring should go over in 1 second</param>
 		/// <param name="speed">the speed (between 0 and 1) at which the spring should operate</param>
 		/// <param name="deltaTime">the delta time (usually Time.deltaTime or Time.unscaledDeltaTime)</param>
-		public static void Spring(ref Vector3 currentValue, Vector3 targetValue, ref Vector3 velocity, float damping, float frequency, float speed, float deltaTime)
+		public static void Spring(ref Vector3 currentValue, Vector3 targetValue, ref Vector3 velocity, float damping, float frequency, float deltaTime)
 		{
-			Vector3 initialVelocity = velocity;
-			velocity.x = SpringVelocity(currentValue.x, targetValue.x, velocity.x, damping, frequency, speed, deltaTime);
-			velocity.y = SpringVelocity(currentValue.y, targetValue.y, velocity.y, damping, frequency, speed, deltaTime);
-			velocity.z = SpringVelocity(currentValue.z, targetValue.z, velocity.z, damping, frequency, speed, deltaTime);
-			velocity.x = MMMaths.Lerp(initialVelocity.x, velocity.x, speed, Time.deltaTime);
-			velocity.y = MMMaths.Lerp(initialVelocity.y, velocity.y, speed, Time.deltaTime);
-			velocity.z = MMMaths.Lerp(initialVelocity.z, velocity.z, speed, Time.deltaTime);
-			currentValue += deltaTime * velocity;
+			float fixedDeltaTime = 1.0f / 60.0f; 
+			float accumulator = deltaTime;
+			while (accumulator > 0f)
+			{
+				float step = Mathf.Min(accumulator, fixedDeltaTime);
+				velocity.x = SpringVelocity(currentValue.x, targetValue.x, velocity.x, damping, frequency, step);
+				velocity.y = SpringVelocity(currentValue.y, targetValue.y, velocity.y, damping, frequency, step);
+				velocity.z = SpringVelocity(currentValue.z, targetValue.z, velocity.z, damping, frequency, step);
+				currentValue += step * velocity; 
+				accumulator -= step;
+			}
 		}
 
 		/// <summary>
@@ -101,18 +113,20 @@ namespace MoreMountains.Tools
 		/// <param name="frequency">the frequency, in Hz, so the amount of periods the spring should go over in 1 second</param>
 		/// <param name="speed">the speed (between 0 and 1) at which the spring should operate</param>
 		/// <param name="deltaTime">the delta time (usually Time.deltaTime or Time.unscaledDeltaTime)</param>
-		public static void Spring(ref Vector4 currentValue, Vector4 targetValue, ref Vector4 velocity, float damping, float frequency, float speed, float deltaTime)
+		public static void Spring(ref Vector4 currentValue, Vector4 targetValue, ref Vector4 velocity, float damping, float frequency, float deltaTime)
 		{
-			Vector4 initialVelocity = velocity;
-			velocity.x = SpringVelocity(currentValue.x, targetValue.x, velocity.x, damping, frequency, speed, deltaTime);
-			velocity.y = SpringVelocity(currentValue.y, targetValue.y, velocity.y, damping, frequency, speed, deltaTime);
-			velocity.z = SpringVelocity(currentValue.z, targetValue.z, velocity.z, damping, frequency, speed, deltaTime);
-			velocity.w = SpringVelocity(currentValue.w, targetValue.w, velocity.w, damping, frequency, speed, deltaTime);
-			velocity.x = MMMaths.Lerp(initialVelocity.x, velocity.x, speed, Time.deltaTime);
-			velocity.y = MMMaths.Lerp(initialVelocity.y, velocity.y, speed, Time.deltaTime);
-			velocity.z = MMMaths.Lerp(initialVelocity.z, velocity.z, speed, Time.deltaTime);
-			velocity.w = MMMaths.Lerp(initialVelocity.w, velocity.w, speed, Time.deltaTime);
-			currentValue += deltaTime * velocity;
+			float fixedDeltaTime = 1.0f / 60.0f; 
+			float accumulator = deltaTime;
+			while (accumulator > 0f)
+			{
+				float step = Mathf.Min(accumulator, fixedDeltaTime);
+				velocity.x = SpringVelocity(currentValue.x, targetValue.x, velocity.x, damping, frequency, step);
+				velocity.y = SpringVelocity(currentValue.y, targetValue.y, velocity.y, damping, frequency, step);
+				velocity.z = SpringVelocity(currentValue.z, targetValue.z, velocity.z, damping, frequency, step);
+				velocity.w = SpringVelocity(currentValue.w, targetValue.w, velocity.w, damping, frequency, step);
+				currentValue += step * velocity; 
+				accumulator -= step;
+			}
 		}
 
 		/// <summary>

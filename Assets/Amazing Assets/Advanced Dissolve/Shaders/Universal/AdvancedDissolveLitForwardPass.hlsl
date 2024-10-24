@@ -272,8 +272,8 @@ half4 LitPassFragment(Varyings input) : SV_Target
 
     InputData inputData;
     InitializeInputData(input, surfaceData.normalTS, inputData);
-    SETUP_DEBUG_TEXTURE_DATA(inputData, input.uv, _BaseMap);
-
+    // Remove or modify this line:
+    // SETUP_DEBUG_TEXTURE_DATA(inputData, input.uv, _BaseMap);
 
 //Advanced Dissolve/////////////////////////////////////////
 #if defined(_AD_STATE_ENABLED)

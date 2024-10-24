@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using MoreMountains.Feedbacks;
+using MoreMountains.Tools;
 #if MM_CINEMACHINE
 using Cinemachine;
 #elif MM_CINEMACHINE3
@@ -33,7 +34,7 @@ namespace MoreMountains.FeedbacksForThirdParty
 		[MMFInspectorGroup("Cinemachine Impulse", true, 28)]
 		/// the impulse definition to broadcast
 		[Tooltip("the impulse definition to broadcast")]
-		public CinemachineImpulseDefinition m_ImpulseDefinition;
+		public CinemachineImpulseDefinition m_ImpulseDefinition = new CinemachineImpulseDefinition();
 		/// the velocity to apply to the impulse shake
 		[Tooltip("the velocity to apply to the impulse shake")]
 		public Vector3 Velocity;
@@ -41,6 +42,11 @@ namespace MoreMountains.FeedbacksForThirdParty
 		[Tooltip("whether or not to clear impulses (stopping camera shakes) when the Stop method is called on that feedback")]
 		public bool ClearImpulseOnStop = false;
 		#endif
+		
+		[Header("Gizmos")]
+		/// whether or not to draw gizmos to showcase the various distance properties of this feedback, when applicable. Dissipation distance in blue, impact radius in yellow.
+		[Tooltip("whether or not to draw gizmos to showcase the various distance properties of this feedback, when applicable. Dissipation distance in blue, impact radius in yellow.")]
+		public bool DrawGizmos = false;
 		
 		#if MM_CINEMACHINE
 		/// the duration of this feedback is the duration of the impulse
@@ -81,6 +87,9 @@ namespace MoreMountains.FeedbacksForThirdParty
 			#endif
 		}
 
+		/// <summary>
+		/// When adding the feedback we initialize its cinemachine impulse definition
+		/// </summary>
 		public override void OnAddFeedback()
 		{
 			#if MM_CINEMACHINE 
@@ -99,6 +108,49 @@ namespace MoreMountains.FeedbacksForThirdParty
 			}
 			this.m_ImpulseDefinition.RawSignal = Resources.Load<NoiseSettings>("MM_6D_Shake");
 			this.Velocity = new Vector3(5f, 5f, 5f);
+			#endif
+		}
+
+		/// <summary>
+		/// Draws dissipation distance and impact distance gizmos if necessary
+		/// </summary>
+		public override void OnDrawGizmosSelectedHandler()
+		{
+			if (!DrawGizmos)
+			{
+				return;
+			}
+			#if MM_CINEMACHINE 
+			{
+				if ( (this.m_ImpulseDefinition.m_ImpulseType == CinemachineImpulseDefinition.ImpulseTypes.Dissipating)
+				     || (this.m_ImpulseDefinition.m_ImpulseType == CinemachineImpulseDefinition.ImpulseTypes.Propagating)
+				     || (this.m_ImpulseDefinition.m_ImpulseType == CinemachineImpulseDefinition.ImpulseTypes.Legacy) )
+				{
+					Gizmos.color = MMColors.Aqua;
+					Gizmos.DrawWireSphere(Owner.transform.position, this.m_ImpulseDefinition.m_DissipationDistance);
+				}
+				if (this.m_ImpulseDefinition.m_ImpulseType == CinemachineImpulseDefinition.ImpulseTypes.Legacy)
+				{
+					Gizmos.color = MMColors.ReunoYellow;
+					Gizmos.DrawWireSphere(Owner.transform.position, this.m_ImpulseDefinition.m_ImpactRadius);
+				}
+			}
+			#elif MM_CINEMACHINE3
+			if (this.m_ImpulseDefinition != null)
+			{
+				if ( (this.m_ImpulseDefinition.ImpulseType == CinemachineImpulseDefinition.ImpulseTypes.Dissipating)
+					 || (this.m_ImpulseDefinition.ImpulseType == CinemachineImpulseDefinition.ImpulseTypes.Propagating)
+					 || (this.m_ImpulseDefinition.ImpulseType == CinemachineImpulseDefinition.ImpulseTypes.Legacy) )
+				{
+					Gizmos.color = MMColors.Aqua;
+					Gizmos.DrawWireSphere(Owner.transform.position, this.m_ImpulseDefinition.DissipationDistance);
+				}
+				if (this.m_ImpulseDefinition.ImpulseType == CinemachineImpulseDefinition.ImpulseTypes.Legacy)
+				{
+					Gizmos.color = MMColors.ReunoYellow;
+					Gizmos.DrawWireSphere(Owner.transform.position, this.m_ImpulseDefinition.ImpactRadius);
+				}
+			}
 			#endif
 		}
 		

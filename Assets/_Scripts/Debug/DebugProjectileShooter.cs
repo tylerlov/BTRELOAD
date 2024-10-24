@@ -96,7 +96,7 @@ public class DebugProjectileShooter : MonoBehaviour
             if (projectile.rb != null)
             {
                 projectile.rb.isKinematic = false; // This line is crucial
-                projectile.rb.velocity = crosshairCore.RaySpawn.transform.forward * debugProjectileSpeed;
+                projectile.rb.linearVelocity = crosshairCore.RaySpawn.transform.forward * debugProjectileSpeed;
                 projectile.rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
             }
 
@@ -104,7 +104,7 @@ public class DebugProjectileShooter : MonoBehaviour
             Debug.DrawRay(projectile.transform.position, projectile.transform.forward * 100f, Color.red, 5f);
             Debug.Log($"Debug projectile fired from {projectile.transform.position} in direction {projectile.transform.forward}");
 
-            Debug.Log($"Debug projectile set up at position {projectile.transform.position} with velocity {projectile.rb.velocity}, isKinematic: {projectile.rb.isKinematic}");
+            Debug.Log($"Debug projectile set up at position {projectile.transform.position} with velocity {projectile.rb.linearVelocity}, isKinematic: {projectile.rb.isKinematic}");
         }
         else
         {

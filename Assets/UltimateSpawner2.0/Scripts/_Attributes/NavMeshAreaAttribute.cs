@@ -58,7 +58,7 @@ namespace UnityEngine
 
                 temp.Add(new GUIContent("All Areas"));
 
-                foreach(string name in GameObjectUtility.GetNavMeshAreaNames())
+                foreach(string name in NavMesh.GetAreaNames())
                 {
                     temp.Add(new GUIContent(name));
                 }

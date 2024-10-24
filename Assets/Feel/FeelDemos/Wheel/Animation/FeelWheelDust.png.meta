@@ -770,3 +770,10 @@ TextureImporter:
   userData: 
   assetBundleName: 
   assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 183370
+  packageName: Feel
+  packageVersion: 4.3
+  assetPath: Assets/Feel/FeelDemos/Wheel/Animation/FeelWheelDust.png
+  uploadId: 689191

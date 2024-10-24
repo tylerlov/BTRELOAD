@@ -11,7 +11,7 @@ public class FlatKitDepthNormals : ScriptableRendererFeature {
     public RenderPassEvent renderEvent = RenderPassEvent.AfterRenderingTransparents;
 
     class DepthNormalsPass : ScriptableRenderPass {
-        private RenderTargetHandle _depthAttachmentHandle;
+        private RTHandle _depthAttachmentHandle;
         private RenderTextureDescriptor _descriptor;
         private FilteringSettings _filteringSettings;
         private readonly Material _depthNormalsMaterial;
@@ -24,7 +24,7 @@ public class FlatKitDepthNormals : ScriptableRendererFeature {
             _depthNormalsMaterial = material;
         }
 
-        public void Setup(RenderTextureDescriptor baseDescriptor, RenderTargetHandle depthRTHandle) {
+        public void Setup(RenderTextureDescriptor baseDescriptor, RTHandle depthRTHandle) {
             this._depthAttachmentHandle = depthRTHandle;
             baseDescriptor.colorFormat = RenderTextureFormat.ARGB32;
             baseDescriptor.depthBufferBits = _depthBufferBits;
@@ -32,8 +32,8 @@ public class FlatKitDepthNormals : ScriptableRendererFeature {
         }
 
         public override void Configure(CommandBuffer cmd, RenderTextureDescriptor cameraTextureDescriptor) {
-            cmd.GetTemporaryRT(_depthAttachmentHandle.id, _descriptor, FilterMode.Point);
-            ConfigureTarget(_depthAttachmentHandle.Identifier());
+            cmd.GetTemporaryRT(Shader.PropertyToID(_depthAttachmentHandle.name), _descriptor, FilterMode.Point);
+            ConfigureTarget(_depthAttachmentHandle);
             ConfigureClear(ClearFlag.All, Color.black);
         }
 
@@ -50,10 +50,7 @@ public class FlatKitDepthNormals : ScriptableRendererFeature {
 
                 ref CameraData cameraData = ref renderingData.cameraData;
                 Camera camera = cameraData.camera;
-#pragma warning disable 618
-                if (cameraData.xr.enabled)
-#pragma warning restore 618
-                {
+                if (cameraData.xr.enabled) {
                     context.StartMultiEye(camera);
                 }
 
@@ -61,39 +58,38 @@ public class FlatKitDepthNormals : ScriptableRendererFeature {
 
                 context.DrawRenderers(renderingData.cullResults, ref drawSettings, ref _filteringSettings);
 
-                cmd.SetGlobalTexture("_CameraDepthNormalsTexture", _depthAttachmentHandle.id);
+                cmd.SetGlobalTexture("_CameraDepthNormalsTexture", _depthAttachmentHandle.nameID);
             }
 
             context.ExecuteCommandBuffer(cmd);
             CommandBufferPool.Release(cmd);
         }
 
-        // public override void OnCameraCleanup(CommandBuffer cmd) {
         public override void FrameCleanup(CommandBuffer cmd) {
-            if (_depthAttachmentHandle == RenderTargetHandle.CameraTarget) return;
-            cmd.ReleaseTemporaryRT(_depthAttachmentHandle.id);
-            _depthAttachmentHandle = RenderTargetHandle.CameraTarget;
+            if (_depthAttachmentHandle == null) return;
+            _depthAttachmentHandle.Release();
         }
     }
 
     DepthNormalsPass _depthNormalsPass;
-    RenderTargetHandle _depthNormalsTexture;
+    RTHandle _depthNormalsTexture;
     Material _depthNormalsMaterial;
-
-    public FlatKitDepthNormals(RenderTargetHandle depthNormalsTexture) {
-        _depthNormalsTexture = depthNormalsTexture;
-    }
 
     public override void Create() {
         _depthNormalsMaterial = CoreUtils.CreateEngineMaterial("Hidden/Internal-DepthNormalsTexture");
         _depthNormalsPass = new DepthNormalsPass(RenderQueueRange.all, -1, _depthNormalsMaterial) {
             renderPassEvent = overrideRenderEvent? renderEvent : RenderPassEvent.AfterRenderingTransparents
         };
-        _depthNormalsTexture.Init("_CameraDepthNormalsTexture");
+        _depthNormalsTexture = RTHandles.Alloc("_CameraDepthNormalsTexture", name: "_CameraDepthNormalsTexture");
     }
 
     public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData) {
         _depthNormalsPass.Setup(renderingData.cameraData.cameraTargetDescriptor, _depthNormalsTexture);
         renderer.EnqueuePass(_depthNormalsPass);
+    }
+
+    protected override void Dispose(bool disposing) {
+        _depthNormalsTexture?.Release();
+        CoreUtils.Destroy(_depthNormalsMaterial);
     }
 }

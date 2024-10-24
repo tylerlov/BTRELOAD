@@ -1,5 +1,6 @@
-using UnityEngine.Rendering.Universal;
 using UnityEngine;
+using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
 
 namespace TND.FSR
 {
@@ -8,80 +9,92 @@ namespace TND.FSR
     {
         [HideInInspector]
         public bool IsEnabled = false;
+        private bool usingRenderGraph = false;
 
-        private FSR3_URP m_fsrURP;
+        private FSR3_URP m_upscaler;
 
-        private FSRBufferPass fsrBufferPass;
-        private FSRRenderPass fsrRenderPass;
-        private FSROpaqueOnlyPass fsrReactiveMaskPass;
-        private FSRTransparentPass fsrReactiveMaskTransparentPass;
+        private FSRBufferPass _bufferPass;
+        private FSRRenderPass _renderPass;
+        private FSROpaqueOnlyPass _opaqueBufferPass;
+        private FSRTransparentPass _transparentBufferPass;
 
         private CameraData cameraData;
 
-        public void OnSetReference(FSR3_URP _fsrURP) {
-            m_fsrURP = _fsrURP;
-            fsrBufferPass.OnSetReference(m_fsrURP);
-            fsrRenderPass.OnSetReference(m_fsrURP);
-            fsrReactiveMaskPass.OnSetReference(m_fsrURP);
-            fsrReactiveMaskTransparentPass.OnSetReference(m_fsrURP);
+        public override void Create()
+        {
+            name = "FSRRenderFeature";
+
+
+
+            SetupPasses();
         }
 
-        public override void Create() {
-            name = "FSRScriptableRenderFeature";
-
-            // Pass the settings as a parameter to the constructor of the pass.
-            fsrBufferPass = new FSRBufferPass(m_fsrURP);
-            fsrRenderPass = new FSRRenderPass(m_fsrURP);
-            fsrReactiveMaskPass = new FSROpaqueOnlyPass(m_fsrURP);
-            fsrReactiveMaskTransparentPass = new FSRTransparentPass(m_fsrURP);
-
-            fsrBufferPass.ConfigureInput(ScriptableRenderPassInput.Depth | ScriptableRenderPassInput.Motion);
+        public void OnSetReference(FSR3_URP _upscaler)
+        {
+            m_upscaler = _upscaler;
+            SetupPasses();
         }
 
-        public void OnDispose() {
-        }
-
-#if UNITY_2022_1_OR_NEWER
-        public override void SetupRenderPasses(ScriptableRenderer renderer, in RenderingData renderingData) {
-            fsrBufferPass.Setup(renderer);
-        }
+        private void SetupPasses()
+        {
+#if UNITY_2023_3_OR_NEWER
+            var renderGraphSettings = GraphicsSettings.GetRenderPipelineSettings<RenderGraphSettings>();
+            usingRenderGraph = !renderGraphSettings.enableRenderCompatibilityMode;
 #endif
 
-        public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData) {
+            if (!usingRenderGraph)
+            {
+                _bufferPass = new FSRBufferPass(m_upscaler, usingRenderGraph);
+                _bufferPass.ConfigureInput(ScriptableRenderPassInput.Depth | ScriptableRenderPassInput.Motion);
+            }
+
+            _renderPass = new FSRRenderPass(m_upscaler, usingRenderGraph);
+            _renderPass.ConfigureInput(ScriptableRenderPassInput.Depth | ScriptableRenderPassInput.Motion);
+
+            _opaqueBufferPass = new FSROpaqueOnlyPass(m_upscaler, usingRenderGraph);
+            _transparentBufferPass = new FSRTransparentPass(m_upscaler, usingRenderGraph);
+        }
+
+        public void OnDispose()
+        {
+        }
+
+        public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
+        {
 #if UNITY_EDITOR
-            if(!Application.isPlaying) {
+            if (!Application.isPlaying)
+            {
                 return;
             }
 #endif
-            if(!IsEnabled) {
-                return;
-            }
-            if(m_fsrURP == null) {
-                return;
-            }
-            if(m_fsrURP.m_context == null) {
+            if (!IsEnabled)
+            {
                 return;
             }
 
             cameraData = renderingData.cameraData;
-            if(cameraData.cameraType != CameraType.Game) {
+            if (cameraData.camera != m_upscaler.m_mainCamera)
+            {
                 return;
             }
-            if(cameraData.camera.GetComponent<FSR3_URP>() == null) {
-                return;
-            }
-            if(!cameraData.resolveFinalTarget) {
+            if (!cameraData.resolveFinalTarget)
+            {
                 return;
             }
 
-            m_fsrURP.m_autoHDR = cameraData.isHdrEnabled;
+            m_upscaler.m_autoHDR = cameraData.isHdrEnabled;
 
             // Here you can queue up multiple passes after each other.
-            renderer.EnqueuePass(fsrBufferPass);
-            renderer.EnqueuePass(fsrRenderPass);
-            if(m_fsrURP.generateReactiveMask) {
-                renderer.EnqueuePass(fsrReactiveMaskPass);
-                renderer.EnqueuePass(fsrReactiveMaskTransparentPass);
+            if (!usingRenderGraph)
+            {
+                renderer.EnqueuePass(_bufferPass);
+            }
+
+            renderer.EnqueuePass(_renderPass);
+            if (m_upscaler.generateReactiveMask)
+            {
+                renderer.EnqueuePass(_opaqueBufferPass);
+                renderer.EnqueuePass(_transparentBufferPass);
             }
         }
     }

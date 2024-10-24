@@ -93,7 +93,7 @@ namespace MoreMountains.Feedbacks
 				return;
 			}
 			#if (MM_TEXTMESHPRO || MM_UGUI2)
-			_initialSoftness = TargetTMPText.fontMaterial.GetFloat(ShaderUtilities.ID_FaceDilate);
+			_initialSoftness = TargetTMPText.fontMaterial.GetFloat(ShaderUtilities.ID_OutlineSoftness);
 			#endif
 		}
 
@@ -123,6 +123,7 @@ namespace MoreMountains.Feedbacks
 						{
 							return;
 						}
+						if (_coroutine != null) { Owner.StopCoroutine(_coroutine); }
 						_coroutine = Owner.StartCoroutine(ApplyValueOverTime());
 						break;
 				}

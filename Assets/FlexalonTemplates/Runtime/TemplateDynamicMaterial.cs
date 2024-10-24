@@ -22,11 +22,11 @@ namespace Flexalon.Templates
             UpdateMeshRenderer();
             if (_meshRenderer)
             {
-                if (GraphicsSettings.renderPipelineAsset?.GetType().Name.Contains("HDRenderPipelineAsset") ?? false)
+                if (GraphicsSettings.defaultRenderPipeline?.GetType().Name.Contains("HDRenderPipelineAsset") ?? false)
                 {
                     _meshRenderer.sharedMaterial = HDRP;
                 }
-                else if (GraphicsSettings.renderPipelineAsset?.GetType().Name.Contains("UniversalRenderPipelineAsset") ?? false)
+                else if (GraphicsSettings.defaultRenderPipeline?.GetType().Name.Contains("UniversalRenderPipelineAsset") ?? false)
                 {
                     _meshRenderer.sharedMaterial = URP;
                 }

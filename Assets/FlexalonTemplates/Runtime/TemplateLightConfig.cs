@@ -16,11 +16,11 @@ namespace Flexalon.Templates
             var light = GetComponent<Light>();
             if (light)
             {
-                if (GraphicsSettings.renderPipelineAsset?.GetType().Name.Contains("HDRenderPipelineAsset") ?? false)
+                if (GraphicsSettings.defaultRenderPipeline?.GetType().Name.Contains("HDRenderPipelineAsset") ?? false)
                 {
                     light.intensity =  HDRPIntensity;
                 }
-                else if (GraphicsSettings.renderPipelineAsset?.GetType().Name.Contains("UniversalRenderPipelineAsset") ?? false)
+                else if (GraphicsSettings.defaultRenderPipeline?.GetType().Name.Contains("UniversalRenderPipelineAsset") ?? false)
                 {
                     light.intensity = URPIntensity;
                 }

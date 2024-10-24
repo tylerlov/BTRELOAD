@@ -1,8 +1,5 @@
 ﻿using UnityEngine;
 using System.Collections;
-using System;
-using UnityEngine.UI;
-using MoreMountains.Tools;
 
 namespace MoreMountains.Tools
 {
@@ -12,17 +9,17 @@ namespace MoreMountains.Tools
 	/// </summary>
 	[RequireComponent(typeof(CanvasGroup))]
 	[AddComponentMenu("More Mountains/Tools/GUI/MMFaderDirectional")]
-	public class MMFaderDirectional : MonoBehaviour, MMEventListener<MMFadeEvent>, MMEventListener<MMFadeInEvent>, MMEventListener<MMFadeOutEvent>, MMEventListener<MMFadeStopEvent>
+	public class MMFaderDirectional : MMMonoBehaviour, MMEventListener<MMFadeEvent>, MMEventListener<MMFadeInEvent>, MMEventListener<MMFadeOutEvent>, MMEventListener<MMFadeStopEvent>
 	{
 		/// the possible directions this fader can move in
 		public enum Directions { TopToBottom, LeftToRight, RightToLeft, BottomToTop }
 
-		[Header("Identification")]
+		[MMInspectorGroup("Identification", true, 122)] 
 		/// the ID for this fader (0 is default), set more IDs if you need more than one fader
 		[Tooltip("the ID for this fader (0 is default), set more IDs if you need more than one fader")]
 		public int ID;
 
-		[Header("Directional Fader")]
+		[MMInspectorGroup("Directional Fader", true, 123)]
 		/// the direction this fader should move in when fading in
 		[Tooltip("the direction this fader should move in when fading in")]
 		public Directions FadeInDirection = Directions.LeftToRight;
@@ -30,7 +27,7 @@ namespace MoreMountains.Tools
 		[Tooltip("the direction this fader should move in when fading out")]
 		public Directions FadeOutDirection = Directions.LeftToRight;
         
-		[Header("Timing")]
+		[MMInspectorGroup("Timing", true, 124)]
 		/// the default duration of the fade in/out
 		[Tooltip("the default duration of the fade in/out")]
 		public float DefaultDuration = 0.2f;
@@ -44,12 +41,12 @@ namespace MoreMountains.Tools
 		[Tooltip("whether or not to automatically disable this fader on init")]
 		public bool DisableOnInit = true;
 
-		[Header("Delay")]
+		[MMInspectorGroup("Delay", true, 127)]
 		/// a delay (in seconds) to apply before playing this fade
 		[Tooltip("a delay (in seconds) to apply before playing this fade")]
 		public float InitialDelay = 0f;
 
-		[Header("Interaction")]
+		[MMInspectorGroup("Interaction", true, 125)]
 		/// whether or not the fader should block raycasts when visible
 		[Tooltip("whether or not the fader should block raycasts when visible")]
 		public bool ShouldBlockRaycasts = false; 
@@ -59,15 +56,12 @@ namespace MoreMountains.Tools
 		/// the height of the fader
 		public virtual float Height { get { return _rectTransform.rect.height; } }
 
-		[Header("Debug")]
-		[MMInspectorButton("FadeIn1Second")]
-		public bool FadeIn1SecondButton;
-		[MMInspectorButton("FadeOut1Second")]
-		public bool FadeOut1SecondButton;
-		[MMInspectorButton("DefaultFade")]
-		public bool DefaultFadeButton;
-		[MMInspectorButton("ResetFader")]
-		public bool ResetFaderButton;
+		[MMInspectorGroup("Debug", true, 126)]
+		[MMInspectorButtonBar(new string[] { "FadeIn1Second", "FadeOut1Second", "DefaultFade", "ResetFader" }, 
+			new string[] { "FadeIn1Second", "FadeOut1Second", "DefaultFade", "ResetFader" }, 
+			new bool[] { true, true, true, true },
+			new string[] { "main-call-to-action", "", "", "" })]
+		public bool DebugToolbar;
 
 		protected RectTransform _rectTransform;
 		protected CanvasGroup _canvasGroup;

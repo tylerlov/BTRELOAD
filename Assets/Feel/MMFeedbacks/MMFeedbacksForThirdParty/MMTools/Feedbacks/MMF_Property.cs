@@ -146,9 +146,11 @@ namespace MoreMountains.Feedbacks
 					{
 						return;
 					}
+					if (_coroutine != null) { Owner.StopCoroutine(_coroutine); }
 					_coroutine = Owner.StartCoroutine(UpdateValueSequence(intensityMultiplier));
 					break;
 				case Modes.ToDestination:
+					if (_coroutine != null) { Owner.StopCoroutine(_coroutine); }
 					_coroutine = Owner.StartCoroutine(ToDestinationSequence(intensityMultiplier));
 					break;
 			}

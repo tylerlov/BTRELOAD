@@ -1,8 +1,4 @@
 ﻿using UnityEngine;
-using UnityEngine.UI;
-using System.Collections;
-using System.Collections.Generic;
-using MoreMountains.Tools;
 
 namespace MoreMountains.Tools
 {
@@ -88,6 +84,13 @@ namespace MoreMountains.Tools
 		/// the speed at which to interpolate the follower's rotation
 		[MMCondition("InterpolateRotation", true)]
 		public float FollowRotationSpeed = 10f;
+		/// higher values mean more damping, less spring, low values mean less damping, more spring
+		[MMEnumCondition("FollowRotationMode", (int)FollowModes.MMSpring)] 
+		[Range(0.01f, 1.0f)]
+		public float RotationSpringDamping = 0.3f;
+		/// the frequency at which the spring should "vibrate", in Hz (1 : the spring will do one full period in one second)
+		[MMEnumCondition("FollowRotationMode", (int)FollowModes.MMSpring)]
+		public float RotationSpringFrequency = 3f;
 
 		[Header("Scale Interpolation")]
 		/// whether or not we need to interpolate the scale
@@ -98,6 +101,13 @@ namespace MoreMountains.Tools
 		/// the speed at which to interpolate the follower's scale
 		[MMCondition("InterpolateScale", true)]
 		public float FollowScaleSpeed = 10f;
+		/// higher values mean more damping, less spring, low values mean less damping, more spring
+		[MMEnumCondition("FollowScaleMode", (int)FollowModes.MMSpring)] 
+		[Range(0.01f, 1.0f)]
+		public float ScaleSpringDamping = 0.3f;
+		/// the frequency at which the spring should "vibrate", in Hz (1 : the spring will do one full period in one second)
+		[MMEnumCondition("FollowScaleMode", (int)FollowModes.MMSpring)]
+		public float ScaleSpringFrequency = 3f;
 
 		[Header("Mode")]
 		/// the update at which the movement happens
@@ -121,18 +131,35 @@ namespace MoreMountains.Tools
 		/// the maximum distance around the initial position at which the transform can move
 		[MMCondition("AnchorToInitialPosition", true)]
 		public float MaxDistanceToAnchor = 1f;
-        
+		
 		protected bool _localSpace { get { return PositionSpace == PositionSpaces.Local; } }
 
-		protected Vector3 _velocity = Vector3.zero;
-		protected Vector3 _newTargetPosition;        
+		protected Vector3 _positionVelocity = Vector3.zero;
+		protected Vector3 _scaleVelocity = Vector3.zero;    
+		protected Vector3 _rotationVelocity = Vector3.zero;    
+		
 		protected Vector3 _initialPosition;
-		protected Vector3 _lastTargetPosition;
 		protected Vector3 _direction;
+		
 		protected Vector3 _newPosition;
+		protected Vector3 _newRotation;
 		protected Vector3 _newScale;
+		
+		protected Vector3 _newTargetPosition;    
 		protected Quaternion _newTargetRotation;
+		protected Vector3 _newTargetRotationEulerAngles;
+		protected Vector3 _newTargetRotationEulerAnglesLastFrame;
+		protected Vector3 _newTargetScale;
+
+		protected float _rotationFloatVelocity;
+		protected float _rotationFloatCurrent;
+		protected float _rotationFloatTarget;
+
+		protected Vector3 _currentRotationEulerAngles;
+		protected Quaternion _rotationBeforeSpring;
+		
 		protected Quaternion _initialRotation;
+		protected Vector3 _lastTargetPosition;
         
 		/// <summary>
 		/// On start we store our initial position
@@ -277,7 +304,7 @@ namespace MoreMountains.Tools
 						break;
 					case FollowModes.MMSpring:
 						_newPosition = this.transform.position;
-						MMMaths.Spring(ref _newPosition, _newTargetPosition, ref _velocity, PositionSpringDamping, PositionSpringFrequency, FollowPositionSpeed, Time.deltaTime);
+						MMMaths.Spring(ref _newPosition, _newTargetPosition, ref _positionVelocity, PositionSpringDamping, PositionSpringFrequency, Time.deltaTime);
 						if (_localSpace)
 						{
 							this.transform.localPosition = _newPosition;   
@@ -331,7 +358,7 @@ namespace MoreMountains.Tools
 
 			return interpolatedDistance;
 		}
-
+		
 		/// <summary>
 		/// Makes the object follow its target's rotation
 		/// </summary>
@@ -348,6 +375,24 @@ namespace MoreMountains.Tools
 			}
 
 			_newTargetRotation = Target.rotation;
+			
+			_newTargetRotationEulerAngles = Target.rotation.eulerAngles;
+			_currentRotationEulerAngles = this.transform.rotation.eulerAngles;
+			
+			if (FollowRotationMode == FollowModes.MMSpring && (_newTargetRotationEulerAnglesLastFrame != _newTargetRotationEulerAngles))
+			{
+				_rotationBeforeSpring = this.transform.rotation;
+				_rotationFloatCurrent = 0f;
+				_rotationFloatTarget = (Mathf.Abs(_newTargetRotation.eulerAngles.x)
+				                        + Mathf.Abs(_newTargetRotation.eulerAngles.y)
+				                        + Mathf.Abs(_newTargetRotation.z))
+				                       -
+				                       (Mathf.Abs(_currentRotationEulerAngles.x)
+				                        + Mathf.Abs(_currentRotationEulerAngles.y)
+				                        + Mathf.Abs(_currentRotationEulerAngles.z));
+
+				_rotationFloatTarget = Mathf.Abs(_rotationFloatTarget);
+			}
 
 			if (InterpolateRotation)
 			{
@@ -360,7 +405,13 @@ namespace MoreMountains.Tools
 						this.transform.rotation = Quaternion.Lerp(this.transform.rotation, _newTargetRotation, Time.deltaTime * FollowRotationSpeed);
 						break;
 					case FollowModes.MMSpring:
-						this.transform.rotation = MMMaths.Lerp(this.transform.rotation, _newTargetRotation, FollowRotationSpeed, Time.deltaTime);
+						if (_rotationFloatCurrent == _rotationFloatTarget)
+						{
+							break;
+						}
+						MMMaths.Spring(ref _rotationFloatCurrent, _rotationFloatTarget, ref _rotationFloatVelocity, RotationSpringDamping, RotationSpringFrequency, Time.deltaTime);
+						float lerpValue = MMMaths.Remap(_rotationFloatCurrent, 0f, _rotationFloatTarget, 0f, 1f);
+						this.transform.rotation = Quaternion.LerpUnclamped(_rotationBeforeSpring, _newTargetRotation, lerpValue );   
 						break;
 				}
 			}
@@ -368,6 +419,8 @@ namespace MoreMountains.Tools
 			{
 				this.transform.rotation = _newTargetRotation;
 			}
+
+			_newTargetRotationEulerAnglesLastFrame = _newTargetRotationEulerAngles;
 		}
 
 		/// <summary>
@@ -385,26 +438,28 @@ namespace MoreMountains.Tools
 				return;
 			}
 
-			_newScale = Target.localScale * FollowScaleFactor;
+			_newTargetScale = Target.localScale * FollowScaleFactor;
 
 			if (InterpolateScale)
 			{
 				switch (FollowScaleMode)
 				{
 					case FollowModes.MMLerp:
-						this.transform.localScale = MMMaths.Lerp(this.transform.localScale, _newScale, FollowScaleSpeed, Time.deltaTime);
+						this.transform.localScale = MMMaths.Lerp(this.transform.localScale, _newTargetScale, FollowScaleSpeed, Time.deltaTime);
 						break;
 					case FollowModes.RegularLerp:
-						this.transform.localScale = Vector3.Lerp(this.transform.localScale, _newScale, Time.deltaTime * FollowScaleSpeed);
+						this.transform.localScale = Vector3.Lerp(this.transform.localScale, _newTargetScale, Time.deltaTime * FollowScaleSpeed);
 						break;
 					case FollowModes.MMSpring:
-						this.transform.localScale = MMMaths.Lerp(this.transform.localScale, _newScale, FollowScaleSpeed, Time.deltaTime);
+						_newScale = this.transform.localScale;
+						MMMaths.Spring(ref _newScale, _newTargetScale, ref _scaleVelocity, ScaleSpringDamping, ScaleSpringFrequency, Time.deltaTime);
+						this.transform.localScale = _newScale;   
 						break;
 				}
 			}
 			else
 			{
-				this.transform.localScale = _newScale;
+				this.transform.localScale = _newTargetScale;
 			}
 		}
         

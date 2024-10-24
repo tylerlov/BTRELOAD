@@ -68,7 +68,7 @@ namespace Micosmo.SensorToolkit {
 
         void FlyableSeekWithForces(Rigidbody rb, Vector3 vSteer, Vector3 tdir, Vector3 tup) {
             var angularAccel = MotionUtils.SeekAngularAccel(attenMaxTurnAccel, attenMaxTurnSpeed, Mathf.Rad2Deg * rb.angularVelocity, rb.rotation, Quaternion.LookRotation(tdir, tup));
-            var transAccel = MotionUtils.SeekAccel(attenMaxSpeed, vSteer, rb.velocity);
+            var transAccel = MotionUtils.SeekAccel(attenMaxSpeed, vSteer, rb.linearVelocity);
             AccelerateForces(rb, angularAccel, transAccel);
         }
 
@@ -80,7 +80,7 @@ namespace Micosmo.SensorToolkit {
 
         void CharacterSeekWithForces(Rigidbody rb, Vector3 vSteer, Vector3 tdir, Vector3 tup) {
             var angularAccel = MotionUtils.SeekAngularAccel(attenMaxTurnAccel, attenMaxTurnSpeed, Mathf.Rad2Deg * rb.angularVelocity, rb.rotation, Quaternion.LookRotation(tdir, tup));
-            var transAccel = MotionUtils.SeekAccel(attenMaxSpeed, vSteer, rb.velocity);
+            var transAccel = MotionUtils.SeekAccel(attenMaxSpeed, vSteer, rb.linearVelocity);
             AccelerateForces(rb, angularAccel, transAccel);
         }
 
@@ -98,7 +98,7 @@ namespace Micosmo.SensorToolkit {
 
         void RigidBody2DSeekWithForces(Rigidbody2D rb, Vector2 vSteer, Vector2 tdir) {
             var angularAccel = MotionUtils.SeekAngularAccel2D(attenMaxTurnAccel, attenMaxTurnSpeed, rb.angularVelocity, rb.transform.up, tdir);
-            var transAccel = MotionUtils.SeekAccel(attenMaxSpeed, vSteer, rb.velocity);
+            var transAccel = MotionUtils.SeekAccel(attenMaxSpeed, vSteer, rb.linearVelocity);
             AccelerateForces(rb, angularAccel, transAccel);
         }
 
@@ -124,10 +124,10 @@ namespace Micosmo.SensorToolkit {
             if (constrainMotion) {
                 rb.angularVelocity = Vector3.ClampMagnitude(rb.angularVelocity, Mathf.Deg2Rad * attenMaxTurnSpeed);
 
-                var vel = rb.velocity;
+                var vel = rb.linearVelocity;
                 var dirDotForward = Vector3.Dot(vel.normalized, rb.transform.forward);
                 var maxVel = Mathf.Abs(dirDotForward) * attenMaxSpeed + (1f - Mathf.Abs(dirDotForward)) * attenMaxStrafeSpeed;
-                rb.velocity = Vector3.ClampMagnitude(rb.velocity, maxVel);
+                rb.linearVelocity = Vector3.ClampMagnitude(rb.linearVelocity, maxVel);
             }
         }
 
@@ -188,10 +188,10 @@ namespace Micosmo.SensorToolkit {
             if (constrainMotion) {
                 rb.angularVelocity = Mathf.Clamp(rb.angularVelocity, -attenMaxTurnSpeed, attenMaxTurnSpeed);
 
-                var vel = rb.velocity;
+                var vel = rb.linearVelocity;
                 var dirDotForward = Vector3.Dot(vel.normalized, rb.transform.up);
                 var maxVel = Mathf.Abs(dirDotForward) * attenMaxSpeed + (1f - Mathf.Abs(dirDotForward)) * attenMaxStrafeSpeed;
-                rb.velocity = Vector3.ClampMagnitude(rb.velocity, maxVel);
+                rb.linearVelocity = Vector3.ClampMagnitude(rb.linearVelocity, maxVel);
             }
         }
 

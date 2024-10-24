@@ -160,7 +160,11 @@ float4 AD_CutoutSource = 0;
 
     InputData inputData;
     InitializeInputData(input, surfaceData.normalTS, inputData);
-    SETUP_DEBUG_TEXTURE_DATA(inputData, input.texcoord, _BaseMap);
+
+    // Remove or modify the SETUP_DEBUG_TEXTURE_DATA line
+#if defined(DEBUG_DISPLAY)
+    inputData.uv = input.texcoord;
+#endif
 
     // Stripped down version of UniversalFragmentPBR().
 

@@ -63,7 +63,7 @@ public class PlayerShotState : ProjectileState
                 : _lastKnownTargetPosition;
         float distanceToTarget = Vector3.Distance(_projectile.transform.position, targetPosition);
 
-        Debug.Log($"Projectile {_projectile.GetInstanceID()} - Position: {_projectile.transform.position}, Target: {targetPosition}, Distance: {distanceToTarget}, Velocity: {_projectile.rb.velocity}");
+        Debug.Log($"Projectile {_projectile.GetInstanceID()} - Position: {_projectile.transform.position}, Target: {targetPosition}, Distance: {distanceToTarget}, Velocity: {_projectile.rb.linearVelocity}");
 
         if (distanceToTarget <= CLOSE_PROXIMITY_THRESHOLD)
         {
@@ -72,7 +72,7 @@ public class PlayerShotState : ProjectileState
 
         ConditionalDebug.Log(
             $"Projectile ID: {_projectile.GetInstanceID()}, Position: {_projectile.transform.position}, "
-                + $"Target: {targetPosition}, Distance: {distanceToTarget}, Velocity: {_projectile.rb.velocity}, "
+                + $"Target: {targetPosition}, Distance: {distanceToTarget}, Velocity: {_projectile.rb.linearVelocity}, "
                 + $"Forward: {_projectile.transform.forward}, Rotation: {_projectile.transform.rotation.eulerAngles}"
         );
     }
@@ -127,7 +127,7 @@ public class PlayerShotState : ProjectileState
         if (_projectile.currentTarget != null)
         {
             _projectile.transform.position = _projectile.currentTarget.position;
-            _projectile.rb.velocity = Vector3.zero;
+            _projectile.rb.linearVelocity = Vector3.zero;
 
             Collider targetCollider = _projectile.currentTarget.GetComponent<Collider>();
             if (targetCollider != null)

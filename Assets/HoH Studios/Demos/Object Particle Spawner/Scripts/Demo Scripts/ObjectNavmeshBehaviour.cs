@@ -48,7 +48,7 @@ namespace HohStudios.Tools.ObjectParticleSpawner.Demo
 
                 var rbody = GetComponent<Rigidbody>();
                 if (rbody)
-                    rbody.velocity = Vector3.zero;
+                    rbody.linearVelocity = Vector3.zero;
             }
         }
 
@@ -62,7 +62,7 @@ namespace HohStudios.Tools.ObjectParticleSpawner.Demo
 
                 var rbody = GetComponent<Rigidbody>();
                 if (rbody)
-                    rbody.velocity = Vector3.zero;
+                    rbody.linearVelocity = Vector3.zero;
             }
         }
     }

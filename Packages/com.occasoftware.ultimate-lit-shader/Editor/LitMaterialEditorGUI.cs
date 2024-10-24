@@ -131,6 +131,8 @@ namespace OccaSoftware.UltimateLitShader.Editor
 
             MaterialProperty _UseVertexColors = FindProperty("_UseVertexColors", properties);
 
+            MaterialProperty _ExcludeFromJPG = FindProperty("_ExcludeFromJPG", properties);
+
             DrawSurfaceOptions();
             DrawSurfaceInputs();
             DrawSurfaceInputs2();
@@ -247,6 +249,27 @@ namespace OccaSoftware.UltimateLitShader.Editor
                     EditorGUI.indentLevel++;
                     e.ShaderProperty(_ReceiveFogEnabled, new GUIContent("Receive Fog"));
                     e.ShaderProperty(_SortPriority, new GUIContent("Sort Priority"));
+                    
+                    // Add this block
+                    EditorGUI.BeginChangeCheck();
+                    e.ShaderProperty(_ExcludeFromJPG, new GUIContent("Exclude from JPG"));
+                    if (EditorGUI.EndChangeCheck())
+                    {
+                        foreach (Material target in e.targets)
+                        {
+                            if (_ExcludeFromJPG.floatValue > 0)
+                            {
+                                // Set to render after post processing
+                                target.renderQueue = 3000 + 100; // Transparent+100
+                            }
+                            else
+                            {
+                                // Return to normal geometry queue
+                                target.renderQueue = 2000 + target.GetInt("_QueueOffset"); // Geometry + offset
+                            }
+                        }
+                    }
+                    
                     EditorGUI.indentLevel--;
                     EditorGUILayout.Space();
                 }

@@ -57,17 +57,14 @@ namespace JPG.Universal
                 FetchVolumeComponent();
                 
                 #if UNITY_2022_1_OR_NEWER
-                    source = renderingData.cameraData.renderer.cameraColorTargetHandle; //implicit conversion, hopefully will exist for forseable future
+                    source = renderingData.cameraData.renderer.cameraColorTargetHandle;
                     sourceDepthStencil = renderingData.cameraData.renderer.cameraColorTargetHandle.rt.depth > 0 ? renderingData.cameraData.renderer.cameraColorTargetHandle : renderingData.cameraData.renderer.cameraDepthTargetHandle;
                 #else
                     source = renderingData.cameraData.renderer.cameraColorTarget;
-                    sourceDepthStencil = renderingData.cameraData.renderer.cameraDepthTarget != new RenderTargetIdentifier(BuiltinRenderTextureType.CameraTarget)/*(basically -1)*/ ? renderingData.cameraData.renderer.cameraDepthTarget : renderingData.cameraData.renderer.cameraColorTarget;
+                    sourceDepthStencil = renderingData.cameraData.renderer.cameraDepthTarget != new RenderTargetIdentifier(BuiltinRenderTextureType.CameraTarget) ? renderingData.cameraData.renderer.cameraDepthTarget : renderingData.cameraData.renderer.cameraColorTarget;
                 #endif
                 
                 cameraData = renderingData.cameraData;
-                
-                renderPassEvent = RenderPassEvent.AfterRenderingTransparents;
-                //renderPassEvent = RenderPassEvent.AfterRenderingPostProcessing;
 
                 ConfigureInput(DoReprojection ? ScriptableRenderPassInput.Motion : ScriptableRenderPassInput.Color);
             }
@@ -218,6 +215,9 @@ namespace JPG.Universal
         Shader shader;
         JPGRenderPass renderPass;
 
+        [SerializeField]
+        RenderPassEvent renderPassEvent = RenderPassEvent.AfterRenderingTransparents;
+
         public override void Create()
         {
             if (!isActive)
@@ -228,6 +228,8 @@ namespace JPG.Universal
             }
             name = "JPG";
             renderPass = new JPGRenderPass();
+            // Add this line to set the render pass event
+            renderPass.renderPassEvent = renderPassEvent;
         }
 
         void OnDisable()

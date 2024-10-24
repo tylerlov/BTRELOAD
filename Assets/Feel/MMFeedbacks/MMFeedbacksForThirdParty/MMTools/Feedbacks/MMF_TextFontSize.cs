@@ -1,4 +1,5 @@
-﻿using MoreMountains.Tools;
+﻿#if MM_UI
+using MoreMountains.Tools;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.Scripting.APIUpdating;
@@ -22,6 +23,7 @@ namespace MoreMountains.Feedbacks
 		public override string RequiresSetupText { get { return "This feedback requires that a TargetText be set to be able to work properly. You can set one below."; } }
 		#endif
 		public override bool HasAutomatedTargetAcquisition => true;
+		public override bool CanForceInitialValue => true;
 		protected override void AutomateTargetAcquisition() => TargetText = FindAutomatedTarget<Text>();
 
 		[MMFInspectorGroup("Target", true, 58, true)]
@@ -70,3 +72,4 @@ namespace MoreMountains.Feedbacks
 		}
 	}
 }
+#endif

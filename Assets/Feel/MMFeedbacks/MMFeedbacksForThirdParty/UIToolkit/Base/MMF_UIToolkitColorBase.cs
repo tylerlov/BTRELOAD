@@ -150,6 +150,7 @@ namespace MoreMountains.FeedbacksForThirdParty
 					{
 						return;
 					}
+					if (_coroutine != null) { Owner.StopCoroutine(_coroutine); }
 					_coroutine = Owner.StartCoroutine(ImageSequence());
 					break;
 			}

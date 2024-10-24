@@ -1,5 +1,6 @@
-﻿using UnityEngine;
-using UnityEngine.UI;
+﻿using MoreMountains.Tools;
+using UnityEngine;
+using System.Collections;
 using UnityEngine.Scripting.APIUpdating;
 
 namespace MoreMountains.Feedbacks
@@ -21,6 +22,8 @@ namespace MoreMountains.Feedbacks
 		public override string RequiredTargetText { get { return TargetRenderer != null ? TargetRenderer.name : "";  } }
 		public override string RequiresSetupText { get { return "This feedback requires that a TargetRenderer be set to be able to work properly. You can set one below."; } }
 		#endif
+		public override bool HasRandomness => true;
+		public override bool HasCustomInspectors => true; 
 		public override bool HasAutomatedTargetAcquisition => true;
 		protected override void AutomateTargetAcquisition() => TargetRenderer = FindAutomatedTarget<Renderer>();
 		
@@ -68,6 +71,21 @@ namespace MoreMountains.Feedbacks
 		[Tooltip("if the property is a vector4, the new vector4 to set")]
 		[MMFEnumCondition("PropertyType", (int)PropertyTypes.Vector)]
 		public Vector4 NewVector;
+
+		[Header("Interpolation")] 
+		/// whether or not to interpolate the value over time. If set to false, the change will be instant
+		[Tooltip("whether or not to interpolate the value over time. If set to false, the change will be instant")]
+		public bool InterpolateValue = false;
+		/// the duration of the interpolation
+		[Tooltip("the duration of the interpolation")]
+		[MMFCondition("InterpolateValue", true)]
+		public float Duration = 2f;
+		/// the curve over which to interpolate the value
+		[Tooltip("the curve over which to interpolate the value")]
+		[MMFCondition("InterpolateValue", true)]
+		public MMTweenType InterpolationCurve = new MMTweenType(new AnimationCurve(new Keyframe(0, 0), new Keyframe(0.3f, 1f), new Keyframe(1, 0)));
+		
+		public override float FeedbackDuration { get { return (InterpolateValue) ? ApplyTimeMultiplier(Duration) : 0f; } set { if (InterpolateValue) { Duration = value; } } }
 		
 		protected int _propertyID;
 		protected Color _initialColor;
@@ -77,6 +95,10 @@ namespace MoreMountains.Feedbacks
 		protected Vector2 _initialOffset;
 		protected Vector2 _initialScale;
 		protected Vector4 _initialVector;
+		protected Coroutine _coroutine;
+		protected Color _newColor;
+		protected Vector2 _newVector2;
+		protected Vector2 _newVector4;
 		
 		/// <summary>
 		/// On init we turn the sprite renderer off if needed
@@ -135,30 +157,119 @@ namespace MoreMountains.Feedbacks
 				return;
 			}
 
+			if (InterpolateValue)
+			{
+				Owner.StartCoroutine(InterpolationSequence(feedbacksIntensity));
+			}
+			else
+			{
+				switch (PropertyType)
+				{
+					case PropertyTypes.Color:
+						TargetRenderer.materials[MaterialID].SetColor(_propertyID, NewColor);
+						break;
+					case PropertyTypes.Float:
+						TargetRenderer.materials[MaterialID].SetFloat(_propertyID, NewFloat);
+						break;
+					case PropertyTypes.Integer:
+						TargetRenderer.materials[MaterialID].SetInt(_propertyID, NewInt);
+						break;
+					case PropertyTypes.Texture:
+						TargetRenderer.materials[MaterialID].SetTexture(_propertyID, NewTexture);
+						break;
+					case PropertyTypes.TextureOffset:
+						TargetRenderer.materials[MaterialID].SetTextureOffset(_propertyID, NewOffset);
+						break;
+					case PropertyTypes.TextureScale:
+						TargetRenderer.materials[MaterialID].SetTextureScale(_propertyID, NewScale);
+						break;
+					case PropertyTypes.Vector:
+						TargetRenderer.materials[MaterialID].SetVector(_propertyID, NewVector);
+						break;
+				}
+			}
+			
+		}
+		
+		/// <summary>
+		/// An internal coroutine used to interpolate the value over time
+		/// </summary>
+		/// <param name="intensityMultiplier"></param>
+		/// <returns></returns>
+		protected virtual IEnumerator InterpolationSequence(float intensityMultiplier)
+		{
+			IsPlaying = true;
+			float journey = NormalPlayDirection ? 0f : FeedbackDuration;
+			while ((journey >= 0) && (journey <= FeedbackDuration) && (FeedbackDuration > 0))
+			{
+				float remappedTime = MMFeedbacksHelpers.Remap(journey, 0f, FeedbackDuration, 0f, 1f);
+
+				SetValueAtTime(remappedTime, intensityMultiplier);
+
+				journey += NormalPlayDirection ? FeedbackDeltaTime : -FeedbackDeltaTime;
+				yield return null;
+			}
+			SetValueAtTime(FinalNormalizedTime, intensityMultiplier);    
+			_coroutine = null;      
+			IsPlaying = false;
+			yield return null;
+		}
+
+		/// <summary>
+		/// Sets the value of the property at a certain time
+		/// </summary>
+		/// <param name="t"></param>
+		/// <param name="intensityMultiplier"></param>
+		protected virtual void SetValueAtTime(float t, float intensityMultiplier)
+		{
 			switch (PropertyType)
 			{
 				case PropertyTypes.Color:
-					TargetRenderer.materials[MaterialID].SetColor(_propertyID, NewColor);
+					float evaluated = MMTween.Tween(t, 0f, 1f, _initialFloat, NewFloat, InterpolationCurve);
+					_newColor = Color.Lerp(_initialColor, NewColor, evaluated);
+					TargetRenderer.materials[MaterialID].SetColor(_propertyID, _newColor);
 					break;
 				case PropertyTypes.Float:
-					TargetRenderer.materials[MaterialID].SetFloat(_propertyID, NewFloat);
+					float newFloatValue = MMTween.Tween(t, 0f, 1f, _initialFloat, NewFloat, InterpolationCurve);
+					TargetRenderer.materials[MaterialID].SetFloat(_propertyID, newFloatValue);
 					break;
 				case PropertyTypes.Integer:
-					TargetRenderer.materials[MaterialID].SetInt(_propertyID, NewInt);
+					int newIntValue = (int)MMTween.Tween(t, 0f, 1f, _initialInt, NewInt, InterpolationCurve);
+					TargetRenderer.materials[MaterialID].SetInt(_propertyID, newIntValue);
 					break;
 				case PropertyTypes.Texture:
 					TargetRenderer.materials[MaterialID].SetTexture(_propertyID, NewTexture);
 					break;
 				case PropertyTypes.TextureOffset:
-					TargetRenderer.materials[MaterialID].SetTextureOffset(_propertyID, NewOffset);
+					_newVector2 = MMTween.Tween(t, 0f, 1f, _initialOffset, NewOffset, InterpolationCurve);
+					TargetRenderer.materials[MaterialID].SetTextureOffset(_propertyID, _newVector2);
 					break;
 				case PropertyTypes.TextureScale:
-					TargetRenderer.materials[MaterialID].SetTextureScale(_propertyID, NewScale);
+					_newVector2 = MMTween.Tween(t, 0f, 1f, _initialScale, NewScale, InterpolationCurve);
+					TargetRenderer.materials[MaterialID].SetTextureScale(_propertyID, _newVector2);
 					break;
 				case PropertyTypes.Vector:
-					TargetRenderer.materials[MaterialID].SetVector(_propertyID, NewVector);
+					_newVector4 = MMTween.Tween(t, 0f, 1f, _initialVector, NewVector, InterpolationCurve);
+					TargetRenderer.materials[MaterialID].SetVector(_propertyID, _newVector4);
 					break;
 			}
+		}
+        
+		/// <summary>
+		/// Stops this feedback
+		/// </summary>
+		/// <param name="position"></param>
+		/// <param name="feedbacksIntensity"></param>
+		protected override void CustomStopFeedback(Vector3 position, float feedbacksIntensity = 1)
+		{
+			if (!Active || !FeedbackTypeAuthorized || (_coroutine == null))
+			{
+				return;
+			}
+			base.CustomStopFeedback(position, feedbacksIntensity);
+			IsPlaying = false;
+			Owner.StopCoroutine(_coroutine);
+			_coroutine = null;
 		}
 		
 		/// <summary>

@@ -2,6 +2,7 @@
 using MoreMountains.Tools;
 using UnityEngine;
 using UnityEngine.Events;
+#if MM_UI
 using UnityEngine.UI;
 
 #if UNITY_EDITOR
@@ -15,6 +16,7 @@ namespace MoreMountains.Feedbacks
 	/// A simple class used to handle demo buttons in the MMF_PlayerDemo and MMFeedbacksDemo scenes
 	/// </summary>
 	[ExecuteAlways]
+	[AddComponentMenu("")]
 	public class DemoButton : MonoBehaviour
 	{
 		[Header("Behaviour")]
@@ -61,3 +63,4 @@ namespace MoreMountains.Feedbacks
 		}
 	}
 }
+#endif

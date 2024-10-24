@@ -285,11 +285,14 @@ namespace MoreMountains.Feedbacks
 		protected int _currentIndex = 0;
 		protected Vector3 _gizmoCenter;
 		protected MMShufflebag<int> _randomUniqueShuffleBag;
+		protected AudioClip _lastPlayedClip;
 		
 		protected override void CustomInitialization(MMF_Player owner)
 		{
 			base.CustomInitialization(owner);
 			HandleSO();
+
+			_lastPlayedClip = null;
 			
 			if (RandomUnique)
 			{
@@ -506,6 +509,7 @@ namespace MoreMountains.Feedbacks
 			_playedAudioSource = MMSoundManagerSoundPlayEvent.Trigger(sfx, _options);
 
 			_lastPlayTimestamp = FeedbackTime;
+			_lastPlayedClip = sfx;
 		}
 
 		/// <summary>
@@ -534,6 +538,11 @@ namespace MoreMountains.Feedbacks
 			float longest = 0f;
 			if ((randomSfx != null) && (randomSfx.Length > 0))
 			{
+				if (_lastPlayedClip != null)
+				{
+					return _lastPlayedClip.length;	
+				}
+				
 				foreach (AudioClip clip in randomSfx)
 				{
 					if ((clip != null) && (clip.length > longest))
@@ -610,6 +619,7 @@ namespace MoreMountains.Feedbacks
 			_editorAudioSource = temporaryAudioHost.AddComponent<AudioSource>() as AudioSource;
 			PlayAudioSource(_editorAudioSource, tmpAudioClip, volume, pitch, _randomPlaybackTime, _randomPlaybackDuration);
 			_lastPlayTimestamp = FeedbackTime;
+			_lastPlayedClip = tmpAudioClip;
 			float length = (_randomPlaybackDuration > 0) ? _randomPlaybackDuration : tmpAudioClip.length;
 			length *= 1000;
 			length = length / Mathf.Abs(pitch);
@@ -717,6 +727,15 @@ namespace MoreMountains.Feedbacks
 		{
 			base.OnValidate();
 			RandomizeTimes();
+			
+			if ((RandomSfx != null) && (RandomSfx.Length > 0))
+			{
+				_randomUniqueShuffleBag = new MMShufflebag<int>(RandomSfx.Length);
+				for (int i = 0; i < RandomSfx.Length; i++)
+				{
+					_randomUniqueShuffleBag.Add(i,1);
+				}
+			}
 		}
 
 		#endregion

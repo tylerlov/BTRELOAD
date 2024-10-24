@@ -3,12 +3,13 @@ using UnityEngine;
 #if (MM_TEXTMESHPRO || MM_UGUI2)
 using TMPro;
 #endif
-
+#if MM_UI
 namespace MoreMountains.Feel
 {
 	/// <summary>
 	/// A small script used to power the FeelMMSoundManagerPlaylistManager demo scene
 	/// </summary>
+	[AddComponentMenu("")]
 	public class PlaylistDemo : MonoBehaviour
 	{
 		/// the playlist manager to read data on
@@ -79,3 +80,4 @@ namespace MoreMountains.Feel
 		}
 	}
 }
+#endif

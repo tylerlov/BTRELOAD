@@ -4,6 +4,7 @@ using UnityEngine;
 using MoreMountains.Tools;
 using UnityEngine.Scripting.APIUpdating;
 
+#if MM_UI
 namespace MoreMountains.Feedbacks
 {
 	/// <summary>
@@ -249,3 +250,4 @@ namespace MoreMountains.Feedbacks
 		}
 	}
 }
+#endif

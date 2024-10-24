@@ -233,7 +233,8 @@ namespace FidelityFX
 
                 // Auto exposure always used to track luma changes in locking logic
                 commandBuffer.SetRenderTarget(_resources.FrameInfo);
-                commandBuffer.ClearRenderTarget(false, true, new Color(0f, 1e8f, 0f, 0f));
+                //commandBuffer.ClearRenderTarget(false, true, new Color(0f, 1e8f, 0f, 0f));
+                commandBuffer.ClearRenderTarget(false, true, new Color(0f, 1f, 0f, 0f));
 
                 // Reset atomic counter to 0
                 commandBuffer.SetRenderTarget(_resources.SpdAtomicCounter);

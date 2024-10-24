@@ -199,6 +199,7 @@ namespace MoreMountains.Tools
 			{
 				// we pick an idle audio source from the pool if possible
 				audioSource = _pool.GetAvailableAudioSource(PoolCanExpand, this.transform);
+				audioSource.clip = audioClip;
 				if ((audioSource) && (!loop))
 				{
 					recycleAudioSource = audioSource;
@@ -793,13 +794,19 @@ namespace MoreMountains.Tools
 			Coroutine outCoroutine;
 			if ((source != null) && (_fadeInSoundCoroutines.TryGetValue(source, out outCoroutine)))
 			{
-				StopCoroutine(outCoroutine);
-				_fadeInSoundCoroutines.Remove(source);
+				if (outCoroutine != null)
+				{
+					StopCoroutine(outCoroutine);
+					_fadeInSoundCoroutines.Remove(source);	
+				}
 			}
 			if ((source != null) && (_fadeOutSoundCoroutines.TryGetValue(source, out outCoroutine)))
 			{
-				StopCoroutine(outCoroutine);
-				_fadeOutSoundCoroutines.Remove(source);
+				if (outCoroutine != null)
+				{
+					StopCoroutine(outCoroutine);
+					_fadeOutSoundCoroutines.Remove(source);
+				}
 			}
 		}
 
@@ -996,8 +1003,11 @@ namespace MoreMountains.Tools
 		{
 			foreach (MMSoundManagerSound sound in _sounds)
 			{
-				sound.Source.Play();
-			}    
+				if (sound.Source.isActiveAndEnabled)
+				{
+					sound.Source.Play();
+				}
+			}
 		}
 
 		/// <summary>

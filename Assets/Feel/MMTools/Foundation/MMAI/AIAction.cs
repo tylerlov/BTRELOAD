@@ -11,7 +11,7 @@ namespace MoreMountains.Tools
 	public abstract class AIAction : MonoBehaviour
 	{
 		public enum InitializationModes { EveryTime, OnlyOnce, }
-
+		/// whether initialization should happen only once, or every time the brain is reset
 		public InitializationModes InitializationMode;
 		protected bool _initialized;
 		

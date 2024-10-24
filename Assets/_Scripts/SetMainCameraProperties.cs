@@ -1,19 +1,29 @@
 using System.Collections;
 using System.Collections.Generic;
-using Cinemachine;
+using Unity.Cinemachine;
 using UnityEngine;
 
 public class SetMainCameraProperties : MonoBehaviour
 {
-    public CinemachineVirtualCamera mainCamera;
+    public CinemachineCamera mainCamera;
 
     public void SetCameraProperties(float fOV)
     {
-        mainCamera.m_Lens.FieldOfView = fOV;
+        if (mainCamera != null)
+        {
+            LensSettings lens = mainCamera.Lens;
+            lens.FieldOfView = fOV;
+            mainCamera.Lens = lens;
+        }
     }
 
     public void SetDrawDistance(float distance)
     {
-        mainCamera.m_Lens.FarClipPlane = distance * 100;
+        if (mainCamera != null)
+        {
+            LensSettings lens = mainCamera.Lens;
+            lens.FarClipPlane = distance * 100;
+            mainCamera.Lens = lens;
+        }
     }
 }

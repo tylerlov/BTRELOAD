@@ -23,7 +23,7 @@ namespace TND.FSR
 
             EditorGUILayout.LabelField("FSR 3.1 Settings", EditorStyles.boldLabel);
             //bool frameGeneration = EditorGUILayout.Toggle(Styles.FGText, fsrScript.enableFG);
-            FSR_Quality fsrQuality = (FSR_Quality)EditorGUILayout.EnumPopup(Styles.qualityText, fsrScript.FSRQuality);
+            FSR3_Quality fsrQuality = (FSR3_Quality)EditorGUILayout.EnumPopup(Styles.qualityText, fsrScript.FSRQuality);
             float AntiGhosting = EditorGUILayout.Slider(Styles.antiGhosting, fsrScript.antiGhosting, 0.0f, 1.0f);
 
             bool sharpening = EditorGUILayout.Toggle(Styles.sharpeningText, fsrScript.sharpening);

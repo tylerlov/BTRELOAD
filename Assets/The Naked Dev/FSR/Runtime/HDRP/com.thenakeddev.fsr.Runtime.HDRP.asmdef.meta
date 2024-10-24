@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: cd077049ec4a1214eaa24b5c85890edf
+AssemblyDefinitionImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 252172
+  packageName: FSR 3 - Upscaling for Unity
+  packageVersion: 1.7.3
+  assetPath: Assets/The Naked Dev/FSR/Runtime/HDRP/com.thenakeddev.fsr.Runtime.HDRP.asmdef
+  uploadId: 701333

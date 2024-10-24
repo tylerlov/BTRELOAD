@@ -1,9 +1,9 @@
-﻿using System;
-using UnityEngine;
-using MoreMountains.Tools;
+﻿using UnityEngine;
 using System.Collections;
 using UnityEngine.SceneManagement;
+#if MM_UI
 using UnityEngine.UI;
+#endif
 
 namespace MoreMountains.Tools
 {
@@ -14,6 +14,7 @@ namespace MoreMountains.Tools
 	[AddComponentMenu("More Mountains/Tools/GUI/MMHealthBar")]
 	public class MMHealthBar : MonoBehaviour 
 	{
+		#if MM_UI
 		/// the possible health bar types
 		public enum HealthBarTypes { Prefab, Drawn, Existing }
 		/// the possible timescales the bar can work on
@@ -120,6 +121,12 @@ namespace MoreMountains.Tools
 		/// the mode the bar should follow the target in
 		[Tooltip("the mode the bar should follow the target in")]
 		public MMFollowTarget.UpdateModes FollowTargetMode = MMFollowTarget.UpdateModes.LateUpdate;
+		/// if this is true, the drawn health bar will adapt its rotation to match the one of its target
+		[Tooltip("if this is true, the drawn health bar will adapt its rotation to match the one of its target")]
+		public bool FollowRotation = false;
+		/// if this is true, the drawn health bar will adapt its scale to match the one of its target
+		[Tooltip("if this is true, the drawn health bar will adapt its scale to match the one of its target")]
+		public bool FollowScale = true;
 		/// if this is true, the drawn health bar will be nested below the MMHealthBar
 		[Tooltip("if this is true, the drawn health bar will be nested below the MMHealthBar")]
 		public bool NestDrawnHealthBar = false;
@@ -269,6 +276,7 @@ namespace MoreMountains.Tools
 				_progressBar.SetBar(100f, 0f, 100f);
 			}
 		}
+		
 
 		/// <summary>
 		/// Draws the health bar.
@@ -289,7 +297,8 @@ namespace MoreMountains.Tools
 			_followTransform = newGameObject.AddComponent<MMFollowTarget>();
 			_followTransform.Offset = HealthBarOffset;
 			_followTransform.Target = this.transform;
-			_followTransform.FollowRotation = false; 
+			_followTransform.FollowRotation = FollowRotation;
+			_followTransform.FollowScale = FollowScale; 
 			_followTransform.InterpolatePosition = false;
 			_followTransform.InterpolateRotation = false;
 			_followTransform.UpdateMode = FollowTargetMode;
@@ -508,5 +517,7 @@ namespace MoreMountains.Tools
 		{
 			UpdateBar(TestCurrentHealth, TestMinHealth, TestMaxHealth, true);
 		}
+
+		#endif
 	}
 }
