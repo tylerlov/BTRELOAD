@@ -36,6 +36,9 @@ public class ProjectileEffectManager : MonoBehaviour
     [SerializeField]
     private float poolWarningThreshold = 0.8f;
 
+    private Queue<MaterialPropertyBlock> propertyBlockPool = new Queue<MaterialPropertyBlock>();
+    private const int PROPERTY_BLOCK_POOL_SIZE = 20;
+
     private void Awake()
     {
         if (Instance == null)
@@ -46,6 +49,12 @@ public class ProjectileEffectManager : MonoBehaviour
         else
         {
             Destroy(gameObject);
+        }
+
+        // Initialize property block pool
+        for (int i = 0; i < PROPERTY_BLOCK_POOL_SIZE; i++)
+        {
+            propertyBlockPool.Enqueue(new MaterialPropertyBlock());
         }
     }
 
@@ -146,5 +155,18 @@ public class ProjectileEffectManager : MonoBehaviour
     public void ClearPools()
     {
         // This method is no longer needed as ParticleSystemManager handles the pools
+    }
+
+    public MaterialPropertyBlock GetPropertyBlock()
+    {
+        if (propertyBlockPool.Count > 0)
+            return propertyBlockPool.Dequeue();
+        return new MaterialPropertyBlock();
+    }
+
+    public void ReturnPropertyBlock(MaterialPropertyBlock block)
+    {
+        if (propertyBlockPool.Count < PROPERTY_BLOCK_POOL_SIZE)
+            propertyBlockPool.Enqueue(block);
     }
 }

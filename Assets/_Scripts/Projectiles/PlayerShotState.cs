@@ -143,7 +143,19 @@ public class PlayerShotState : ProjectileState
 
     public override void OnTriggerEnter(Collider other)
     {
-        HandleCollision(other.gameObject);
+        GameObject hitObject = other.gameObject;
+
+        if (hitObject.CompareTag("Enemy"))
+        {
+            // Handle enemy collision
+            HandleCollision(hitObject);
+        }
+        else
+        {
+            Debug.Log($"Projectile hit non-enemy object: {hitObject.name}");
+            _projectile.gameObject.SetActive(false); // Deactivate the projectile
+            ProjectilePool.Instance.ReturnProjectileToPool(_projectile); // Return it to the pool
+        }
     }
 
     public override void OnCollisionEnter(Collision collision)

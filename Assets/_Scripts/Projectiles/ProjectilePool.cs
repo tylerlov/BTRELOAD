@@ -1,5 +1,21 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Chronos; // Add this line
+
+public struct ProjectileSpawnRequest
+{
+    public Vector3 Position;
+    public Quaternion Rotation;
+    public float Speed;
+    public float Lifetime;
+    public float Scale;
+    public float Damage;
+    public bool EnableHoming;
+    public Transform Target;
+    public bool IsStatic;
+    public Material Material;
+}
 
 public class ProjectilePool : MonoBehaviour
 {
@@ -13,51 +29,170 @@ public class ProjectilePool : MonoBehaviour
     private const int MAX_POOL_SIZE = 1000; // Add a maximum pool size
     private int totalProjectilesCreated = 0;
 
+    private const int MAX_SIMULTANEOUS_SPAWNS = 5;
+    private Queue<ProjectileRequest> spawnQueue = new Queue<ProjectileRequest>();
+
+    private const int BATCH_SIZE = 10;
+
+    // Add these fields at the top of the ProjectilePool class
+    private const int INITIALIZATION_BATCH_SIZE = 5; // Smaller batch size
+    private const float BATCH_DELAY = 0.02f; // 20ms delay between batches
+    private bool isInitializing = false;
+
+    // Add these constants
+    private const int TIMELINE_BATCH_SIZE = 2; // Reduce from 3 to 2
+    private const float TIMELINE_INIT_DELAY = 0.1f; // Increase delay between Timeline inits
+    private const int MAX_TIMELINE_INITS_PER_FRAME = 1; // Limit Timeline initializations per frame
+    private int timelineInitsThisFrame = 0;
+    private float lastTimelineInitTime = 0f;
+
     private void Awake()
     {
         if (Instance == null)
         {
             Instance = this;
             DontDestroyOnLoad(gameObject);
+            StartCoroutine(InitializePoolGradually());
         }
         else
         {
             Destroy(gameObject);
         }
-
-        InitializePool();
     }
 
-    private void InitializePool()
+    private IEnumerator InitializePoolGradually()
     {
-        for (int i = 0; i < initialPoolSize; i++)
+        isInitializing = true;
+        int created = 0;
+        
+        // Create initial batch without Timelines
+        for (int i = 0; i < INITIALIZATION_BATCH_SIZE; i++)
         {
-            CreateNewProjectile();
+            CreateNewProjectile(false);
+            created++;
         }
+
+        yield return new WaitForSeconds(BATCH_DELAY);
+
+        // Create the rest gradually
+        while (created < initialPoolSize)
+        {
+            if (Time.deltaTime < 0.033f) // Only create when frame time is good
+            {
+                int batchSize = Mathf.Min(INITIALIZATION_BATCH_SIZE, initialPoolSize - created);
+                for (int i = 0; i < batchSize; i++)
+                {
+                    var projectile = CreateNewProjectile(false);
+                    created++;
+                    
+                    // More conservative Timeline initialization
+                    if (i % (TIMELINE_BATCH_SIZE * 2) == 0) // Double the spacing between Timeline inits
+                    {
+                        yield return new WaitForSeconds(TIMELINE_INIT_DELAY);
+                        StartCoroutine(InitializeTimeline(projectile));
+                    }
+                }
+                yield return new WaitForSeconds(BATCH_DELAY * 1.5f); // Increase delay between batches
+            }
+            else
+            {
+                yield return new WaitForSeconds(BATCH_DELAY * 2);
+            }
+        }
+
+        isInitializing = false;
+    }
+
+    private void Update()
+    {
+        if (projectilePool.Count < initialPoolSize * 0.2f) // If pool is less than 20% full
+        {
+            ConditionalDebug.LogWarning($"Pool running low. Current size: {projectilePool.Count}");
+        }
+
+        int spawnsThisFrame = 0;
+        while (spawnQueue.Count > 0 && spawnsThisFrame < MAX_SIMULTANEOUS_SPAWNS)
+        {
+            var request = spawnQueue.Dequeue();
+            // Process spawn request
+            spawnsThisFrame++;
+        }
+    }
+
+    private ProjectileStateBased CreateNewProjectile(bool initializeTimeline = true)
+    {
+        ProjectileStateBased newProjectile = Instantiate(projectilePrefab, transform);
+        newProjectile.gameObject.SetActive(false);
+        
+        if (initializeTimeline)
+        {
+            StartCoroutine(InitializeTimeline(newProjectile));
+        }
+        
+        projectilePool.Enqueue(newProjectile);
+        totalProjectilesCreated++;
+        
+        return newProjectile;
+    }
+
+    private IEnumerator InitializeTimeline(ProjectileStateBased projectile)
+    {
+        if (projectile == null) yield break;
+
+        // Check if we've hit our per-frame limit
+        if (timelineInitsThisFrame >= MAX_TIMELINE_INITS_PER_FRAME)
+        {
+            yield return new WaitForEndOfFrame();
+            timelineInitsThisFrame = 0;
+        }
+
+        // Ensure minimum time between Timeline initializations
+        float timeSinceLastInit = Time.time - lastTimelineInitTime;
+        if (timeSinceLastInit < TIMELINE_INIT_DELAY)
+        {
+            yield return new WaitForSeconds(TIMELINE_INIT_DELAY - timeSinceLastInit);
+        }
+
+        Timeline timeline = projectile.gameObject.GetComponent<Timeline>();
+        if (timeline != null)
+        {
+            timeline.enabled = false;
+            timeline.rewindable = true;
+            
+            // Activate without triggering full hierarchy
+            var cachedActive = projectile.gameObject.activeSelf;
+            projectile.transform.gameObject.SetActive(true);
+            timeline.enabled = true;
+            projectile.transform.gameObject.SetActive(cachedActive);
+        }
+
+        timelineInitsThisFrame++;
+        lastTimelineInitTime = Time.time;
     }
 
     public ProjectileStateBased GetProjectile()
     {
         ProjectileStateBased projectile = null;
 
-        // Try to get from pool first
         while (projectilePool.Count > 0)
         {
             projectile = projectilePool.Dequeue();
             if (projectile != null && !projectile.gameObject.activeInHierarchy)
             {
-                ConditionalDebug.Log($"Retrieved projectile from pool. Pool size: {projectilePool.Count}");
+                // Initialize Timeline if not already done
+                if (projectile.TLine == null)
+                {
+                    StartCoroutine(InitializeTimeline(projectile));
+                    return projectile;
+                }
                 return projectile;
             }
         }
 
-        // Create new if pool is empty and we haven't hit the limit
+        // Create new if needed
         if (totalProjectilesCreated < MAX_POOL_SIZE)
         {
-            projectile = CreateNewProjectile();
-            totalProjectilesCreated++;
-            ConditionalDebug.Log($"Created new projectile. Total created: {totalProjectilesCreated}");
-            return projectile;
+            return CreateNewProjectile(true);
         }
 
         // If we hit the limit, force recycle the oldest projectile
@@ -171,29 +306,12 @@ public class ProjectilePool : MonoBehaviour
     public void InitializeProjectilePool()
     {
         ClearPool();
-        InitializePool();
+        StartCoroutine(InitializePoolGradually());
     }
 
     public bool HasPendingRequests()
     {
         return projectileRequestQueue.Count > 0;
-    }
-
-    private void Update()
-    {
-        if (projectilePool.Count < initialPoolSize * 0.2f) // If pool is less than 20% full
-        {
-            ConditionalDebug.LogWarning($"Pool running low. Current size: {projectilePool.Count}");
-        }
-    }
-
-    private ProjectileStateBased CreateNewProjectile()
-    {
-        ProjectileStateBased newProjectile = Instantiate(projectilePrefab, transform);
-        newProjectile.gameObject.SetActive(false);
-        newProjectile.Initialize(); // Make sure this method exists in ProjectileStateBased
-        ConditionalDebug.Log($"Created new projectile. Total: {totalProjectilesCreated + 1}");
-        return newProjectile;
     }
 }
 

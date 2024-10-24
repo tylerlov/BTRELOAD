@@ -21,8 +21,7 @@ public enum ProjectilePoolType
     Explosive,
 }
 
-// Define ProjectileVector3 if it's not defined elsewhere
-[System.Serializable]
+// Define ProjectileVector3 if it's not defined elsewherewhy a[System.Serializable]
 public struct ProjectileVector3
 {
     public float x;
@@ -190,6 +189,79 @@ public class ProjectileStateBased : MonoBehaviour
 
     private FMOD.Studio.EventInstance soundInstance;
 
+    // Add near the top of the class with other fields
+    private float nextAudioUpdateTime;
+    private const float AUDIO_UPDATE_INTERVAL = 0.1f;
+
+    // Add these fields at the top of the class
+    private static MaterialPropertyBlock _sharedPropertyBlock;
+    private bool _materialsInitialized = false;
+
+    // Add to the fields section
+    private bool _componentsInitialized = false;
+
+    // Add these fields
+    private bool timelineInitialized = false;
+    private static readonly WaitForSeconds TimelineInitDelay = new WaitForSeconds(0.1f);
+
+    private IEnumerator InitializeTimelineComponent()
+    {
+        if (timelineInitialized) yield break;
+
+        yield return TimelineInitDelay;
+
+        if (TLine == null)
+        {
+            TLine = GetComponent<Timeline>();
+            if (TLine != null)
+            {
+                TLine.enabled = false;
+                TLine.rewindable = true;
+                
+                // Activate without triggering full hierarchy
+                var cachedActive = gameObject.activeSelf;
+                transform.gameObject.SetActive(true);
+                TLine.enabled = true;
+                transform.gameObject.SetActive(cachedActive);
+            }
+        }
+
+        timelineInitialized = true;
+    }
+
+    private void InitializeMaterials()
+    {
+        if (_materialsInitialized) return;
+        
+        if (_sharedPropertyBlock == null)
+            _sharedPropertyBlock = new MaterialPropertyBlock();
+        
+        if (modelRenderer != null)
+        {
+            myMaterial = new Material(modelRenderer.sharedMaterial);
+            originalProjectileColor = myMaterial.color;
+            modelRenderer.material = myMaterial;
+        }
+        
+        _materialsInitialized = true;
+    }
+
+    private void InitializeComponents()
+    {
+        if (_componentsInitialized) return;
+        
+        rb = rb ?? GetComponent<Rigidbody>();
+        tRn = tRn ?? GetComponent<TrailRenderer>();
+        
+        // Don't initialize Timeline here - defer it
+        if (!timelineInitialized)
+        {
+            StartCoroutine(InitializeTimelineComponent());
+        }
+        
+        _componentsInitialized = true;
+    }
+
     private void Awake()
     {
         cachedTransform = transform;
@@ -221,6 +293,17 @@ public class ProjectileStateBased : MonoBehaviour
 
     void OnEnable()
     {
+        // Initialize non-Timeline components immediately
+        if (!_componentsInitialized)
+        {
+            InitializeComponents();
+        }
+
+        if (!_materialsInitialized)
+        {
+            InitializeMaterials();
+        }
+
         lifetimeExtended = false;
         projHitPlayer = false;
 
@@ -229,34 +312,37 @@ public class ProjectileStateBased : MonoBehaviour
             gameObject.tag = "LaunchableBullet";
         }
 
-        if (PlayerPrefs.GetInt(FIRST_TIME_ENABLED_KEY, 0) == 0)
+        // Use property block instead of directly modifying material
+        if (modelRenderer != null)
         {
-            ConditionalDebug.Log("First Time Enabled");
-            PlayerPrefs.SetInt(FIRST_TIME_ENABLED_KEY, 1);
-        }
-        else
-        {
-            modelRenderer.material = myMaterial;
-            myMaterial.SetColor("_BaseColor", originalProjectileColor);
+            _sharedPropertyBlock.SetColor("_BaseColor", originalProjectileColor);
+            modelRenderer.SetPropertyBlock(_sharedPropertyBlock);
         }
 
-        ChangeState(new EnemyShotState(this));
+        // Only change state if needed
+        if (!(currentState is EnemyShotState))
+        {
+            ChangeState(new EnemyShotState(this));
+        }
 
-        disableOnProjMove = false;
-
-        transform.GetChild(0).gameObject.SetActive(false);
+        // Optimize child handling
+        Transform child = transform.GetChild(0);
+        if (child != null && child.gameObject.activeSelf)
+        {
+            child.gameObject.SetActive(false);
+        }
 
         _currentTag = gameObject.tag;
 
-        // Remove any existing LockedFX
+        // Optimize LockedFX handling
         if (currentLockedFX != null)
         {
             ProjectileEffectManager.Instance.ReturnLockedFXToPool(currentLockedFX);
             currentLockedFX = null;
         }
 
-        // Only create sound instance if needed
-        if (!string.IsNullOrEmpty(soundEventPath) && soundInstance.isValid())
+        // Only create sound instance if needed and not already valid
+        if (!string.IsNullOrEmpty(soundEventPath) && !soundInstance.isValid())
         {
             soundInstance = FMODUnity.RuntimeManager.CreateInstance(soundEventPath);
         }
@@ -265,9 +351,9 @@ public class ProjectileStateBased : MonoBehaviour
     private void OnDisable()
     {
         // Optional: Ensure projectile is returned to the pool only if not already handled
-        if (!rb.isKinematic)
+        if (rb != null && !rb.isKinematic)
         {
-            ProjectilePool.Instance.ReturnProjectile(this);
+            ProjectilePool.Instance?.ReturnProjectile(this);
         }
 
         // Clean up sound instance
@@ -275,6 +361,12 @@ public class ProjectileStateBased : MonoBehaviour
         {
             soundInstance.stop(FMOD.Studio.STOP_MODE.IMMEDIATE);
             soundInstance.release();
+        }
+
+        // Only try to release sound if the AudioManager exists
+        if (ProjectileAudioManager.Instance != null)
+        {
+            ProjectileAudioManager.Instance.ReleaseProjectileSound(GetInstanceID());
         }
     }
 
@@ -730,7 +822,16 @@ public class ProjectileStateBased : MonoBehaviour
 
     void Update()
     {
-        // Instead of managing FMOD events directly
-        ProjectileAudioManager.Instance.UpdateProjectileSound(transform.position, rb.linearVelocity.magnitude);
+        // Only process audio for homing projectiles
+        if (homing && Time.time >= nextAudioUpdateTime)
+        {
+            ProjectileAudioManager.Instance.UpdateProjectileSound(
+                transform.position, 
+                rb.linearVelocity.magnitude,
+                GetInstanceID(),
+                homing  // Pass the homing state
+            );
+            nextAudioUpdateTime = Time.time + AUDIO_UPDATE_INTERVAL;
+        }
     }
 }
