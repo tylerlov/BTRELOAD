@@ -73,12 +73,21 @@ public class PlayerHealth : MonoBehaviour, IDamageable
 
     private void SpawnHitEffect()
     {
+        // Find an inactive effect in the pool
         GameObject effect = hitEffectsPool.Find(e => !e.activeInHierarchy);
         if (effect != null)
         {
+            // Set the position and activate the effect
             effect.transform.position = transform.position;
             effect.SetActive(true);
+
+            // Start coroutine to deactivate the effect after a short duration
             StartCoroutine(DeactivateEffect(effect));
+        }
+        else
+        {
+            // Optional: Log a warning if no inactive effects are available
+            Debug.LogWarning("No available hit effects in the pool. Consider increasing pool size.");
         }
     }
 

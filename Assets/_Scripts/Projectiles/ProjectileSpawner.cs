@@ -6,6 +6,10 @@ using UnityEngine;
 
 public class ProjectileSpawner : MonoBehaviour
 {
+    private static readonly int ColorProperty = Shader.PropertyToID("_Color");
+    private static readonly int OpacityProperty = Shader.PropertyToID("_Opacity");
+    private static readonly int TimeOffsetProperty = Shader.PropertyToID("_TimeOffset");
+
     // Singleton instance
     public static ProjectileSpawner Instance { get; private set; }
 
@@ -64,94 +68,62 @@ public class ProjectileSpawner : MonoBehaviour
     {
         projectile.transform.position = request.Position;
         projectile.transform.rotation = request.Rotation;
-        
-        // Set up the projectile properties based on the request
-        projectile.SetupProjectile(request.Damage, request.Speed, request.Lifetime, request.EnableHoming, request.UniformScale, request.Target, isStatic);
-        
-        // Ensure the projectile is active
         projectile.gameObject.SetActive(true);
-        
-        if (projectile.rb != null)
+        projectile.transform.localScale = Vector3.one * request.UniformScale;
+
+        projectile.rb.isKinematic = false;
+        projectile.rb.linearVelocity = request.Rotation * Vector3.forward * request.Speed;
+        projectile.bulletSpeed = request.Speed;
+        projectile.SetLifetime(request.Lifetime);
+        projectile.EnableHoming(request.EnableHoming);
+
+        // Use MaterialPropertyBlock instead of changing material
+        if (projectile.modelRenderer != null)
         {
-            // Ensure the Rigidbody is non-kinematic
-            projectile.rb.isKinematic = false;
-
-            // Debug log to confirm Rigidbody state
-            ConditionalDebug.Log($"[ProjectileSpawner] Rigidbody isKinematic: {projectile.rb.isKinematic} for projectile {projectile.gameObject.name}");
-            
-            // Now set the velocity
-            projectile.rb.linearVelocity = projectile.transform.forward * request.Speed;
-        }
-        
-        if (request.EnableHoming && request.Target != null)
-        {
-            projectile.SetHomingTarget(request.Target);
-        }
-        
-        ConditionalDebug.Log($"[ProjectileSpawner] Processed projectile. Position: {request.Position}, Target: {(request.Target != null ? request.Target.name : "None")}, IsStatic: {isStatic}, Velocity: {projectile.rb?.linearVelocity}, Homing: {request.EnableHoming}");
-    }
-
-    private void SetupProjectile(ProjectileStateBased projectile, ProjectileRequest request)
-    {
-        try
-        {
-            projectile.transform.SetParent(transform);
-            projectile.transform.position = request.Position;
-            projectile.transform.rotation = request.Rotation;
-            projectile.gameObject.SetActive(true);
-            projectile.transform.localScale = Vector3.one * request.UniformScale;
-
-            projectile.rb.isKinematic = false;
-            projectile.rb.linearVelocity = request.Rotation * Vector3.forward * request.Speed;
-            projectile.bulletSpeed = request.Speed;
-            projectile.SetLifetime(request.Lifetime);
-            projectile.EnableHoming(request.EnableHoming);
-
+            var propertyBlock = ProjectileEffectManager.Instance.GetPropertyBlock();
             Material material = GetMaterialById(request.MaterialId);
-            if (material != null && projectile.modelRenderer != null)
+            if (material != null)
             {
-                projectile.modelRenderer.material = material;
+                propertyBlock.SetColor(ColorProperty, material.GetColor(ColorProperty));
+                propertyBlock.SetFloat(OpacityProperty, material.GetFloat(OpacityProperty));
+                projectile.modelRenderer.SetPropertyBlock(propertyBlock);
             }
-
-            effectManager.CreateEnemyShotFX(
-                projectile.transform,
-                Vector3.zero,
-                Vector3.one * request.UniformScale
-            );
-
-            if (!request.IsStatic)
-            {
-                GameObject radarSymbol = effectManager.GetRadarSymbolFromPool();
-                if (radarSymbol != null)
-                {
-                    radarSymbol.transform.SetParent(projectile.transform);
-                    radarSymbol.transform.localPosition = Vector3.zero;
-                    radarSymbol.SetActive(true);
-                }
-            }
-
-            projectile.initialSpeed = request.Speed;
-            projectile.SetAccuracy(projectileManager.projectileAccuracy);
-
-            if (!string.IsNullOrEmpty(request.ClockKey))
-            {
-                projectile.SetClock(request.ClockKey);
-            }
-
-            projectile.SetAccuracy(request.Accuracy);
-
-            effectManager.CreateEnemyShotFX(
-                projectile.transform,
-                Vector3.zero,
-                Vector3.one * request.UniformScale
-            );
-
-            ConditionalDebug.Log($"[ProjectileSpawner] Projectile setup complete. Position: {request.Position}, Speed: {request.Speed}, Lifetime: {request.Lifetime}");
         }
-        catch (System.Exception e)
+
+        effectManager.CreateEnemyShotFX(
+            projectile.transform,
+            Vector3.zero,
+            Vector3.one * request.UniformScale
+        );
+
+        if (!request.IsStatic)
         {
-            ConditionalDebug.LogError($"[ProjectileSpawner] Error setting up projectile: {e.Message}\n{e.StackTrace}");
+            GameObject radarSymbol = effectManager.GetRadarSymbolFromPool();
+            if (radarSymbol != null)
+            {
+                radarSymbol.transform.SetParent(projectile.transform);
+                radarSymbol.transform.localPosition = Vector3.zero;
+                radarSymbol.SetActive(true);
+            }
         }
+
+        projectile.initialSpeed = request.Speed;
+        projectile.SetAccuracy(projectileManager.projectileAccuracy);
+
+        if (!string.IsNullOrEmpty(request.ClockKey))
+        {
+            projectile.SetClock(request.ClockKey);
+        }
+
+        projectile.SetAccuracy(request.Accuracy);
+
+        effectManager.CreateEnemyShotFX(
+            projectile.transform,
+            Vector3.zero,
+            Vector3.one * request.UniformScale
+        );
+
+        ConditionalDebug.Log($"[ProjectileSpawner] Projectile setup complete. Position: {request.Position}, Speed: {request.Speed}, Lifetime: {request.Lifetime}");
     }
 
     public bool RequestEnemyShot(Action shotAction)
@@ -347,7 +319,7 @@ public class ProjectileSpawner : MonoBehaviour
         public float Scale;
         public float Damage;
         public bool EnableHoming;
-        public Material Material;
+        public int MaterialId; // Change from Material to MaterialId
     }
 
     public void ShootStaticEnemyProjectile(
@@ -369,7 +341,7 @@ public class ProjectileSpawner : MonoBehaviour
             Scale = scale,
             Damage = damage,
             EnableHoming = enableHoming,
-            Material = material
+            MaterialId = RegisterMaterial(material)
         });
 
         if (!isProcessingStaticEnemyProjectiles)
@@ -422,9 +394,9 @@ public class ProjectileSpawner : MonoBehaviour
         projectile.transform.localScale = Vector3.one * request.Scale;
         projectile.SetupProjectile(request.Damage, request.Speed, request.Lifetime, request.EnableHoming, request.Scale, null, true);
         
-        if (request.Material != null && projectile.modelRenderer != null)
+        if (request.MaterialId != -1 && projectile.modelRenderer != null)
         {
-            projectile.modelRenderer.material = request.Material;
+            projectile.modelRenderer.material = GetMaterialById(request.MaterialId);
         }
     }
 

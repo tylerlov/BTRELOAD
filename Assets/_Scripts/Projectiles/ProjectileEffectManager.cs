@@ -159,14 +159,18 @@ public class ProjectileEffectManager : MonoBehaviour
 
     public MaterialPropertyBlock GetPropertyBlock()
     {
-        if (propertyBlockPool.Count > 0)
-            return propertyBlockPool.Dequeue();
-        return new MaterialPropertyBlock();
+        if (propertyBlockPool.Count == 0)
+        {
+            propertyBlockPool.Enqueue(new MaterialPropertyBlock());
+        }
+        return propertyBlockPool.Dequeue();
     }
 
     public void ReturnPropertyBlock(MaterialPropertyBlock block)
     {
-        if (propertyBlockPool.Count < PROPERTY_BLOCK_POOL_SIZE)
+        if (block != null)
+        {
             propertyBlockPool.Enqueue(block);
+        }
     }
 }

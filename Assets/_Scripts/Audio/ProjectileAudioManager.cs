@@ -36,15 +36,6 @@ public class ProjectileAudioManager : MonoBehaviour
         {
             _instance = this;
             DontDestroyOnLoad(gameObject);
-            
-            activeProjectileSounds = new Dictionary<int, EventInstance>(MAX_ACTIVE_SOUNDS);
-            soundPool = new Queue<EventInstance>(MAX_ACTIVE_SOUNDS);
-            
-            // Pre-initialize minimal pool
-            for (int i = 0; i < MAX_ACTIVE_SOUNDS; i++)
-            {
-                CreateNewSoundInstance();
-            }
         }
         else
         {
@@ -52,11 +43,23 @@ public class ProjectileAudioManager : MonoBehaviour
         }
     }
 
+    void Start()
+    {
+        activeProjectileSounds = new Dictionary<int, EventInstance>(MAX_ACTIVE_SOUNDS);
+        soundPool = new Queue<EventInstance>(MAX_ACTIVE_SOUNDS);
+        
+        // Pre-initialize minimal pool
+        for (int i = 0; i < MAX_ACTIVE_SOUNDS; i++)
+        {
+            CreateNewSoundInstance();
+        }
+    }
+
     private void CreateNewSoundInstance()
     {
         if (!movingSoundEvent.IsNull)
         {
-            var instance = RuntimeManager.CreateInstance(movingSoundEvent);
+            var instance = AudioManager.Instance.GetOrCreateInstance(movingSoundEvent.Path);
             instance.start();
             instance.setVolume(0);
             soundPool.Enqueue(instance);

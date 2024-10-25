@@ -131,11 +131,9 @@ public class ProjectileStateBased : MonoBehaviour
     public Renderer modelRenderer;
 
     [HideInInspector]
-    public Material myMaterial;
     public Color lockedProjectileColor;
     private Color originalProjectileColor;
     public TrailRenderer playerProjPath;
-    public Material lockedStateMaterial;
     public VisualEffect currentLockedFX;
 
     // New fields for refactored functionality
@@ -158,8 +156,6 @@ public class ProjectileStateBased : MonoBehaviour
     private static readonly int DissolveCutoutProperty = Shader.PropertyToID(
         "_AdvancedDissolveCutoutStandardClip"
     );
-    private MaterialPropertyBlock propBlock;
-
     private Transform cachedTransform;
     private Rigidbody cachedRigidbody;
 
@@ -188,13 +184,13 @@ public class ProjectileStateBased : MonoBehaviour
     [SerializeField] private string soundEventPath; // Reference the FMOD event path as a string
 
     private FMOD.Studio.EventInstance soundInstance;
+    private bool isPlayingSound = false;
 
     // Add near the top of the class with other fields
     private float nextAudioUpdateTime;
     private const float AUDIO_UPDATE_INTERVAL = 0.1f;
 
     // Add these fields at the top of the class
-    private static MaterialPropertyBlock _sharedPropertyBlock;
     private bool _materialsInitialized = false;
 
     // Add to the fields section
@@ -203,6 +199,12 @@ public class ProjectileStateBased : MonoBehaviour
     // Add these fields
     private bool timelineInitialized = false;
     private static readonly WaitForSeconds TimelineInitDelay = new WaitForSeconds(0.1f);
+
+    // Add these fields at the top of ProjectileStateBased
+    private static readonly int ColorProperty = Shader.PropertyToID("_Color");
+    private static readonly int OpacityProperty = Shader.PropertyToID("_Opacity");
+    private static readonly int TimeOffsetProperty = Shader.PropertyToID("_TimeOffset");
+    private MaterialPropertyBlock _propertyBlock;
 
     private IEnumerator InitializeTimelineComponent()
     {
@@ -229,32 +231,42 @@ public class ProjectileStateBased : MonoBehaviour
         timelineInitialized = true;
     }
 
-    private void InitializeMaterials()
+    // Add these public methods
+    public void InitializeProjectile()
     {
-        if (_materialsInitialized) return;
-        
-        if (_sharedPropertyBlock == null)
-            _sharedPropertyBlock = new MaterialPropertyBlock();
-        
+        if (!_componentsInitialized)
+        {
+            InternalInitializeComponents();
+        }
+
         if (modelRenderer != null)
         {
-            myMaterial = new Material(modelRenderer.sharedMaterial);
-            originalProjectileColor = myMaterial.color;
-            modelRenderer.material = myMaterial;
+            // Get the color from sharedMaterial
+            if (!_materialsInitialized)
+            {
+                originalProjectileColor = modelRenderer.sharedMaterial.GetColor(ColorProperty);
+                _materialsInitialized = true;
+            }
+
+            // Use property block from pool
+            _propertyBlock = ProjectileEffectManager.Instance.GetPropertyBlock();
+            _propertyBlock.SetColor(ColorProperty, originalProjectileColor);
+            _propertyBlock.SetFloat(OpacityProperty, 1f);
+            _propertyBlock.SetFloat(TimeOffsetProperty, UnityEngine.Random.Range(0f, 100f));
+            modelRenderer.SetPropertyBlock(_propertyBlock);
         }
-        
-        _materialsInitialized = true;
     }
 
-    private void InitializeComponents()
+    // Rename existing private methods to internal versions
+    private void InternalInitializeComponents()
     {
         if (_componentsInitialized) return;
         
-        rb = rb ?? GetComponent<Rigidbody>();
-        tRn = tRn ?? GetComponent<TrailRenderer>();
+        modelRenderer = GetComponent<Renderer>();
+        rb = GetComponent<Rigidbody>();
+        tRn = GetComponent<TrailRenderer>();
         
-        // Don't initialize Timeline here - defer it
-        if (!timelineInitialized)
+        if (!timelineInitialized && gameObject.activeInHierarchy)
         {
             StartCoroutine(InitializeTimelineComponent());
         }
@@ -266,13 +278,15 @@ public class ProjectileStateBased : MonoBehaviour
     {
         cachedTransform = transform;
         cachedRigidbody = GetComponent<Rigidbody>();
-        rb = cachedRigidbody; // Assign rb here
+        rb = cachedRigidbody;
         tRn = GetComponent<TrailRenderer>();
         TLine = GetComponent<Timeline>();
-
         _currentTag = gameObject.tag;
-        myMaterial = modelRenderer.material;
-        originalProjectileColor = myMaterial.color;
+        
+        // Remove these lines
+        // myMaterial = modelRenderer.material;
+        // originalProjectileColor = myMaterial.color;
+        
         initialSpeed = bulletSpeed;
         initialLifetime = lifetime;
 
@@ -280,8 +294,6 @@ public class ProjectileStateBased : MonoBehaviour
         {
             shootingObject = GameObject.FindGameObjectWithTag("Shooting");
         }
-
-        propBlock = new MaterialPropertyBlock();
 
         // New initializations for refactored classes
         _movement = new ProjectileMovement(this);
@@ -291,19 +303,15 @@ public class ProjectileStateBased : MonoBehaviour
         EnemyLayerMask = 1 << LayerMask.NameToLayer("Enemy");
     }
 
-    void OnEnable()
+    private void OnEnable()
     {
-        // Initialize non-Timeline components immediately
-        if (!_componentsInitialized)
-        {
-            InitializeComponents();
-        }
+        // Guard clause to prevent accessing null components
+        if (!gameObject.activeInHierarchy) return;
 
-        if (!_materialsInitialized)
-        {
-            InitializeMaterials();
-        }
+        // Use the public initialization method
+        InitializeProjectile();
 
+        // Reset state
         lifetimeExtended = false;
         projHitPlayer = false;
 
@@ -315,8 +323,12 @@ public class ProjectileStateBased : MonoBehaviour
         // Use property block instead of directly modifying material
         if (modelRenderer != null)
         {
-            _sharedPropertyBlock.SetColor("_BaseColor", originalProjectileColor);
-            modelRenderer.SetPropertyBlock(_sharedPropertyBlock);
+            if (_propertyBlock == null)
+            {
+                _propertyBlock = new MaterialPropertyBlock();
+            }
+            _propertyBlock.SetColor(ColorProperty, originalProjectileColor);
+            modelRenderer.SetPropertyBlock(_propertyBlock);
         }
 
         // Only change state if needed
@@ -341,32 +353,42 @@ public class ProjectileStateBased : MonoBehaviour
             currentLockedFX = null;
         }
 
-        // Only create sound instance if needed and not already valid
-        if (!string.IsNullOrEmpty(soundEventPath) && !soundInstance.isValid())
+        // Only create sound instance if needed and not already playing
+        if (!string.IsNullOrEmpty(soundEventPath) && !isPlayingSound)
         {
-            soundInstance = FMODUnity.RuntimeManager.CreateInstance(soundEventPath);
+            soundInstance = AudioManager.Instance.GetOrCreateInstance(soundEventPath);
+            if (soundInstance.isValid())
+            {
+                soundInstance.start();
+                isPlayingSound = true;
+                StartCoroutine(ReleaseAudioAfterPlay(soundEventPath, soundInstance));
+            }
         }
     }
 
     private void OnDisable()
     {
-        // Optional: Ensure projectile is returned to the pool only if not already handled
+        // Handle projectile pool return
         if (rb != null && !rb.isKinematic)
         {
             ProjectilePool.Instance?.ReturnProjectile(this);
         }
 
-        // Clean up sound instance
-        if (soundInstance.isValid())
+        // Handle audio cleanup
+        if (isPlayingSound && soundInstance.isValid())
         {
             soundInstance.stop(FMOD.Studio.STOP_MODE.IMMEDIATE);
-            soundInstance.release();
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.ReleaseInstance(soundEventPath, soundInstance);
+            }
+            isPlayingSound = false;
         }
 
-        // Only try to release sound if the AudioManager exists
-        if (ProjectileAudioManager.Instance != null)
+        if (_propertyBlock != null)
         {
-            ProjectileAudioManager.Instance.ReleaseProjectileSound(GetInstanceID());
+            ProjectileEffectManager.Instance.ReturnPropertyBlock(_propertyBlock);
+            _propertyBlock = null;
         }
     }
 
@@ -635,11 +657,6 @@ public class ProjectileStateBased : MonoBehaviour
             playerProjPath.enabled = false;
         }
 
-        if (modelRenderer != null && myMaterial != null)
-        {
-            // Reset material or other properties as needed
-        }
-
         accuracy = 1f;
         lifetime = initialLifetime;
         isMissing = false;
@@ -834,4 +851,52 @@ public class ProjectileStateBased : MonoBehaviour
             nextAudioUpdateTime = Time.time + AUDIO_UPDATE_INTERVAL;
         }
     }
+
+    private IEnumerator ReleaseAudioAfterPlay(string eventPath, FMOD.Studio.EventInstance instance)
+    {
+        FMOD.Studio.PLAYBACK_STATE state;
+        do
+        {
+            instance.getPlaybackState(out state);
+            yield return null;
+        } while (state != FMOD.Studio.PLAYBACK_STATE.STOPPED);
+
+        if (AudioManager.Instance != null)
+        {
+            AudioManager.Instance.ReleaseInstance(eventPath, instance);
+        }
+        isPlayingSound = false;
+    }
+
+    public void PlaySound()
+    {
+        if (!isPlayingSound && !string.IsNullOrEmpty(soundEventPath))
+        {
+            soundInstance = AudioManager.Instance.GetOrCreateInstance(soundEventPath);
+            soundInstance.start();
+            isPlayingSound = true;
+            StartCoroutine(ReleaseAudioAfterPlay(soundEventPath, soundInstance));
+        }
+    }
+
+    // Replace direct material modifications with PropertyBlock:
+    public void SetProjectileColor(Color color)
+    {
+        if (modelRenderer != null && _propertyBlock != null)
+        {
+            _propertyBlock.SetColor(ColorProperty, color);
+            modelRenderer.SetPropertyBlock(_propertyBlock);
+        }
+    }
+
+    public void SetOpacity(float opacity)
+    {
+        if (modelRenderer != null && _propertyBlock != null)
+        {
+            _propertyBlock.SetFloat(OpacityProperty, opacity);
+            modelRenderer.SetPropertyBlock(_propertyBlock);
+        }
+    }
+
 }
+

@@ -16,11 +16,21 @@ Shader "Custom/TY_Fast Ghost"
     }
     SubShader
     {
-        Tags {"RenderType"="Transparent" "Queue"="Transparent" "RenderPipeline"="UniversalPipeline"}
-        LOD 100
-
+        Tags 
+        {
+            "RenderType"="Transparent" 
+            "Queue"="Transparent" 
+            "RenderPipeline"="UniversalPipeline"
+            "DisableBatching"="False"
+        }
+        
         HLSLINCLUDE
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+        #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
+        
+        #pragma target 3.5
+        #pragma multi_compile_instancing
+        #pragma instancing_options forcemaxcount:50
         ENDHLSL
 
         Pass
@@ -51,7 +61,9 @@ Shader "Custom/TY_Fast Ghost"
                 float3 normalWS : TEXCOORD0;
                 float3 viewDirWS : TEXCOORD1;
                 float fogFactor : TEXCOORD2;
+                float instanceTime : TEXCOORD3;
                 UNITY_VERTEX_INPUT_INSTANCE_ID
+                UNITY_VERTEX_OUTPUT_STEREO
             };
 
             CBUFFER_START(UnityPerMaterial)
@@ -69,6 +81,7 @@ Shader "Custom/TY_Fast Ghost"
             UNITY_INSTANCING_BUFFER_START(Props)
                 UNITY_DEFINE_INSTANCED_PROP(half4, _Color)
                 UNITY_DEFINE_INSTANCED_PROP(half, _Opacity)
+                UNITY_DEFINE_INSTANCED_PROP(float, _TimeOffset)
             UNITY_INSTANCING_BUFFER_END(Props)
 
             Varyings vert(Attributes input)
@@ -76,12 +89,16 @@ Shader "Custom/TY_Fast Ghost"
                 Varyings output = (Varyings)0;
                 UNITY_SETUP_INSTANCE_ID(input);
                 UNITY_TRANSFER_INSTANCE_ID(input, output);
+                UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
 
                 VertexPositionInputs vertexInput = GetVertexPositionInputs(input.positionOS.xyz);
                 output.positionCS = vertexInput.positionCS;
                 output.normalWS = TransformObjectToWorldNormal(input.normalOS);
                 output.viewDirWS = GetWorldSpaceViewDir(vertexInput.positionWS);
                 output.fogFactor = ComputeFogFactor(vertexInput.positionCS.z);
+                
+                float timeOffset = UNITY_ACCESS_INSTANCED_PROP(Props, _TimeOffset);
+                output.instanceTime = _Time.y + timeOffset;
 
                 return output;
             }
@@ -89,25 +106,23 @@ Shader "Custom/TY_Fast Ghost"
             half4 frag(Varyings input) : SV_Target
             {
                 UNITY_SETUP_INSTANCE_ID(input);
+                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
 
-                // Fresnel
                 half NdotV = dot(normalize(input.normalWS), normalize(input.viewDirWS));
                 half fresnelFactor = _Invert ? NdotV : (1.0 - NdotV);
                 half fresnel = _FresnelBias + _FresnelIntensity * pow(abs(fresnelFactor), _FresnelPower);
                 half3 fresnelColor = _FresnelColor.rgb * fresnel * _SelfIllumination;
 
-                // Animation
-                half amplitude = lerp(_MinValueAmplitude, _MaxValueAmplitude, (sin(_Time.y * _AmplitudeSpeed) + 1) * 0.5);
+                half amplitude = lerp(_MinValueAmplitude, _MaxValueAmplitude, 
+                    (sin(input.instanceTime * _AmplitudeSpeed) + 1) * 0.5);
                 
-                // Final color
-                half4 instancedColor = UNITY_ACCESS_INSTANCED_PROP(Props, _Color);
-                half3 finalColor = fresnelColor * amplitude * instancedColor.rgb;
-
-                // Apply fog
+                half4 instanceColor = UNITY_ACCESS_INSTANCED_PROP(Props, _Color);
+                half instanceOpacity = UNITY_ACCESS_INSTANCED_PROP(Props, _Opacity);
+                
+                half3 finalColor = fresnelColor * amplitude * instanceColor.rgb;
                 finalColor = MixFog(finalColor, input.fogFactor);
-
-                half instancedOpacity = UNITY_ACCESS_INSTANCED_PROP(Props, _Opacity);
-                return half4(finalColor, instancedOpacity * instancedColor.a);
+                
+                return half4(finalColor, instanceOpacity * instanceColor.a);
             }
             ENDHLSL
         }

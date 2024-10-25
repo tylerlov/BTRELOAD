@@ -27,17 +27,19 @@ public class ProjectileVisualEffects
             _projectile.playerProjPath.enabled = false;
         }
 
-        if (
-            _projectile.myMaterial != null
-            && _projectile.myMaterial.HasProperty("_AdvancedDissolveCutoutStandardClip")
-        )
+        if (_projectile.modelRenderer != null)
         {
-            _projectile
-                .myMaterial.DOFloat(0.05f, "_AdvancedDissolveCutoutStandardClip", 0.1f)
-                .OnComplete(() =>
-                {
-                    _projectile.gameObject.SetActive(false);
-                });
+            var propertyBlock = new MaterialPropertyBlock();
+            _projectile.modelRenderer.GetPropertyBlock(propertyBlock);
+            propertyBlock.SetFloat("_AdvancedDissolveCutoutStandardClip", 0.05f);
+            _projectile.modelRenderer.SetPropertyBlock(propertyBlock);
+            
+            DOVirtual.Float(1f, 0f, 0.1f, (value) => {
+                propertyBlock.SetFloat("_Opacity", value);
+                _projectile.modelRenderer.SetPropertyBlock(propertyBlock);
+            }).OnComplete(() => {
+                _projectile.gameObject.SetActive(false);
+            });
         }
         else
         {

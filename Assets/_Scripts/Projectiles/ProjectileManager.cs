@@ -704,7 +704,10 @@ public class ProjectileManager : MonoBehaviour
 
     public void PlayOneShotSound(string soundEvent, Vector3 position)
     {
-        FMODUnity.RuntimeManager.PlayOneShot(soundEvent, position);
+        var instance = AudioManager.Instance.GetOrCreateInstance(soundEvent);
+        instance.set3DAttributes(FMODUnity.RuntimeUtils.To3DAttributes(position));
+        instance.start();
+        AudioManager.Instance.ReleaseInstance(soundEvent, instance);
     }
 
     private void ClearNativeArray<T>(NativeArray<T> array)

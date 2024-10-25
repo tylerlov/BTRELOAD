@@ -14,7 +14,7 @@ public struct ProjectileSpawnRequest
     public bool EnableHoming;
     public Transform Target;
     public bool IsStatic;
-    public Material Material;
+    public int MaterialId;  // Changed from Material to MaterialId
 }
 
 public class ProjectilePool : MonoBehaviour
@@ -23,6 +23,7 @@ public class ProjectilePool : MonoBehaviour
 
     [SerializeField] private ProjectileStateBased projectilePrefab;
     [SerializeField] private int initialPoolSize = 100;
+    [SerializeField] private Material projectileMaterial; // Add this line
     private Queue<ProjectileStateBased> projectilePool = new Queue<ProjectileStateBased>();
     private Queue<ProjectileRequest> projectileRequestQueue = new Queue<ProjectileRequest>();
 
@@ -45,6 +46,11 @@ public class ProjectilePool : MonoBehaviour
     private const int MAX_TIMELINE_INITS_PER_FRAME = 1; // Limit Timeline initializations per frame
     private int timelineInitsThisFrame = 0;
     private float lastTimelineInitTime = 0f;
+
+    // Add these shader property IDs
+    private static readonly int ColorProperty = Shader.PropertyToID("_Color");
+    private static readonly int OpacityProperty = Shader.PropertyToID("_Opacity");
+    private static readonly int TimeOffsetProperty = Shader.PropertyToID("_TimeOffset");
 
     private void Awake()
     {
@@ -121,7 +127,23 @@ public class ProjectilePool : MonoBehaviour
 
     private ProjectileStateBased CreateNewProjectile(bool initializeTimeline = true)
     {
+        if (projectilePrefab == null)
+        {
+            Debug.LogError("Projectile prefab is null!");
+            return null;
+        }
+
         ProjectileStateBased newProjectile = Instantiate(projectilePrefab, transform);
+        
+        // Set shared material before initialization
+        var renderer = newProjectile.GetComponent<Renderer>();
+        if (renderer != null)
+        {
+            renderer.sharedMaterial = projectileMaterial;
+        }
+        
+        newProjectile.InitializeProjectile();
+        
         newProjectile.gameObject.SetActive(false);
         
         if (initializeTimeline)
