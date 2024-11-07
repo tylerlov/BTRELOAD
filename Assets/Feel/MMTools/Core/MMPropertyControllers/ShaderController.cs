@@ -10,7 +10,7 @@ namespace MoreMountains.Tools
 	/// To use it, simply drag a monobehaviour in its target field, pick a control mode (ping pong or random), and tweak the settings
 	/// </summary>
 	[MMRequiresConstantRepaint]
-	[AddComponentMenu("More Mountains/Tools/Property Controllers/ShaderController")]
+	[AddComponentMenu("More Mountains/Tools/Property Controllers/Shader Controller")]
 	public class ShaderController : MMMonoBehaviour
 	{
 		/// the possible types of targets

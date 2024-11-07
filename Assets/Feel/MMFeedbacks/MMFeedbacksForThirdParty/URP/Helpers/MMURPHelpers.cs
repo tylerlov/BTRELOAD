@@ -30,7 +30,7 @@ namespace MoreMountains.FeedbacksForThirdParty
 			additions += "Set PostProcessing:true on the "+Camera.main.name+" camera. ";
 				
 			// looks for a Volume
-			Volume volume = (Volume)Object.FindObjectOfType(typeof(Volume));
+			Volume volume = (Volume)Object.FindAnyObjectByType(typeof(Volume));
 			if (volume == null)
 			{
 				GameObject postProcessingObject = GameObject.Instantiate(Resources.Load<GameObject>("MMDefaultURPVolume"));

@@ -188,7 +188,7 @@ namespace MoreMountains.Feedbacks
 	/// <summary>
 	/// Add this class to a GameObject to be able to control its position/rotation/scale individually and periodically, allowing it to "wiggle" (or just move however you want on a periodic basis)
 	/// </summary>
-	[AddComponentMenu("More Mountains/Feedbacks/Shakers/Various/MMWiggle")]
+	[AddComponentMenu("More Mountains/Feedbacks/Shakers/Various/MM Wiggle")]
 	public class MMWiggle : MonoBehaviour 
 	{
 		/// the possible update modes
@@ -724,6 +724,18 @@ namespace MoreMountains.Feedbacks
 			transform.localPosition = _positionInternalProperties.initialValue;
 			transform.localEulerAngles = _rotationInternalProperties.initialValue;
 			transform.localScale = _scaleInternalProperties.initialValue;
+		}
+
+		/// <summary>
+		/// On Validate, if the app is running, we reinitialize to allow for faster iteration times
+		/// </summary>
+		protected virtual void OnValidate()
+		{
+			if (!Application.isPlaying)
+			{
+				return;
+			}
+			Initialization();
 		}
 	}
 }

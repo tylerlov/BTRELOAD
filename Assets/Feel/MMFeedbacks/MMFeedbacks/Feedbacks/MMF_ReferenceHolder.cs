@@ -22,6 +22,7 @@ namespace MoreMountains.Feedbacks
 		/// sets the inspector color for this feedback
 		#if UNITY_EDITOR
 		public override Color FeedbackColor { get { return MMFeedbacksInspectorColors.FeedbacksColor; } }
+		public override Color DisplayColor { get { return MMFeedbacksInspectorColors.FeedbacksColor.MMDarken(0.15f); } }
 		public override string RequiredTargetText => GameObjectReference != null ? GameObjectReference.name : "";  
 		#endif
 		/// the duration of this feedback is 0

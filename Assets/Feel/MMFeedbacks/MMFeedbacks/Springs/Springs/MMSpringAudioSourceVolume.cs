@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace MoreMountains.Feedbacks
 {
-	[AddComponentMenu("More Mountains/Springs/MMSpringAudioSourceVolume")]
+	[AddComponentMenu("More Mountains/Springs/MM Spring Audio Source Volume")]
 	public class MMSpringAudioSourceVolume : MMSpringFloatComponent<AudioSource>
 	{
 		public override float TargetFloat

@@ -167,7 +167,7 @@ namespace MoreMountains.Feedbacks
 				case Modes.Instant:
 					if (ModifyColor)
 					{
-						BoundSpriteRenderer.color = InstantColor;
+						BoundSpriteRenderer.color = NormalPlayDirection ? InstantColor : _initialColor;
 					}
 					Flip();
 					break;

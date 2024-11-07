@@ -11,7 +11,7 @@ namespace MoreMountains.Tools
 	/// initially inspired by this great tutorial by Sebastian Lague : https://www.youtube.com/watch?v=rQG9aUWarwE - check out his tutorials, they're amazing!
 	/// </summary>
 	[Serializable]
-	[AddComponentMenu("More Mountains/Tools/Vision/MMConeOfVision")]
+	[AddComponentMenu("More Mountains/Tools/Vision/MM Cone Of Vision")]
 	public class MMConeOfVision : MonoBehaviour
 	{
 		/// <summary>

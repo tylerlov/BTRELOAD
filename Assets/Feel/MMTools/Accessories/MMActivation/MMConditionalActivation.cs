@@ -5,7 +5,7 @@ namespace MoreMountains.Tools
 	/// <summary>
 	/// Add this component to a gameobject, and it'll let you enable target monos after all other targets have been disabled
 	/// </summary>
-	[AddComponentMenu("More Mountains/Tools/Activation/MMConditionalActivation")]
+	[AddComponentMenu("More Mountains/Tools/Activation/MM Conditional Activation")]
 	public class MMConditionalActivation : MonoBehaviour
 	{
 		/// a list of monos to enable

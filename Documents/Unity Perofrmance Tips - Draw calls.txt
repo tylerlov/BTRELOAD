@@ -1,0 +1,145 @@
+hi
+in today's video i'm going to tell you
+something i wish i knew when i started
+making games
+which will help us go from this to this
+without sacrificing visual quality
+so here we have a simple building it has
+three materials one for the roof
+windows and walls each window is a
+separate object
+let's bring it into unity and make say
+five thousand of them
+and oh dear so why does this scene run
+so badly
+well first we need to talk about draw
+calls
+a draw call tells your gpu to render a
+mesh if we have one mesh
+that's one draw call if we have three
+meshes that's three draw calls
+additional draw calls are also created
+for each material on each mesh
+if we have one mesh with two materials
+that's two draw calls if we have three
+meshes with two materials
+that's six it's easy to see how draw
+pulls can start to add up fast
+so why is this a problem well each call
+has to be processed by the cpu
+before being sent to the gpu imagine it
+like a funnel
+if we only have a few draw calls the cpu
+can get through them quickly
+however if we have too many the cpu
+takes far too long to process them
+which is what results in our low frame
+rate so what can we do to reduce the
+number of draw calls
+the first thing we can do is combine
+meshes
+in blender select everything and press
+ctrl j to join objects
+bear in mind that the last object
+selected will be the new origin
+in maya select everything and go to mesh
+combine
+you should do this for all objects in
+your game the only exception should be
+when parts need to move independently
+i'd recommend saving this as a separate
+file so it's still easy to edit later on
+it's worth mentioning that this only
+helps performance with meshes that share
+the same material
+if we jump back to unity and see how
+this performs now
+all of a sudden we're getting a pretty
+respectable frame rate we've gone from
+half an fps to about 80.
+so why does this happen well rather than
+each window being its own draw call
+now all windows on each building are a
+single draw call
+if we want to see the number of calls
+inside unity then in play mode
+we can click stats up the top right and
+look for batches
+we can see we've gone from 1.6 million
+batches down to 20 000
+however we can do better which brings me
+to my second tip
+reduce the number of materials generally
+speaking
+objects should only have one material
+there are a couple of exceptions however
+if you need different shaders or tiling
+textures they can have their own
+materials
+here i have given our building a single
+material with a texture to color the
+different parts
+and if we jump back to unity we're now
+getting about 180 fps
+which is pretty impressive however
+there's one more thing we can do to
+improve performance further
+and that is batching batching works by
+combining meshes in unity
+into a single mesh before being sent to
+the gpu which significantly reduces the
+number of draw calls
+batching will only work on objects with
+the same material now there's two ways
+of batching we can control
+the first is static batching this can be
+enabled by selecting objects and ticking
+the static checkbox at the top right
+if you want to exclude these objects
+from navigation or bait lighting you can
+use the drop down
+this can only be used on objects that
+will not move in your game
+which brings me to my third tip if an
+object isn't going to move
+mark it as static if we take a look back
+at our scene with static enabled on our
+buildings
+we can see that our frame rate is now up
+to 210.
+now you might be wondering what can we
+do if we want to batch moving objects
+well we have another option called gpu
+instancing
+gpu instancing only works for objects
+with both the same mesh and the same
+material
+enabling it is as simple as a checkbox
+in the material and if we look back at
+our scene
+we're getting the same great frame rate
+and as an added bonus we can now make
+our buildings move
+which is our fourth tip use gpu
+instancing where appropriate
+you can't use gpu instancing at the same
+time as static batching
+in that case those objects are excluded
+from static batches and will just be gpu
+instanced
+so choose which one best suits your use
+case
+so to go over our tips again combine
+meshes in your modeling program
+reduce the number of materials if an
+object isn't going to move
+mark it as static and use gpu instancing
+where appropriate
+hopefully these tips will prove useful
+in improving the performance in your own
+games
+if you want to learn more about making
+the most of unity consider subscribing
+to the channel
+thank you for watching and i'll see you
+in the next one

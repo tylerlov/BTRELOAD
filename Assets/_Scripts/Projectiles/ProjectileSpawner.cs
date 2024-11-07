@@ -90,11 +90,14 @@ public class ProjectileSpawner : MonoBehaviour
             }
         }
 
-        effectManager.CreateEnemyShotFX(
-            projectile.transform,
-            Vector3.zero,
-            Vector3.one * request.UniformScale
+        // Store the created effect GameObject reference in the projectile
+        GameObject shotEffect = effectManager.CreateEnemyShotFX(
+            request.Position,
+            request.Rotation
         );
+        
+        // Store the effect reference in the projectile for cleanup
+        projectile.SetShotEffect(shotEffect);
 
         if (!request.IsStatic)
         {
@@ -104,6 +107,8 @@ public class ProjectileSpawner : MonoBehaviour
                 radarSymbol.transform.SetParent(projectile.transform);
                 radarSymbol.transform.localPosition = Vector3.zero;
                 radarSymbol.SetActive(true);
+                // Store the radar symbol reference in the projectile for cleanup
+                projectile.SetRadarSymbol(radarSymbol);
             }
         }
 
@@ -118,9 +123,8 @@ public class ProjectileSpawner : MonoBehaviour
         projectile.SetAccuracy(request.Accuracy);
 
         effectManager.CreateEnemyShotFX(
-            projectile.transform,
-            Vector3.zero,
-            Vector3.one * request.UniformScale
+            request.Position,
+            request.Rotation
         );
 
         ConditionalDebug.Log($"[ProjectileSpawner] Projectile setup complete. Position: {request.Position}, Speed: {request.Speed}, Lifetime: {request.Lifetime}");

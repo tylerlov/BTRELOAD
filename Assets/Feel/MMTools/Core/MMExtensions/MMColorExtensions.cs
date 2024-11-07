@@ -12,7 +12,7 @@ namespace MoreMountains.Tools
 		/// </summary>
 		/// <param name="color"></param>
 		/// <returns></returns>
-		public static float Sum(this Color color)
+		public static float MMSum(this Color color)
 		{
 			return color.r + color.g + color.b + color.a;
 		}
@@ -22,7 +22,7 @@ namespace MoreMountains.Tools
 		/// </summary>
 		/// <param name="color"></param>
 		/// <returns></returns>
-		public static float MeanRGB(this Color color)
+		public static float MMMeanRGB(this Color color)
 		{
 			return (color.r + color.g + color.b) / 3f;
 		}
@@ -32,9 +32,43 @@ namespace MoreMountains.Tools
 		/// </summary>
 		/// <param name="color"></param>
 		/// <returns></returns>
-		public static float Luminance(this Color color)
+		public static float MMLuminance(this Color color)
 		{
 			return 0.2126f * color.r + 0.7152f * color.g + 0.0722f * color.b;
+		}
+		
+		public static Color MMLighten(this Color color, float amount)
+		{
+			amount = Mathf.Clamp01(amount);
+			color.r = color.r / amount;
+			color.g = color.g / amount;
+			color.b = color.b / amount;
+			return color;
+		}
+		
+		public static Color MMDarken(this Color color, float amount)
+		{
+			amount = Mathf.Clamp01(amount);
+			color.r = color.r * (1 - amount);
+			color.g = color.g * (1 - amount);
+			color.b = color.b * (1 - amount);
+			return color;
+		}
+		
+		public static Color32 MMDarken(this Color32 color, float amount)
+		{
+			amount = 1 - Mathf.Clamp01(amount);
+			color.r = (byte)(color.r * amount);
+			color.g = (byte)(color.g * amount);
+			color.b = (byte)(color.b * amount);
+			return color;
+		}
+		
+		public static Color MMAlpha(this Color color, float newAlpha)
+		{
+			newAlpha = Mathf.Clamp01(newAlpha); 
+			color.a = newAlpha;
+			return color;
 		}
 	}
 }

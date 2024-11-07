@@ -8,7 +8,7 @@ namespace MoreMountains.Tools
 	/// <summary>
 	/// MM delay particles.
 	/// </summary>
-	[AddComponentMenu("More Mountains/Tools/Particles/MMDelayParticles")]
+	[AddComponentMenu("More Mountains/Tools/Particles/MM Delay Particles")]
 	public class MMDelayParticles : MonoBehaviour 
 	{
 		[Header("Delay")]

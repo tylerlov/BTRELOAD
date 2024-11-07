@@ -96,6 +96,9 @@ namespace MoreMountains.Feedbacks
 		[MMFCondition("CreateObjectPool", true)] 
 		public Transform PoolParentTransform;
 
+		/// the game object instantiated by this feedback	
+		public GameObject InstantiatedGameObject => _newGameObject;
+
 		protected MMMiniObjectPooler _objectPooler; 
 		protected GameObject _newGameObject;
 		protected bool _poolCreatedOrFound = false;

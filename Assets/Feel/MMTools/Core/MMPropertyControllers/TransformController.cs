@@ -7,7 +7,7 @@ namespace MoreMountains.Tools
 	/// <summary>
 	/// A simple class used to control properties on a transform
 	/// </summary>
-	[AddComponentMenu("More Mountains/Tools/Property Controllers/TransformController")]
+	[AddComponentMenu("More Mountains/Tools/Property Controllers/Transform Controller")]
 	public class TransformController : MonoBehaviour
 	{
 		[Header("Position")]

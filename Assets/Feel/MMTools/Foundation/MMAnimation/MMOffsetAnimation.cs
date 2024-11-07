@@ -7,7 +7,7 @@ namespace MoreMountains.Tools
 	/// Use this class to offset an animation by a random range
 	/// </summary>
 	[RequireComponent(typeof(Animator))]
-	[AddComponentMenu("More Mountains/Tools/Animation/MMOffsetAnimation")]
+	[AddComponentMenu("More Mountains/Tools/Animation/MM Offset Animation")]
 	public class MMOffsetAnimation : MonoBehaviour
 	{
 		/// the minimum amount (in seconds) by which to offset the animation

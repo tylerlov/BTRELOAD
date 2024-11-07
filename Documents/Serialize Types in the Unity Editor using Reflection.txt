@@ -1,0 +1,326 @@
+there are many things you can't
+serialize natively in unity and C types
+are one of them there are all kinds of
+reasons you might want to be able to
+choose a c type from the editor not the
+least of which is that you can start to
+make your code much more Dynamic I had a
+simple problem this week I wanted to be
+able to choose C types for my state
+machine and for my event bus from the
+editor I ended up being able to
+serialize types and also be able to
+filter and choose them from a drop- down
+menu in the inspector let's walk through
+it
+together all right well the first thing
+I want to do is create a new type
+extension method I want to be able to
+check if a given type inherits or
+implements a specified base type let's
+open this up in
+ryer first of all we can clean this up a
+little bit uh I'm going to need to use
+system and I'm also going to use Link
+for this and so we don't need to inherit
+from mono Behavior but this is an extens
+I method so it needs to be inside of a
+static class let's write a helper method
+that will determine whether or not a
+given type is a generic instance or a
+generic definition if this type is not a
+generic type instance we're just going
+to return the type otherwise we're going
+to get the generic type definition then
+we can say if that definition is
+different than the original type we'll
+return the
+definition now we can create one more
+helper method that can take a type and
+determine if any of the interfaces that
+it actually uses match a given type so
+we can just get all the interfaces then
+use Link to search through all of them
+and resolve the generic type of each one
+and then just check and see if it's a
+match so our actual extension method
+here has to be static we'll call it
+inherits or implements and it needs the
+this keyword of course because it's an
+extension method so we'll take in the
+type and the base type and first of all
+let's resolve both of those now we can
+drill down into the type until we
+actually reach type of object which
+would be the very bottom now if our base
+type equals the type or if the has any
+interfaces method returns true then we
+know that this particular type
+implements or inherits from the base
+type otherwise let's resolve the type of
+type. Base type and put that into our
+type variable for the next iteration of
+the loop if that happens to be null
+we're going to return false and if we
+make it all the way out of this Loop we
+are also going to return false the only
+way that this will ever be true is if we
+find a match while itera in I'm going to
+move the public method up to the top and
+I'm just going to paste in a little bit
+of documentation here as well you can
+find link all of today's code in the
+video
+description next let's make an attribute
+that will allow us to actually filter
+different fields by type I'm going to
+call it the type filter attribute and
+it's just going to inherit from property
+attribute I'll move it into its own file
+here so our new attribute here is
+actually going to need a way to filter
+things we can do that with a system funk
+in the Constructor of our attribute we
+can accept the kind of type that we want
+to limit this field to be then our
+filter will operate on that type using
+our extension method we can also say
+can't be abstract can't be an interface
+can't be a generic type that means that
+when we use this attribute on a field
+the value is always going to have to be
+a concrete implementation of that type
+all right now let's make a class that
+will actually allow us to serialize this
+type I'm just going to call it
+serializable type and I'm going to
+implement the I serialization callback
+receiver interface so this interface has
+two methods one is the on before
+serialize method and then there's an on
+after deserialize I don't really need
+either of these to be public methods so
+I'm going to use the explicit
+implementation then of course one other
+thing we need to do here is actually
+make this class
+serializable now we can't actually
+serialize a type but we can serialize
+its assembly qualified name this is the
+string that you would get returned to
+you if you were to use the method type
+get type so why don't we store that as a
+serialized field here and we can start
+it with string.empty when that string
+gets modified inside of unity these call
+backs are going to get fired off and
+we'll be able to set the type correctly
+let's make a helper method try get type
+so this will use that get type method
+with that string name we can populate
+the type variable with the result of our
+type. getet type method and then we can
+set true or false based on whether or
+not there was a result and whether or
+not there was actually something in our
+qualified name String now we can fill
+out the two callbacks on before
+serialize will let us set the string
+name so as long as type is not null we
+can use assembly qualified name property
+and put it in there if it was null let's
+just keep whatever the value was before
+and the other method on after
+deserialize is where we're actually
+going to set the type so here's where we
+can use the try get type method by
+passing in the assembly qualified name
+and getting an out variable now if there
+was some error getting the type let's
+put out a message and just return
+otherwise we'll set type equals to the
+type all right so this will actually
+work as it stands but how would we
+actually use it and is it
+convenient if I jump over to my hero
+class here I'm going to make a whole
+bunch of interfaces and classes that we
+can just use as demo stuff so to
+simulate what it would be like working
+with the event bus I'll make a basic
+interface for in a couple
+implementations but then I'd also like
+to simulate what it's going to be like
+with working with my state machine
+because that was the original impetus
+for wanting to serialize types in the
+first place although I've since thought
+of quite a few other good reasons for it
+so I'll just add a few basic States here
+now up in the hero class let's add a few
+headers and underneath each header we
+can have a few serialized fields for
+each of these now each of my serialized
+Fields is also going to use the type
+filter if I want to be able to select a
+state in the ins Spector I really want
+to be filtering by iate if I want to
+choose an event I should be filtering by
+I event so I'll just add a few more
+Fields here maybe we can call this one
+game over and then maybe we could have
+one more for some other event in the
+game maybe level complete that would be
+good copilot's got that figured out now
+we could have a start method here so we
+could actually debug a little bit of
+output and make sure everything's
+working the way we want we need to
+inherit from Model Behavior in order to
+do that and then what I'll do is I'll
+just have a few lines here we could
+debug out the types of some of these
+things and maybe on top of that we could
+also try out our extension method as
+well CU we can use that in more places
+than just our filter what's great about
+this extension method is that we can use
+it to test to find out if things not
+only use a particular interface but if
+they derive from a particular Base
+Class we might as well try that out on
+the events as well
+and with that done we can go have a look
+at what's going on in
+unity so I've recompiled and I've added
+the component to my hero game object and
+you can see now it's exposed that string
+the assembly qualified name on each of
+these serializable types now this would
+work just fine except for the actual
+return value from type. getet type is
+this long string here not only is this
+extremely prone to human error to try
+and type this thing out all the time but
+it's inconvenient
+wouldn't this be so much better if we
+use the type that we're filtering on to
+create a drop down list for each of
+these with a nice friendly name that we
+could just choose let's make a property
+drawer so I've made an editor folder and
+created a new file here serializable
+type drawer it inherits from property
+drawer and I've given it the proper
+attribute here so we're going to need to
+grab a reference to that type filter
+attribute we're also going to Cache both
+the assembly qualified names as well as
+make a friendly name name that we can
+show on a drop- down menu and we're
+going to gather all that information in
+the initialize method I only want the
+initialized method to run one time to
+Cache these values so if we've already
+put some values into the array we're
+just going to return early otherwise
+we're going to first of all grab that
+filter now we can reach into the
+assemblies and we can use the filter
+with link here to actually put all of
+those into an array so every type that
+matches the filter is going into our
+filtered types variable
+now let's fill up our friendly names we
+can take the filter types and use Link
+again and we're going to use the
+reflected type property of the type
+class now reflected type really means
+the enclosing class so for example if I
+had let's say for example my hero had a
+subass then i' would like my menu to say
+hero. subclass when I'm choosing
+otherwise we can just use the name of
+the type now we can take all those
+longer assembly qualified names and put
+them right into the type full names
+array now it's possible that uh the
+programmer forgot to specify a type
+filter in which case we could just use a
+default it's going to produce a really
+big list but at least it won't be null
+and certainly when you see the list it's
+going to remind you you probably want to
+filter it down a little bit more than it
+actually shows up because it's going to
+grab every single concrete type in the
+assemblies that it finds so now that
+we've got the arrays populated let's
+work on our on GUI
+method so as soon as I've got the method
+signature filled out here what I'll do
+is call the initialize method first
+that'll make sure that our arrays are
+populated correctly after that let's get
+the assembly qualified name String right
+off of this particular property so we
+can use the find property relative
+method for that now it's possible that
+that string was actually empty and
+there's a few different things you could
+do here I think to keep it simple for
+now all I'm going to do is say if that
+string was empty let's just grab the
+first full name from our array and put
+it in there and then we have to apply
+the modified properties of course so we
+can do that that's one way of validating
+you can get more fancier than that if
+you want to with that out of the way
+let's get some index numbers for our
+drop-down menu so we can get figure out
+which index is our current selection and
+then we're going to want another index
+which is you know the one that we're
+about to choose and we can get that out
+of the editor guy. popup method popup
+method is going to give that drop down
+menu now in the drop- down menu you can
+see I'm passing the type names which is
+our friendly
+names now if our selection in the menu
+comes back as a positive number we know
+that's the name we want to use so we can
+grab the full assembly qualified name
+and assign it now we could also have a
+check here to say as long as it's not
+the same as before and if that all
+happens again we need to apply the
+modified properties and that's it that's
+our whole property drawer now we can go
+try it out in
+unity so if we have a look here I've got
+these nice drop downs now and you can
+see I have my three states walking
+running and jumping and then my events
+also can choose from the two events that
+I defined event a and event B so I'll
+set some selections here and just hit
+play and watch what happens in the debug
+log and there we go our debug log is
+showing the correct names for each of
+our selections and it's also saying true
+for all the results from our extension
+method so the sky the limit with what
+you can do with this information
+obviously you now instantiate types
+dynamically chosen in the editor I'll be
+using mine for making decisions based on
+types inside of my state machine and for
+events that I'm going to publish to the
+bus but my mind's already started
+thinking about an escope solution and I
+know I'll probably use this for
+predicates as well so that's all I've
+got for you today I'll see you in the
+next one

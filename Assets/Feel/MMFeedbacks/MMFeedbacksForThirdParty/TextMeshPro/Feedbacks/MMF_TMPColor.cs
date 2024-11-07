@@ -121,7 +121,7 @@ namespace MoreMountains.Feedbacks
 			switch (ColorMode)
 			{
 				case ColorModes.Instant:
-					TargetTMPText.color = InstantColor;
+					TargetTMPText.color = NormalPlayDirection ? InstantColor : _initialColor;;
 					break;
 				case ColorModes.Gradient:
 					if (!AllowAdditivePlays && (_coroutine != null))

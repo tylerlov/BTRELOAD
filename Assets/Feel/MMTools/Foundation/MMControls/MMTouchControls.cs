@@ -3,7 +3,7 @@
 namespace MoreMountains.Tools
 {	
 	[RequireComponent(typeof(CanvasGroup))]
-	[AddComponentMenu("More Mountains/Tools/Controls/MMTouchControls")]
+	[AddComponentMenu("More Mountains/Tools/Controls/MM Touch Controls")]
 	public class MMTouchControls : MonoBehaviour 
 	{
 		public enum InputForcedMode { None, Mobile, Desktop }

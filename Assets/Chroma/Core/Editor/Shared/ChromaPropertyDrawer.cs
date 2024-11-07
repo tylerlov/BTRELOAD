@@ -167,9 +167,20 @@ public static class ChromaPropertyDrawer {
                     // - Adding `_` prefix just in case the user provided display name instead of reference.
 
                     // Check toggle.
-                    if (Array.Exists(material.shaderKeywords,
-                                     keyword => keyword == p || keyword == $"_{p}" || keyword == $"{p}_ON")) {
-                        return true;
+                    {
+                        // Return true if the keyword is enabled.
+                        if (Array.Exists(material.shaderKeywords,
+                                         keyword => keyword == p || keyword == $"_{p}" || keyword == $"{p}_ON")) {
+                            return true;
+                        }
+
+                        // Return false if the keyword is not enabled and the attribute has a `!` prefix.
+                        if (p.StartsWith("!") && !Array.Exists(material.shaderKeywords,
+                                                               keyword => keyword == p[1..] ||
+                                                                          keyword == $"_{p[1..]}" ||
+                                                                          keyword == $"{p[1..]}_ON")) {
+                            return true;
+                        }
                     }
 
                     // Check enum.

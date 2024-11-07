@@ -21,7 +21,7 @@ namespace MoreMountains.Tools
 	/// <summary>
 	/// Add this component to an object and you'll be able to define a path, that can then be used by another component
 	/// </summary>
-	[AddComponentMenu("More Mountains/Tools/Movement/MMPath")]
+	[AddComponentMenu("More Mountains/Tools/Movement/MM Path")]
 	public class MMPath : MonoBehaviour 
 	{
 		/// the possible cycle options

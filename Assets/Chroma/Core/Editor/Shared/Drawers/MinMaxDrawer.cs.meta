@@ -1,3 +1,10 @@
 ﻿fileFormatVersion: 2
-guid: e17aba44b76be03479dbd737f9cdf447
+guid: b818fbd80f8a0b04ab9555645bf9219d
 timeCreated: 1627416252
+AssetOrigin:
+  serializedVersion: 1
+  productId: 231313
+  packageName: 'Chroma: Easy Pro Shaders'
+  packageVersion: 2.1.5
+  assetPath: Assets/Chroma/Core/Editor/Shared/Drawers/MinMaxDrawer.cs
+  uploadId: 702278

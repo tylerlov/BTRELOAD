@@ -27,7 +27,7 @@ namespace MoreMountains.Tools
 	/// <summary>
 	/// This class allows you to have a pool of various objects to pool from.
 	/// </summary>
-	[AddComponentMenu("More Mountains/Tools/Object Pool/MMMultipleObjectPooler")]
+	[AddComponentMenu("More Mountains/Tools/Object Pool/MM Multiple Object Pooler")]
 	public class MMMultipleObjectPooler : MMObjectPooler
 	{
 		/// the list of objects to pool

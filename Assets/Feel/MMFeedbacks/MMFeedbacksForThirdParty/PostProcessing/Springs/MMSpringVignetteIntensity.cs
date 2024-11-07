@@ -4,7 +4,7 @@ using UnityEngine.Rendering.PostProcessing;
 
 namespace MoreMountains.Feedbacks
 {
-	[AddComponentMenu("More Mountains/Springs/MMSpringVignetteIntensity")]
+	[AddComponentMenu("More Mountains/Springs/MM Spring Vignette Intensity")]
 	public class MMSpringVignetteIntensity : MMSpringFloatComponent<PostProcessVolume>
 	{
 		protected Vignette _vignette;

@@ -8957,7 +8957,7 @@ MonoBehaviour:
   - {fileID: 8926484042661615395}
   m_ExposedName: Slash Lifetime
   m_Exposed: 1
-  m_Order: 1
+  m_Order: 3
   m_Category: Slash
   m_Min:
     m_Type:
@@ -9177,7 +9177,7 @@ MonoBehaviour:
   - {fileID: 8926484042661615401}
   m_ExposedName: Slash Color
   m_Exposed: 1
-  m_Order: 2
+  m_Order: 6
   m_Category: Slash
   m_Min:
     m_Type:
@@ -9394,7 +9394,7 @@ MonoBehaviour:
   - {fileID: 8926484042661615407}
   m_ExposedName: Spark Spawn Rate
   m_Exposed: 1
-  m_Order: 0
+  m_Order: 1
   m_Category: Background Sparks
   m_Min:
     m_Type:
@@ -9475,7 +9475,7 @@ MonoBehaviour:
   - {fileID: 8926484042661615409}
   m_ExposedName: Spark Lifetime
   m_Exposed: 1
-  m_Order: 1
+  m_Order: 4
   m_Category: Background Sparks
   m_Min:
     m_Type:
@@ -9695,7 +9695,7 @@ MonoBehaviour:
   - {fileID: 8926484042661615415}
   m_ExposedName: Spark Color
   m_Exposed: 1
-  m_Order: 2
+  m_Order: 7
   m_Category: Background Sparks
   m_Min:
     m_Type:
@@ -9912,7 +9912,7 @@ MonoBehaviour:
   - {fileID: 8926484042661615421}
   m_ExposedName: Glow Lifetime
   m_Exposed: 1
-  m_Order: 0
+  m_Order: 2
   m_Category: Background Glow
   m_Min:
     m_Type:
@@ -9993,7 +9993,7 @@ MonoBehaviour:
   - {fileID: 8926484042661615423}
   m_ExposedName: Glow Size
   m_Exposed: 1
-  m_Order: 1
+  m_Order: 5
   m_Category: Background Glow
   m_Min:
     m_Type:
@@ -10074,7 +10074,7 @@ MonoBehaviour:
   - {fileID: 8926484042661615425}
   m_ExposedName: Glow Color
   m_Exposed: 1
-  m_Order: 2
+  m_Order: 8
   m_Category: Background Glow
   m_Min:
     m_Type:

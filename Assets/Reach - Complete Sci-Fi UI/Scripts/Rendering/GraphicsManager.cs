@@ -10,7 +10,7 @@ namespace Michsky.UI.Reach
     {
         [SerializeField] private Dropdown resolutionDropdown;
         [SerializeField] private HorizontalSelector windowModeSelector;
-        [SerializeField] private SwitchManager vSyncSwitch; // Add this line
+        [SerializeField] private SwitchManager vSyncSwitch;
         [SerializeField] private HorizontalSelector textureQualitySelector;
         [SerializeField] private HorizontalSelector anisotropicFilteringSelector;
 
@@ -93,7 +93,9 @@ namespace Michsky.UI.Reach
                 return;
             }
 
-            vSyncSwitch.isOn = GraphicsCore.instance.IsVSyncEnabled();
+            // Set VSync to off by default and update the UI switch
+            GraphicsCore.instance.SetVSync(false);
+            vSyncSwitch.isOn = false;
             vSyncSwitch.onValueChanged.AddListener(SetVSync);
         }
 

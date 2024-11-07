@@ -1,0 +1,335 @@
+I love using extension methods for
+keeping code clean and readable I want
+to get right into it today so I'm going
+to hit play here to show you an issue
+with my power orb piix is easy right
+just adjust the transform of the orb up
+by some small amount the only problem is
+that the naive implementation of that is
+too verbose and it looks hideous let's
+go take a
+look so the basic implementation might
+be just to define a new Vector 3 using
+the x y and z this game object and
+modify the yv value just a little bit a
+slightly less verbose version of this
+might just be to take the transform.
+position and add Vector 3. up so this is
+just another way of writing new Vector 3
+with a yval of one now we should
+probably just take that y value of one
+and put it into a configurable field I
+think I'll just make it super simple
+right now I'll just put an integer here
+that we can configure in the inspector
+and set it to one and then just replace
+that one with the variable so that's
+fine but we still have to assign this
+position to the power orb let's take a
+look at how an extension method can help
+us out extension methods in C must be
+static methods within a static class the
+key feature of an extension method is
+its first parameter which is always
+preceded by the this keyword this
+parameter specifies the type that the
+method extends indicating that the
+method will behave as if it were part of
+that type the wi method for Vector 3
+uses nullable floats for x y and z
+letting you selectively change these
+components it employs the null
+coalescing operator which keeps the
+original value if a null was passed
+allowing flexible modification of any
+combination of X Y and Z so let's see
+what this would look like if we just
+want to pass in the yv value for this
+Vector it's a lot less verbose isn't it
+why don't we jump back into unity and
+make sure that it
+works okay come back in here and hit
+play and there we go our orb is up out
+of the ground it looks great so
+following the player around properly
+everything's good with that now let's
+jump back into code because I want to
+show you a variation of this that I just
+call add now add allows us to add values
+to the X Y and Z components so it uses
+nullable floats and adds non-null values
+to the respective components defaulting
+to zero if null so this method will
+simplify incremental adjustments to a
+vector 3 Let's see it in
+action I think I'll put some kind of far
+out values here so it'll put the orb off
+to the side and a little bit higher up
+now notice because we've defaulted all
+the input parameters to be null you only
+have to specify the ones that you want
+to
+use let's come back in here and hit play
+so now we can see the orb kind of
+staying off behind the character a
+little ways and just slightly higher
+that's exactly what we'd expect with
+this now you can chain these methods
+together if you like or just use one or
+the other so I think I use those two
+extension methods probably more than any
+other I think I'll save all the
+extension methods from today's video and
+probably a few more and I'll link that
+in the
+description back out to play mode here
+let's do a little bit of cleanup my
+personal preference is to keep all
+extension methods for a particular type
+in their own static
+class so next I want to talk about
+adding components to a game object with
+an extension method I've actually
+created a little component here called
+bob up and down because I want my power
+orb to go up and down but it the prefab
+doesn't actually have this component on
+it yet so if we were to try to use the
+normal get component and then disable it
+or enable it for example this isn't
+going to work because there is no
+component we're going to get a null
+reference exception so we could get the
+component and check if it was null and
+have a bunch of verbose code in there or
+we can use an extension method which if
+you followed this channel for any length
+of time you've probably seen this before
+I call it get or add component or just
+get or add so all we're going to do is
+try to get the component if it's null
+then we're going to add that component
+and return it and that way we are
+ensured that there is always that
+component on the object we can actually
+make this slightly shorter by just
+saying not component instead of checking
+for null now we can replace our usage of
+get component with our get or ADD
+extension method and voila we'll never
+get a null reference exception
+there let's try it out all right there
+we go it's bobbing up and down as it
+goes around the player so it now has two
+components on it one that's making it
+spin around and the other one that's
+making it bob up and down which is
+exactly what we want I want to take a
+look at one more extension for game
+objects that we haven't used before on
+the channel and that is an extension
+method that I call or no so if we try to
+get a component from a game object and
+it doesn't exist we simply return null
+and that'll prevent issues with unity
+special handling of objects when they're
+marked for Destruction and they can
+sometimes return null but not actually
+be null yet because they're not
+destroyed let's take a
+look so this is a very simple extension
+method it's just going to check to see
+if the object was null if it's not
+return the object if it is null and by
+that I mean the unity version of null
+not the standard system null but like an
+object that has been marked for
+Destruction whether it's been destroyed
+or not then we're going to actually
+return null by doing this we can
+actually start to use things like null
+propagation operators null coalescing
+operators safely on game objects if we
+wanted to I'll put a link to the video
+where we talked about this issue up on
+the screen one way this might be useful
+is if you wanted to get a value from a
+component that may or may not be on a
+game object and if it isn't you just
+want to use a default value so here we
+could say try and get the distance that
+the orb is floating away from the player
+and if it's not there then we'll just
+return zero so here we can safely use
+null propagation and a null coalescing
+operator no problem you're either going
+to get the move distance or we're going
+to get a value of zero so another way
+you can make use of this extension
+method is what if you wanted to have a
+default component and suppose you're
+trying to get a light component from the
+power orb but maybe it doesn't exist so
+what we do if it's null well we can
+again use a null coalescing operator to
+say if it was null then let's just use
+this default one that we've specified so
+that's as far as we're going to look at
+game object extensions for now I'm just
+going to move this into its own file and
+we'll come back to it in a couple
+minutes let's do a small amount of clean
+up here because we don't need all this
+for the next example so we're going to
+start thinking about what we can do to
+make working with transforms a little
+bit easier to be honest I probably have
+more transform extensions than any other
+type uh and that's because we are are
+always moving things around and we're
+always turning things on and off one of
+the most common operations that you're
+going to do is destroy or disable or
+enable children of a transform so you've
+probably seen something like this before
+it's a for Loop that just iterates over
+however many children there are to this
+transform and then you need to get that
+child and perform some operation what a
+lot of people don't know is that
+transform actually implements an
+inumerable interface let's go have a
+look at it
+so check it out transform inherits from
+component and from I enumerable that
+means it also has a method get
+enumerator now check out what it's
+returning notice the new keyword there
+we're going to get back to that in a
+second now it's returning an instance of
+its class here the enumerator which
+essentially is an enumerator of all the
+child transforms so what can we do with
+that
+knowledge first of all I'm going to add
+a little debug statement just so that we
+can see something in the console as
+we're iterating over children okay so
+given what we know about the transform
+now what we could do is make an
+extension method for transforms that
+actually returns an i numerable since
+this is already built into the transform
+class this is a really simple extension
+method so we're going to simplify this
+even further in a moment but for now
+just as an example of pulling an i
+inumerable out with this we can just
+iterate over all the transforms in the
+parent transform and then we'll yield
+return the child so this could be used
+potentially in a 4 each Loop like this
+and just to see it in action in this
+state let's jump back into the game and
+we could just see that it will output
+all of the children including the new
+Power orb which was spawned I'll just
+clean this up a little bit and move the
+transform extensions into its own file
+for now and then we'll come back here
+because the transform was constructed in
+the way that it was we actually don't
+even need this extension method to run a
+for Loop Over All of the children we can
+just make it as concise as this this is
+because the for each Loop leverages the
+get enumerator method under the hood
+recall that we saw the new keyword used
+in that method in the transform class
+this is going to create a new object
+every time you use it and it's also why
+iterating with a basic for Loop is often
+preferable there's no garbage to clean
+up so why would we ever want to use that
+extension method well you might want to
+use it if you were going to want to pass
+all the children of a trans form into a
+link expression for example so I'm just
+going to put one in here that would grab
+all the active children of a
+transform just add a little debug
+statement so that we can see how many
+active children there were let's jump
+back over to Unity here so if we look
+under the hero there're actually four
+right now but we are going to spawn that
+orb so it should say five and then hit
+play yeah there we go so counted all the
+active children you could do the same
+thing if you wanted to know how many
+were disabled or if you just wanted to
+get get a collection and iterate it over
+it for some reason just remember that if
+you're going to store all the children
+in some object children of a game object
+can change all the time it's generally a
+good idea just to grab the children of a
+game object right when you want to use
+them so all that being said this kind of
+extension method would probably make
+more sense to be able to run on any type
+of enumerator so why don't we make
+another class just for enumerator
+extensions and we'll put a more General
+type of this in there that would handle
+anything that implements the I numerator
+interface and that way you know the
+transform one yeah it's useful once in a
+while but probably not so often still
+sometimes it's good to have a think
+about the how and why things work the
+way they do I think a more general
+purpose kind of thing for transform
+extensions would be to continue to
+iterate using indexes because it's nice
+and fast no garbage collection however
+we're going to have a lot of them that
+need to iterate over all the children so
+why don't we have a private static
+method that does the iteration and just
+takes in an action the action can be
+performed on every child that way we can
+have a method for Destruction for
+enabling for disabling just about
+anything else you could think of now if
+we come back over to our hero class look
+how really simple we can make this
+transform disabled children let's jump
+back into Unity here recompile Press
+Play You'll see lists out all the
+children but notice that everything
+under the the hero has now been disabled
+just going to show one more thing here
+and that is whenever I make a transform
+extension I like to make the same
+version of it on a game object that
+calls the transform version of it and
+that way if I'm referencing something by
+game object or transform using a method
+like destroy children will have the
+exactly the same effect so back here in
+the hero if I say power orb do destroy
+children that's exactly the same thing
+as saying power or. transform. destroy
+children but I've uploaded a bunch of
+extension methods to the repository Link
+in the description and there's a few
+extra ones in there too that you can go
+check out and we'll definitely be adding
+more things like attributes more
+extension methods some helpers some uh
+keybinds I'd love to hear about your
+extension methods in the comments below
+otherwise click on one of these boxes up
+here and I'll see you in another
+video

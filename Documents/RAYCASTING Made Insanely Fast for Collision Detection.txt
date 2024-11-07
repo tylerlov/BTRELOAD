@@ -1,0 +1,519 @@
+today we're going to take a look at a
+few more ways you can use jobs and burst
+in your projects where you have a lot of
+moving objects and collisions like in an
+FPS or a bullet hell style of game we're
+going to batch raycasts as a job for
+Collision detection look at the
+transform access array for movement and
+Implement object pooling as well this
+simple demo scene should give you a good
+idea of how to implement these things in
+your project and we'll talk about a few
+gachas and alternative implementations
+and I hope that you'll be able to take
+some of these techniques and customize
+them to work for whatever your building
+let's get
+started okay the first thing I want to
+do is actually be able to spawn some
+projectiles here before we get them
+moving or hitting anything let's make
+sure that we can spawn them in a fairly
+optimal way let's have a field to say
+how many bullets we can spawn every time
+we pull the trigger and a few more to
+say how fast the bullets will travel how
+far out they can go if they don't hit
+anything a layer mask to determine what
+they can and can't hit and a transform
+for the origin point then I'll have two
+more fields one for a bullet prefab and
+another one for an impact effect so with
+this setup done I'm going to collapse up
+some things so we have some screen real
+estate let's get started I'm going to
+make use of unity's generic object pool
+and then I'm also going to use a bullet
+pattern generator which is a factory
+class that I've written we can take a
+quick look at that in a little bit but
+down in our start method I'm actually
+going to initialize that with a new
+bullet pattern generator and I'm going
+to pass in a strategy that defines the
+starting points and directions for
+bullets to fly out in a radial pattern
+away from the player here in start we
+can also initialize our bullet pool of
+type bullet which is another class we'll
+look at in a moment the Constructor for
+an object pool takes seven arguments the
+first one is a funk that defines what to
+do to actually create a bullet and get
+it into the pool we'll instantiate a
+prefab here and set it as inactive and
+then we'll use our utility method get or
+add to make sure that it has a bullet
+component on it and we'll store a
+reference to that in the pool then we
+Define an action which is what we want
+to do when we get something from the
+pool then we have a release which is the
+opposite when we're putting it back then
+we have another action if we need to
+destroy a bullet collection check is if
+you want to have an exception thrown if
+the object is being returned to the pool
+but it's already in the pool it's editor
+only default capacity is the initial
+amount and Max size is how big the pool
+can actually grow to before things can't
+be returned to it anymore and they just
+get garbage collected let's make it
+fairly big now to help me keep track of
+all the bullets that have been spawned
+by this class I'm going to create a new
+list here called active projectiles and
+I'm going to create another one called
+bullets to return and that's because I
+want to return all the bullets that need
+to go back into the pool in one
+operation and not one by one why don't
+we collapse up this start method now
+because we're all done with that and
+give us some room to keep going so as
+far as returning bullets back into the
+pool goes what I really want to do is
+figure out which ones need to go back in
+update or possibly fixed update and then
+in late update I know which ones those
+are we can just iterate over all of them
+and release all of them back into the
+pool if you've ever run into into the
+problem where you're trying to releasee
+things back into a pool and it looks
+like they're each just disappearing one
+by one this is a way you can avoid that
+with one batch job when we're done that
+we'll just clear the list and we're
+ready for the next round now to actually
+start spawning projectiles I'm going to
+make use of that bullet pattern
+generator so let's have a public method
+here I'll call it spawn bullet pattern
+here we can call the pattern generator
+to get back an array of data of where to
+actually spawn all these bullets so
+we'll call the public generate pattern
+method pass in the origin position
+position how many bullets we want and
+their initial speed now we're not going
+to make a whole bullet held game here
+this is just a prototype but let's have
+a look at some of these objects the
+bullet hell projectile is just a dto
+that we get back from the bullet pattern
+generator that has all the information
+that we want to spawn bullets if it
+stays this Bare Bones i' probably change
+it into a struct if we take a look at
+the bullet pattern generator class you
+can see I've got an interface here that
+all the strategies are going to
+implement the actual generator takes in
+one of these patterns as a strategy and
+then the strategy itself will calculate
+all these starting positions and whatnot
+and send it all the way back to the
+caller the bullet is a monob behavior
+that lives on the actual projectile and
+be able to tell us a little bit about
+each one as it appears in our game right
+now the most important thing here is I
+want this bullet to be able to tell me
+if it's gone past its max distance or
+not and that's it this is just a simple
+system for this demo now let's get back
+to the topic at hand after we know where
+we want all the bullets to appear let's
+just run a four each Loop over all of
+that data for each one we'll get a
+bullet out of the pool then we'll call
+its initialize method we'll send in the
+data from that dto and then we're going
+to add it to the active projectiles list
+now that's all we have to do to actually
+spawn bullets let's have one more public
+method here so I can switch the pattern
+in the pattern generator this is just
+going to be a pass through method that
+we can call from our player controller
+or what have you okay well there's not
+too much to demo yet so why don't we
+move on to actually moving these things
+around the screen and to do that we're
+going to use jobs and burst but we're
+going to do something a little bit
+different from last week and that is
+we're going to use the transform access
+array type this is a special type of
+array from the job system that holds
+strs of type transform access these strs
+hold all the information of a transform
+so position rotation and scale so I'll
+create an update method and here I'll
+have a using statement where I
+initialize the transform access array to
+the same size as the active projectiles
+array by wrapping our logic with the
+using statement it means that my
+transform access array will be disposed
+of without me having to do it manually
+now in here I'm going to have a four
+Loop we'll iterate over all of our
+active projectiles grab each bullet and
+we're going to add it into the transform
+access array now before we can invoke
+our job to move things around we
+actually have to create the job so let's
+come down here we use burst compile for
+this and then I'll declare a new job and
+this one is going to implement I job
+parallel for transform interface there
+is one undocumented gotcha with this
+particular interface and that is that it
+splits threads per root object so if all
+of your transforms have the same parent
+they're all going to execute in the same
+thread that's an optimization we can
+make to our object pool in the future
+for now let's make sure that we have
+fields to take in the Delta time speed
+and then we'll have an execute method
+this will take in an index in one of the
+transform access objects then we'll
+calculate the forward Direction by
+multiplying transform. rotation
+multiplied by Vector 3. forward then we
+can adjust our speed in the forward
+Direction by speed and Delta time if we
+come back into update let's define a new
+bullet move job we're going to pass in
+time. Delta time and our bullet speed
+then we're going to schedule the job and
+get a reference to that in the job
+handle and then we can call complete on
+the job handle right away with that we
+should have some moving projectiles
+let's go check it out here in my scene
+I've already set up a bullet manager
+object that has the script we've been
+working on and I've already filled in
+all the references with my prefabs and
+whatnot and I've set up a little script
+so that when I press the space bar we're
+going to fire off a round of projectiles
+so at this point all I really care about
+is that our job is actually running the
+projectiles are moving out in the
+directions they're supposed to be based
+on the pattern generator at the moment
+though the particles just fly off into
+the distance forever they never hit
+anything and they never go back into the
+object pool let's deal with that next so
+now we're ready to start thinking about
+collisions and for that I'm going to
+make another class here raycast batch
+processor I'm going to set a limit to
+10,000 on the number of Max rcast per
+job this is an arbitrary number for this
+video for your own project choose values
+that make sense and if you need to run
+more than one of these jobs you
+certainly can so I'm going to declare a
+native array of type raycast command and
+I'm going to have another one for our
+results which will be a native array of
+type raycast hit now I'm going to have a
+public method here we can call so we can
+actually perform the raycast it has a
+lot of prams I'll just reformat that
+quick so for the prams we're going to
+have two arrays we're going to be the
+origin point and the direction to shoot
+off the Rays and then a layer mask some
+flags and then finally very important
+we're going to have a call back this
+will be an action that executes on all
+of our results so we'll have a constant
+here that'll be how far I want the ray
+to actually shoot at a maximum I want to
+keep it fairly tight for what I'm
+working on you can adjust yours as
+necessary but I just want mine to be
+kind of close to the impact point then
+we can have a ray count this would be
+the minimum of either the amount of rays
+we passed into the method or our
+absolute Max which we set earlier next
+we'll use the hit triggers Boolean to
+figure out whether or not our query
+triggers interact action setting is
+going to be to collide with triggers or
+to ignore them now let's wrap everything
+else in a using statement because we're
+going to initialize a new native array
+of type Rayas command here based on the
+number of arrays that we need let's make
+it a temp job next let's set up a query
+prams object this is going to take in
+most of those prams we passed into our
+perform rcast method as well as that
+query trigger interaction that we just
+set up now once we've got this in place
+we can now iterate over all the Rays
+that we want to cast and we're going to
+create a new raycast command for each
+one let's have a loop here that'll
+iterate over each of them now here we
+can say new raycast command and we'll
+pass in the origin at I Direction at I
+our prams and the max distance that
+we've defined then we'll add this into
+our command list and you know what why
+don't we just inline this whole thing
+and make it a lot simpler so now we've
+got a list of raycasts we want to fire
+let's execute them all in a new method
+I'm just going to zoom out here and
+collapse this up so we've got a little B
+more room there we go so this method
+will be a little shorter but it'll take
+in that native array of raycast commands
+and our call back at the moment I'm only
+interested in the first hit for every
+raycast and we need to know how big we
+want to initialize the results array so
+let's have an INT here that'll be the
+number of rays we're going to cast
+multiplied by the previous number now
+again let's have a using statement here
+where we initialize our hits result
+array with those numbers before we
+process them why don't we iterate over
+all the commands and actually draw some
+lines so can visualize this Now raycast
+command has a nice static method called
+schedule batch you can pass in all your
+commands and your results array and the
+max hits per raycast and assign that
+into a job handle and then as per usual
+we'll call complete on the handle and
+we're done once we're out of there we
+could check to see if there actually
+were any hits and if there were let's
+convert the native array back into a
+managed array we can iterate over that
+and for everyone that actually has a
+collider in it when why don't we debug
+something out to the console and
+actually draw a short green line at the
+impact point then let's actually use our
+callback method on our results here so
+we'll pass that in as long as it wasn't
+null let's invoke that on the
+results now it would normally be my
+practice to create an on Destroy method
+here at the bottom so in on Destroy I
+would check to see if these native
+arrays were created and if they were uh
+dispos of them here that's not going to
+be necessary and we're going to take a
+closer look at that in a moment but for
+now I'm going to come back into the
+bullet manager and create a n- destroy
+method here because I want to dispose of
+the object pool and normally I would
+also dispose of the Native array that we
+had initialized as well so now that we
+can do some Ray casting it's time to
+deal with getting these objects back
+into the pool when we don't need them
+anymore and the first condition that
+that would fall under is if it's
+actually traveled too far so up here in
+update before we even start running jobs
+on these bullets let's filter out all
+the ones that have traveled to the max
+distance we're going to return those
+bullets back to the pool in another
+method and we can just continue here to
+exclude them from the bullets we're
+going to consider in the jobs later on
+let's come down here and write this
+return bullet method here we can add
+this to our array of bullets to return
+and remove it from the active
+projectiles array so that handles
+bullets that have traveled too far let's
+make another method that will do the ray
+casting so let's do this in a new method
+handle collisions actually I'm just
+going to adjust the screen here a little
+bit and scroll down so we got some room
+there we go so let's set up some frams
+to pass into our batch raycaster we're
+going to want an array of all the
+origins of the active projectiles and
+the same for all the directions now
+let's populate these two arrays by
+iterating over the active projectiles
+we'll grab the bullet at I and we'll
+assign it into both of them now
+potentially if you only plan to move
+projectiles straight ahead and only
+shoot Rays straight ahead you could
+simplify this to use one array of
+transforms and additionally you could
+use that for the transform AIS array as
+well because it has a set transforms
+method that takes in an array of
+transforms so now we have all the data
+we can pass into our perform raycast
+method except for our call back so what
+do we want to do with these hit results
+let's make a new method here on rcast
+results so inside of here we've got the
+array of hits let's iterate over them as
+long as there was a collider associated
+with the hit we know which bullet it was
+because we only have one hit per bullet
+will return that bullet to the pool now
+additionally here is where you'd want to
+spawn your impact effect because you
+know where the hit point is and sound
+effects or whatever else you need let's
+inline this to clean it up and we're all
+done let's jump back into
+Unity okay let's hit play and try this
+out now if I hit the space bar and fire
+off some projectiles you can see right
+away it's catching most of them but a
+few of the projectiles are actually
+making it through the collider the ray
+Casta isn't detecting what's going on
+and they just keep flying off until they
+reach max distance each of the cubes in
+my scene has a box collider and a rigid
+body that's set to continuous Dynamic
+Collision detection but when you have a
+lot of fast moving particles sometimes
+that's not enough so we're going to deal
+with that next and I also want to point
+out that I've got a couple exceptions
+here in my editor these are coming from
+my on Destroy methods that I mentioned
+earlier because we've wrapped all of the
+initialization of our native arrays in
+using statements they're automatically
+disposed of at the end of that block
+let's go back and clean that up so we
+have unnecessary code here in our rast
+batch processor I'm just going to remove
+the entire on Destroy method and then
+over in the bullet hell manager we have
+two calls in our on Destroy method we
+can keep the one for the object pool but
+I'm going to control X and remove this
+other one with that cleanup done let's
+get back to optimization what I want to
+do here is come back into the bullet
+hell manager in the update method what
+I'm going to do here is use a technique
+called substepping so I'm going to
+subdivide each update into four distinct
+steps for each of these steps let's
+define a substep time that'll be time.
+Delta time divided by the number of
+substeps we're going to take so instead
+of moving all the bullets once and rayc
+casting once we're going to do it four
+times every update so let's wrap our
+jobs in a for Loop instead of passing in
+time. Delta time we'll pass in the
+substep time and to make this work I'm
+going to grab the handle collisions
+method and move it up into this Loop now
+in update we'll take a small step
+raycast small step raycast and so on
+this is going to give us much more
+accurate results with fast moving moving
+projectiles and one last thing before we
+jump back into Unity I have two Loops
+here where we're actually returning
+bullets back into the pool so instead of
+counting up let's count down just to
+make sure that we don't get any
+exceptions thrown or any weird hiccups
+in the editor so I'll come back down
+here to the results as well let's
+iterate this one from top to bottom
+there we
+go some of you may have noticed this
+time scale feature that I've got at the
+top of my editor I'm going to turn it
+all the way down to 34 this is actually
+a free asset you can get on store and
+I'll put a link to it in the description
+it's extremely useful for debugging this
+kind of thing so now we can play at a
+reduced time scale and watch everything
+in slow motion I've also added some
+impact effects here because of the
+substepping I don't expect any
+projectiles to make it past the cubes
+and so far it looks pretty good now
+every Project's going to be different
+and if projectiles are still getting
+through there's a couple more things you
+can do of course you can increase the
+number of substeps just keep in mind
+that the more steps you take the more
+jobs you have to run so it's going to be
+more and more processor intensive
+another thing that you can do is change
+from raycast command to sphere cast
+command or even Capal cast command if
+you had to now again slightly more
+processing it really depends what you're
+doing now I think we could go on
+customizing this forever and build a
+complete tool that would do all those
+different things let you customize it
+any way that you want but you know what
+it's really Project Specific and any
+sort of profiling optimization and
+whatnot you're going to have to do on
+your own in your own environment because
+it's going to be totally totally
+different than what you see here on the
+screen so whether you choose to use a
+ray cast or a sphar cast how far you
+want to shoot the Rays how many Rays you
+want to shoot per job how many substeps
+you want to take if any those are all
+things you're going to have to decide
+for yourself and the needs of your
+project so that's where we're going to
+wrap it up for today don't forget that
+we've got a Discord Channel where we
+talk about things like this and all
+kinds of other things if you have
+questions or comments about this video
+please leave them in the comments below
+don't forget to like And subscribe for
+more content I'll throw another video up
+on the screen if you're interested in
+watching more from this channel

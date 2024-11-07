@@ -1,0 +1,1637 @@
+- Alright, let's start. Hola a todos.
+Welcome to this Performance Tips
+and Tricks from a Unity consultant talk.
+My name is Nicolas Borromeo,
+I'm a senior software development
+consultant here at Unity
+and my job consists mostly
+on reviewing client projects,
+assessing their performance
+and helping them optimizing their projects.
+So that's a little bit of the
+reason I'm here right now. Is
+because as a Unity consultant
+we see unity in a wide
+variety of contexts.
+We see it being used in
+mobile applications, console
+games, desktop applications,
+VR applications.
+We see unity being used
+for industry, for gaming,
+and for a wide, you know, range
+of genres, like from simple 
+mobile games to full
+city building simulations.
+So in this experience as
+consultants we tend to see lots
+of performance issues repeat
+in all of these projects.
+And the idea of this session
+is to share some of the tips
+and tricks we learn during this job.
+So in this session we are gonna
+discuss first a little bit
+of advanced profiling. From the
+previous performance session,
+that you might have go, you saw
+all the unity profilers,
+but we will go a little
+bit deeper into other ways
+to analyze performance
+with other profilers.
+Then we are going to discuss
+a little bit about the most
+common CPU performance issues,
+the most common CPU performance issues.
+And finally the most common
+performance issues regarding memory.
+Essentially how to prevent
+your application from crashing due
+to out of memory issues.
+So let's start first
+talking about profiling.
+When talking about profiling,
+sometimes you think
+that profiling is only a
+matter of profiling, you know,
+the gameplay loop, so
+how physics are doing,
+how rendering is doing and so on.
+And while that's perfectly true,
+there's way more areas
+which we can use the
+profiler to get performance.
+So as an example, we can
+split the different hotspots
+between maybe player performance
+and editor performance.
+So you can first analyze the
+performance of your build,
+your executable, your APK and so on.
+And from there you can analyze of course
+as we mentioned before, gameplay loop.
+So again, rendering physics,
+your scripts and so on.
+But also you can analyze loading times,
+how much time you're
+spending loading assets
+or maybe how much time you're
+spending doing server calls
+and waiting for server response,
+instantiation times.
+Also you can analyze spikes of course
+you know these sudden frames
+that take longer than expected.
+Again, it can be instantiation,
+activating and deactivating
+objects sometimes can be
+expensive, and so on.
+But you can also use the
+profiler to analyze the editor.
+You can analyze as an
+example, asset importing times,
+how much time we're
+taking to import textures
+and why. Maybe you're executing
+custom post processors
+that are taking longer than expected
+or maybe some player build
+custom post processors,
+you might be wondering about scripting,
+how much time you are spending
+compiling your scripts, which
+assembly is taking longer
+and maybe some dependencies
+are causing issues.
+You might be also wondering why the domain
+reload takes so much.
+You can use the profiler also for that.
+And also building times,
+you might want
+to analyze why your application
+is taking so much to build,
+why addressables is taking so much, why
+scene building is taking lots of time
+and of course custom building
+steps that you might be using
+so you can profile a wide array of things
+with the unity profiler.
+Now when you use the Unity
+profiler, it's a great tool
+and just
+to let you know it works under
+the principle of instrumentation.
+That means that in specific
+performance hotspots in the
+unity source code, we added markers
+to analyze performance.
+As an example, here we can
+see LateBehaviorUpdate. It is a
+marker we added that, you know,
+calculates the time it takes
+to execute your script's LateUpdate.
+So it's a great tool
+but sometimes you need more information.
+This case as an example,
+we can see that
+that late update is
+taking 1.5 milliseconds.
+That's great. We know that
+that script is an issue
+but now what we can do, we can
+open the script, we can start
+to figuring out what could be
+and, we can do better than that.
+So you may be thinking, okay,
+we can use the deep profiler,
+which is of course a great solution.
+You can see the full call stack
+of every single C# function
+that was called in your application,
+but the timings are completely irrelevant.
+You don't trust, you know,
+you just don't trust the
+timings in deep profile
+because the act of profiling,
+analyzing the performance
+of every single function called
+is more heavy,
+even that sometimes the function itself.
+So, and also it only shows
+your C# functions.
+So if you want to see that, as an example,
+you might be calling an API
+that is doing something in the
+native side, you have no clue
+with this profiler.
+So sometimes you need
+even more information
+and here is where native
+profilers kick in.
+This is a pivotal is tool in my job
+as a consultant because you
+have profilers, native profilers
+that are per platform.
+So you have profilers that
+are specifically dedicated
+for iOS, for Android, for
+pc, for consoles and so on.
+So an example in iOS, the
+biggest one is instruments.
+So these tools,
+at least the CPU profilers
+works under the principle
+of sampling profiling.
+You will measure the
+performance of your game during,
+I dunno, 10 seconds or so.
+And these profilers will sample
+the entire native call stack,
+every single function
+that we called at
+a given frequency
+during those 10 seconds.
+So it will tell you which
+function was mostly called
+during your recording time.
+So in this case you can
+see how we get plenty
+of information from a simple act like
+activating a game object.
+We can see that most of the time taken
+by activating the
+specifically object was due
+to calling the native side awake
+method of the mesh collider.
+We can tell that it's native
+because of the classic C++
+characteristic colon,
+colon syntax.
+So we, if we keep exploring we can see
+that actually the cost of
+awake this mesh collider was due
+to cooking the physics mesh.
+Essentially you need to
+convert the, you know,
+the render mesh into a physics,
+you know, compatible mesh.
+That specific
+problem is outside the scope
+of this presentation,
+but I wanted to show you
+how much details you
+can get from these tools
+and the thing you need to consider is
+that these tools, given they are native,
+they usually only works
+when your player is built
+with IL2CPP because
+usually they don't recognize
+mono call stacks.
+But consider that there are some tools
+that actually recognize mono
+call stacks, as an example,
+superluminal, which is great
+because, as an example, in
+the editor you don't have
+IL2CPP. IL2CPP is
+only happening on builds.
+So if you want to learn a
+little bit more about how
+to use superluminal, I
+recommend the Unity
+learn article Profile CPU performance
+with superluminal, which tells you the
+workflows to use this tool.
+But actually let me show you
+an example of how to use it.
+So i opened Superluminal, it
+is a windows only tool.
+I'm just running Parallels on Mac
+but you need to use it on Windows.
+And I will open a capture I
+did, in this case it's a capture
+from a client who was wondering
+why Addressables was taking
+10 minutes to build.
+So we, you know, put superluminal,
+put Unity to build
+and then start recording.
+You can see that we have
+a recording of 10 minutes
+and you can see things like as an example
+all the threads that
+were running during this time
+and also you can start analyzing
+all the methods and all the
+call stacks that were
+called during that time.
+In this case I want to focus on
+addressables content building.
+So I will look for a, the method
+that kicks all that process
+which is called build player content.
+You can find it right here. AssetSettings
+that build player content.
+So essentially I just found the method
+and if we switch to timing you can see
+that it takes about 10 minutes,
+which is yeah what we expect.
+So from now on I want
+to focus on this branch,
+I can double click or right click
+and set it as root to focus on that
+and I can switch the time
+display to real, to absolute
+to essentially see how the methods called
+by this method compares
+to the overall time of 
+building a addressables.
+So now we can start going
+deeper, deeper, deeper
+and see all the methods.
+This is actually you know, C# methods
+and C++ methods that are called
+and we can start analyzing
+how, as we start exploring,
+how the timings start to
+spread between the children
+and as an example, in this
+example we reached this case
+where we get to the point
+where we execute the method
+that run all the steps
+involved on addressables building
+and we can see that 86%
+of the entire building
+process is spent on Atlas
+Cache regeneration.
+So that's great.
+Now we have something to focus,
+Sprite atlases, but we can do better.
+We can keep exploring
+and start saying, okay,
+what packing atlas involves
+and if we go, go go,
+eventually we can find 
+this other case like 49%
+of the time is spent on
+compressing textures.
+You might have, you know, unoptimal
+compression settings
+or sizes and again we
+can keep going and going.
+In this case we get to
+the point where we can see
+that we are actually
+using ETC compression.
+So now you can think, okay
+we might be using ASTC
+instead, or you know,
+making smaller textures.
+Now the conversation
+can go to other places,
+but my point here is
+that you can see very,
+very detailed information about
+what exactly Unity is
+doing at your build as well.
+So that's about profiling.
+Now let's discuss a little
+bit about the most common
+CPU performance issues.
+So shader compilation spikes is one
+of the most common ones I see.
+Just to recap, remember that
+your shaders have variants.
+So every shader has different
+versions of the shaders
+with different combination of of features.
+So if you have a material that,
+as an example, is using the lit shader
+and you didn't set the
+normal map as an example,
+you will be using one of the
+many versions of your shader
+that doesn't have the
+the normal mapping code.
+So I imagine that in complex shaders
+that consider different APIs, VR, not VR
+and so on, you can have hundreds
+or even thousands of shader variants.
+It can scale really, really fast.
+So every single one of
+the variants that you use
+for the first time needs
+to be compiled, even if it's
+the same shader you might be
+compiling different shader variants.
+So essentially you will see
+that this time is shown in
+the profiler under the Shader
+CreateGPUProgram marker that
+is usually in the render thread.
+This essentially means
+the time that is consumed
+by unity in order to send
+the shader variant data
+to the GPU driver and let
+the GPU driver do its thing.
+So what you can do to prevent this,
+because this can
+happen during gameplay
+and you can start experiencing
+hiccups during gameplay,
+and especially in vr, that's something
+that can be pretty, pretty annoying.
+So here's where shader
+requirement kicks in.
+The idea is that you
+will compile the shaders
+before the gameplay starts.
+You can first detect
+which are the shaders
+that you're actually
+using, not the millions
+or well thousands of
+variants you might have.
+So one way
+to determine which shaders you
+actually need is using the
+log shader compilation flag
+in the graphics settings.
+This will essentially mean
+that if you make a build
+with this setting, you run the game
+and close the game, you will find a log
+that will contain all the shader
+variants that you compiled.
+So you can play the game,
+execute it as thoroughly
+as you can to trigger as
+many scenarios as you can
+and then use that
+to create a shader variant
+collection or an SVC.
+It's an asset that will contain
+a list of shader variants.
+You can automate this process
+using the project auditor.
+This is a third party
+unity package that you need
+to install separately,
+which do a lot of stuff
+regarding analyzing your project.
+But one of the things it
+does is taking this log
+and converting it to a
+shader variant collection.
+Once you have this asset,
+whenever you want to prewarm your shader,
+you can call the warmup method in the
+shader variant collections.
+But shared variant collection
+has some things that you need
+to consider first
+or actually the biggest
+one, it doesn't work well
+with modern APIs like Vulcan
+and DirectX 12 and so on
+because these APIs have,
+let's call them sub
+variants of your shader.
+So even the same shader can be
+compiled into different shaders
+depending on the GPU state.
+So if you have meshes with
+different vertex attributes,
+in this newer APIs you
+will have different sub
+variants, let's call them.
+So the most reliable way
+to prewarm shaders in these
+APIs as of now, as of unity 2022
+and before, is essentially
+rendering some mesh
+that uses the same vertex format
+using the exact same URP
+assets and all the pipeline state
+that you use normally in your game,
+but behind a loading screen.
+So it's kind of a manual
+work, but should work.
+But in unity 6 we have solved this.
+We have now the concept of PSO caching
+or pipeline state object
+caching, its a very similar API
+to shader variant collections.
+You can essentially create
+a graphic state collection,
+record all the shaders that
+you compile during a given,
+you know, playtime session
+and then store these to prewarm,
+this graphics variants
+collection with again,
+the same API of shader variant collection,
+or a very similar one.
+I recommend you to check
+the unity discussion thread,
+called GraphicStateCollection
+tracing and warm up.
+You can get more information
+about how this works.
+Now other common thing
+that we see is a misuse
+of batching. Just to keep
+everybody on the same page,
+remember that batching
+consists essentially
+of grouping elements that
+share the same GPU state.
+So whenever you want to
+render something, you need
+to set up the GPU to
+use specific shaders,
+specific textures,
+specific uniform buffers
+or vertex buffers and so on.
+So whenever you need to
+change the GPU estate
+to represent any other material,
+that's expensive. That's why
+we try to group elements that
+have the same shader state
+and change the GPU state
+and render all the elements
+that use the same GPU state.
+And Unity have
+plenty of ways to do this.
+We have the static
+and the dynamic batching,
+we have the SRP batcher.
+You have instanced
+and you can even use low
+level APIs like draw instanced.
+So I won't go through
+detailed explanations on
+how each one of these options work,
+but what I wanted to give
+you some tips. Please,
+the first thing I would
+recommend you to do is
+to not skip on the SRP batch.
+If you're using any SRP like URP
+or HDRP, you can use the
+SRP batcher, which is a way,
+way more flexible tool compared to
+as an example, dynamic batching.
+It can batch elements that use
+different materials as long
+as the materials use
+the same shader variant
+and also essentially
+you can batch elements
+with less restrictive vertex limits
+compared to dynamic batching.
+You need to be sure
+that you shader is
+compatible with SRP batcher.
+You can check in the inspector
+when you select a shader if
+it's SRP batcher compatible with
+that little property right there
+and you have information
+in the documentation about
+what you need to do to make
+your shaders compatible.
+Usually it's a simple change
+regarding some C buffer.
+Also, you don't need to use
+material property blocks.
+Those are intended to be
+used alongside instancing
+and essentially instancing and
+SRP batcher doesn't play well
+together, it's one or the other.
+So if you are using
+material property blocks,
+we are not going to execute
+SRP batcher for those objects.
+So it's perfectly fine
+to have thousands
+of materials with different
+colors if you want as long
+as they use the same shader variant.
+Talking about instancing,
+sometimes instancing can be
+better than the SRP batcher.
+It's a little bit of a
+project dependent thing
+but usually as a rule
+of thumb, you can think
+that if you need to render
+the same mesh more than 100
+times, usually GPU instancing 
+is a better solution.
+So try to use both in
+the best way possible.
+Finally you have low level
+APIs like the draw instanced
+APIs or the batch render
+group which allows you
+to render objects without the overhead
+of having a GameObject, renders,
+transformations and so on.
+So it's a little bit low level
+but it's a very, very powerful tool.
+So actually let me show you
+how render mesh instanced can
+improve your performance.
+So in this demo I have this
+kind of sea with things
+around like cubes going
+around spheres and so on.
+I'm using this for a game where I want
+to just have some nice graphics.
+This is not gameplay related,
+this is just some boids
+that move around and do nothing.
+And if we check the frame
+debugger, we can see that all
+of them were rendered in just four draw calls.
+One for the cubes that are flying on top.
+Then two for lots of cubes in
+below the sea that you can see
+that they are around
+500 instances, 200 instances,
+300 instances.
+And then there's spheres
+another set of 300 instances.
+So essentially 1200 elements
+being rendered in just four
+draw calls and no, I don't
+have 1200 game objects
+to load, to parse, you know
+to spend time loading them.
+This is because these game
+objects use custom script i did
+that executes the low level APIs.
+So in this case, I won't
+go into the details of
+how this work but at least
+some things to notice is
+that I have a native array
+of matrices which represents
+the position rotation
+and scale of the boids.
+Then in the update I'm using jobs
+and burst to update those
+to represent the logic
+of you know, how the boids will move,
+how they follow a leader and so on.
+But the part I wanted to show you is
+that later, in the late update,
+when those jobs finished,
+I execute render mesh
+instanced to say I want to render
+that mesh as many times
+as boid matrices elements has, in the
+positions specified by them.
+So just a single line of code
+and have a lot of elements on screen.
+Also another common issue,
+we see, multiple cameras,
+especially since URP, each
+camera has severe overhead.
+You need to execute culling
+and maybe occlusion cooling
+if you have some enabled,
+you will need to create the
+render graph if you're using the
+newer version of URP
+or HDRP, you need to prepare
+render passes and so on.
+You can see in the image
+how we have certain markers
+and in the submit marker
+which is the marker
+that is actually issuing draw
+calls to the render thread,
+you can see that all things that comes
+before are actually just preparation
+for start issuing draw calls.
+You can see that actually the overhead
+of preparing the camera is
+bigger than the rendering itself.
+So this multiplies as
+more cameras you have.
+So essentially avoid having
+multiple cameras, reduce your
+camera count as much as possible.
+If you need to render elements on top
+of the existing camera results,
+you can use render features
+as an example to create custom maps
+for custom post-processing effects.
+You can even do some tricks
+like rendering elements
+that are being seen in the
+camera into a separate render
+texture to use in UI
+or something like that.
+And another case is
+avoid separating the UI
+and the 3D camera if possible.
+Sometimes I see cases where
+clients use camera space
+UI canvases to render 3D
+elements in the middle,
+but to avoid the camera from
+overlapping the 3D world,
+they choose to separate cameras.
+Well that makes perfect sense.
+But if you want to really avoid
+the second camera overhead,
+you can just use clever tricks
+to prevent the UI from, you know, colliding
+with the the 3D world.
+And if you really need to use
+multiple cameras, consider
+that you, as an example in URP,
+you can set in your URP assets,
+multiple universal renderers.
+So you can have different
+universal renderers
+with different settings
+and you can create one
+for the 3d world
+and one for the UI
+because as an example in
+the UI one you dont want,
+ambient occlusion as an example.
+So at least you will
+reduce a little bit the
+cost of the extra camera.
+Finally, regarding CPU
+improvements, I want
+to talk about some of the
+ones upcoming in unity 6.
+One that you probably already
+heard of is the resident drawer.
+Essentially it is an implementation
+of the batch renderer group
+but for game objects. That
+API was created for dots
+and now it's being used
+on game objects. One
+of the many things it does is
+to essentially do a very
+efficient instanced based batching.
+So it also includes
+GPU occlusion culling,
+as we already mentioned several times.
+But another interesting
+feature, a little bit
+of a low level one is
+split jobs. Its something
+that is available in DirextX 12 in Unity 6,
+essentially it's a new multi
+treaded rendering model
+for rendering.
+So remember that rendering
+happens in multiple threads,
+especially if you use graphic jobs.
+This is a new mode
+that will reduce a lot
+the synchronization time
+between the threads, and again,
+it's available in direct X 12.
+Again, Unity discussions
+has a nice thread about this
+DirectX 12 and graphics
+jobs improvements.
+Okay, now let's discuss
+a little bit about GPU
+performance.
+So the first thing you
+want to know about GPU is
+that if you really need to
+worry about GPU, so you need
+to know if you are GPU bound.
+Usually the most reliable
+way to detect this is
+through again native profilers.
+They will provide more accurate timings
+but you can infer if you are
+GPU bound checking certain
+profiler markers.
+The truth is that this is a
+little bit difficult sometimes
+because different platforms
+have different markers called
+differently like Vulcan
+or even in Quest 2
+that they has it its
+own graphics compositor.
+Some things are managed in
+the graphics compositor side
+and they're not very
+clear in the unity profiler
+but usually it looks something
+like the main thread waiting
+for something happening
+in the render thread.
+Usually in the form of wait for
+present on GFX thread marker
+and then you need to check what
+is actually doing, the render
+thread, because it might be only
+waiting for vertical sync
+or the target FPS,
+but if you see something
+like present frame,
+unless you have a compositor
+that might be doing vertical
+sync on its own side,
+usually this means that we are waiting,
+the render thread is waiting
+for the GPU to finish.
+So try to look at these
+patterns in your profiler capture
+to see if you're GPU bound.
+If you're GPU bound. Some
+of the most common issues I
+see in those cases is overdraw.
+Overdraw consists of repeated
+rendering of the same pixel over
+and over and over again and
+it's especially an issue in UI
+and any kind of 2D rendering
+because this uses transparent
+rendering techniques,
+this usually involves
+rendering elements back
+to front in order to achieve
+a proper transparency.
+And of course we need to
+disable the depth tests
+for this to work properly.
+So as an example, if you
+have a UI being occluded
+by another UI completely, like
+an options menu hiding the
+main menu you will want
+to disable the main menu.
+Or another case is that you
+might have an element hidden
+through alpha, that means that
+the element won't be visible
+but sometimes depending on
+your configuration you might
+still sending these completely
+transparent objects to the CPU
+and it might be rendering
+and wasting performance
+without you not seeing it.
+So we recommend using
+again native CPU profilers,
+render doc, pix, nvidia nsight
+or any of the platform specific ones.
+So let me show you how to
+detect this in render doc.
+So I won't go through all the
+details that it took in order
+to take this capture, but we have plenty
+of guides about that.
+But the point here is
+that the only thing I see
+regarding this rendering
+is just a white square.
+So I literally have a white
+square using UI in my game.
+So just by looking this I
+say okay everything is good
+but if I switch to some
+of the visualization modes like
+quad overdraw, you can see
+that something weird is happening.
+So we have a quad rectangle
+but we have this kind
+of heat map showing us
+that theres something
+else being rendered.
+So in this sense we can go back
+to normal rendering, in this
+sense render doc works pretty
+similarly from the frame debugger.
+It can see individual draw calls instead
+of batches you will see individual drops
+and you can see that before
+rendering the white square
+we are rendering some text.
+And after rendering the white square,
+I also have some invisible thing.
+So, what is
+doing this? You can switch
+as an example to the highlight
+draw call view on render doc
+to see the draw call that this is doing
+and we can see that we are
+actually rendering pixels
+but no results at all.
+So here we can start researching
+if we want, we can go
+as an example to the meh viewer to see
+that we are actually rendering one quad
+but then we can see that the
+colors are red in the case
+of the quads but alpha zero.
+So in this case we are rendering something
+that is completely transparent
+with no reason at all.
+This is heavy in performance
+and it wastes quite a lot
+especially if you are using high
+expensive shaders.
+So we recommend when you are GPU bound
+to take a look quick look at overdraw
+to see what you can do about it.
+Another form of overdraw which
+is a little bit less known is
+quad overdraw.
+Quad overdraw happens when
+you render small pixels
+for example, I mean all GPU
+pixel operations usually works
+in quads or in you know, small
+two by two pixels arrays.
+So even if you have a
+single pixel triangle,
+you are actually rendering four pixels
+to calculate the derivatives and so on.
+So you might have a very, very
+dense mesh being seen very,
+very little and you might
+have lots of little triangles.
+One pixel triangles overlapping,
+you might be rendering a lot
+of times the same pixels
+over and over and over again.
+So here the classic vertex
+density reduction techniques
+apply, like using LOD or HLOD.
+So you don't only reduce the
+vertex shader costs
+but most importantly you'd
+reduce the pixel shader cost.
+Nowadays modern GPUs are more
+worried about pixels than
+vertex shaders, especially with 4K
+resolutions and that kind of things.
+So pay attention to your little triangles
+and actually this is a
+visualization that comes
+with HDRP in order to
+detect this on the editor.
+Finally, regarding GPU i want
+to talk about shader performance.
+Again, you might have
+issues in the GPU side
+but it might just be
+that a single draw call
+is taking a lot of time.
+We saw in render doc that you can
+see draw calls, and in other tools,
+you can actually see the
+timings of those draw calls
+and you find that a draw call
+might be rendering just a bunch
+of pixels but still it's very expensive.
+You might be having issues in your shader.
+So there are plenty of
+shadee profiler tools
+as an example in the
+image we can see the nvidia
+nsight shader profiler which can point you
+to the exact methods that are
+actually taking lots of time.
+Profiling shaders is not easy,
+is a very complex science.
+You need to learn a lot
+of how the GPU works
+but at least I want to to let
+you know that this exists.
+So again, there's lots of
+things that can happen here,
+but the most common things that
+you might be looking for is
+as an example, reducing
+the ALU operation costs
+through replacing floats or ints with half
+or int16 types if your
+graphics card supports them
+because these essentially
+are cheaper operations.
+So half precision but you
+might not need full precision.
+I dunno if you are representing normals
+or something like that,
+usually half is enough
+but also they use less memory
+and this means that each
+pixel needs less memory
+to be represented in the CPU, which means
+that you can fit more
+pixels in the same warp,
+as Nvidia call them.
+So essentially you can process
+more pixels in parallel.
+In the same line try to
+reduce your variables
+so this can translate as registers
+so the more variables you use,
+the more registers you will use,
+hence less pixels will
+fit in a single warp.
+So of course the compilers
+do a nice work in reducing
+variables for you, but
+sometimes they need your help in
+order to prevent some scenarios.
+Also something that seems weird
+but avoid using ifs like the
+regular if. is very, very bad
+for the GPU due to lots of reasons.
+But the main point is avoid
+using them, instead use a static
+branching or shader keywords.
+So essentially you will
+be creating a new variant
+or set of variants of your shader
+but having your code enabled or disabled.
+So essentially you are,
+we are making variants
+through special ifs that uses keywords
+and finally reduce texture
+or any kind of main
+memory access like
+like dynamic buffers access.
+So essentially everything
+that might require going
+to the main memory to read
+some data like textures,
+it's very expensive.
+You have cache mechanisms
+but still you need to
+pay the price sometimes
+to go into main memory.
+So you can do classic tricks
+like combining four single
+channel textures in a four
+channel texture in order
+to retrieve four values
+in one texture fetch
+or if you're using buffers, try
+to use constant buffer
+instead of the other ones.
+So, well that's regarding GPU.
+Now I want to finish with
+memory performance issues
+and one of the most common
+and most hideous problems,
+untracked memory,
+this is usually huge
+untracked memory is
+essentially any kind of memory
+that your allocation
+allocated that didn't went
+through the unity native allocators.
+So essentially unity
+have native allocators
+of different flavors
+for different purposes,
+but sometimes certain plugins
+or maybe your own plugins
+or native code might be
+allocating memory not using them.
+We provide an API for plugins to use
+the Unity native allocators
+in order for them
+to be recognized by the memory profiler.
+But not every plugin does that.
+So usually it's just plugging allocations.
+And the first thing to notice
+regarding untracked memory is
+that most of the times it
+is just non-resident memory.
+Remember that your
+application if you want,
+can allocate 50 gigabytes of memory
+but you might be only used in 200 mb.
+Those two hundreds mb are the
+ones that matter, the ones
+that might cause out of memory crashes.
+So since Unity 2022.2,
+the memory profiler can
+differentiate allocated
+size and resident size.
+In this case, in this image we can see
+how the memory profiler
+reports 0.75 gigabytes
+of untracked memory.
+But from those actually we
+are only using 140 megabytes
+that are present in your physical ram
+and in some cases in some
+specific devices like iOS, some of
+that memory might be swappable.
+Again, you can use the memory
+usage on device documentation
+of the memory profiler,
+which clarifies a little
+bit more these concepts.
+But if you are in older
+unity versions this
+differentiation doesn't exist
+and again, native profilers
+comes to save the day.
+So in the image you can see how we start
+to cross-reference the information
+that the memory profiler
+gives with native profilers.
+In this case I'm using instruments.
+So in the image you can see
+how we enable the memory map
+feature of the memory profiler.
+This is something that you
+need to enable in the unity
+preferences, not the project preferences,
+the unity preferences to
+allow the memory profiler
+to show this new tab.
+And this is a detailed
+breakdown of all the allocations
+that are present
+in your memory capture.
+So you can see that you
+can see the individual
+and untracked allocations some label
+that the operative system gives.
+Let's for example Malloc
+small is a iOS specific
+label and the address.
+So you can start cross-referencing, okay,
+these eight megabytes
+memory what it means.
+So you can use as an example
+the instruments VM tracker
+profiler, which allows you to
+essentially take a snapshot
+of your memory and you can
+essentially look for that address
+and you get more detailed
+information like the virtual size
+or the full allocation size or
+and how much of that memory is actually
+resident on physical.
+So in this case we can see
+that we have about 100
+megabytes allocation
+but only half of it is
+occupying physical memory.
+And also you will see
+some concepts like dirty
+or swapped size, which are kind of iOS specific
+so I won't go into details about them
+but I recommend you
+to see the WWDC 2018 video
+called iOS Memory Deep dive.
+It's an as an apple specific video
+that will go into details of
+how the iOS memory architecture works, is
+is pretty pretty informative.
+So, and again you can start
+cross-referencing to get
+that resident versus allocated
+memory using native profilers
+and you can go even
+deeper, in as an example,
+the instruments allocations
+list tool allows you also
+to again cross reference the addresses
+and then look who
+which method actually
+created this allocation.
+And with the right panel that
+I'm not showing you right now,
+you can actually see the entire
+cost stack to see, I don't know
+who allocated this memory. In this
+example, we are seeing lots
+of AK platform allocations,
+which is usually related to wwise
+and you can follow the
+call stack to see which
+of your C sharp methods
+might have allocated this
+or which thread if you want.
+So it's, it's a little bit
+of a very, very deep work
+but can clarify a lot
+about untracked memory.
+Then another classic we see
+is the reserved managed memory
+essentially is memory
+that is allocated in C sharp
+that you have allocated
+but you are not using.
+This will never be 
+untracked memory
+because untracked memory only
+happens for native allocations.
+So for understanding
+this one, I would like
+to discuss a little bit
+about how we allocate
+or how our implementation of the bohem
+GC allocator algorithm works.
+So essentially C sharp
+allocates memory in these kind
+of sections like 1, 2,
+3, 4 megabyte sections,
+the size change over time.
+So all these different chunks
+of memory that are scattered
+through your ram is what
+we call the managed heap.
+Whenever we need to allocate
+an object, we take one
+of these sections
+and we split it between, i don't know, you want
+to allocate at 200 kilobyte objects,
+we will you we will split it
+between a 200 kilobytes section
+and the rest of the empty memory in a way
+that then other locations
+can use this empty memory.
+As these allocations are
+released, the continuous block
+that are free are going to be merged
+to have a nice continuous set of memory
+and this is where the first issue happens.
+If you don't release this memory,
+you cannot merge the object continuously.
+So if you want to fit a large
+object in these sections,
+it's completely fragmented
+and you cannot fit it.
+But this is even worse
+for small allocations,
+which actually this the most common ones
+because this, this division
+of the sections happen at a
+four kilobyte granularity level.
+Usually meaning
+that the smallest block you
+can get is four kilobytes.
+So if you want
+to allocate usually larger
+than two kilobyte
+allocations, we take the entire block,
+we fit the two kilobytes
+or plus allocation
+and leave the rest just to be empty.
+But for smaller allocations,
+which again are are the most common ones,
+we don't waste a lot of space.
+We instead take a four kilobytes chunk,
+split it into buckets
+and start allocating different
+object sizes inside it.
+So smaller allocations go into
+a single four kilobytes block
+and again the issue happens again
+as if you don't release
+all the objects in these
+four kilobytes sections.
+Essentially you will be
+holding the entire block
+and prevented it from being
+merged with the rest of the blocks.
+So again, this happens a lot
+and this is the most common issue
+and you can detect the actual size
+of reserved memory in the memory profiler.
+If you go to the all of memory
+tab, managed, reserve section,
+you can see how much
+memory you are wasting
+or pre allocating for these objects.
+So in this case, 28 megabytes
+is not the end of the world,
+but I have seen worse.
+Nice. We know how it works,
+what we can do about it.
+So actually I already talk about this.
+So essentially avoid
+allocating long term memory,
+and long temporary memory
+because you might be allocating lots
+of small objects in a block,
+splitting the block into little chunks
+and then one of those
+object might be long term
+and the other were temporary.
+I dunno. Some list you're
+allocated to filter another list
+and then you know, throw away the list
+and you might end up having a
+four kilobyte block occupied
+by maybe a 10 bytes long-term object.
+So if you instead try to
+initialize, as an example, instead
+of lazily initializing
+long term managers, you
+initialize them all of
+them at the same time.
+Without allocating any
+temporary memory in the middle,
+you might end up having
+lots of the long term
+of objects living in the same
+blocks preventing from
+the fragmentation to happen.
+Also you need
+to avoid allocating memory every frame
+you can check in the memory of the profiler,
+how much memory you're
+allocating every frame
+because usually this is
+probably temporary memory
+that will be, you know,
+making your sections
+to not be properly utilized.
+And we have a feature 
+called the call stack
+feature that allows you to
+see the entire call stack
+whenever you do a GC.Alloc.
+Actually I will show that in a moment,
+but if you want to go
+even deeper than that
+and go to the guts of your memory,
+you can again use the memory
+map feature I mentioned before
+and in it you can actually
+find manage heap sections,
+these four kilobytes or
+larger sections I mentioned
+before this example,
+we can see a 16 kilobytes section
+only occupied by the array
+of floats of 32 bytes.
+So it's quite
+the waste. Consider that
+for this view we might not
+have the entire information
+so it's kind of an approximate
+of the entire thing
+but should be pretty reliable.
+And other recommendation is try to use,
+to avoid allocating
+temporary memory in the
+in the managed memory.
+Sometimes you can instead have
+native collections like the
+ones that usually are used in dots,
+but you can use them in
+regular c sharp objects
+because those go through native allocators
+that have specialized allocators
+for small long term objects.
+So sometimes if you can't do it,
+use them instead might be
+better in terms of performance.
+So let me show you the
+GC call stack feature.
+So in this case I have
+this profiler capture, I
+took the capture having this
+call stacks option turnen on.
+So you need to pre enable
+this before recording
+and then you can start finding
+for GC.Alloc markers,
+which are usually these
+purple ones right here.
+So since I made the recording
+with this call stack option
+enabled, when you select one
+of these markers, you can
+see the full call stack
+and while the memory profiler,
+sorry, the unity profiler
+will only show you
+that these allocation happen
+inside the update method
+of the race stats player class.
+We can see that actually
+this called the update stats
+method, which instead called
+the format race type method.
+In the race ui and you are in a
+completely different class.
+So you might have spent
+a lot of time analyzing
+what can be wrong in the race stats player
+and actually the allocation
+happened in other method.
+This case we can see
+that eventually we call
+to string format to probably update some
+timer somewhere in this game.
+So this is very powerful
+to detect allocations
+and try to prevent them with
+other techniques, you know,
+string builders and any kind
+of non allocating version of things.
+Another common issue is asset duplication.
+Essentially this happens under different,
+different circumstances,
+but this means that you might
+have the same asset loaded
+multiple times into memory.
+One common case for this
+to happen is when you have non
+addressable assets being used
+in addressable assets.
+This example we have bundle one
+and bundle two using
+prefab one and prefab two.
+Both of them needs texture
+one for rendering the prefab,
+but given texture one is not addressable.
+These bundles don't know where to pull,
+the texture.
+So instead they copy the
+entire texture in each bundle.
+So if you load bundle
+one, it will have its copy
+of texture one and if you load bundle two,
+you will have another
+copy of texture one.
+So this can be easily solved,
+but making texture one accessible in a way
+that the bundle one and bundle two can get
+the same textures from bundle three.
+This can also happen
+under other circumstances.
+Usually as an example, assets
+repeat in both the player
+and asset bundles.
+So as an example, if you have
+a scene in your player in,
+you know, in the player build settings
+that is referenced in a prefab
+that at the end is referencing texture one
+given this scene is not
+addressable it needs
+to be included and all its
+dependencies into the player
+content into the APK, IPA
+or your executable files and folders.
+And if this texture is
+also addressable, we need
+to copy it also in addressable,
+even if the texture is in addressables,
+the player won't never go
+automatically to addressables
+or asset bundles to load it.
+It's your responsibility.
+The bundle might not be even there.
+So the player doesn't know
+anything about the content in
+Addressables, that's why
+it needs its own copy.
+And another way this can
+manifest is if texture one is in
+the resources folder because
+everything in the resources
+folder will be copied regardless
+of it being referenced
+or not into the player content.
+So addressables in the resources
+folder is a big no-no.
+So how you can detect asset duplication,
+we have several tools
+to detect this, as an example,
+The Addressables package comes
+with the addressables analyzer window,
+which is slowly being
+superseded by the build report
+a new feature in Addressables that
+after each build it provides a report
+of the all the bundles
+generated, the content
+of the bundles, why one
+bundle reference other,
+I mean which asset references
+which other asset in which
+other bundles, is very powerful.
+And one of these features is
+detecting duplicates. But
+if you don't have the report
+and you have the development build,
+you can use the memory profiler
+that has a show potential duplicates tool
+that if you check it, it will look
+for all assets named the same,
+of the same type weighting the same.
+So that's why it's potential duplicates.
+You might have two assets called the same
+but maybe actually different contents.
+But you can get an idea if you
+have duplications with this.
+And sometimes if you don't
+even have a development build
+but you have access to the bundles,
+you can also still use
+the unity data tools.
+This is a common line,
+eh, a CLI, you know,
+command line tool is in its own
+GitHub repository which you can
+access right now, which
+essentially analyzes a folder
+that contains bundles
+and generates a SQL database
+that you can explore
+to see which assets are in the bundles
+and explore some important information.
+So let me show you a little bit this tool.
+So in this case I took, you
+know, analyzed a group of bundles
+and this SQL database has lots of tables
+and views that allows you
+to see stuff like all the
+animations included,
+all the audio included,
+all the mesh, shaders and so on.
+But it has also the interesting part here,
+which is the view potential duplicates,
+which works similarly to
+the memory profiler version.
+It looks for assets called the same
+of the same type weighting the same.
+So in this example you can
+see how we have two instances
+of the speeday less slant sdf texture2d in
+the personal season and default bundles.
+So essentially this is saying
+that we have two font addresses
+because the SDF part can sort of
+give it away in those bundles
+and you can use the build report
+and so on to keep deeping dive into that.
+I really recommend this tool also
+to see stuff like texture formats
+and if you are compressing
+or not compressing textures.
+But again, kind of outside of
+the scope of today's session.
+And finally regarding memory, I want
+to talk about shader memory.
+We talk about shader variants
+and that you can have hundreds of them.
+One thing to consider is that
+whenever you load a shader,
+like you are referencing it in
+in a scene or something like that,
+we load all the shader
+variants into memory for them
+to be compiled when the GPU needs.
+So, so their data is ready in
+the ram for fast compilation.
+As soon as the GPU compiles it,
+because you needed it,
+it's moved to the GPU
+and evicted from ram,
+but still can occupy quite a
+bit of memory if you didn't,
+eh, strip the shaders.
+So you might have thousands
+of shaders in memory
+and just using a a couple
+of them even if you won't compile them,
+especially if you don't
+compile them actually.
+So one way to deal
+with this is using the shader
+dynamic loading feature
+that essentially is this
+shader variants loading settings
+that you can find in the player settings.
+It allows you to define a maximum size
+that you will spend on
+the shader variant size,
+but consider that if you make
+it, you know small enough,
+you might end up needing to
+read shaders from disc,
+which will make the
+compilation processes slower.
+So a better approach will be to mix this
+with shadee variant stripping.
+You can essentially tell you need
+to skip from includding certain shader
+variants into your player.
+You can do that with the
+IPreProcessShader API,
+which essentially is a callback that
+whenever a shader is compiled
+you can say return false
+and skip the shader
+or something like that.
+You can combine this with the
+shader variant collection we
+use when compiling or prewarming shaders
+because those are the
+shaders you actually need.
+So you might do something
+like skip any shader
+that is not referenced in
+the shader variant collection.
+So let's wrap up. We saw different things.
+We saw that using native
+profilers from CPU, GPU
+and memory profilers is key
+if you really, really want
+to get into the bottom of
+your performance issues.
+We talk about that the shaders
+performance is not only about
+the GPU side of things,
+but also you can have pre
+warming and stripping
+and memory issues when you see shaders.
+We discuss that we have several
+unity batching mechanisms
+and how to use them
+properly you will
+reduce batching quite a lot.
+We talk about untracked memory
+and this thing about everybody
+is scared about untracked memory,
+but most of the time it's not resident.
+And in any other case you can
+use nice memory profile tools
+to go deeper, essentially pay attention
+to transparent rendering
+and asset duplication.
+Some are some very easy things to fix
+and might save you a lot of performance.
+So thank you everybody for being here.
+I hope you enjoyed the session.

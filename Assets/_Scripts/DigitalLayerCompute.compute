@@ -1,0 +1,74 @@
+#pragma kernel GeneratePositions
+
+struct SpriteData
+{
+  float4 position;
+  float4 color;
+};
+
+RWStructuredBuffer<SpriteData> PositionBuffer;
+StructuredBuffer<float3> VertexBuffer;
+StructuredBuffer<int> TriangleBuffer;
+
+float4x4 ObjectToWorld;
+int SpriteCount;
+float Time;
+
+// Hash function for randomization
+float hash(float3 p)
+{
+  p = frac(p * 0.3183099 + 0.1);
+  p *= 17.0;
+  return frac(p.x * p.y * p.z * (p.x + p.y + p.z));
+}
+
+// Random point on triangle
+float3 RandomPointOnTriangle(uint triIndex, float r1, float r2)
+{
+  int i0 = TriangleBuffer[triIndex * 3];
+  int i1 = TriangleBuffer[triIndex * 3 + 1];
+  int i2 = TriangleBuffer[triIndex * 3 + 2];
+  
+  float3 v0 = VertexBuffer[i0];
+  float3 v1 = VertexBuffer[i1];
+  float3 v2 = VertexBuffer[i2];
+  
+  float sqrtR1 = sqrt(r1);
+  return v0 * (1.0 - sqrtR1) + v1 * (sqrtR1 * (1.0 - r2)) + v2 * (r2 * sqrtR1);
+}
+
+[numthreads(64,1,1)]
+void GeneratePositions(uint3 id : SV_DispatchThreadID)
+{
+  if (id.x >= uint(SpriteCount)) return;
+  
+  // Generate deterministic random values based on ID
+  float3 seed = float3(id.x, id.x * 2.371, id.x * 4.127);
+  float random1 = hash(seed);
+  float random2 = hash(seed + 1.0);
+  float random3 = hash(seed + 2.0);
+  
+  // Select random triangle
+  uint triCount = TriangleBuffer.Length / 3;
+  uint selectedTri = uint(random1 * triCount);
+  
+  // Generate point on triangle
+  float3 position = RandomPointOnTriangle(selectedTri, random2, random3);
+  
+  // Transform to world space
+  float4 worldPos = mul(ObjectToWorld, float4(position, 1.0));
+  
+  // Add some floating animation
+  float floatOffset = sin(Time * 0.5 + random1 * 6.28) * 0.1;
+  worldPos.y += floatOffset;
+  
+  SpriteData spriteData;
+  spriteData.position = worldPos;
+  spriteData.position.w = random1 * 6.28; // rotation
+  
+  // Semi-transparent color with random variation
+  spriteData.color = float4(0.5, 0.8, 1.0, 0.3 + random2 * 0.4);
+  spriteData.color.w = 0.2 + random3 * 0.3; // scale
+  
+  PositionBuffer[id.x] = spriteData;
+} 

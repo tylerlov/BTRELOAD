@@ -5,7 +5,7 @@ namespace MoreMountains.Tools
 	/// <summary>
 	/// Add this component to an object and it'll get moved towards the target at update, with or without interpolation based on your settings
 	/// </summary>
-	[AddComponentMenu("More Mountains/Tools/Movement/MMFollowTarget")]
+	[AddComponentMenu("More Mountains/Tools/Movement/MM Follow Target")]
 	public class MMFollowTarget : MonoBehaviour
 	{
 		/// the possible update modes

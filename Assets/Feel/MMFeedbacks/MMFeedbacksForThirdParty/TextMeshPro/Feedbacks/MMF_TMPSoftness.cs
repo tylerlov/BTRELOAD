@@ -59,8 +59,7 @@ namespace MoreMountains.Feedbacks
 		public float Duration = 0.5f;
 		/// the curve to tween on
 		[Tooltip("the curve to tween on")]
-		[MMFEnumCondition("Mode", (int)MMFeedbackBase.Modes.OverTime)]
-		public MMTweenType SoftnessCurve = new MMTweenType(new AnimationCurve(new Keyframe(0, 0f), new Keyframe(0.3f, 1f), new Keyframe(1, 0f)));
+		public MMTweenType SoftnessCurve = new MMTweenType(new AnimationCurve(new Keyframe(0, 0f), new Keyframe(0.3f, 1f), new Keyframe(1, 0f)), "", "Mode", (int)MMFeedbackBase.Modes.OverTime);
 		/// the value to remap the curve's 0 to
 		[Tooltip("the value to remap the curve's 0 to")]
 		[MMFEnumCondition("Mode", (int)MMFeedbackBase.Modes.OverTime)]
@@ -115,6 +114,7 @@ namespace MoreMountains.Feedbacks
 				switch (Mode)
 				{
 					case MMFeedbackBase.Modes.Instant:
+						float newSoftness = NormalPlayDirection ? InstantSoftness : _initialSoftness;
 						TargetTMPText.fontMaterial.SetFloat(ShaderUtilities.ID_OutlineSoftness, InstantSoftness);
 						TargetTMPText.UpdateMeshPadding();
 						break;
@@ -197,6 +197,19 @@ namespace MoreMountains.Feedbacks
 			TargetTMPText.fontMaterial.SetFloat(ShaderUtilities.ID_OutlineSoftness, _initialSoftness);
 			TargetTMPText.UpdateMeshPadding();
 			#endif
+		}
+		
+		/// <summary>
+		/// On Validate, we init our curves conditions if needed
+		/// </summary>
+		public override void OnValidate()
+		{
+			base.OnValidate();
+			if (string.IsNullOrEmpty(SoftnessCurve.EnumConditionPropertyName))
+			{
+				SoftnessCurve.EnumConditionPropertyName = "Mode";
+				SoftnessCurve.EnumConditions[(int)MMFeedbackBase.Modes.OverTime] = true;
+			}
 		}
 	}
 }

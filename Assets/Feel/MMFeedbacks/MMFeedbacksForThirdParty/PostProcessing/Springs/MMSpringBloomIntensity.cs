@@ -4,7 +4,7 @@ using UnityEngine.Rendering.PostProcessing;
 
 namespace MoreMountains.Feedbacks
 {
-	[AddComponentMenu("More Mountains/Springs/MMSpringBloomIntensity")]
+	[AddComponentMenu("More Mountains/Springs/MM Spring Bloom Intensity")]
 	public class MMSpringBloomIntensity : MMSpringFloatComponent<PostProcessVolume>
 	{
 		protected Bloom _bloom;

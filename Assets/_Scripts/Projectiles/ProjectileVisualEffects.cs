@@ -3,47 +3,75 @@ using UnityEngine;
 
 public class ProjectileVisualEffects
 {
-    private ProjectileStateBased _projectile;
+    private ProjectileStateBased projectile;
+    private Material material;
+    private Color originalColor;
+    private float originalEmission;
 
     public ProjectileVisualEffects(ProjectileStateBased projectile)
     {
-        _projectile = projectile;
+        this.projectile = projectile;
+        var renderer = projectile.GetComponent<Renderer>();
+        if (renderer != null)
+        {
+            material = renderer.material;
+            if (material != null)
+            {
+                originalColor = material.color;
+                originalEmission = material.GetFloat("_EmissionIntensity");
+            }
+        }
     }
 
-    public void UpdateVisuals()
+    public void PlayDeathEffect(bool hitSomething = false)
     {
-        // This method can be expanded to handle any continuous visual updates
-    }
-
-    public void PlayDeathEffect(bool hitSomething)
-    {
-        if (hitSomething)
+        if (material != null)
         {
-            ProjectileEffectManager.Instance.PlayDeathEffect(_projectile.transform.position);
-        }
-
-        if (_projectile.playerProjPath != null)
-        {
-            _projectile.playerProjPath.enabled = false;
-        }
-
-        if (_projectile.modelRenderer != null)
-        {
-            var propertyBlock = new MaterialPropertyBlock();
-            _projectile.modelRenderer.GetPropertyBlock(propertyBlock);
-            propertyBlock.SetFloat("_AdvancedDissolveCutoutStandardClip", 0.05f);
-            _projectile.modelRenderer.SetPropertyBlock(propertyBlock);
-            
-            DOVirtual.Float(1f, 0f, 0.1f, (value) => {
-                propertyBlock.SetFloat("_Opacity", value);
-                _projectile.modelRenderer.SetPropertyBlock(propertyBlock);
-            }).OnComplete(() => {
-                _projectile.gameObject.SetActive(false);
+            DOTween.To(
+                () => material.GetFloat("_EmissionIntensity"),
+                x => material.SetFloat("_EmissionIntensity", x),
+                originalEmission * 2f,
+                0.1f
+            ).OnComplete(() =>
+            {
+                DOTween.To(
+                    () => material.GetFloat("_EmissionIntensity"),
+                    x => material.SetFloat("_EmissionIntensity", x),
+                    0f,
+                    0.1f
+                );
             });
         }
-        else
+    }
+
+    public void PlayImpactEffect(Collision collision)
+    {
+        if (material != null)
         {
-            _projectile.gameObject.SetActive(false);
+            DOTween.To(
+                () => material.GetFloat("_EmissionIntensity"),
+                x => material.SetFloat("_EmissionIntensity", x),
+                originalEmission * 1.5f,
+                0.05f
+            ).OnComplete(() =>
+            {
+                DOTween.To(
+                    () => material.GetFloat("_EmissionIntensity"),
+                    x => material.SetFloat("_EmissionIntensity", x),
+                    originalEmission,
+                    0.05f
+                );
+            });
+        }
+    }
+
+    public void Cleanup()
+    {
+        if (material != null)
+        {
+            DOTween.Kill(material);
+            material.color = originalColor;
+            material.SetFloat("_EmissionIntensity", originalEmission);
         }
     }
 }

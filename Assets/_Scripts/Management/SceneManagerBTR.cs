@@ -39,6 +39,8 @@ public class SceneManagerBTR : MonoBehaviour
     private bool isFirstUpdate = true;
     private int currentWaveCount; // Add this line to declare the variable
 
+    [SerializeField] private GameObject vfxManagerPrefab;
+
     private void Start()
     {
         InitializeNextSceneValues();
@@ -644,4 +646,5 @@ public class SceneManagerBTR : MonoBehaviour
             isTransitioning = false;
         }
     }
+
 }

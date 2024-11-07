@@ -1,0 +1,481 @@
+today we're going to build a solution
+that allows us to bootstrap a game with
+a persistent scene and additively load
+groups of scenes together at the same
+time what I want to achieve is to have
+one scene that holds services and
+objects that will exist for the lifetime
+of the game and then load in gameplay UI
+environments and cinematics as different
+scenes that comprise a scene group a
+scene group could be just one scene or
+it could be 10 or more let's see how we
+can get this
+done
+all right to start off today I want to
+import a third-party Library this is the
+scene reference library it lets us
+access scenes directly without having to
+use a bunch of string names it has a lot
+of other features too so let's bring
+that into the project quickly in unity
+you can go into your package manager hit
+the plus icon and import by get URL I'm
+importing version 4.0 this is going to
+give us a new type called scene
+reference it has properties like name
+and path you can also configure it a
+little bit if you head into project
+settings under scene reference you'll
+see some debug settings it's worth
+noting that this Library also supports
+addressables so let's see how we can use
+this in
+unity because I want to load my scenes
+as groups of scenes I'm going to Define
+some metadata about them the first thing
+I want to do is classify them by type so
+I can treat some of them differently for
+example a scene that I Mark as active
+scene will actually set that to be the
+active scene so that will become the
+target of any new game objects that are
+instantiated by scripts we can have new
+class called scene data that will keep
+all of the data about a scene and the
+first thing we can put in there is this
+new type scene reference for ease of use
+let's have a shortcut property here that
+just gives us direct access to the name
+of the scene and then let's also have a
+property for its type so now we can say
+a few things about each scene let's
+assemble them into a scene group a scene
+group can have a list of scene data
+let's create a helper for ourselves
+that'll return the name of a scene based
+on its type and we could just use Link
+for this we can use a first or default
+that's probably all the data we need
+right now we can come back and add a few
+more things to this later if necessary
+so let's have a look at how we can make
+use of this
+data I've got a new class here scen
+group manager now this is not a monob
+behavior just a pure CP class I want it
+to be able to publish a few events for
+us so whenever we load a scene unload a
+scene or we load an entire scene group I
+want to publish an action we're also
+going going to need a reference to the
+active scene group whichever one we've
+currently Got Loaded most methods from
+unity's scene manager return in async
+operation I want to collect all of these
+return types into a group that we can
+perform actions and Logic on let's have
+a struct here while we keep a readon
+list of all these async operations can
+just call it operations The Constructor
+can take the capacity and just create a
+new list for us I want two public
+properties the first one I want to be
+able to tell us a float value of the
+progress of all all the operations every
+async operation has a progress property
+let's just get the average of them using
+link let's have one more public property
+that will tell us if they're all
+finished async operations also have an
+isone property now we can use this new
+struct up in our main class when we're
+loading an unloading scenes so let's
+create two methods here the first one
+load scenes is going to be async returns
+a task it's going to accept a scene
+group a special type called I progress
+and a Boolean that will define whether
+or not we're going to reload scenes that
+actually are already loaded you could
+always set that to true if you wanted
+some duplicates now we just need a very
+basic unload scenes because we already
+know what the active scene group is we
+don't really need to pass in more
+parameters let's quickly divert to look
+at this I progress interface there's
+actually nothing too crazy about this
+this is a very simple interface that's
+part of net it can hold any type te and
+it actually only has one method you can
+see at the bottom there which is report
+typical use is that you use the report
+method to actually report on the
+progress being made so for this purpose
+I've made a very simple implementation
+of it it's an i progress type float
+called loading progress every time we
+get a report we're going to publish an
+event which is just the ratio of
+progress we've made so let's come back
+to our load scenes method and first of
+all let's set our active scene group to
+the group that we pass into the method I
+want a variable that's going to store
+any loaded scenes that are still here
+after we're done running the unload
+scenes method so that might be our
+bootstrapper or active gameplay scene
+perhaps depends on your game we'll get
+to that in a moment for now after we're
+done unloading the scenes let's first of
+all get a count of what scenes are still
+open so we can use the scene manager
+scene count property for that then we
+can iterate over all of these scenes and
+one by one we'll add them into this
+loaded scene list let's figure out how
+many scenes are actually in the active
+scene group that we just passed in and
+then let's create a new async operation
+group for them we'll just scroll down a
+little bit here so we have some more
+breathing room now we can get to the
+actual loading operations so we're just
+going to iterate over all of the scenes
+that we're going to load we can just
+make a for Loop that's going to just
+count up to the total amount of scenes
+that we have to operate on let's first
+get a variable with the scene data for
+the first scene if this scene is a
+duplicate of a scene that's already
+loaded and we said there's no dupes
+let's just continue and Go to the next
+iteration otherwise let's start loading
+the scene asynchronous ly and get a
+handle on that operation and then we're
+going to put this operation into our
+async operation group variable we can
+just add it directly to the list there
+once that's done let's publish an event
+that says that we've started to load
+this particular scene now before we move
+on from here I just want to point out a
+few things first of all I'm using the
+Path property of the scene reference
+type when we're loading the scene async
+and I'm also going to load all of these
+scenes additively the only scene I ever
+want to have loaded in single mode is my
+bootstrapper because it unloads all of
+the other scenes let's keep going here
+we want to run a while loop that's going
+to use that is done property to tell us
+when all of the async operations have
+actually finished and while we're in
+this Loop let's publish that progress
+report we can use the progress property
+there as the float value for that
+particular event I'm going to add just a
+little bit of delay here just cuz I
+don't want it going off too frequently
+but you know if you're working on
+something like this for your game adjust
+as necessary now let's figure out which
+one of the scenes in our scene group is
+actually marked as the active scene
+throw that into a variable then let's
+make sure that it's actually valid and
+if it is let's use the scene manager set
+active scene method then we're just
+about done just one more thing to do
+we've loaded all of the scenes so we
+have an event just for this let's
+publish it okay well we're actually
+almost finished here so let's finish off
+our unload scene method it's actually
+basically the inverse of what we just
+looked at with a few little extra things
+first of all I'm going to create a list
+so I can keep track of which scenes I
+actually want to unload it would also be
+helpful to keep track of which scene is
+actually active right now let's also
+figure out how many scenes are actually
+open now we can start iterating over all
+of these scenes and dealing with them so
+we can use I as our index and get the
+scene at that particular value of I
+let's a make sure that it's actually
+been loaded and not just sitting there
+unloaded because then there's nothing to
+do right we could just continue if it
+wasn't loaded next I want to make sure
+that if it's a certain scene like my
+bootstrapper or my active scene I don't
+want to unload it now this is a personal
+choice for my game the way that I want
+to set it up I would probably always
+leave the bootstrapper there and that's
+because I'm going to use that scene to
+store all kinds of things I want to make
+sure are persistent so here I'll say if
+it is the active scene or it is the
+bootstrapper let's just carry on
+otherwise I want to add it to this
+scenes list so that I can unload it now
+like we did before we can create a async
+operation group let's create an
+operation for each one of these scenes
+it's going to unload it asynchronously
+and then we'll add each of the
+operations into the group and after
+we've added the operation let's publish
+a message saying that we've started
+unloading the scene now similar to what
+we did with the loading of the scenes
+let's just have a while loop that will
+run until all of these operations are
+finished this time I'm not actually
+going to publish a progress report
+because I'm not going to show a bar when
+I'm unloading scenes now finally as an
+optional idea we could actually unload
+unused assets this is going to walk the
+hierarchy tree and figure out what's
+been used and if if it hasn't been used
+it's going to unload it and this is a
+little bit of an expensive operation it
+also returns an async operation so you
+could put it with the other jobs some
+people don't like using this method
+because a it gives you zero control and
+B you might have loaded up things that
+you haven't used yet but you're planning
+to use in the future and this might
+accidentally unload them on you next
+let's build a class that we can actually
+use in the editor so it'll be a monob
+behavior we'll call it scene loader this
+will handle showing a bar and a loading
+screen but this will also let us Define
+some scene groups right in the editor
+let's start with some serialized Fields
+I need a reference to the image I'm
+going to use for the loading bar and how
+fast I want it to fill up I also need
+references to the canvas and the camera
+because I'm going to turn them on and
+off when I'm loading a scene or rather a
+scene group Next let's actually have an
+array of scene groups exposed to the
+editor I need a few other helpers one is
+going to be the target progress the
+progress that we aiming for the bar to
+achieve her convenience let's also have
+a Boolean that says whether or not we're
+actually loading or not and then of
+course we need the PowerHouse that's
+going to do all the heavy lifting so
+let's have an instance of the scene
+group manager next let's have a start
+method since we don't actually have a
+main menu yet to create new games or
+load games let's just load the first
+scene group right in our start method
+the load scene group doesn't have to be
+too complicated we really just want to
+wrap up the manager method and decide
+whether or not we're going to show the
+loading screen now some people like to
+load in a whole other loading scene and
+that's one way you can do it but we can
+also just show the bar here let's say
+that at this point we want our Target
+progress to be a full bar so 1 F but
+we'll start the fill amount at zero now
+for a sanity check let's make sure there
+was a valid number passed in there after
+this we need an instance of that loading
+progress class that implements the I
+progress interface I'm going to add a
+lamb expression to the progress's
+progressed event and all this is going
+to do is say Target progress is going to
+equal the greater of either what's
+coming out of the event from the actual
+loading progress or or our Target
+progress now in this instance I've
+always set it to one so it will always
+be one but if you started your target
+progress at maybe a quarter of the bar
+or something as things progress it would
+let you move the bar like keep it moving
+forward as it were instead of always
+heading to the max I'm just going to add
+a little helper method here that will
+allow us to turn on and off the camera
+and the canvas when we're not loading
+and also just set that is loading flag
+then all we really have to do up in the
+method is enable the canvas then we can
+call the method in the manager passing
+in our particular scene group and our
+progress object and when that's done we
+can just turn the canvas and Camera back
+off if we come back up to the top we can
+create an update method that will handle
+actually progressing our bar if you
+don't have too many scenes to load it
+might actually look a little bit chunky
+so what we can do is smooth things out a
+little bit but first of all if we're not
+loading let's just get out of update we
+don't need to do anything here but let's
+grab the current fill amount and let's
+try to make this a little bit smoother
+so let's figure out the progress
+difference what's the absolute
+difference between what where we're
+filled now and where we want to be and
+then let's take that and multiply it by
+how fast we actually want to be filling
+up the bar now this value might need to
+be adjusted a little bit but I set it at
+0. five now the loading bar fill amount
+will be a lured value between where we
+are where we want to be and this fill
+speed time time. Delta time this
+approach will keep the bar moving fairly
+consistently but it will slow down as it
+gets closer to the end if it's not quite
+finished one more thing before we leave
+this class I'm going to create an awake
+method and just register to each of the
+events that was in the manager just so
+that we can see clearly in the console
+that something was fired we can get rid
+of these later on just one more class to
+write the
+bootstrapper the bootstrapper is very
+simple all I want it to do is before any
+scene loads I want it to run an
+initialization method that method all
+it's going to do is load the
+bootstrapper scene which actually
+contains this class and quite a few of
+other classes so whatever's going on in
+the bootstrapper scene it's going to
+unload every other scene because it's
+load scene mode single and it'll just
+Exist by itself and run its startup
+logic and of course any other class in
+that scene is also going to start up so
+if we jump back into Unity you'll see
+that I've got the bootstrapper scene
+open there's a bootstrapper game object
+with that class we just looked at
+there's also the scene loader that has
+the scene loader script and you'll see
+I've just set up a very simple canvas
+with an image with a fill amount we can
+slide that back and forth you can see
+how it's going to look like there and of
+course a little bit of text and a
+background but that's really it however
+if we look over at the scene loader in
+the inspector now you can see that we
+can have an array of scene groups so
+let's make one I'm just going to start
+dragging in scenes from my project
+folder and assigning a different type to
+these for my first level I'm going to
+have gameplay a UI and a cinematic which
+I've disabled for right now but we still
+load up all three of those scenes but if
+I make another one here I can still have
+my gameplay but it's going to get
+ignored because that's the active scene
+and that's how I've set things up it
+would be valuable to leave it though in
+case you started the game on level two
+then I'll also have the normal UI we
+could have a different cinematic and
+then also maybe an additional
+environment and you can see that my new
+scene that I just dragged in there is
+lit up red that's a feature of the scene
+reference type it'll light up red
+because that scene is not included in my
+build settings well why don't we click
+play and see what
+happens okay so the bar moved up a
+little bit but it went awfully quick and
+that's because the scenes are all very
+small but if we look in the console
+there we can see it got the bootstrapper
+then it loaded up gameplay UI cinematics
+and published an event saying that all
+the scenes were loaded it might be more
+useful for our testing purposes to
+actually come back here into the scene
+group manager and just add a little
+DeLay So for every single scene that
+we're going to load let's just add a 2.5
+second delay let's put a note here to
+myself to take this out later but it'll
+give us a better idea of what it would
+be like to load bigger scenes so if I
+come back in here now and press play
+Let's see what happens so there we go
+going a little bit longer we can see the
+things coming in and the bar is going
+slower and slower as it gets to the end
+and then here we are all scenes are done
+shows up my inventory which I can put
+away and now I can run around in my Game
+World and if you look up in the
+hierarchy you'll see that they're
+they're in the order they were loaded in
+as well the gameplay scene is marked in
+bold that means that it's the active
+scene where everything's going to get
+instantiated if we look at the scene
+loader here you'll see that I put two
+buttons on it and this is just for
+convenience for now for me to load up
+the second group or the first group so
+I'm going to load up the second group
+now and let's see what happens
+so there we go it's basically everything
+that was in the first group but I've
+added the extra environment there so now
+I can just run up there and continue my
+adventure if I so desire at this point I
+would start thinking about how am I
+going to start communicating between
+these different scenes and getting
+references to objects and systems in
+these other scenes for example my
+inventory is in the UI scene how am I
+going to do anything with it from the
+gameplay scene for me personally I've
+started to use the service locator more
+and more and the event bust in almost
+every project so there's a video on each
+of those topics already on the channel I
+encourage you to watch those if you're
+interested in that kind of thing I want
+to point out too that this kind of
+system lends itself very well to
+addressables and we're going to have a
+video on that topic very soon well
+that's all I've got for you today feel
+free to leave a comment or question
+below or join the other subscribers on
+Discord I've got a big episode planned
+for next week but if you can't wait that
+long just click on one of these boxes on
+your screen and I'll see you there

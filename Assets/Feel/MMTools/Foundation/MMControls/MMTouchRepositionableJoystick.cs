@@ -10,7 +10,7 @@ namespace MoreMountains.Tools
 	/// Add this component to a UI rectangle and it'll act as a detection zone for a joystick.
 	/// Note that this component extends the MMTouchJoystick class so you don't need to add another joystick to it. It's both the detection zone and the stick itself.
 	/// </summary>
-	[AddComponentMenu("More Mountains/Tools/Controls/MMTouchRepositionableJoystick")]
+	[AddComponentMenu("More Mountains/Tools/Controls/MM Touch Repositionable Joystick")]
 	public class MMTouchRepositionableJoystick : MMTouchJoystick, IPointerDownHandler
 	{
 		[MMInspectorGroup("Repositionable Joystick", true, 22)]

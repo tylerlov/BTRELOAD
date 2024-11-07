@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System.Collections;
+using UnityEngine;
 using System.Threading.Tasks;
 using MoreMountains.Tools;
 using UnityEngine.Audio;
@@ -64,7 +65,7 @@ namespace MoreMountains.Feedbacks
 		[Tooltip("the sound clip to play")]
 		public AudioClip Sfx;
 
-		[MMFInspectorGroup("Random Sound", true, 34, true)]
+		[MMFInspectorGroup("Random Sound", true, 39, true)]
         
 		/// an array to pick a random sfx from
 		[Tooltip("an array to pick a random sfx from")]
@@ -150,8 +151,7 @@ namespace MoreMountains.Feedbacks
 		public float FadeDuration = 1f;
 		/// if fading, the tween over which to fade the sound 
 		[Tooltip("if fading, the tween over which to fade the sound ")]
-		[MMCondition("Fade", true)]
-		public MMTweenType FadeTween = new MMTweenType(MMTween.MMTweenCurve.EaseInOutQuartic);
+		public MMTweenType FadeTween = new MMTweenType(MMTween.MMTweenCurve.EaseInOutQuartic, "Fade");
         
 		[MMFInspectorGroup("Solo", true, 32)]
 		/// whether or not this sound should play in solo mode over its destination track. If yes, all other sounds on that track will be muted when this sound starts playing
@@ -363,7 +363,10 @@ namespace MoreMountains.Feedbacks
 			if (StopSoundOnFeedbackStop && (_playedAudioSource != null))
 			{
 				_playedAudioSource.Stop();
-				MMSoundManager.Instance.FreeSound(_playedAudioSource);
+				if (RecycleAudioSource == null)
+				{
+					MMSoundManager.Instance.FreeSound(_playedAudioSource);	
+				}
 			}
 		}
 
@@ -508,8 +511,28 @@ namespace MoreMountains.Feedbacks
 
 			_playedAudioSource = MMSoundManagerSoundPlayEvent.Trigger(sfx, _options);
 
+			Owner.StartCoroutine(IsPlayingCoroutine());
+
 			_lastPlayTimestamp = FeedbackTime;
 			_lastPlayedClip = sfx;
+		}
+
+		/// <summary>
+		/// A coroutine used to determine if the sound is still playing or not
+		/// </summary>
+		/// <returns></returns>
+		protected virtual IEnumerator IsPlayingCoroutine()
+		{
+			if (_playedAudioSource != null)
+			{
+				while (_playedAudioSource.isPlaying)
+				{
+					IsPlaying = true;
+					yield return null;
+				}
+				IsPlaying = false;
+				yield break;
+			}
 		}
 
 		/// <summary>
@@ -576,7 +599,7 @@ namespace MoreMountains.Feedbacks
 		/// </summary>
 		public override void AutomaticShakerSetup()
 		{
-			MMSoundManager soundManager = (MMSoundManager)Object.FindObjectOfType(typeof(MMSoundManager));
+			MMSoundManager soundManager = (MMSoundManager)Object.FindAnyObjectByType(typeof(MMSoundManager));
 			if (soundManager == null)
 			{
 				GameObject soundManagerGo = new GameObject("MMSoundManager");
@@ -735,6 +758,11 @@ namespace MoreMountains.Feedbacks
 				{
 					_randomUniqueShuffleBag.Add(i,1);
 				}
+			}
+			
+			if (string.IsNullOrEmpty(FadeTween.ConditionPropertyName))
+			{
+				FadeTween.ConditionPropertyName = "Fade";
 			}
 		}
 

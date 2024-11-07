@@ -7,7 +7,7 @@ namespace MoreMountains.Tools
 	/// Add this class to an object that you expect to pool from an objectPooler. 
 	/// Note that these objects can't be destroyed by calling Destroy(), they'll just be set inactive (that's the whole point).
 	/// </summary>
-	[AddComponentMenu("More Mountains/Tools/Object Pool/MMPoolableObject")]
+	[AddComponentMenu("More Mountains/Tools/Object Pool/MM Poolable Object")]
 	public class MMPoolableObject : MMObjectBounds
 	{
 		[Header("Events")]

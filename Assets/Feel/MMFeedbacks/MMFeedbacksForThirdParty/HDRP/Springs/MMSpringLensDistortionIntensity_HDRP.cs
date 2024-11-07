@@ -5,7 +5,7 @@ using UnityEngine.Rendering.HighDefinition;
 
 namespace MoreMountains.Feedbacks
 {
-	[AddComponentMenu("More Mountains/Springs/MMSpringLensDistortionIntensity_HDRP")]
+	[AddComponentMenu("More Mountains/Springs/MM Spring Lens Distortion Intensity HDRP")]
 	public class MMSpringLensDistortionIntensity_HDRP : MMSpringFloatComponent<Volume>
 	{
 		protected LensDistortion _lensDistortion;

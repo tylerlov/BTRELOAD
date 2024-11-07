@@ -4,7 +4,7 @@ using TMPro;
 
 namespace MoreMountains.Feedbacks
 {
-	[AddComponentMenu("More Mountains/Springs/MMSpringTMPAlpha")]
+	[AddComponentMenu("More Mountains/Springs/MM Spring TMP Alpha")]
 	public class MMSpringTMPAlpha : MMSpringFloatComponent<TMP_Text>
 	{
 		public override float TargetFloat

@@ -99,7 +99,7 @@ namespace MoreMountains.Tools
 	/// In general, for all of these settings, higher values mean better quality and lower performance. The buffer speed determines how 
 	/// fast buffered band levels readjust.
 	/// </summary>
-	[AddComponentMenu("More Mountains/Tools/Audio/MMAudioAnalyzer")]
+	[AddComponentMenu("More Mountains/Tools/Audio/MM Audio Analyzer")]
 	public class MMAudioAnalyzer : MonoBehaviour
 	{
 		public enum Modes { Global, AudioSource, Microphone }

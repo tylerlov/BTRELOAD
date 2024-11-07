@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace MoreMountains.Tools
 {
-	[AddComponentMenu("More Mountains/Tools/Animation/MMStopMotionAnimation")]
+	[AddComponentMenu("More Mountains/Tools/Animation/MM Stop Motion Animation")]
 	public class MMStopMotionAnimation : MonoBehaviour
 	{
 		public enum FramerateModes { Manual, Automatic }

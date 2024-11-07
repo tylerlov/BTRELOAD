@@ -6,7 +6,7 @@ namespace MoreMountains.Tools
 	/// <summary>
 	/// Add this script to an animation in Mecanim and you'll be able to control its start position and speed
 	/// </summary>
-	[AddComponentMenu("More Mountains/Tools/Animation/MMAnimationModifier")]
+	[AddComponentMenu("More Mountains/Tools/Animation/MM Animation Modifier")]
 	public class MMAnimationModifier : StateMachineBehaviour
 	{
 		[MMVectorAttribute("Min", "Max")]

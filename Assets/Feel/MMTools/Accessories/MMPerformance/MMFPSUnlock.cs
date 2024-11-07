@@ -9,7 +9,7 @@ namespace MoreMountains.Tools
 	/// <summary>
 	/// Add this component to any object and it'll set the target frame rate and vsync count. Note that vsync count must be 0 for the target FPS to work.
 	/// </summary>
-	[AddComponentMenu("More Mountains/Tools/Performance/MMFPSUnlock")]
+	[AddComponentMenu("More Mountains/Tools/Performance/MM FPS Unlock")]
 	public class MMFPSUnlock : MonoBehaviour
 	{
 		/// the target FPS you want the game to run at, that's up to how many times Update will run every second

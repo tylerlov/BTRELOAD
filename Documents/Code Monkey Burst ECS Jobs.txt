@@ -1,0 +1,2711 @@
+hello and welcome I'm your Cod Mony
+let's learn how to get started using n
+dots this is a technology stack that can
+provide some insane performance results
+literally 100x faster in some cases and
+thankfully learning the basics that is
+actually pretty simple here let's learn
+what is a component what is a system and
+what is an entity then we're going to
+learn how to create a job and run with
+the burst compiler for some insane
+performance and also of course see how
+to combine both entities and game
+objects and interact with them back and
+forth this video actually turned out
+pretty long because there's so much to
+cover there's time steps throughout the
+video I've been re searching all
+documentation and working on this video
+for the past two weeks so if you find
+the video helpful and you're feeling
+generous go ahead and drop a super
+thanks on the video or simply hit the
+Subscribe and the like buttons it's a
+small thing but it really does help so
+thanks also huge thanks to Danny from DM
+do seam who helped me by answering tons
+of my dots questions so this video could
+be as accurate as possible now over here
+on this video this is going to be a
+technical tutorial on how to start using
+dots but if you're looking for a hand
+level overview on the theory behind what
+is dots what is ECS and so on for that I
+highly recommend the video from Channel
+turb makes games that one is a really
+excellent explainer of all the
+components that makeup dots as well as
+the pros and cons and when to use it and
+when not to use it so go ahead and watch
+that video for the theory and over here
+let's learn a technical part on how to
+actually use it although let me also
+quickly remind you that you don't have
+to go full dots or full game objects the
+ideal workflow is to mix them both so
+dots is really just another tool in your
+toolbox it is indeed a little bit more
+complex compared to game objects as
+we're going to see in a little bit it is
+an advanced tool after all although it's
+honestly not really too complex once you
+understand the basics and of course that
+comp actually buys a ton of excellent
+benefits so even if you're working on a
+relatively simple game I would still
+encourage you to watch this whole video
+to the end just to be aware just to
+remember that you have this tool at your
+disposal in case you need some excellent
+performance at some point in the future
+you don't have to use it for everything
+but for some case it is an absolutely
+excellent tool and also just a question
+for my own purposes I would love to do a
+complete dots course in the next few
+months so let me know in the comments if
+you would be interested in that and
+specifically let me know what type of
+game you'd like to see made now the
+obvious answers would be a factory game
+or an RTS but could also be Tower
+Defense third person shooter vampire
+survivors like something like that there
+are plenty of genres where dots makes a
+lot of sense so do let me know your
+thoughts in the comments I'm currently
+working on a complete C course and after
+that one I plan to work on a dots course
+or if you're watching this several
+months in future maybe you hav already
+done it so check the pen comment and if
+you use Unity at all then check out my
+ultimate unity overview course to learn
+how to make better games faster it
+features over 70 lectures each covering
+a different tool or feature of the
+engine including many of which you might
+not know about and might be super useful
+for whatever project you're currently
+working on okay so let's begin by making
+the most basic demo possible let's make
+just a simple Cube rotating now before
+we do that just some notes in terms of
+unity version over here I'm using the
+unity 22 LTS although you can also use
+the 23 beta if you like it should be
+pretty much the same and if you're
+watching this many months or years in
+the future and using Unity 6 then should
+still be mostly the same then dots uses
+a lot of source code generation in order
+to simplify various things so for that
+you need to be using an ID that supports
+that in my case I'm using visual studio
+22 to the free community version and
+then they also recommend that you modify
+the domain reload setting so for that
+here in unity let's go into edit and
+then project settings then on left side
+go into the editor Tab and over here
+let's scroll down find here the
+interplay mode settings and let's enable
+these and make sure these two are
+unticked now importantly you should know
+one side effect of this is that your
+static fields and events those will not
+be reset by default meaning if you set
+some data on a static field then you
+stop playing and start playing again
+that data will persist whereas if you
+have mean reloading enabled if so it
+will always clear the data before
+starting so just be aware of that side
+effect just be aware of what this option
+does and when working with dots be extra
+careful about any static fields or
+events all right so here in the editor
+let's begin by installing the package so
+as usual let's open up the package
+manager up here up top let's go into the
+entity registry and then over here let's
+scroll down and find the entities
+package alternatively if you don't see
+it you can also insult by name so com.
+en. entities you would basically go up
+here on the top left corner add a
+package by name and put in this name
+community. entities but as long as you
+are using a recent version you should be
+able to see it so let's just go ahead
+and
+install okay done now the other one that
+we need in order to be able to render
+things is the enties graphics you only
+need this one if you actually want to
+render entities meaning you can use just
+entities without any entities visual but
+over here in this emo I will indeed be
+rendering some entities so let's go
+ahead and install this one as well now
+one more note related to this NT
+Graphics this one only works with either
+urp or hrp it does not work with the
+built-in rer pipeline so here in my
+project I have my project set up to use
+urp the universal R Pipeline and they
+also recommend that entities rendering
+be used with forward plus rendering so
+let's go ahead and set that up so let's
+go into the render pipeline asset and
+inside let's go inside the actual render
+object and over here for rendering path
+let's put it on forward plus okay that
+should do it let's also make sure all
+the other packages related to dots are
+also installed again remember how dots
+is really not just one thing it is
+actually composed of the enti component
+system or ECS that's the en package that
+we just installed but then it's also
+composed of the job system and burst
+those should both automatically be
+installed as dependencies so if you look
+over here burst Yep this one should be
+installed then the other one is the
+mathematics Library yep also installed
+and finally the collections Library yep
+also installed okay great so we have all
+the packages that we need all right now
+let's begin by making our first entity
+and the way we do that is first we
+create a subscene so over here on the
+hierarchy click on the plus icon and
+let's create a brand new subscene then
+give it some kind of name so over here
+entities subscene all right there it is
+here we have our subscene now this
+subscene this is an ECS specific thing
+basically any objects that we place
+inside of this subscene all of those
+will automatically be converted into
+entities so inside for example let's
+create a new game object and let's go
+inside 3D and just make a basic Cube and
+yep look how that one is indeed inside
+the entity subscene and now this game
+object this will automatically be
+converted into an entity if we look on
+the inspector and down here we can see
+something for the entity baking preview
+you can click to expand this and over
+here basically we can see all the
+components that won't be baked based on
+these regular components also one very
+important thing the system is smart
+enough to be optimized to only create
+entities when they are needed so if we
+create a cube like this with these
+Vision components then it will indeed
+create an entity and add all of these
+components however if I go in the
+subscene and I create just an empty game
+object if I do yep nothing shows up here
+because this one won't actually be baked
+if the game object has no components
+nothing at all then it will not actually
+create an enti so with the cube selected
+another way that we can see the entty
+components is on the inspector on the
+top right corner we have the circle
+button and if we click on it we can
+basically tell on the inspector between
+various modes right now we are seeing
+the default mode which shows usual game
+object representation so the usual
+components you're used to and then if we
+click on runtime yep now here we can see
+the entity representation so instead of
+the normal transform component we have a
+local to world then we've got a bunch of
+things to handle rendering render bounds
+and so on so basically these are all of
+the entity components that are created
+automatically by the baking system
+compared to the regular monom Behavior
+components by the way here's one quick
+tip instead of over here constantly
+jumping back and forth between these two
+modes we can basically leave this
+regular inspector as a regular game
+object inspector and then we can right
+click on the tab and let's create add
+new tab add a new inspector Tab and on
+this one let's go ahead and swap it out
+into the entities this way we have two
+inspectors so we can very easily swap
+back and forth between the two
+representations now another place where
+we can see entities is on the entities
+hierarchy so for that let's go into
+window and go down into entities and
+open up the hierarchy and yep in here we
+can see all of the various entities
+right now it still looks ex the same as
+the regular hierarchy but if we now hit
+on play yep here we see all of the
+entities that were automatically
+generated and again if I select the game
+object the one that has no components
+like I said this one does not create an
+entity so if you look in the inspector
+yep it says this one does not exist
+anymore because again this one does not
+get baked because it is completely empty
+okay so for now let's get rid of the
+game object and we can actually put the
+N hierarchy next to the regular
+hierarchy and for visual just for fun
+let's attach a different material just
+to make it easy to see so I'm going to
+go into the regular inspector again the
+regular game object inspector with usual
+components that you're used to and over
+here I'm going to drag the material and
+yep and I can move it around and again
+note how all I'm doing is really just
+interacting with game objects and then
+it everything gets automatically
+converted into entities okay so now that
+we have our entity next thing we want to
+create is a component and the way we do
+that is with a script so let's go ahead
+right click on the project files and
+let's create a new C script and for this
+one let's call it rotate speed now
+importantly we do not attach it to
+anything so just create the script and
+let's open it and over here first let's
+just get rid of the default functions
+okay so now we need to do two things
+first we do not inherit from monob
+Behavior instead we are going to
+implement I component data it's this one
+which exists inside namespace unity.
+entities so make sure to add the using
+and Yep this is it it and secondly this
+is not going to be a class instead it is
+going to be a struct now if you don't
+know differences between those two go
+check out my quick video on it basically
+strs and classes those are stored in
+different places in memory and the way
+that doarts is so insanely fast is
+really mostly all about memory
+management so a lot of things in dots
+are used as structs usually that just
+involves replacing class with struct but
+like I said definitely go watch my video
+on that topic if you're going to use
+dots you absolutely must know the
+differences between those two otherwise
+you will go crazy at some point in the
+future if you don't know how some things
+work as copies and some work as
+references okay so with this we have our
+component and components are basically
+just containers for data so over here we
+can place whatever that we want for
+example let's just add a public float
+and just call it value this is going to
+be our rotation speed now normally I
+always tell you not to make everything
+public normally I tell you to make
+Fields private and if you need to you
+can make some functions to get and set
+that field and technically over here on
+the component you can add functions that
+is allowed but you really should not do
+that component comp should really only
+hold data and no logic so for components
+you can really just Define a personal
+rule to always make them public since
+they only ever hold data kind of similar
+to the rule that I defined for myself
+when working with script M objects I
+also use those only as data containers
+and I also make those with public Fields
+okay so this is just our super basic
+component just one piece of data however
+just like this we still haven't attach
+it to our entity if here in the editor
+we run our code look in the empty
+inspector and nope we still don't have
+our custom component and since this one
+is an ey component data instead of a
+mono Behavior because that we can simply
+just drag it this does not work so in
+order to attach components to entities
+we have several ways of doing that in
+order to use the exact same game object
+workflow that you're used to for that we
+need to use the baking system and the
+way we do that is actually super simple
+we just need to make what is called an
+authoring component so let's make a UC
+sh script and for this one let's call it
+rotate speed authoring now here
+technically you don't have to append
+authoring to the name it's really just a
+nice convention to follow so let's make
+this script and let's open it and now
+this one is indeed going to be a regular
+mono Behavior component and over here we
+can add whatever films we want so let's
+add the exact same ones that we had in
+our component so let's just add a public
+float for our field now over here in the
+editor let's select the cube let's go
+into the regular game object inspector
+and over here let's just attach the
+component just like any other component
+so let's attach it and put the field
+let's say on three okay great so
+basically now we have a simple component
+that just has our value field and we
+have a simple authoring component that
+we then attached to our game object what
+is left is really just our Baker in
+order to turn one into the other one now
+the baker is going to be a class and by
+convention we should put the baker class
+directly inside the authoring class you
+don't have to but it just helps to keep
+things organized so let's make a private
+class call it Baker again the name also
+doesn't matter just a nice convention
+and now what does matter is that we
+actually extend the baker class this one
+takes a generic if you don't know about
+generics check out my quick video on
+them and then we put in the time for our
+authoring class so in this case the rot
+T speed authoring okay so this is what
+we do and then in order to use this one
+this one is inside unity. enties so
+let's make sure to do that and now in
+order to do this we need to implement
+this abstract class which requires
+implementing this bake method okay so we
+have this and now here is where we
+basically convert the data from our
+authoring component into our actual ECS
+component so we're going to use the
+function add component now importantly
+this is the baker add component this is
+not the regular game object add
+component and for this one first we
+require entity reference so for that we
+can use the function get entity this one
+requires us to use a transform usage
+Flags this is an optimization thing
+basically if you set it as none then the
+entity won't be converted with no entity
+transform component so if you never need
+to move an entity or have a position in
+the world and there's really no reason
+to include a transform component but in
+this case for our demo we do want to
+transform we want to rotate our Cube so
+for that instead of none let's go with
+Dynamic and this going to return an
+entity reference and then we can simply
+use this entity reference to add our
+comp component and then for our
+component we really just create the one
+that we just created so the rotate speed
+component and then we initialize it with
+our values so in this case the rotate
+speed value let's go inside the
+authoring component and grab the value
+okay so yep that's it in summary we have
+our rotate speed this is a regular
+component so I component data just an
+ECS component and inside we just have a
+value field but this one cannot be
+attached to a game object so for that we
+create an authoring component this one
+is a mon behavior and this one we do
+attach to our object we expose it field
+on this one by convention it should
+probably be the exact same name as the
+one on the component but techically it
+doesn't have to be so here in the editor
+we added that mod Behavior component and
+we assign the value then we created a
+baker class that extends the baker
+entities class and on this one we need
+to overwrite this function and basically
+the ECS system will automatically run
+this function it will pass in this
+reference for the authoring component
+and then over here we get the entity
+that Baker is currently being run on and
+we call add component in order to add
+our custom component and then we just
+manually assign the value to the exact
+same value okay so with this let's test
+all right so here's our en let's select
+it go into the entities inspector and
+let's scroll down and seeing and yep
+here we have our rotate speed component
+and yep the value is indeed the one that
+we set all right awesome now just one
+more note on a possible optimization
+here if you want you can do it like this
+so basically having two separate scripts
+one for just the component and one for
+just the authoring component or
+alternatively you can simplify this and
+just put everything on the same script
+so over here on the rotate speed I'm
+literally just going to copy this code
+and paste it directly inside of this
+file then over here on the editor just
+delete the rotate speed script so we
+just have one file one script and inside
+that we have both the component the
+authoring and the baker so yep
+everything still works exactly the same
+except now it's all much more compact
+all in just one script although one note
+on this method which is that the file
+name the name for the actual file for
+the script this one has to match actual
+authoring component it needs to match a
+script that we are using over here on
+the mon Behavior if we rename this file
+to something different to just the file
+name of the actual component if we did
+it would not work because Unity expects
+the file name to match a mono Behavior
+class name so if you follow this method
+of putting everything inside one file
+one script then just make sure that file
+name actually matches the authoring
+monob behavior component Okay so we've
+already learned about entities and
+components however just like this we're
+really just attaching some data to an
+entity nothing is moving nothing is
+changing so what we are missing is the s
+in ECS which are these systems systems
+are what actually modifies the data in
+the components so let's begin by making
+a brand new C script call this the
+rotating Cube system and again we don't
+attach it to anything let's just open it
+and now here again same thing we do not
+extend mod Behavior instead for a system
+we have two possible ways of making them
+one way is to make this a class and
+extend system base inside unity.
+entities this is how you make a system
+that deals with manage types so things
+like game objects transforms delegates
+and so on also a note is this needs to
+be marked as a partial class this this
+comes back to what I mentioned in the
+beginning of how dots is very much based
+on Source generation basically we're
+marking this as partial and then the dot
+system will write the rest of the code
+so this is one way making a system base
+like I said this one is for managed data
+and the other way is instead of making a
+class we make it a struct and set of
+system base we Implement I system so
+this one is meant for unmanaged types so
+strs inss bones and so on which in turn
+means you can use burst on this one
+making it much faster basically by
+default you should probably always try
+to make an i system unless you spefic
+spefically need to use a manage type in
+which case use a system base however
+also let me make sure one very important
+thing about systems in general both High
+system and system base both of them run
+on the main thread just making something
+a system does not make it multi- thread
+for that we need to make a proper job
+which I'm going to cover later on the
+video okay so here let's use an i system
+so it needs to be partial needs to be
+struct and needs to implement I system
+then over here on the I system we can
+Implement three functions we can
+actually inspect the system definition
+so let's go ahead right click go to that
+definition and here we see what we can
+Implement so we can implement the
+oncreate function this one happens when
+the system itself is created we can
+Implement on Destroy so this one is
+called when this system is destroyed
+then of course we have the onupdate and
+this one runs on every update so pretty
+much the same thing as the normal mod
+Behavior update so let's go ahead and
+Implement our on update method so just
+go ahead do this our P void on update
+and now here we want the system to run
+and do something on some entity
+right now we really just want to rotate
+our Cube and the way that we do that is
+with a 4 each and in this case we want
+to find entities that have our rotate
+speed component so we're going to find
+the rotate speed rotate speed in and
+then basically do a query for all of our
+components so for that we go inside the
+system API and we call query and then we
+pass in the types that we're looking for
+so in this case rotate speed now another
+really important part when working with
+ECS is being very clear with when we
+want to write or when you just want to
+read and the way we do that is by either
+writing ref RW or ref rro this is a
+class that use generics once again so
+don't be confused about the amount of
+angle brackets over here like I said we
+have refr W so this one is meant for
+read WR but if we never need to modify
+anything then we can use ref for read
+only this becomes really important later
+on when scheduling jobs since you can
+have multiple jobs running concurrently
+if they're only reading the same data
+but you can only ever write one job at a
+time in this case we really just want to
+read the rotate speed so let's go with
+ref and of course over here for the
+parameter instead of just rotate speed
+we also have ref of type rotate speed
+although let me also make one note
+technically like we saw if we erase the
+refo technically this is valid code we
+don't have any errors basically like
+this the default to read only however it
+also using a copy instead of a point of
+reference which can cause some
+performance concerns so even though this
+is technically valid code you should
+always explicit mention whether it's
+refr w or refer okay so basically these
+we do a for each on all the entities
+that have our rotate speed component but
+in order to rotate them for that we also
+need the transform so over here in our
+query let's also include the local
+transform component this one exists
+inside using unity. transforms so we
+have this one and for this one we do
+want to modify the transform in order to
+actually rotate the object so for this
+one let's go with ref RW and for our
+iterator variable instead of having just
+one put it inside parentheses because
+over here we have basically a ton so the
+ref RW for the local transform like this
+by by the way one note here you can
+write code like this meaning Define the
+types and the name for the variables or
+alternatively you can also just use VAR
+so just VAR and then just the names of
+the variables so this also perly valid
+code now some people like this method
+the official documentation use this
+quite a lot although personally I am not
+a fan of R just because I like to be as
+explicit as possible so personally I
+really prefer to define the actal type
+so just like this but like I said this
+is just personal preference both ways
+work so feel free to use the V method if
+you prefer that one okay okay so here
+now we have both of our components and
+this for each the code in here this will
+cycle through all the entities that have
+both of these components now here we can
+just say app rotation so in order to
+rotate let's go inside the local
+transform and then first we need to
+access the underlying component with
+either read or write in this case we do
+want to write so let's access the value
+r w and then on the local transform we
+can call the function rotate y to rotate
+on the Y AIS however this function
+actually rotates a copy instead of
+modifying the original local transform
+so we set the value r w equals whatever
+this function returns and over here for
+the rotating angle for this let's grab
+the speed value from the component so
+rotate speed in this case this is a read
+only so let's grab the value r o and
+then we grab the value the one that we
+Define inside the component and finally
+as always when doing any movement or
+rotation we want it to be frame rate
+independent so over here we need to
+modify by Delta time and inside the
+system we get that through system api.
+time. Delta time now important it's this
+one when working with entities it's it
+is supposed to be this one and not the
+usual time. time basically this has to
+do with the fact that you can have
+multiple worlds and multiple systems
+with different time frames so when
+working inside of VCS always use this
+one inside the system API so with this
+Yep this will indeed rotate it now just
+one tiny thing like I said over here the
+rotate y this one doesn't actually
+modify this value so technically over
+here we can just read in order to apply
+the rotation so just make this one an r
+o and then we actually assign it to the
+RW again when working in DCS it is
+important to be very clear about read
+and write access and just like this
+everything should be working so
+basically this system this will work on
+every single entity that has both a
+rotate speed and a local transform
+component then it will run this code on
+those entities which in turn is going to
+rotate it on the yv value based on the
+speed defining the rotate speed okay so
+let's test and right away we do see our
+entity rotating and if I click to
+inspect the cube yep over there we can
+see the local transform is constantly
+modifying and if we go down here we can
+see the rotate speed and of course if we
+modify this increase it or decrease it
+and yep it modifies the speed all right
+awesome now if we want we can try making
+a bunch more cubes by the way when
+working with entity subscenes you can
+also use just regular prefabs so let's
+rename this to rotating Cube and I'm
+just going to drag it into my prefabs
+folder to make a regular prefab so this
+is a normal game object prefab I'm going
+to cover how to spawn in prefabs later
+on in the video right now I'm just
+making this a cube just so we can
+duplicate and create a bunch of them so
+let me create a whole bunch of them and
+then later on if we want to modify all
+of these we can just modify the original
+prefab okay so here we have a whole
+bunch of cubes and if I head on play yep
+all of them are rotating because again
+the system works on all entities that
+match the query no matter how many they
+are related to systems we also have the
+systems window so let's go into window
+and then over here into entities and
+systems this window basically shows all
+the systems that are running how long
+they are taking to execute and how many
+entities they are being run on so over
+here we can find our system by default
+it's going to be inside the simulation
+system group and over here we do see our
+rotating Cube system and Y this one is
+running on seven entities and taking 001
+milliseconds also one note on systems is
+technically they can be created before
+the main scene is loaded so generally it
+is actually good practice to make sure
+they only run if the actual entities
+that you want if those have already been
+spawned so to do that it's good practice
+over here to also implement the other
+function the oncreate and on this one
+let's say we want to run the system only
+when there is at least one entity
+without our rotate speed component so we
+do that by accessing the state so this
+is this system State variable and we
+call require for update and then pass in
+the type that we want to require so in
+this case the rotate speed basically
+this will make sure that this system
+this update will only run once we have
+an entity that has this speed component
+now technically this isn't absolutely
+necessary like we saw our code ran
+perfectly fine without of it that is
+simply because the query that we are
+doing here this one is simply returning
+an empty list before any cubes will
+respond so if the list is empty the 4
+each is simply not going to run so
+there's no problem but for example if we
+had other logic over here that somehow
+assume that a cube already exists all
+the time if so you might get an error
+whereas by adding the required for
+update this one matures the update
+function this one only runs when there
+is at least one entity with this
+component okay so far so good now like I
+said a while ago making something a
+system does not automatically make it
+multi-threaded this is all still running
+just on the main thread we can open the
+profiler in see so over here let's go
+into window then analysis and open up
+the profiler and we can click on a frame
+and be able to see let's expand this
+over here on my job look at all my
+worker threads and none of them are are
+actually doing the rotate cubes code
+everything is still happening all the
+way up here if we find it on the main
+thread it's really small so it's really
+hard to see but yep here it is the
+rotating Cube system this is all running
+still just over here on the main thread
+let me just add some dummy Co just to
+slow this down so we can more easily
+see okay so here I just wrote some dummy
+code just to waste some time on the CPU
+so just a variable that I'm multiplying
+and dividing a ton of times and then
+using it over here on the calculation
+since I'm multiplying and dividing the
+final result won't be one so it won't
+affect the actual rotation piece it
+should just take a bunch of time so
+let's see and yep now we can much more
+easily see yep all the code is over here
+again all of the worker threads all of
+these are idle all of our code is still
+running just on the main thread
+currently taking 7 milliseconds to run
+just a handful of Cubes now to get those
+massive performance boosts that dots is
+famous for for that we need to use the
+job system and burst which just to
+clarify those are not exclusive to
+entities you can make your game
+internally with game objects and you can
+still use the job system and burst those
+are not dependent on entities so first
+let's just enable burst which is super
+simple if you don't know the burst
+compiler is really one of the best
+things about dots it is basically a
+magical button that makes your code run
+orders of magnitude faster in order to
+enable burst you just go up here onto
+the jobs menu under burst and just make
+sure to take enable compilation which by
+the way right away you might be asking
+if burst is so good why isn't it always
+enabled why is it a checkbox and that's
+because when some error happens it can
+be tricky to debug if burst is enabled
+just because of how burst automized the
+low level code so while developing if
+you find some errors it might be useful
+to actually disable burst so you get
+some proper error messages but when
+making a proper final bill definitely
+always make sure to enable it okay so
+this one really just enables the burst
+compilation it just enables the
+potential to use burst but by itself
+it's really not doing anything just yet
+for that we need to go to some functions
+like over here on the onupdate function
+let's say we want to use burst on this
+one so for this we add an attribute to
+this function and we add the attribute
+burst compile so this one which exists
+inside using unity. burst so this
+attribute like this and Y just like this
+this code will be compounded with burst
+and will be insanely fast there's no
+need to do anything else let's just test
+and you prob away it does work so you
+can already see the difference
+previously our system was taking 7
+milliseconds whereas now just by
+literally enabling burst now it is
+taking literally 0.004 milliseconds now
+actually in this case I think the
+compiler is way too smart and basically
+sees that what I'm doing here is not
+nonsensical so this code makes no sense
+so I think the compiler is smart enough
+to pretty much just erase this that is
+why it's such a drastic speed up in this
+test but in pretty much every normal
+scenario just the enabling burst makes
+insane speed UPS this is really insanely
+impressive for literally just one button
+click and also one note sometimes you
+might see some code that also has the
+burst compile applied over here into the
+system struct if you want you can add it
+doesn't change anything basically the
+autogeneration the source code
+generation that one is smart enough to
+know that if you use burst compile on
+any method it automatically adds it so
+you only need to add it on the methods
+now while burst does indeed work pretty
+much like magic it does have some
+limitations the main one being that it
+only works on unmanaged types so if you
+use a class inside this function then
+you cannot make it burst compile this is
+why ECS is very much based on structs
+and a data oriented design it's so you
+can benefit from these massive speed UPS
+including using burst and to make this
+truly insanely fast that's where we use
+the next part dots which is the job
+system again right now even though we
+are using burst which made this insanely
+fast even with that it is still all
+running just over here on the main
+thread in order to make it
+multi-threaded that's where we use the
+job system so first thing we do is we
+need to create a job and for that we
+make a struct so let's put it right in
+here let's make a public struct call it
+rotating Cube job if you want you can
+make it in its own file or really just
+over here right next to the system this
+works great so we do this and now we
+Implement one of the several I job
+interfaces there's a bunch of them
+depending on what exactly you're trying
+to do if you're trying to run some nonn
+code then you should probably use the
+iob 4 also by the way there is an iob 4
+and an iob parallel 4 however you really
+should not use this one this one is
+really only here for backwards
+compatibility reasons instead if you
+need something not to do with entities
+you should use I drop 4 and then if you
+need to make this code parallelized then
+you can simply call schedule parallel
+which we're going to see in a little bit
+but over here we want to do some work on
+some entities so for that let's use the
+I job entity okay so we do this one and
+for this one same thing Source
+generation so this one also needs to be
+marked as partial and then like it said
+says here we need to implement an
+execute method so let's make public void
+execute and over here for the parameters
+for this one we basically add the
+components that we need just like we did
+up here on the query so we are going to
+need the local transform local transform
+and then we're also going to need the
+rotate speed rotate speed so we need
+these two components and then again we
+have the same considerations we had
+previously with regards to read write
+except over here instead of using ref RW
+and ref instead of that when we want
+something just read only instead of ref
+we just set the in keyword this makes it
+read only and when we want read write
+for that we are going to add the ref
+keyword so just like this and then the
+code inside is going to be exactly the
+same so I'm just going to copy paste
+that except we now don't need to go into
+the value Arrow we just do just like
+this so just erase these like this and
+then over here when working inside a job
+we don't have direct access to the
+system API so in order to get our Delta
+time let's pass it over here as a simple
+field in our job so float for Delta time
+and then over here here we use this same
+okay so this is going to do pretty much
+the same thing so basically this job won
+be executed on every single entity that
+has both these two components just like
+we had the query up here which is going
+to execute that and for every single one
+of those entities it is going to run
+this code so here we have the find our
+job all that's left is to actually run
+our job so for that let's go up here
+onto our on update and right now we are
+not going to use the system query method
+so let's just comment this one out so
+comment out the 4 in instead of doing
+that we just create a new job so new
+rotating Cube job and inside we need to
+pass in the Delta time so let's pass in
+the same thing go inside the system API
+in order to grab time. Delta time this
+is going to return a rotating Cube job
+this simply creates a job and then after
+creating the job then we have two
+options number one is to call run this
+one will make it run immediately on the
+main thread so this one can be sometimes
+useful for debugging but in most case
+you probably don't want to use this one
+instead you probably want to use
+schedule this one will schedule the job
+to complete at some point in the future
+it will be completed either by the main
+thread or any worker thread it really
+depends on which one is busy this one
+completes the entire job in just one
+thread and then finally we have the
+schedule parallel this one will
+basically split the job into multiple
+chunks and create multiple jobs that run
+on multiple threads all at the same time
+so first let's actually start with a
+simple one just a regular schedule so
+let's do this in test okay so there it
+is and the cubes are all spinning and if
+we look and up here we can see there
+we've got our job and it's actually
+being handled over here by worker one
+now depending on what you're doing it
+might complete in the same frame or in
+this case it might take two frames to
+complete if you really want to force a
+job to complete then over here on the
+schedule you can pass in the optional
+state. dependency now this one returns a
+job handle and if you want to force it
+to complete you can call complete and
+Visually then down here you can write
+some code that assumes that this job has
+already been completed however you
+should really avoid this as much as
+possible instead you should let the job
+system actually decide when to run jobs
+and if you need some code to run after
+some job has completed then you
+basically should just make that second
+job a dependency of the first job so
+ideally you never actually do this you
+just call schedule and then wait that
+for the job system to actually complete
+the job although one important note is
+how over AE schedule this is actually a
+shorthand so the source generation then
+replaces this so basically puts a state.
+dependency inside of here and sets the
+new state. dependency equals to this so
+when you call that short hand it is
+actually doing this this basically
+ensures that as you schedule a job it
+will have the correct dependencies but I
+should also mention that while the short
+hand works great if you're doing an i
+job entity this code will have problems
+if you use an i job 4 because then it
+will not pass in the correct
+dependencies so in doing anything other
+than an i job entity then make sure you
+explicitly Define the state. dependency
+as a dependency of that job instead of
+using just a Shand okay so like we saw
+the schedule this one schedules on just
+one worker thread so over here we have
+our job running on just this one and the
+other one that we saw is the schedule
+parallel this one will run the job on
+multiple threads however this one
+actually has a really sneaky thing that
+confused me quite a lot while
+researching this video this one
+supposedly splits this job across
+multiple worker threads however if we
+test this and nope everything still
+looks the same it is still running on
+just one worker thread and all the other
+ones these are all idle so this is the
+part that really confused me it confused
+me why this one was still running on
+just one thread I even made a post on
+the forums asking for some help and
+thankfully I received some really
+excellent responses the answer is that
+apparently this one splits across
+multiple threads but it is based on
+chunks so since in My Demo over here I
+really just have seven entities these
+are not enough to be split over multiple
+threads they all fall into the same
+Chunk meaning they all run the same job
+on just this one worker thread it does
+not matter how intensive the job is it
+is all based on the number of entities
+if I say I just make a ton of entities
+so let me just duplicate this a mountain
+of times okay so I duplicate the prefab
+a ton of times so now I have a total of,
+1500 entities and now if we run the same
+code again and now if we go ahead and we
+look and if now it is correctly in the
+indeed using all of the nice workout
+threads so that means that this method
+really isn't suitable for doing super
+heavy work on just a small number of
+entities if you have that specific use
+case then instead of using iob entity
+instead use the one that I mentioned so
+the I job parallel 4 and basically
+handle splitting the logic yourself so
+just be aware of this one this one
+confuse me by quite a bit but yep if you
+do this and you have a certain number of
+entities this does work you just call
+schedule parallel and it automatically
+runs it across multiple worker threads
+so in here with this many entities with
+1500 entities ring the code which has
+this intentionally wasteful thing with
+all that in total it is taking 1500
+milliseconds per frame but we are still
+getting a handful of frames per second
+because when the whole thing is combined
+because of using all of these threads at
+the same time the whole thing takes just
+100 milliseconds so this is how you make
+code multi-threading and again the best
+results come from combining both
+multi-threading the job system with
+burst so on the job definition let's add
+the burst compile attribute we only need
+to add it up here there's no need to add
+it for the execute function itself so
+like this if we test
+and again notice that difference again
+bur is way too smart and right now I
+can't even find it I need to zoom in
+like crazy in order to be able to find
+anything so here it is I finally found
+it so previously it was taking 1500
+milliseconds and now it is taking just
+01 by the way quick tip to check if it's
+using burst or not look at the color
+over here on the profiler if it's in
+green then it is indeed using burst
+again I'm assuming burst is way too
+smart and it's intentionally identifying
+that this code is just wasteful this is
+nonsensical so I'm assuming it is
+actually identifying this in just
+deleting this useless cone but still
+even in regular scenarios and proper
+scenarios without this kind of testing
+code even in that burst is an insanely
+good thing it is a really excellent way
+to get extra free performance by just
+following some good data oriented design
+so when you combine the job system along
+with bur you can get some really insane
+results now let's learn about tag
+components this is a really easy and
+extremely powerful tool basically it's
+how you can add a tag to an object to
+Market as some sort of type like for
+example the difference between a player
+and an enemy thankfully tag components
+are insanely simp simple first let's
+actually see the problem that they solve
+so right now we have these rotating
+cubes now let's say I want to also have
+a player object so let's go ahead and
+make a player so inside my entity
+subscene I'm going to create a new game
+object this time for a player let's say
+it's a capsule let's move it a little
+bit going to give it a different color
+and inside I'm also going to add a
+simple Cube just to be able to see where
+this transform is facing okay so that's
+my basic player and now let's say that
+the player will also rotate so let's
+also uh the usual rotate speed component
+however we want the player to rotate
+based on input and not constantly like
+all the other objects whereas right now
+if we h on play and nope this is not
+what we want the player is rotating
+alongside all the other cubes basically
+what we want is for this rotating Cube
+system for this one to only apply to the
+cubes and not the player meaning that we
+need some kind of way to identify
+exactly what is a cube and what is a
+player so that's where tags come in like
+I said they are extremely simple we just
+make a new component as usual so let's
+create an UC C script call it the player
+authoring because again we're going to
+place both the component and the
+authoring directly inside the same
+script let's go ahead and attach a
+player authoring to the same player
+component and let's open and now over
+here for our authoring component which
+is going to be our mon behavior for this
+one we do not have any fields we have an
+empty authoring component then let's
+make a regular component an ECS
+component so a public this is going to
+be a struct let's just call it player
+and this one is an i component data
+which again exists inside unity.
+entities now this one also has no fields
+at all this is a tag component which is
+really just an empty component and then
+let's make our Baker so inside our
+authoring class let's make our usual
+public class Baker We Implement Baker of
+type player authoring and on our bake
+class on this one we're basically just
+going to add the component so again
+let's first of all grab the entity get
+entity and for this player the player is
+going to move so let's use Dynamic then
+let's call at component pass in this
+entity and just do a new player for the
+new player component so that's it no
+Fields no data nothing over here
+inspecting our player if we go into the
+entities inspector on this one if we
+look up top we can see a section just
+for the tags and Y over here we do see
+our player tag okay so this one is
+correctly tagged as our player and over
+here in our rotating Cube system let's
+go down to our job where we are rotating
+the cubes and right now this job w't run
+on every single entity that has both a
+rotate speed component and a local
+transform component this includes the
+player so in order to not include the
+player we can add a nice attribute to
+the job that is going to be the one
+called with none and then basically we
+add any types that we don't want this
+shop to run on so in this case let's go
+type of of our player component
+basically now with this component this
+job will run on every single entity that
+has both a local transform and a rotate
+speed component but no player component
+so it should run on everything except
+the player let's test and Y it does work
+all the cubes are still rotating but the
+player is not rotating okay great by the
+way here we we saw by using this
+attribute in order to make this job not
+run on entities that have the player
+component but over here the other method
+the4 each we can also do the same thing
+the way we do it inside of this one is
+we've got our system query and then
+after the query so after the parenthesis
+we can then add pretty much the same
+thing with none and then we pass in the
+type of type player and yep just like
+this now this for each will only run on
+all entities that have rotate speed
+local transform but no player and also
+yet another alternative is obviously we
+can do the opposite so instead of
+tagging the player and then writing this
+with none instead of that we can
+actually tag the cubes so let's make our
+rotating Cube tag so as usual C script
+for the rotating Cube authoring and over
+here the mono Behavior this one is empty
+then we've got a public struct for our
+rotating Cube this one is going to be I
+component data and inside this one is
+empty then on this one we've got our
+usual Baker class and then we simply
+have to implement our method and over
+here get the entity and add the
+component yep just like this and now the
+rotating cubes a while ago I made them a
+prefab just so we could easily modify
+all of them so let's go inside the
+prefab and let's add the rotating Cube
+authoring and Yep this one should now
+tag it as a rotating Cube and now in our
+system either over here on the 4 each
+instead of saying with none we can say
+with all so with all or with any in this
+case either one will work so with all of
+the rotating Cube so this works as we'll
+now only run on the cubes and same thing
+over here we can use the attribute let's
+go with with all and same thing the
+rotating Cube so now this job and this 4
+in both them will run on things that
+have the rotate speed the local
+transform and the rotating Cube
+component and also just for completeness
+sake of course the other alternative
+that you have is instead of using the
+WID all we could just use a ref RL over
+here of our rotating Cube that would
+also work but that would be quite a bit
+wasteful since we don't really need to
+access that tag component we really just
+want to run the cury that has that tag
+so when working in tags do not include
+them as a refero instead use the with
+all either the function over here or the
+attribute on this one and if we try
+running this code yep exactly the same
+result so now that rotating logic that
+one is only being applied to entities
+that have the rotating Cube tag so
+that's how simple tag components are
+they're literally just empty components
+which are really great for identifying
+your objects as being of a specific type
+so things like the player enemy bullet
+money and so on whenever you want to
+identify anything as something make sure
+you use a tag component next let's learn
+about aspects however before we do let's
+actually first see the problem that they
+are me to solve so for that let's make
+another simple component in the system
+to move our cues let's go ahead and make
+an e Shar script first for the component
+so movement authoring let's go ahead and
+add this one to our rotating Cube so
+let's just add the movement authoring
+and let's open it and over here let's
+actually do something fun so let's do so
+that the authoring component this one is
+completely empty but then we are going
+to have a movement Vector in our actual
+component so let's do a stru for our
+movement so I component data and on this
+one we do have something we do have a
+float 3 which by the way a float 3 is
+really pretty much exactly the same
+thing as a vector 3 this one just exists
+inside the unit mathematics library and
+this one is optimized to be used with
+dots and burst but in terms of logic
+it's literally the exact same thing as a
+vector 3 meaning if we go inside it we
+can see this one has an X Y and Z
+components so we got a flow three and
+let's call it the movement Vector so we
+have some data in our component but we
+have no data in our authoring component
+now let's go ahead and make our usual
+Baker class
+class on this one let's get our entity
+and then on ADD component let's add a
+component onto this entity and the
+component will be our movement component
+except now we don't have this field to
+grab directly from our authoring
+component I didn't do that just to show
+you how you don't have to you can make
+some authoring components that do some
+kind of processing in order to actually
+generate the final component data so
+over here for example let's just set it
+to a random value so we can just set
+movement Vector equals a new FL 3 like I
+said this is the same as a vector 3 so
+we've got an x y and Zed we just need to
+set these up so let's just put a random
+Vector which by the way the mathematics
+Library also has a random but for
+Simplicity sake I really enjoy using
+just the simple Unity engine one so
+let's go inside Unity engine to use that
+random specifically okay great just like
+this so when we attach this authoring
+component to an entity it is going to
+bait that entity and passing a movement
+Vector with a random movement Vector now
+that we have this let's make a system
+that will both move and rotate our cubes
+we want to do both of them so let's go
+ahead create a new C script let's call
+this the handle cubes system and over
+here for this one let's go ahead and
+make it an i system then as always we
+need to make this a partial
+struct okay let's write our onupdate
+method and on this one let's keep it
+simple and instead of using a job let's
+just use the regular for each method
+which actually this is probably what you
+should do when you first make a system
+meaning first use the simpler for each
+method that works just on the main
+thread get it working like that and then
+convert into a proper job if you need to
+so over here let's do a 4 in let's write
+a query first so system api. query in
+order to both move and rotate we are
+going to need the local transform
+component and we're going to need this
+one as a ref RW because we are going to
+actually move then in order to know how
+fast to rotate we are going to need the
+rotate speed component that one is just
+for reading so ref Ro for the rotate
+speed component next we are going to
+need to know how fast to move and where
+to move to so we need the move speed
+component again just for reading for the
+movement component and finally we don't
+want this to run on the player so let's
+also call with all and pass in the type
+of of our rotating cubes all right so
+this is our query so inside our 4 each
+we just need to use all of these so let
+me just write all of this okay so we
+have our query with all of our
+components then we do the logic so just
+rotating and moving all of it pretty
+simple just go into the local transform
+go inside first of all the value in
+order to rotate it so rotate it on the Y
+and let's do the same thing grab the
+rotate speed grab the value R and grab
+the actual value multiply it by our
+time. Delta time inside the system API
+so the time. Delta time this one is
+going to rotate but it doesn't actually
+modify the value so let's go inside the
+value RW and set it to this one this one
+rotates then we just need to move and
+for moving we're going to do the same
+thing so local transform go inside the
+value R and this case it's the translate
+then we need our movement Vector so
+movement value rrow and grab the
+movement vector and again make it frame
+rate independent so system api. time.
+Delta time okay so that's it some pretty
+simple logic this going to both rotate
+and move the component let's also just
+go ahead and disable our rotating Cube
+system we can either delete the script
+or just over here on the update we can
+just go into the state so that's the
+system State variable and just set
+enable equals false and let's return so
+it never runs once this one basically
+disabled the system from running so with
+this let's test and if everything works
+the cubes are both rotating and moving
+okay great so everything is working but
+looking over here at this query it is
+becoming quite massive with so many
+components so this is exactly where
+aspects come in an aspect basically
+groups multiple components into a single
+logical unit in order to Define an
+aspect first we need to define a script
+so let's create a brand new C script
+let's call the rotating moving Cube
+aspect and then inside of this one for
+this one we are going to implement I
+aspect which exists inside using unity.
+entities now this interface has no
+methods that we actually need to
+implement it's basically just a tag to
+mark this script as an aspect then an
+aspect is not a class instead it is a
+struct and again this one also needs
+partial for the source generation to
+work and one more thing specif to
+aspects is these need to be marked as
+read only okay great so now here we can
+add fields for all the components that
+make this aspect that make a rotating
+moving Cube and to add a component let's
+do the usual so let's make them public
+then over here we use either refr W or
+ref and let's begin with the UN local
+transform that we do want to write so
+let's go ref RW for the UN locon
+transform call it the local transform
+next we also need the rotate speed so
+for that one ref of the rotate speed and
+finally we got another one for the
+movement and as you can see since
+aspects need to be marked as read only
+all of these fields also need to be
+marked as read only so read only on all
+of these basically this this is the C
+read only tag basically it makes sure
+that we can never modify this field
+directly so after being set we cannot
+modify it it looks a little bit
+confusing to have something as marked as
+both read only and then ref RW for read
+write so it looks a little bit strange
+but Yep this is exactly how you write it
+use a c readon keyword and then ref RW
+or ref RL okay so we have all the
+components that we need in order to make
+this aspect work and then we also need
+to include the cube tag now suddenly the
+with all attribute does not work here so
+adding the with all just like we saw
+previously this one suddenly does not
+work on aspects instead said right now
+in order to add some kind of tag
+component is we can add it over here as
+a refero so we can do a read only make
+it a ref R in this case we need the
+rotating Cube tag component so this does
+work however it's a bit wasteful since
+we never actually need to touch this
+component so it would be nice if The Wil
+attribute worked here although there is
+an alternative that I will mention in a
+little bit so right now we do have all
+the components that make up our rotating
+Cube aspect basally we have the exact
+same components that we had over here on
+our system and now that we have defined
+the aspect now we can simplify this huge
+query with just a single aspect type so
+over here instead of all of these refl
+instead of all this movement so on we
+can just use the rotating moving Cube
+aspect and over here same thing now we
+just need one of them so the rotating
+moving Cube aspect just like this and
+yep that's it so as you can see this
+really simplifies that query now we just
+have one aspect in set of tons and tons
+of components also note how over here we
+do not need to add the refero or ref RW
+basically the aspect itself this works
+as a pointer and will already have the
+access that you define over here in the
+aspect definition now for the tag
+alternative that I mentioned like I said
+adding it here is a little bit wasteful
+since we never actually need to touch
+this data so if you need absolute
+maximum performance just remove it over
+here from the aspect and set over here
+on the system use the same thing that we
+already saw so just add with all and
+then we can include our rotating Cube Ty
+component yep just like this so This Way
+It Is technically slightly more
+efficient although in terms of
+readability I think prefer putting it on
+the aspect itself so I think this one is
+a little bit easier to read the best way
+would simply be if they allowed using
+the with all component the with all
+attribute over here directly inside the
+aspect that would be great so maybe they
+will add that in a future update okay so
+here we have our query with just our
+aspect and then over here for the logic
+now we can access the aspect components
+and make our changes so go inside the
+aspect then let's say go inside the
+local transform then go inside the value
+RW and so on so you could do this this
+would work just fine but another great
+bonus of aspects is that you can add
+logic directly inside of them so over
+here in our aspect let's just make a
+function so a p void move and rotate and
+over here let's really just copy this
+code so let's copy this put it in here
+and the only thing that we don't have
+the access is to the dth time from the
+system API so let's just receive it as a
+simple parameter okay yep just like this
+and over here in our system let's just
+go inside our aspect and simply call our
+function to move and rotate and pass in
+the system API time. time and yep that's
+it just like this let's test and yep
+everything still works so here you can
+really see how this code is now much
+much simpler than it was before thanks
+to using our aspect that is really the
+power of aspects is allowing you to
+group several components together into
+one logical unit next let's learn about
+something that is crucial to making
+pretty much any game prefabs and
+thankfully prefabs in ECS are also
+really simple right now we manually
+populated all of these cubes in our
+world and now instead of doing that
+let's make them spawn at runtime so
+let's make a system that spawn them and
+before we do that first we need to find
+some way to store a reference to our
+prefab so let's first make a component
+to store that and then our system will
+use that component so let's go ahead
+create new C script for the spawn cubes
+config authoring basically this is going
+to be the config file containing all of
+the config data for our spawn Cube
+system and over here in our mono
+behavior let's add a regular game object
+field for our Cube prefab so public game
+object for the cube prefab and then
+we're going to want to spawn multiple of
+them so let's also add an INT for the
+amount to spawn okay great like this
+then here in the editor let's make an
+empty gim object inside our entity
+subscene so let's create it name it
+spawn cubes config on the regular
+inspector let's go ahead and attach our
+authoring component and for the prefab
+let's drag our rotating CU prefab and
+for the amount one let's go with five
+okay so that's our authoring component
+now we need to convert this into an
+actual entity component so for that
+let's go ahead and make our entity
+components so again let's follow the
+exact same thing so so let's make it a
+stroke for spawn cubes config and this
+one is I component data however on this
+one instead of making another field of
+type game object instead of that we're
+going to make it of type entity so
+public entity and let's call A Q prefab
+entity so I have this and then for the
+end the same thing so the amount to
+spawn okay great so all we really need
+to do is convert our regular game object
+prefab into an entity prefab and we're
+going to do that on our
+Baker so let's make our usual Baker CL
+class we're going to do Baker and extend
+the spawn cubes config authoring then
+over here as usual let's pass in add
+components so that means we need our
+entity for this entity so let's go ahead
+get entity and in this case actually
+since we're using this config component
+this is really just a data component we
+don't really want it to exist anywhere
+so for this one now we can use none in
+order to make it just a little bit
+optimized since we don't really need
+that transform component then let's add
+a component onto this entity and the
+component new spawn cubes config and now
+inside here for the data for the amount
+of Spawn let's just go into our
+authoring and grab the amount of Spawn
+and then for the Q prefab entity the way
+we convert our game object prefab into
+an actual entity thankfully that is
+extremely simple we'll literally just
+use the same get entity function so get
+entity and this one has a version that
+takes in a game object so we can just go
+inside the authoring component and let's
+grab the regular game object Q prefab
+and then usage flag same thing let's go
+with Dynamic so y That's it really
+simple we just call get nty and this is
+going to automatically convert our G
+object into an entity prefab so with
+this this is going to work we're going
+to have our nice config component we can
+even test it out over here let's go
+ahead and run our game then look into
+the entity inspector and if there it is
+the spawn cubes config and yep we do
+have our rotating Cube prefab entity
+also note how on this one we do not have
+any transform components again that is
+that little optimization thing if we
+look into the other components the other
+entities all these is you have local to
+local transform and so on but on this
+one which was optimized this one does
+not have any transform data okay so
+great here we have our Q prefab entity
+now let's simply just
+insentient to handle that let's go ahead
+create a new C script let's call the
+spawn cubes system and then over here we
+can either make this a system base or an
+i system let's go ahead and do a system
+base just to be different from what
+we've already seen But like I said
+either one works so a system base just
+need to mark this as partial and then we
+need to implement our abstract class so
+we need to implement at least the
+onupdate method but then like I said a
+while you should also implement the
+uncreate if you have any requirements so
+over here let's also Implement override
+void the uncreate and on this one let's
+call require for update which by the way
+this is a little bit different from the
+one that we saw on the system so if we
+go inside the rotating Cube system on
+this one on the uncreate when working
+with an i system we've got a system
+State over here on the parameter and we
+go through that and call require for
+update whereas over here on a system
+base we can just call require for update
+and then pass in the component that we
+need need so in this case it's a spawn
+cubes config just like this okay so yep
+with this now the update will only run
+when there's an entity with the spawn
+cubes config that's good because we're
+going to actually need that object to
+exist in order to run some logic here
+and now on this logic we really only
+want to spawn the cubes once so let's
+just disable this system right after the
+first update the way we do that on a
+system base just do this. enable equals
+false that will make sure that this
+update is only going to run once and
+over here in order to get our spawn
+cubes config for that we can use a super
+useful function from the system API we
+just go inside system API and we call
+get Singleton this one like the name
+implies gets a Singleton so we just pass
+in the type so the spawn cubes config
+and this one is going to return our
+spawn cubes config now importantly this
+get single function this one has a whole
+bunch of really useful safety checks if
+you have zero entities with this
+component then it's going to fire an
+error so again really important that we
+add the required for update before this
+update runs and if you have more more
+than one meaning it's not really a singl
+ton if so then also fires an error so
+basically in order to call this get
+singl ton function in order to do this
+then this must actually be a Singleton
+meaning there has to be one and only one
+entity with this component these are
+some really great safety checks because
+they really enforce you to actually
+implement the proper singl ton pattern
+so with this we can now easily access
+the data inside of this component so
+let's just do a basic cycle through the
+amount to spawn so just say basic for
+starting on zero going until the spawn
+cubes config the am M to spawn i++ okay
+and now here let's simply spawn and the
+way that we spawn a brand new NTI prefab
+is really simple we just need to access
+the spawn cubes config and inside we've
+got the Q prefab entity and the way we
+spawn it is we just go inside the entity
+manager inside this one we call
+insentient a regular game object and
+this one takes a parameter for the
+source entity which is indeed our Q
+prefab entity just like this all this is
+doing is really just copying the source
+entity since entities are really just
+data inen ating simply means copying all
+the data in memory the only special
+thing that intiate does is how prefab
+entities they've got a prefab tag
+component this is a special te component
+that all the anti queries ignore since
+normally we don't want to run any logic
+on the prefabs themselves so when you
+call intiate it copies all the data from
+that prefab copies everything except
+that one prefab component and Y that's
+it super simple so this will return our
+spawn entity and then if we want we can
+initialize it so we can go inside the
+entity manager and call set component
+data and we can set any component to any
+data that we want but at the same time
+our prefab this one already has a bunch
+of authoring components these are still
+going to run when this is converted into
+an entity so we don't need to manually
+initialize all of these authoring
+components so for all this custom data
+we don't need to do anything else other
+than just spawn it although actually one
+real interesting thing is that the bake
+happens just once for the prefab meaning
+all of these authoring components they
+will be converted into the corresponding
+entity components just once so for
+example in this scenario we have our
+movement authoring components and for
+this one we defined over here on the
+baker it generates a random movement
+Factor but like I said this bake will
+only happen once for the prefab itself
+will not happen every single time that
+we instantiate the new entity from that
+prefab so in this case all of our SP
+objects they will all have the exact
+same movement Vector since again this
+bake only runs once so just something to
+be aware of the bake only runs once when
+the prefab is converted and not every
+time that you spawn an entity from that
+prefab so right here for set component
+we don't need to bother with all those
+custom components let's just put it in a
+random position so the set component
+data this one takes an entity so let's
+go inside our spawn entity and for the
+component dat in order to put it on a
+random position let's just modify the
+local transform this one takes a certain
+position and the position is a flow
+three so let's go ahead let's Implement
+using unity.
+mathematics and we're going to have our
+nice flow three again same thing as a
+vector 3 so XY Z so this is going to
+spawn it on some random position
+although actually here here's another
+thing that confused me quite a little
+bit when I first was researching this
+topic I initially just did this in order
+to spawn all the entities naturally if
+we test this it does work it will spawn
+the enties and it will position them on
+a random position so here let's quickly
+test and before we do let's actually get
+rid of the rotating cubes so we just
+want to spawn them so let's test and
+look at that nothing is actually visible
+however if we look in the entity's
+hierarchy yep all the cubes are indeed
+being spawned so again this is the thing
+that confused me a little bit and the
+reason has to do with the defaults and
+we can look over here on the local
+transform and see yep the position is
+indeed being set correctly but over here
+the scale the scale is a float and the
+float by default is going to come out to
+zero so that is why we don't see
+anything the entities are all actually
+there but since they've got a scale of
+zero they're not visible so technically
+when spawning a new local transform in
+setting some data technically you can
+just insert the ones that you need so in
+this case just a position but if you do
+know that everything else is going to
+default to zero so in order for you to
+not be confused like I am if you go
+ahead modify local transform just go
+ahead and also apply the rotation we can
+go inside the Quan this is the one
+inside the unity mathematics library and
+just use identity for the default
+rotation and again let's also put on the
+scale just so this one does not default
+to zero also another option exactly to
+solve this sort of problem is how the
+local transform if we go inside that
+class local transform this one has all
+sorts of helper functions similar to the
+rotate and the translate that we saw a
+while ago we can use this to
+automatically create the loal transform
+with a certain position rotation scale
+or just position like for example this
+one so we can use this one with our
+custom position and then basically this
+would create a local transform with a
+certain position and set the scale
+correctly to one so all of the helper
+functions inside the AL transform all of
+these can be quite useful okay so just
+like this if we test any up here we do
+see a bunch of Cubes being spawned and
+yep everything still works so all the
+same rotating and movement logic all of
+that is still working the same as
+previously we can easily go inside our
+spawning cubes component in order to
+spawn more or fewer cubes and there you
+go everything spawns and they all move
+all right awesome now I should note that
+there are more efficient methods for
+spawning entities if that's really the
+only thing that you want to do and if
+you want to spawn a ton of them if so
+then instead of instantiating them like
+this just literally one by one instead
+of that you can use the other functions
+over here for the instantiate so we've
+got this one that just takes an entity
+and spawns another entity or
+alternatively we have for example this
+one this one takes a source entity and
+then creates a number of entities that
+are all place inside a Native array so
+basically you construct a new native
+array with a certain size and then this
+one will inate entities to fill that
+entire array so if you spawn an array
+with 100 elements it is going to spawn
+100 entities then you would simply cycle
+through that entire native array and set
+the component data on all of those
+entities so just be aware if you want to
+spawn tons of things it might be better
+off to spawn all of them at once instead
+of one by one individually also speaking
+of Maximum performance so over here this
+code works but for maximum performance
+instead of using over here entim
+manager. set component data instead of
+this one you can use system api. set
+component and Yep this will do the exact
+same thing but this one has some nice
+performance benefits so in general
+whenever possible for maximum
+performance you should prefer using the
+functions inside the system API since a
+lot of those will have some nice
+performance benefits as opposed to using
+the en manager directly but on a simple
+system like this one either one works
+and also another very important thing on
+spawning entities over here note how we
+are spawning them directly directly
+through the entity manager so that's
+perfectly fine here like I said
+technically this is not the most
+performant matter but over here we're
+only running this update one so really
+over here we have no concerns when it
+comes to Performance and there also is
+not cycling through anything so again
+also not an issue but for example let's
+say that our players firing bullets so
+let me just quickly make a system for
+the player to manually spawn some
+bullets let's go ahead and just create a
+new C script called the player shooting
+system and then over here let's make
+this one a system base so system base
+inside using unity. entities let's make
+it partial let's go ahead and Implement
+both these so both the on update and
+let's also do
+override void the uncreate and on the
+uncreate let's call require for update
+and make sure this one only runs when
+the player tag component actually exists
+okay so we have this one and then on
+update let's go ahead and fire some
+bullets and for firing bullets let's
+actually assly spawn a cube so let's
+consider a cube to be a bullet so let me
+just copy this and in order to fire it
+manually let's just check if the player
+is holding down the space so over here
+I'm just doing some basic testing code
+so just get key down so let's says for
+the space key so if the player is not
+pressing space if not then let's just
+return and if the player is pressing
+space then we're going to run this code
+then for the bullets instead of going
+through this amount to spawn instead of
+that let's cycle through all of our
+players so let's do for each system API
+let's first handle the query we're going
+to need to know the player's position in
+order to know where to spawn the bullet
+so let's use a ref rro because we only
+need to read it for the local transform
+so this is the only one that we're going
+to have so we just need the local
+transform in the query and let's also
+make sure this one only runs on the
+player so with all of the player tag
+component so we CLE through all the
+players we get the L transform then over
+here we are going to spawn the cube so
+that is going to act kind of like a
+bullet and then for spawning it let's
+simply spawn it directly on the player
+position so over here let's just go
+inside the local transform grab the
+value RL and let's just grab the same
+position okay so just a super simple
+system so when we are pressing space we
+are going to run this logic we get the
+singl ton in order to get our prefab
+reference and we're simply going to
+spawn a cube directly on top of the
+player so let's see so here we have the
+player and if I press on space and if
+there you go it does indeed spawn a cube
+directly on top of the player okay great
+so again we still have the exact same
+logic that we had previously just
+spawning it directly so over here we're
+still using the enti manager.
+instantiate however one very important
+thing about dots is that spawning or
+destroying entities that is what is
+known as a structural change basically
+the back end of dots that one is storing
+a ton of tightly packed arrays for all
+of the entities and all the components
+that's really how this system is so
+insanely performant but of course if you
+spawn new entity you are going to modify
+those underlying arrays so while cycling
+through some arrays while cycling
+through some entities while doing this
+you really don't want to modify it so in
+order to spawn or destroy entities while
+in a job or in a 4 in in this case you
+should actually use what is called an
+enti command buffer now I should also
+obviously say that this code actually
+works this is not a problem as we saw it
+is running perfectly but the reason why
+it works is because the new prefab
+entity does not match this at all we're
+spawning bullets not players so the new
+spawn entity will not have a player
+component so it does not match this
+query however if the instantiated entity
+archetype if that one did match this
+query then it would break this code so
+when that happens for that like I said
+you should spawn entities using an
+entity command buffer so let's see how
+that's done first we need to create a
+new inty command buffer so let's see new
+entity command buffer this one requires
+a certain allocator and over here there
+are a whole bunch of options depending
+on how long you want this command buffer
+to live now in this case we really just
+want to create it in order to spawn our
+entities and then we want it to be
+disposed of so let's use the simplest
+one the temp allocation this one is
+going to be created temporarily and then
+automatically it's going to be disposed
+of so we don't need to manually dispose
+it ourselves we do this in order to
+create a new entity command buffer but
+of course we don't actually want to
+create it for every single player we
+just want to create one and then spawn
+all kinds of entities so we do this
+outside of the four okay then we go
+inside the four and for each enemy and
+for each player we want to spawn our
+bullets so over here we go inside this
+one and we just call the same
+instantiate function this one as you can
+see also has all kinds of options we can
+spawn just one or multiple so for now
+let's just spawn one so let's literally
+just replace this exact same code with
+this one everything else is exactly the
+same however importantly this isn't
+actually instantiating The Entity over
+here over here we are simply adding that
+command to a command list that will be
+executing later so we do that in order
+to record an instantiate command and
+then same thing over here for the set
+component data except over here for some
+reason reason instead of being called
+set component data it is only called set
+component I'm not sure why this function
+is different but it just has a different
+name and everything else works the same
+so again this is also going to just
+register a command it is not actually
+going to set any component data just yet
+so we do this and basically over here we
+are queuing up all kinds of commands and
+then after our four after our cycle so
+basically after we are far away from
+those issues that I mentioned with all
+of those titly packed arrays after this
+in order to actually execute those
+commands we can go here and call
+playback and this one takes an enti
+manager that is actually going to spawn
+the entity so let's just pass in the
+reference to our entity manager and yep
+just like this so basically by doing it
+like this we have no structural changes
+over here directly inside the 4 each we
+are just recording some commands and we
+are only executing those commands after
+we exit the cycle and if we run the code
+everything is still going to work
+exactly the same so if I press space yep
+there you go it is spawning cubes
+everything works right so for spawning
+things usually you have these two
+options you can use an En command buffer
+or you can simply use the en manager
+instantiate and another note on getting
+maximum performance so here this works
+it is going to allocate the N command
+buffer and then dispose of it but in
+order to get a tiny bit more performance
+instead of using a temp allocator
+instead of that you should use the world
+update allocator this is a special
+allocator that exists by default it
+lasts for 1 to two frames and is
+automatically disposed of and has some
+nice performance benefits now speaking
+of structural changes one change is
+spawning or destroying enties so over
+here we are instantiating this is a
+structal change then yet another type of
+structural change is simply adding or
+moving components to an enti so if over
+here I go into the enti manager and I
+call add component this is going to be a
+structural change basically it has to do
+once again with how dots works in the
+background how the whole thing is based
+on entity archetypes which are specific
+groups of components so by adding or
+removing components you are basically
+creating a brand new archetype so things
+need to be moved around in memory so
+ideally you should avoid adding or
+removing components as much as possible
+if you need need to do something like
+that like for example let's say you need
+to Define if the player is in some kind
+of sunun state if so then instead of
+adding or removing some kind of stun
+component instead of that you can use
+what are called enable components which
+let you enable or disable without
+triggering a structural change so let's
+see exactly how that's done so first we
+build a component as usual so a new C
+script let's call it stun authoring and
+over here for the authoring component
+let's leave it just like this just empty
+and then let's make the actual empty
+component so let's go ahead call it just
+stun
+and for this one let's Implement I
+component data as usual but then also I
+enable component then if you want this
+can have any fields for any data that
+you want or it can simply be a simple
+tag component and then up here in our
+authoring component let's Implement our
+Baker class and in this one let's do the
+same thing so en entity let's call get
+entity and for this one this is on the
+player so sure let's pass in as Dynamic
+then let's add component onto this
+entity let's add a new stun component so
+just like this and then we can call the
+function set component enabled and we're
+going to modify the one of type stunn
+and then we can set it to either enabled
+or disabled first let's pass in the
+entity and then let's say we don't want
+the player to start off stun so let's
+say false okay so that's it super simple
+so we basically just implement the I
+enable component and then when adding
+that component we can optionally set it
+as enabled or disabled then over here in
+our game let's go ahead and just add the
+stun authoring component and then for
+example over here on the player shooting
+system on this one we are cycling
+through all the players in order to
+spawn all the bullets so we are calling
+with all to see all the players and in
+this case we only want to run this query
+if the player is not stunned so for that
+we can add the WID disabled so this
+query will only work if a certain enable
+component is actually disabled so let's
+go with our stun just like this so This
+query this for each will only run on
+entities that have a local transform
+component also a player tag and also a
+sun component that is set to disign
+disabled and then just for testing let's
+put up here just a simple testing code
+just to swap the stunt state so let's
+test input get key down for some testing
+Keys let's go with the T key in this
+case for some testing we know that we
+only have one player so again just for
+some simple testing code let's go inside
+the system API to get the Singleton
+entity of type player and then we can go
+The Entity manager and call set
+component enabled of the stun component
+on this player entity
+and when we press T let's set it to yes
+let's set it to stun and on another key
+so let's say on a y let's set it to not
+stun okay just like this let's see all
+right so here we are and we can actually
+look at the player so we can select the
+player and go inside the N inspector and
+over here yep we do see up here on the
+tags we do see there's a stun tag and
+right now if I press on Space yep there
+you go it is spawning a bullet however
+now I press on T and yep note how that
+one became checked and now if I press on
+Space again and nope it is is not
+spawning anything because again it is
+only running that query if the player is
+not stunned so press on y that one
+becomes un stunned and space and there
+you go it's still work so stun un stun
+everything works all right great now
+like I said the main benefit is this is
+not a structural change which makes
+enabling or disabling these State these
+enable components makes it super fast so
+instead of adding or removing this
+component instead of that we just decid
+it enable or disable it okay so now
+let's cover one of the most important
+things about ECS which is how to
+interact with the from game objects this
+is very important because it is the
+recommend method for working with dots
+there are many things for which game
+objects are still excellent so the
+recommend workflow is mixing both dots
+and game objects rather than going 100%
+with either of them so over here I
+previously prepared this simple game
+object it's a simple shoot popup so
+inside I really just have some text just
+saying shoot and then I've got this
+simple script so over here really on
+update it just moves this component
+upwards and after a certain amount of
+time just destroys itself again super
+simple note how this is a regular script
+absolutely nothing over here on this
+popup absolutely nothing has to do with
+either entities or dots this is a
+regular game object regular mon Behavior
+component the game object itself again
+like I said regular game object
+absolutely nothing to do with any
+entities what we want is basally spawn
+this regular game object whenever the
+player entity spawns a new entity B so
+let's make some kind of script to handle
+that let's go ahead create a regular
+monob Behavior regular C script called
+the player shoot manager now let's make
+a regular game object to run the script
+and again importantly we want a
+perfectly regular game object so we do
+not want to create anything inside the
+entity subscene no just out here and
+let's create an empty regular game
+object let's go ahead give it the same
+name and reset the transform and let's
+attach our component okay just like this
+and on this script basically we want to
+know when the player is actually
+shooting and when they do then we want
+to spawn our prefab so over here we have
+our play shooting system where we are
+actually spawning our bullets and now
+while ago I made this a system base and
+like I said the difference between
+system Bas and I system is that system
+Bas is meant for manage components and
+is system is meant for unmanage and one
+of the easiest ways for us to connect
+both game objects and the entity systems
+when the easiest ways is simply by using
+an event so over here since we are in
+system based we can use manage
+components so let's use a regular
+managed event handler for handling some
+regular C events so just super simple
+public event event handler again super
+simple event let's call it on shoot
+event handler is a type of delate which
+is a manage type now if you don't know
+about events I covered them in detail in
+a previous video same thing for
+delegates okay so basically with this we
+have our normal event and then down here
+when we shoot let's simply fire off the
+event so again really simple just do the
+exact same thing that we're used to
+using so just invent let's invoke it
+with usual standard this event ARS empty
+also by the way one more quick tip over
+here when doing system api. query for
+this one just in case we need to know
+the enti like for example over here on
+the event it might be useful to know
+know which player is actually shooting a
+bullet for this one one of the many
+options that we can add over here onto
+the query one of the many options is
+with entity access and if we do then our
+entity over here the tupon that this
+returns this one is going to have an
+reference to an entity right over here
+at the end so for example in this case
+we can do this in order to over here
+when we shoot the event we can pass in
+the entty reference as who is actually
+shooting this boat okay so just like
+this pretty simple we've got a regular
+shooting event and then on our regular
+game object script let's just lean this
+up on this one we really just need to
+hook onto that event and for that that
+means that we do need to find some
+reference to this player shooting system
+and thankfully that's pretty easy since
+there is only ever one system in a world
+which means the systems are always
+Singleton so that makes it really easy
+to find we can just go over here on the
+players ship manager let's do a private
+void start in order to hook onto our
+event however over here we can't access
+the system API this one does not work
+this one only works on systems as we can
+see you may not use the system API
+member outside of a system so instead of
+this the way that we find that is we
+first need to access the world and we
+can access the default World by going
+into world. default game object
+injection world and over here we can get
+an existing system and in this case
+since we are using a system base we need
+to use the manage version so for this
+one for the player shooting system and
+now that we have this one we can go and
+do the same thing so just listen to the
+event so just some usual code nothing to
+do with any entities the only entity
+thing is over here converting the center
+into an entity so an entity for the
+player entity and let's go ahead grab
+the sender and we need to convert this
+as an entity so let's go ahead and cast
+it down into an entity so we have this
+and now in order to know where to spawn
+our prefab for that we need to know the
+position of this player entity which
+means we need to access this player
+entity the local transform so for that
+let's go inside the world default GIC
+injection world let's grab the nty
+manager and from that one we can grab
+the get component data we want the local
+transform component and the entity that
+is going to be our our player entity so
+this is going to return our local
+transform components then when we have
+this one we've got the position so this
+contains the position of the player so
+now let's just do a regular game object
+ineni so insen and we just need the
+reference up here so let's go up here
+and add it as a regular field so
+serialized field private game object for
+the shoot popup prefab so again a
+regular game object component and then
+over here let's go ahead let's Spa on
+this position with no rotation so
+querian identity and by the way note how
+even though the position this one is a
+FL 3 it automatically gets converted
+into a vector 3 okay so that's it super
+simple so we basically just go through
+the default World in order to get the
+instance of our shooting system and then
+from that one we hook onto the event
+just a regular event and then we grab
+some data from that entity and spawn our
+regular game object let's test so just
+over here on the player shoot manager
+let's just make sure to add the shoot
+popup and let's test so here we are and
+if I press on space and yep there you go
+there it is the shoot popup it does work
+it does spawn the player and yep
+everything works great all right Awesome
+Again note how this popup this is a
+completely normal game object element
+the player itself is an entity and it is
+being controlled by an entity system but
+this game object this is an entirely
+game object the popup has absolutely
+nothing directly related to any entities
+we've got an entity over here then a
+game object over here and we simply have
+a script just a regular manager just a
+regular monob Behavior component and
+this one is handling the connection
+between one and the other so as you can
+see this is one way for how you can
+connect a game object onto an entity you
+can have some kind of entity system that
+fires off some kind of event and then
+have some kind of script that listens to
+that event and does whatever it wants
+like for example spawning a game object
+this works so basically over here we
+have the monob behavior side grabbing
+some data directly from the N side
+however alternatively we could also do
+the opposite we could have our system in
+order to call some kind of function
+directly on the mono Behavior so for
+that the super simple way is pretty much
+exactly the same thing that we did so we
+grab the existing system which is going
+to be a Singleton so you can pretty much
+just convert this regular am of behavior
+also into a Singleton so let's use the
+usual Singleton pattern that I've used
+in so many videos so for the player
+shoot manager call it instance make it
+with a public get and a private set then
+let's do we private vo awake and on
+awake let's set the instance equals this
+okay so we have our nice static instance
+and now instead of having these events
+instead of having this mon Behavior go
+grab data from the other side instead of
+that let's go ahead and make another
+function so let's make a public function
+let's call it player shoot and let's
+receive Vector 3 for the player position
+then over here we just do literally the
+same thing so we call instantiate shoot
+that one onto this player position just
+like this and over here on the player
+shooting system let's go down to where
+we are doing all this and now we can
+just go the player shoot manager access
+the instance and call the player shoot
+function all right yep just like this
+let's test so here we are press on space
+and yep everything still works exactly
+the same so as you can see there are
+multiple multiple ways to have our game
+objects and entities interact with one
+another you can have the monob behavior
+side as the ECS side for some data or
+the other way you can have the ECS side
+like some kind of system access some
+kind of mon behavior and tell it to do
+something or yet another option you have
+is just know there are ways to store
+manag data directly inside a component
+you can use manage components they do
+have a whole bunch of limitations but it
+is possible so for example you could
+have some kind of manage component that
+holds a reference directly to some kind
+of game object like for example particle
+system so you can do that and have the
+system directly interact with that
+manage component and do any kind of
+function any kind of data do anything
+with that manage component so basically
+all those options work so there are
+plenty of ways for you to mix both game
+objects and entities okay so we already
+covered a lot of stuff that you need to
+get St but dots is huge so there's
+really tons more stuff to learn let me
+quickly just go through some tiny
+details like over here on systems when
+doing a query we already saw a whole
+bunch of options but there's a whole
+bunch more you can just search for wi
+and see all of them so with all this one
+makes sure that all of the ones CU over
+here you can actually include more than
+one type you can include multiple
+components so if you use with all that
+one is going to make sure to run this
+query on all entities that have all of
+these components alternatively you have
+the with any so this one you can pass in
+a bunch of components and it's going to
+run on entities that have any of those
+then you also have with none which is
+going to run on entities that do not
+have any of those components also by the
+way over here I said with disabled but
+if stun was enabled and you only want to
+run some on players that are sun there
+is no with enabled instead if you want a
+component that's enabled that really
+just counts as a regular component so
+you just put it over here with all stun
+and this would only run on things that
+also have a stunt component and it's
+also enabled also by the way all of
+those are also available over here when
+you use a job on this one you can work
+with the attributes so again you can see
+with all with any with the and so on
+then on aspects for this one you can
+also have an entity field so you can do
+public read only entity entity this
+works and basically as you do some kind
+of query against this aspect it is going
+to automatically fill in this entity
+with that entity then in your jobs if
+you somehow have some kind of native
+array component native array or native
+list or any of these collections if so
+then the job will basically consider
+this a read write field meaning if you
+have multiple jobs working on the same
+native array it is going to run one
+after the other instead of running them
+concurrently if you do know that you are
+never actually going to write to the
+same index on multiple jobs if so then
+you can use the attribute read only that
+basically says that this ative array
+this one is only used for reading so you
+can run multiple jobs with this field
+concurrently then on systems themselves
+you also have a whole bunch of
+attributes the main one is the update
+before after or in group with these you
+can basically have some more control
+over when the systems run for example
+over here we can look inside the systems
+window to see all the various systems
+and note all of these various system
+groups so by using these like for
+example update in group you can use this
+in order to Define in which group you
+want to run this system on or you can
+use the update or after to update before
+or after any of these groups any of
+these systems then for the systems over
+here on the system base if we inspect
+this if we go to definition we can see
+these have a bunch more functions for
+example we already saw we can override
+the on update but there is also one
+called on start running onop running and
+so on so for example this is related to
+how on various on create on various of
+those we add the required update
+component meaning the system will not
+start running until an entity with that
+component actually exists so you can use
+these two the on start running and on
+stop running on the system base and if
+you are working in an i system for this
+one you can do the same thing and that
+exists over here on the I system start
+stop so you can implement this one in
+order to have the access to the onart
+and onstop running also speaking of
+systems they actually have an entty
+connected to them so here if we looking
+the enti Hier key look at how right now
+it's actually empty and if I start
+running yep there you go look at all of
+these entities that were created all of
+these for a system for example over here
+the play shooting system this is the
+entity related to that system this can
+be really useful to sore some data that
+is directly related onto a system
+technically you can also store data
+directly on the system so over here you
+can store some Fields but in keeping
+with the data oriented design you should
+really store any system data directly on
+the system entity in order to access
+that entity for example when you go
+inside the entity manager when you do
+for example set component data on this
+one there is a version which takes an
+entity but then there's also one that
+takes a system handle so you do and go
+through the system state in order to get
+the system handle and just like that you
+can access the underlying for this
+system then something I mentioned a
+while ago are the native arrays those
+exist in the collections package so
+you've got native array you've got all
+kinds of those and you also have native
+list this one also exists like name
+implies these are arrays or lists as
+usual but they have native memory access
+meaning they are extremely fast they are
+burst compatible but you must be very
+careful to dispose them so for example
+if I create a native array of type int I
+can do this native array and then when
+constructing I give it some kind of size
+and some kind of allocator so let's say
+five and then allocator we've got all of
+these so if you want to persist you
+would create it for example over here on
+the syston create and then you would
+reuse it if you're using it in a job use
+some kind of temp job if something that
+you only need to process for pretty much
+just one frame use temp also importantly
+is if you use St then the system will
+basically automatically dispose of this
+array by itself however if you use the
+other ones so for example if I use the
+persistent one if I do this then this
+memory won't be allocated forever so if
+you were to do this and spawn one of
+these arrays directly over here inside
+an on update then basically you end up
+with a memory leak so if you work with
+Native arrays or native list or anything
+like that if you don't use temp then you
+need to make sure to call dispose then
+in terms of holding different sizes of
+data inside an entity for that you have
+Dynamic buffers these are basically
+arrays that you can hold as a component
+in an entity basically a component
+usually has a certain number of fields
+but with a dynamic buffer you can have
+something that increase or shrinks
+basically has any size so that's a bunch
+more things for you to be aware of and
+to research like I said dots is a
+massive thing but honestly I think the
+basics are really not that difficult to
+learn so I do hope that this video
+helped with that in learning the basics
+if you just learned those and you
+already have access to an extremely
+powerful tool and if you want to learn
+more then I highly recommend you look at
+the documentation it is really detailed
+and very well written there's a project
+on GitHub with a whole ton of samples it
+even includes a bunch of walkth through
+videos so if you want to continue
+learning more about dots I highly
+recommend you go through those basically
+that's what I did for my own research
+for these past few weeks if you found
+this video helpful and you're feeling
+generous and consider dropping a super
+thanks on the video or simply please hit
+the Subscribe and the like buttons it's
+a small thing but those really do help
+so thanks and like I mentioned in the
+beginning I'd love to do a do course I'm
+planning to do it after I finish my C
+course so do let me know in the comments
+if you would be interested in that and
+if so let me know what gen you'd like to
+see maybe a factory game or an RTS maybe
+Tower Defense third person shooter
+vampire survivors like there's really
+many things for which dots would be a
+great tool for so let me know in the
+comments and if you use Unity at all
+then check out my ultimate unity over
+course it features over 70 lectures each
+covering a different tool or feature of
+the engine including many of which you
+might not know about that might be super
+useful for whatever project you're
+currently working on okay so I really
+hope this video helped you get started
+with DOs thank you for watching and I'll
+see you next
+time and

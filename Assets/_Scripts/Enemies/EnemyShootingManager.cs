@@ -44,6 +44,8 @@ public class EnemyShootingManager : MonoBehaviour
     private bool shouldSkipNextShot = false;
     private float currentLoopDuration = 0f;
 
+    private List<EnemyBasicSetup> registeredEnemies = new List<EnemyBasicSetup>();
+
     private void Awake()
     {
         if (Instance == null)
@@ -232,6 +234,7 @@ public class EnemyShootingManager : MonoBehaviour
             ConditionalDebug.Log($"[EnemyShootingManager] Koreographer events in the last {LOG_INTERVAL} seconds: {koreographerEventCount}");
             ConditionalDebug.Log($"[EnemyShootingManager] Current registered StaticEnemyShooting count: {staticEnemyShootings.Count}");
             ConditionalDebug.Log($"[EnemyShootingManager] Current registered EnemyBasicAI count: {basicEnemies.Count}");
+            ConditionalDebug.Log($"[EnemyShootingManager] Current registered Enemies count: {registeredEnemies.Count}");
             lastLogTime = Time.time;
             koreographerEventCount = 0;
         }
@@ -380,10 +383,11 @@ public class EnemyShootingManager : MonoBehaviour
 
     private void CheckLineOfSightBatched()
     {
-        int enemyCount = basicEnemies.Count;
+        int enemyCount = registeredEnemies.Count;
         if (enemyCount == 0) return;
 
-        Transform playerTransform = GameObject.FindGameObjectWithTag("Player").transform;
+        Transform playerTransform = GameObject.FindGameObjectWithTag("Player")?.transform;
+        if (playerTransform == null) return;
 
         int batchSize = Mathf.Min(enemyCount, maxRaycastsPerJob);
         int batchCount = Mathf.CeilToInt((float)enemyCount / batchSize);
@@ -397,26 +401,48 @@ public class EnemyShootingManager : MonoBehaviour
             NativeArray<RaycastCommand> commands = new NativeArray<RaycastCommand>(currentBatchSize, Allocator.TempJob);
             NativeArray<RaycastHit> results = new NativeArray<RaycastHit>(currentBatchSize, Allocator.TempJob);
 
+            // Setup raycast commands
             for (int i = 0; i < currentBatchSize; i++)
             {
                 int enemyIndex = startIndex + i;
-                Vector3 origin = basicEnemies[enemyIndex].transform.position;
-                Vector3 direction = playerTransform.position - origin;
-                commands[i] = new RaycastCommand(origin, direction.normalized, direction.magnitude, obstacleLayerMask);
+                if (registeredEnemies[enemyIndex] != null && registeredEnemies[enemyIndex].gameObject.activeInHierarchy)
+                {
+                    Vector3 origin = registeredEnemies[enemyIndex].transform.position;
+                    Vector3 direction = playerTransform.position - origin;
+                    commands[i] = new RaycastCommand(origin, direction.normalized, direction.magnitude, obstacleLayerMask);
+                }
             }
 
+            // Schedule and complete the batch
             JobHandle handle = RaycastCommand.ScheduleBatch(commands, results, 1, default(JobHandle));
             handle.Complete();
 
+            // Process results
             for (int i = 0; i < currentBatchSize; i++)
             {
                 int enemyIndex = startIndex + i;
-                bool hasLineOfSight = !results[i].collider;
-                basicEnemies[enemyIndex].HandleLineOfSightResult(hasLineOfSight);
+                if (registeredEnemies[enemyIndex] != null && registeredEnemies[enemyIndex].gameObject.activeInHierarchy)
+                {
+                    bool hasLineOfSight = !results[i].collider;
+                    registeredEnemies[enemyIndex].HandleLineOfSightResult(hasLineOfSight);
+                }
             }
 
             commands.Dispose();
             results.Dispose();
         }
+    }
+
+    public void RegisterEnemy(EnemyBasicSetup enemy)
+    {
+        if (!registeredEnemies.Contains(enemy))
+        {
+            registeredEnemies.Add(enemy);
+        }
+    }
+
+    public void UnregisterEnemy(EnemyBasicSetup enemy)
+    {
+        registeredEnemies.Remove(enemy);
     }
 }

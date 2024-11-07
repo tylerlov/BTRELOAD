@@ -4,7 +4,7 @@ using UnityEngine.Rendering.PostProcessing;
 
 namespace MoreMountains.Feedbacks
 {
-	[AddComponentMenu("More Mountains/Springs/MMSpringMotionBlurShutterAngle")]
+	[AddComponentMenu("More Mountains/Springs/MM Spring Motion Blur Shutter Angle")]
 	public class MMSpringMotionBlurShutterAngle : MMSpringFloatComponent<PostProcessVolume>
 	{
 		protected MotionBlur _motionBlur;

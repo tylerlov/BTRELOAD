@@ -112,3 +112,10 @@ ModelImporter:
   userData: 
   assetBundleName: 
   assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 245758
+  packageName: os. Wireframe Shader | Wireframe Shading for URP
+  packageVersion: 1.0.3
+  assetPath: Assets/OccaSoftware/WireframeShader/DemoResources/Models/Rifle.fbx
+  uploadId: 570598

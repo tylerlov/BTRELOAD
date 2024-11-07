@@ -52,7 +52,7 @@ namespace MoreMountains.Tools
 	/// A class used to control a float in any other class, over time
 	/// To use it, simply drag a monobehaviour in its target field, pick a control mode (ping pong or random), and tweak the settings
 	/// </summary>
-	[AddComponentMenu("More Mountains/Tools/Property Controllers/FloatController")]
+	[AddComponentMenu("More Mountains/Tools/Property Controllers/Float Controller")]
 	[MMRequiresConstantRepaint]
 	public class FloatController : MMMonoBehaviour
 	{

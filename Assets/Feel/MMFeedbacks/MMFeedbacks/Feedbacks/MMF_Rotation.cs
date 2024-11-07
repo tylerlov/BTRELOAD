@@ -26,7 +26,7 @@ namespace MoreMountains.Feedbacks
 		public override Color FeedbackColor { get { return MMFeedbacksInspectorColors.TransformColor; } }
 		public override bool EvaluateRequiresSetup() { return (AnimateRotationTarget == null); }
 		public override string RequiredTargetText { get { return AnimateRotationTarget != null ? AnimateRotationTarget.name : "";  } }
-		public override string RequiresSetupText { get { return "This feedback requires that a AnimatePositionTarget and a Destination be set to be able to work properly. You can set one below."; } }
+		public override string RequiresSetupText { get { return "This feedback requires that you set an AnimateRotationTarget to be able to work properly. You can set one below."; } }
 		public override bool HasCustomInspectors { get { return true; } }
 		#endif
 		public override bool HasAutomatedTargetAcquisition => true;
@@ -64,24 +64,21 @@ namespace MoreMountains.Feedbacks
 		
 		/// how the x part of the rotation should animate over time, in degrees
 		[Tooltip("how the x part of the rotation should animate over time, in degrees")]
-		[MMFCondition("AnimateX")]
-		public MMTweenType AnimateRotationTweenX = new MMTweenType( new AnimationCurve(new Keyframe(0, 0), new Keyframe(0.3f, 1f), new Keyframe(1, 0)));
+		public MMTweenType AnimateRotationTweenX = new MMTweenType( new AnimationCurve(new Keyframe(0, 0), new Keyframe(0.3f, 1f), new Keyframe(1, 0)), "AnimateX");
 		/// if this is true, should animate the Y rotation
 		[Tooltip("if this is true, should animate the Y rotation")]
 		[MMFEnumCondition("Mode", (int)Modes.Absolute, (int)Modes.Additive)]
 		public bool AnimateY = true;
 		/// how the y part of the rotation should animate over time, in degrees
 		[Tooltip("how the y part of the rotation should animate over time, in degrees")]
-		[MMFCondition("AnimateY")]
-		public MMTweenType AnimateRotationTweenY = new MMTweenType( new AnimationCurve(new Keyframe(0, 0), new Keyframe(0.3f, 1f), new Keyframe(1, 0)));
+		public MMTweenType AnimateRotationTweenY = new MMTweenType( new AnimationCurve(new Keyframe(0, 0), new Keyframe(0.3f, 1f), new Keyframe(1, 0)), "AnimateY");
 		/// if this is true, should animate the Z rotation
 		[Tooltip("if this is true, should animate the Z rotation")]
 		[MMFEnumCondition("Mode", (int)Modes.Absolute, (int)Modes.Additive)]
 		public bool AnimateZ = true;
 		/// how the z part of the rotation should animate over time, in degrees
 		[Tooltip("how the z part of the rotation should animate over time, in degrees")]
-		[MMFCondition("AnimateZ")]
-		public MMTweenType AnimateRotationTweenZ = new MMTweenType( new AnimationCurve(new Keyframe(0, 0), new Keyframe(0.3f, 1f), new Keyframe(1, 0)));
+		public MMTweenType AnimateRotationTweenZ = new MMTweenType( new AnimationCurve(new Keyframe(0, 0), new Keyframe(0.3f, 1f), new Keyframe(1, 0)), "AnimateZ");
 		
 		
 		
@@ -103,8 +100,7 @@ namespace MoreMountains.Feedbacks
 		public Vector3 DestinationAngles = new Vector3(0f, 180f, 0f);
 		/// how the x part of the rotation should animate over time, in degrees
 		[Tooltip("how the x part of the rotation should animate over time, in degrees")]
-		[MMFEnumCondition("Mode", (int)Modes.ToDestination)]
-		public MMTweenType ToDestinationTween = new MMTweenType(MMTween.MMTweenCurve.EaseInQuintic);
+		public MMTweenType ToDestinationTween = new MMTweenType(MMTween.MMTweenCurve.EaseInQuintic, "", "Mode", (int)Modes.ToDestination);
 		
 		/// the duration of this feedback is the duration of the rotation
 		public override float FeedbackDuration { get { return ApplyTimeMultiplier(AnimateRotationDuration); } set { AnimateRotationDuration = value; } }
@@ -389,6 +385,15 @@ namespace MoreMountains.Feedbacks
 			MMFeedbacksHelpers.MigrateCurve(AnimateRotationY, AnimateRotationTweenY, Owner);
 			MMFeedbacksHelpers.MigrateCurve(AnimateRotationZ, AnimateRotationTweenZ, Owner);
 			MMFeedbacksHelpers.MigrateCurve(ToDestinationCurve, ToDestinationTween, Owner);
+			
+			if (string.IsNullOrEmpty(AnimateRotationTweenX.ConditionPropertyName))
+			{
+				AnimateRotationTweenX.ConditionPropertyName = "AnimateX";
+				AnimateRotationTweenY.ConditionPropertyName = "AnimateY";
+				AnimateRotationTweenZ.ConditionPropertyName = "AnimateZ";
+				ToDestinationTween.EnumConditionPropertyName = "Mode";
+				ToDestinationTween.EnumConditions[(int)Modes.ToDestination] = true;
+			}
 		}
 		
 		/// <summary>

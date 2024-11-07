@@ -1,0 +1,493 @@
+today we're going to have a look at a
+relatively new tool that unity's
+introduced called the memory profiler
+now this is a new feature it's not the
+same as the Legacy profiler that comes
+built in with every install of unity
+Unity actually has some pretty good
+videos that give a high level overview
+of what this tool can do but there
+aren't really any videos showing you how
+to use it to solve real problems so
+today we're going to create a real
+problem and then use this tool to
+highlight how you would identify that
+problem with the memory profiler on top
+of that we're going to write a little
+bit of code so that we can help into the
+API of the memory profiler and
+programmatically take memory snapshots
+at key points in our game so let's get
+right into
+it let's start by installing the package
+if we come into the package manager
+under Unity registry we can search for
+memory then we just click install and it
+just takes a couple seconds and we'll be
+up and running so the main benefit of
+this tool is that you don't need to have
+an in-depth knowledge of memory to be
+able to effectively optimize your app
+we'll take a snapshot here right away so
+that you can see just how easy it is but
+first let's take a look at some settings
+if I jump up into preferences under
+analysis memory profiler here you'll see
+we have just a few options the most
+important one probably is the first one
+is where are we going to actually save
+our snapshots so that you can find them
+on your file system later the rest of
+these settings are really cosmetic so
+let's move on to get our first snapshot
+uh so I've loaded up this Garden scene
+from the urp sample so I'm going to go
+into play mode here and and then come up
+to window and then under analysis I'm
+going to select memory profiler so
+that'll bring up a new window with this
+tool and there's a couple ways you could
+take snapshots the main one is this
+button right in the middle here capture
+new snapshot it's going to have to do a
+little bit of processing but then we'll
+suddenly have our snapshot appear on the
+left side here and we can select it and
+suddenly start seeing all kinds of
+information about this particular point
+in time here you can click on any one of
+these little things inside the main
+middle window there and then on the
+right side it's going to give you a
+breakdown on what this information
+actually means now as I mentioned before
+you don't have to be a memory expert to
+get something out of this information in
+fact if we scroll down a little bit
+you'll see top Unity object categories
+this is where you're going to find a lot
+of the things that you're going to be
+able to optimize to make your game have
+a smaller memory footprint you can click
+on the inspect button here or you can
+select Unity objects from the top Tab
+and you'll get an even more detailed
+breakdown of which things in your game
+are actually taking up the most memory
+here in this urp sample project we can
+see it's the textures we can even break
+it down by which Textures in particular
+so this way you'll be able to know what
+the big offenders are you can go back
+into your game optimize those things and
+then take another snapshot and see how
+well you're optimization performed now
+another great use of this tool is to be
+able to detect memory leaks so I want to
+build two things in code today the first
+one is just a little bit of code that'll
+simulate a memory leak but the other one
+is I don't want to be coming over to the
+memory profile Filer and clicking that
+button every time I want a snapshot so
+we're going to create a small service
+that will allow us to take snapshots
+programmatically at key points during
+our gameplay so I was thinking the best
+way to simulate a memory leak would be
+to create a class that just creates a
+static list of textures let's create a
+whole bunch let's say 300 we're going to
+put all the textures that we create into
+this static list now the static list of
+course isn't tied to any particular
+scene if I switch from one scene to
+another Unity is going to try to unload
+all the unused resources but of course
+our textures are still going to be
+referenced by this static list and
+they're not going to get unloaded this
+is a classic memory leak so I'll just
+add a little comment here saying what
+I'm doing and then maybe when we're done
+adding all the textures we can also
+debug something you know to the log just
+a little something that says we are
+finished creating all the textures and
+this is how many there were and then I
+can see writers prompting me to make
+this read only which might as well do
+that we're going to come back to this
+class in a moment and add some code to
+actually take a snapshot before we
+create all these textures so that we
+know what the memory footprint looked
+like before we had this massive memory
+leak so I mentioned we're going to swap
+scenes to test this out and make sure
+that uh all our textures are still in
+memory even in the other scene to do
+that let's make another class here I'm
+just going to call it scene loader we'll
+make it the simplest thing ever but
+first let's put it into its own file so
+that we can use it in unity scene loader
+doesn't need too much I've actually
+created two scenes already that are just
+empty in unity and the second one is
+called test scene so in the update
+method let's just wait for key press
+down key 1 and we will load the test
+scene so we're going to start from a
+basic example scene and we'll come over
+to the test scene after that if a single
+mode scene is loaded Unity calls
+resources. unload unused assets
+automatically so let's move on to
+actually build our memory snapshot
+service this will be the bulk of the
+code in today's video so I'm going to
+move this into its own file and we'll
+start working on it let's start up at
+the top with some dependencies we'll put
+in the usual suspect of course but I
+also want to add using unity. profiling
+and using unity. profiling. memory and
+one more I want unity. collections. ll.
+unsafe and that's because we're going to
+be using the native array data structure
+later on in this class I'll just
+collapse these up so they're not taking
+up so much room now I was thinking we
+could name our snapshots in the same
+format that Unity does so why don't we
+take a look at the snapshot we took
+earlier on the file system and see how
+that looks so you can see it just says
+memory profiler underscore and then it
+has a time stamp yeah now you don't have
+to stick with this format but it will
+show the snapshots in sequential order
+in the profiler so why don't we avoid
+magic strings and let's make some
+constants here for the folder name the
+prefix of each file the extension of the
+snapshot and the extension of the
+screenshot that we're going to take for
+each one beyond that we might as well
+cache the actual path to the folder
+we'll set that in a moment and we can
+also set the snapshot name and the
+screenshot name as soon as we've
+generated a timestamp for a particular
+SN snapshot so in the Constructor here
+let's get a reference to the entire
+project path and then we can derive from
+that where we're going to store our
+memory captures now it is possible that
+this is going to be the first capture
+put into that folder maybe the folder
+doesn't exist let's check that if the
+folder doesn't exist yet let's create it
+okay great we're ready to take some
+snapshots so let's come down a little
+bit and create a new public method that
+we'll just call take snapshot as soon as
+we call this method let's capture a Tim
+stamp that we can use from here here we
+have a good idea now what we're going to
+name our two files so we can say the
+snapshot path is going to be the memory
+path and then we'll combine the prefix
+time stamp and the extension together
+and we can do a similar thing for our
+screenshot so now we're into the heart
+of it memory profiler also has a public
+method take snapshot and what we're
+doing here is we're wrapping that method
+so that we can pass in parameters and
+callbacks to it the first argument here
+of course is the full path to where we
+want to save that snapshot then we have
+two callback methods the first one is
+what do we want to have done when the
+snapshot is finished the second one is
+optional and that is going to be what do
+we want to do if we've captured a
+screenshot the only thing I'll say about
+this is that capturing the screenshot is
+a little bit more resource than TSO so
+if you want it to run faster just forget
+about that it's just a convenience so
+that you can see thumbnails in the
+memory profiler so you can call it with
+just these two arguments me personally I
+prefer to see the thumbnails there so
+I'm going to leave it in so let's start
+with the first call back it's actually
+really straightforward you don't have to
+do anything special but it does send you
+back a little bit of information that
+you could do something with if you
+wanted to so the main one is going to
+tell you if it was successful or not
+with this result argument let's just use
+that argument to say whether we were
+successful or not and that's really all
+we have to do that you know Unity is
+going to take care of saving that file
+for you it's done the screenshot capture
+is a little bit more complex so let's
+work on that next this call back
+actually takes three arguments let's def
+find it right up here so the first one
+or the first two are just like the other
+one we get the path and the result but
+it also comes with this debug screen
+capture data structure so like our other
+callback we can do something with the
+result which will be we're going to want
+to save this screen capture to the file
+system we'll make another method for
+that if it failed let's put out an error
+message just like we did with the other
+callback let's come up here just a
+little bit and we'll Define the
+signature for the save screenshot method
+but before we fill it out I want to go
+and take a closer look at this debug
+screen capture data structure it
+references a native array which is this
+raw image data reference let's have a
+look so this is a struct that's defined
+in the unity. profiling namespace and at
+the top of the class here you can see
+this property is a native array of type
+bite and this is what we're going to get
+our actual screenshot data out of so
+let's come back into our class and make
+use of that if we come down here to a
+new new line I want to take that native
+array and turn it into a managed array
+so that we can actually use it in the
+broader scope of c.net features let's
+handle all of that in a new separate
+static method so here we'll just accept
+the native bite array and let's declare
+a new bite array that's the same size as
+the native array so here I'm going to be
+using the unsafe keyword and what this
+does is allows for the use of pointer
+types and operations so that we can
+directly read and poten also write
+directly to memory in order to use the
+unsafe keyword in a Unity project we
+actually have to turn it on in settings
+let's jump back to Unity if we come up
+into project settings under player and
+you scroll all the way to the very
+bottom here there's a few checkboxes
+near the end and from the second one
+here it says allow unsafe code just make
+sure that's checked on next I'm going to
+introduce the fixed statement so the
+fixed statement prevents the garbage
+collector from relocating a movable
+variable the garbage collector won't
+move the variable that the destination
+pointer points to so the address will
+remain valid within the scope of this
+particular statement now we can use the
+buffer. memory copy method to actually
+get all the bytes from the Native array
+copy them into the destination array and
+then at the end we can just return our
+managed array it now has the same
+information as the native array okay now
+that the hard part is done let's finish
+up our save screenshot method first
+let's create a new texture 2D that's
+going to hold this new representation of
+our screenshot then we can use the load
+raw texture data method to accept that
+image data from our new managed array
+and we'll just load all that information
+onto the texture and then of course we
+need to call the apply method on that
+texture as well so now we've got a
+texture that's representing our
+screenshot let's encode that to PNG so
+that's going to go into a new array of
+bytes and with this we can actually
+write this to the screenshot path when
+we're finished with the screenshot
+texture let's just immediately destroy
+it okay there we go we've got a service
+that will take memory snapshots for us
+now we actually need to make a few
+adjustments to the other scripts just to
+make sure that they're actually taking
+screenshots at the appropriate times so
+on our memory leak simulator where I
+left that comment let's just make sure
+that we're actually taking a snapshot
+there now you probably want to pass the
+memory snapshot in as a dependency or
+cach it somehow but this is just for the
+demo so we'll do it like this and now
+when I load the test scene I also want
+to take a snapshot as soon as that scene
+is finished loading everything's loaded
+up and start methods are starting to get
+called on different monob behaviors so
+let's create a new one for this all this
+one does is in the start method takes a
+snapshot and we'll be able to put that
+on a component in our second scene let's
+move this off into its own file and I
+have just one more thing to do if I come
+back to my service I made one mistake
+here the path that is being sent into
+our save screenshot method is actually a
+path to the memory Snapshot not the
+screenshot so let's take that path
+change the extension on it so that it
+becomes our screenshot path and then I
+need to replace that variable here so
+it's using the correct path for saving
+the screenshot and actually if I come up
+to the top of the class we don't need to
+cach the reference to that screenshot
+path anymore we're just deriving it from
+the one that's passed in so clean that
+up a little bit now we're ready to go
+and do a little demo so I'm going to put
+away this Garden scene and I'm going to
+actually open up one of the first test
+scene that I made that's really just an
+empty scene so I actually called it
+empty scene let's open that up and
+there's nothing in here except the
+camera and the directional light but
+I'll create an empty object and I just
+call it test so this needs our memory
+leak and it also needs our scene loader
+so let's start with the memory leak here
+it's called memory leak simulator so
+that'll create our 300 textures and then
+I need the scene loader that'll actually
+flip over to the other scene so that's
+great let's find the test scene and jump
+over to there and just need to save this
+quickly and then we'll open this up so
+this one will need a snapshot on start
+I'll just give it a simple name here
+start snapshot and we just have to add
+that component to it okay as soon as
+that's finished all we really have to do
+is press play and that'll get our first
+well it'll load up all our textures for
+us and then it will take our first
+screenshot so come back to the empty
+scene and press play
+we should see some messages pretty
+quickly in the console sure enough it
+saved the snapshot then it immediately
+created the 300 textures and then we can
+see the message about saving our
+screenshot so obviously these two call
+back methods aren't necessarily
+immediate but you can see they did get
+called and did do their work now if I
+change scenes by pressing the one key
+and come over to the test scene sure
+enough right away it saves a snapshot
+and saves a corresponding screenshot for
+it now let's jump over to the memory
+profiler and have a look at what we've
+actually captured so I've selected
+compare snapshots in the top left corner
+and if I click on the first one it'll
+load it into the first section and I can
+click on the other one and that'll load
+it as the one to compare with in the
+second section so once these are both
+loaded up now you can see we've got some
+side by side data of everything and if
+you look at the purple area right in the
+middle of the screen this according to
+the legend represents all of our
+graphics and of course in our second
+screenshot after we introduce the memory
+leak it's a lot bigger now all of your
+memory leaks might not look this obvious
+but uh they definitely will show up and
+if we come over to Unity objects you'll
+see they're ranked by size difference
+and texture 2D is right at the top of
+the list now we didn't give any of these
+textures names so they're listed as no
+name but you can see there are basically
+300 now if you look in the columns here
+you'll see that in scene a there were
+three textures to begin with then we
+created a whole bunch more and somehow
+got rid of one to only have 302 in the
+second scene so you can see they all
+have IDs and whatnot that's not super
+helpful to you but the fact that you can
+see these objects potentially even by
+name if we had named the textures then
+uh you would be able to find them quite
+easily in this list and determine what
+it is exactly that's causing the problem
+so in this list you're not just going to
+see texture 2DS you're going to see game
+objects transforms mono behaviors uh
+render textures just about anything
+that's going to be created by you in
+your game and you'll be able to say okay
+clearly this huge orange bar here or on
+the first screen that massive purple
+section means something is going
+sideways and I need to figure it out now
+another thing you can do with the code
+that we just wrote is you can hook it up
+to our improved timer system that we
+made a few videos ago so that you can
+actually have a snapshot captured every
+say 5 minutes every 10 minutes as you're
+playing that way if you're playing
+through a level you be able to have
+these snapshots that very clearly show
+the difference between one point and
+another and these diff views that you
+see here in the memory profiler they're
+only going to show you the objects that
+have changed between point a and point B
+so you're not going to see every single
+thing when you're doing a comparison
+it'll really narrow it down for you and
+you'll really be able to isolate what's
+changed between these two points and how
+can I optimize things better or how can
+I fix a problem that is happening
+another really good idea is to always
+take a snapshot at the beginning of any
+sort of level change or maybe you're
+coming out of your main menu into your
+gameplay scene take a snapshot so that
+you have a baseline going forward you
+can compare anything so even if you're
+manually taking snapshots through the
+memory profiler interface you'll still
+have that Baseline snapshot that you can
+compare to any questions about the
+memory profiler or about the Legacy
+profiler which we'll cover in a future
+video please leave in a comment below
+we're definitely going to cover more
+optimizations and profiling in future
+videos so if you don't want to miss that
+hit the Subscribe button hit the like
+button and I'll see you in the next one

@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace MoreMountains.Feedbacks
 {
-	[AddComponentMenu("More Mountains/Springs/MMSpringLightRange")]
+	[AddComponentMenu("More Mountains/Springs/MM Spring Light Range")]
 	public class MMSpringLightRange : MMSpringFloatComponent<Light>
 	{
 		public override float TargetFloat

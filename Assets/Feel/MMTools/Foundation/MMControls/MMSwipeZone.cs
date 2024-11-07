@@ -66,7 +66,7 @@ namespace MoreMountains.Tools
 	/// Add a swipe manager to your scene, and it'll trigger MMSwipeEvents everytime a swipe happens. From its inspector you can determine the minimal length of a swipe. Shorter swipes will be ignored
 	/// </summary>
 	[RequireComponent(typeof(RectTransform))]
-	[AddComponentMenu("More Mountains/Tools/Controls/MMSwipeZone")]
+	[AddComponentMenu("More Mountains/Tools/Controls/MM Swipe Zone")]
 	public class MMSwipeZone : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IPointerExitHandler, IPointerEnterHandler
 	{
 		/// the minimal length of a swipe

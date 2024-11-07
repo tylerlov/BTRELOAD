@@ -4,7 +4,7 @@ using TMPro;
 
 namespace MoreMountains.Feedbacks
 {
-	[AddComponentMenu("More Mountains/Springs/MMSpringTMPLineSpacing")]
+	[AddComponentMenu("More Mountains/Springs/MM Spring TMP Line Spacing")]
 	public class MMSpringTMPLineSpacing : MMSpringFloatComponent<TMP_Text>
 	{
 		public override float TargetFloat

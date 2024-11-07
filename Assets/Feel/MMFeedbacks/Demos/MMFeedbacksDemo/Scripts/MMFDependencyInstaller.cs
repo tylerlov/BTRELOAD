@@ -22,7 +22,6 @@ namespace MoreMountains.Feedbacks
 		private static string[] _packages = new string[] 
 		{"com.unity.cinemachine", 
 			"com.unity.postprocessing", 
-			"com.unity.textmeshpro",
 			"com.unity.2d.animation"
 		};
 

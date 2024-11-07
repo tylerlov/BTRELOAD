@@ -65,8 +65,7 @@ namespace MoreMountains.Feedbacks
 		[MMFInspectorGroup("Level", true, 30)]
 		/// the curve to tween the intensity on
 		[Tooltip("the curve to tween the intensity on")]
-		[MMFEnumCondition("Mode", (int)Modes.OverTime, (int)Modes.ToDestination)]
-		public MMTweenType LevelCurve = new MMTweenType(new AnimationCurve(new Keyframe(0, 0), new Keyframe(0.3f, 1f), new Keyframe(1, 0)));
+		public MMTweenType LevelCurve = new MMTweenType(new AnimationCurve(new Keyframe(0, 0), new Keyframe(0.3f, 1f), new Keyframe(1, 0)), "", "Mode", (int)Modes.OverTime, (int)Modes.ToDestination);
 		/// the value to remap the intensity curve's 0 to
 		[Tooltip("the value to remap the intensity curve's 0 to")]
 		[MMFEnumCondition("Mode", (int)Modes.OverTime)]
@@ -139,7 +138,8 @@ namespace MoreMountains.Feedbacks
 			switch (Mode)
 			{
 				case Modes.Instant:
-					Target.SetLevel(InstantLevel);
+					float newLevel = NormalPlayDirection ? InstantLevel : _initialIntensity;
+					Target.SetLevel(newLevel);
 					break;
 				case Modes.OverTime:
 					if (!AllowAdditivePlays && (_coroutine != null))
@@ -288,6 +288,20 @@ namespace MoreMountains.Feedbacks
 			}
 			
 			Target.SetLevel(_initialIntensity);
+		}
+		
+		/// <summary>
+		/// On Validate, we init our curves conditions if needed
+		/// </summary>
+		public override void OnValidate()
+		{
+			base.OnValidate();
+			if (string.IsNullOrEmpty(LevelCurve.EnumConditionPropertyName))
+			{
+				LevelCurve.EnumConditionPropertyName = "Mode";
+				LevelCurve.EnumConditions[(int)Modes.OverTime] = true;
+				LevelCurve.EnumConditions[(int)Modes.ToDestination] = true;
+			}
 		}
 	}
 }

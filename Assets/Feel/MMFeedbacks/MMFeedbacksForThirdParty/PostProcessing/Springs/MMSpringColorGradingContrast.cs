@@ -4,7 +4,7 @@ using UnityEngine.Rendering.PostProcessing;
 
 namespace MoreMountains.Feedbacks
 {
-	[AddComponentMenu("More Mountains/Springs/MMSpringColorGradingContrast")]
+	[AddComponentMenu("More Mountains/Springs/MM Spring Color Grading Contrast")]
 	public class MMSpringColorGradingContrast : MMSpringFloatComponent<PostProcessVolume>
 	{
 		protected ColorGrading _colorGrading;

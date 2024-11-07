@@ -52,18 +52,27 @@ public class ProjectilePool : MonoBehaviour
     private static readonly int OpacityProperty = Shader.PropertyToID("_Opacity");
     private static readonly int TimeOffsetProperty = Shader.PropertyToID("_TimeOffset");
 
+    private Transform projectileContainer; // Add this field
+
     private void Awake()
     {
         if (Instance == null)
         {
             Instance = this;
             DontDestroyOnLoad(gameObject);
-            StartCoroutine(InitializePoolGradually());
+            CreateProjectileContainer(); // Add this line
         }
         else
         {
             Destroy(gameObject);
         }
+    }
+
+    private void CreateProjectileContainer()
+    {
+        // Create main projectile container
+        projectileContainer = new GameObject("Projectiles_Container").transform;
+        projectileContainer.SetParent(transform);
     }
 
     private IEnumerator InitializePoolGradually()
@@ -133,7 +142,7 @@ public class ProjectilePool : MonoBehaviour
             return null;
         }
 
-        ProjectileStateBased newProjectile = Instantiate(projectilePrefab, transform);
+        ProjectileStateBased newProjectile = Instantiate(projectilePrefab, projectileContainer); // Parent to container
         
         // Set shared material before initialization
         var renderer = newProjectile.GetComponent<Renderer>();
@@ -143,7 +152,6 @@ public class ProjectilePool : MonoBehaviour
         }
         
         newProjectile.InitializeProjectile();
-        
         newProjectile.gameObject.SetActive(false);
         
         if (initializeTimeline)
@@ -276,30 +284,30 @@ public class ProjectilePool : MonoBehaviour
         // Ensure it's inactive
         projectile.gameObject.SetActive(false);
         
-        // Set parent back to pool
-        projectile.transform.SetParent(transform);
+        // Set parent back to pool container
+        projectile.transform.SetParent(projectileContainer);
         
         // Return to pool if not already in it
         if (!projectilePool.Contains(projectile))
         {
             projectilePool.Enqueue(projectile);
-            ConditionalDebug.Log($"Returned projectile to pool. Pool size: {projectilePool.Count}");
         }
     }
 
     public void ClearPool()
     {
-        while (projectilePool.Count > 0)
+        // Clear all projectiles in container
+        if (projectileContainer != null)
         {
-            var projectile = projectilePool.Dequeue();
-            if (projectile != null)
+            foreach (Transform child in projectileContainer)
             {
-                Destroy(projectile.gameObject);
+                Destroy(child.gameObject);
             }
         }
+
+        projectilePool.Clear();
         totalProjectilesCreated = 0;
         projectileRequestQueue.Clear();
-        ConditionalDebug.Log("Pool cleared");
     }
 
     public void CheckAndReplenishPool()

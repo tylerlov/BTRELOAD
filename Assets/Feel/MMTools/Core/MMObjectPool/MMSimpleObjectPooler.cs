@@ -8,7 +8,7 @@ namespace MoreMountains.Tools
 	/// <summary>
 	/// A simple object pool outputting a single type of objects
 	/// </summary>
-	[AddComponentMenu("More Mountains/Tools/Object Pool/MMSimpleObjectPooler")]
+	[AddComponentMenu("More Mountains/Tools/Object Pool/MM Simple Object Pooler")]
 	public class MMSimpleObjectPooler : MMObjectPooler 
 	{
 		/// the game object we'll instantiate 

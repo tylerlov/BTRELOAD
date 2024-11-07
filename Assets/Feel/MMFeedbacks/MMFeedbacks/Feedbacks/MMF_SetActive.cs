@@ -26,6 +26,10 @@ namespace MoreMountains.Feedbacks
 		{
 			get
 			{
+				if (ExtraTargetGameObjects == null)
+				{
+					return "";
+				}
 				if (ExtraTargetGameObjects.Count > 0)
 				{
 					return " (+"+ExtraTargetGameObjects.Count+")";
@@ -47,7 +51,7 @@ namespace MoreMountains.Feedbacks
 		public GameObject TargetGameObject;
 		/// a list of extra gameobjects we want to change the active state of
 		[Tooltip("a list of extra gameobjects we want to change the active state of")]
-		public List<GameObject> ExtraTargetGameObjects;
+		public List<GameObject> ExtraTargetGameObjects = new List<GameObject>();
         
 		[MMFInspectorGroup("States", true, 14)]
 		/// whether or not we should alter the state of the target object on init
@@ -109,12 +113,15 @@ namespace MoreMountains.Feedbacks
 			if (Active && (TargetGameObject != null))
 			{
 				_initialState = TargetGameObject.activeInHierarchy;
-				
-				for (int i = 0; i < ExtraTargetGameObjects.Count; i++)
-				{
-					_initialStates.Add(ExtraTargetGameObjects[i].activeInHierarchy);
-				}
 
+				if (ExtraTargetGameObjects != null)
+				{
+					for (int i = 0; i < ExtraTargetGameObjects.Count; i++)
+					{
+						_initialStates.Add(ExtraTargetGameObjects[i].activeInHierarchy);
+					}	
+				}
+				
 				if (SetStateOnInit)
 				{
 					SetStatus(StateOnInit);

@@ -1,0 +1,1428 @@
+hi so recently there's been a lot of
+talk about clean code and optimization
+uh going on on Twitter and a few people
+asked me if I could do this presentation
+again I did it at a private conference
+so not a lot of people have seen it
+um and yeah the basic idea is to talk a
+bit about practical optimization of code
+and um
+what this talk isn't about is the normal
+sort of optimization stuff you see a lot
+of talks I see about optimization
+they're about looking at the assembly
+simply instructions you know
+reordering or refactoring math and using
+intrinsics and how the compiler is going
+to compile your code or what the chip
+architecture is and how to to write for
+that architecture and then if you get
+into sort of data oriented design talks
+it's a lot about structure alignment and
+and caches and uh and this even though
+I'm going to be talking in the context
+of unity for a lot of this it really
+does apply to any game engine to any
+program
+and it's not about squeezing you know
+this 10 gain out of an inner loop
+routine what this talk is really about
+is that none of this really matters
+until you do this one crazy trick uh and
+with this you can get 90 of gain for
+about 10 of the work and uh what I'm
+gonna do here is walk you through some
+synthetic examples uh but then actually
+show how those apply in real world
+examples of code I've worked on and
+hopefully what this will do is distill
+it down to some simple advice and
+approaches and some awareness of some
+things that you should look for when
+you're writing code and essentially what
+it all really boils down to is how you
+access memory and its access patterns
+um so there's been a big movement over
+the last few years about data oriented
+design uh I'm a big fan of this stuff it
+can be taken too far like anything but
+understanding it is very very useful and
+the essential sort of uh summary of this
+is a coding in schools is taught wrong
+we're taught object orientism and
+structures which really work against
+code being fast
+and that memory is really slow to access
+computation is actually fast that you
+know you can compute hundreds of things
+in the time it takes to fetch a piece of
+memory that's not in the cache and the
+basic
+thing you want to do is always access
+memory in linear order and you know
+don't load what you don't need
+which is very easy to do
+and right for processing many things not
+just one thing at a time
+and from this you get that array is your
+kind of your one and only data structure
+and you'll find yourself favoring arrays
+over other data structures
+when in those more traditional approach
+would say to use something more complex
+so one of the best examples I heard of
+this I heard many many years ago I think
+it was somebody from Ed who said it who
+said you know don't
+um don't write a rocket class write a
+rocket manager and uh so if you think
+about like a rocket you know this is a
+simplified example but it would have
+some position and velocity and you know
+you'd have some update loot that comes
+along and says great let's add our
+velocity to our position multiplied by
+however long it's been and that will
+move the rocket forward
+uh but in in practice if you want you
+know lots of rockets in your game you're
+doing a bullet hell shooter or something
+like that you really don't want to do
+stuff that way what you really want to
+do is treat everything like a particle
+system and so in this case we have a
+rocket manager
+um it has a list or vector positions and
+uh another array of velocities and you
+know depending on what language you're
+in
+um this could be any sort of continuous
+memory structure uh in this case I've
+coded it where I know I'm never gonna
+have more than a thousand of them and
+I'm using uh c-sharp arrays you could do
+this with a c-sharp list so you can
+extend the length of it and stuff uh it
+would cost you a little bit of
+performance but if you want to sort of
+know less about your data that can be
+worth it
+um and then the main thing here is that
+when we actually do that update loop
+we're just going through this local list
+instead of every rocket in the game
+updating themselves we're just blasting
+through this nice continuous memory of
+the positions and velocities and we are
+um uh you know adding that supposed to
+be times time I've got I've got to add
+that in there
+um
+uh so yeah that's the basic difference
+that we're talking about it's not a huge
+change uh and again there's uh multiple
+ways you could do this
+um so let's take an actual example and
+I'm going to profile it uh this is a
+synthetic example
+um we'll get into some real ones in a
+minute uh but this is a monster class
+and in this what we have is we have a
+monster has health and stamina and if
+they have health or in this case stamina
+then uh and it's less than the max
+stamina they're going to regenerate some
+of that uh health and stamina and so
+object-orientism might say hey don't re
+you know don't write this out like this
+let's just have a regen stat class and
+you could do that and uh and then maybe
+you refactor that into you know
+something where it gets more and more
+complex uh but your problems are just
+going to grow more and more as you do
+that and so in this uh we have an update
+Loop so this thing is going to update
+itself every frame uh Unity calls an
+update on any object that has that
+function and we're just going to
+increment uh health and stamina if we
+have to and make sure it doesn't get
+greater than the max amount
+pretty simple pretty straightforward you
+see this type of unity code all the time
+so
+problem when I look at code like this is
+It's you're kind of unsure of what's
+mutable and what isn't I like stats and
+things to be in their own place uh
+because I know they're not going to
+change versus or rather the parameters
+of kind of like Max health and
+regenerate and then
+um uh I want the actual mutable State
+that's changing all the time uh to be
+the only thing I'm I'm working with on
+every one of these objects and so we've
+got configuration State and mutable
+State kind of mixed up here and then of
+course we have unity's we're using the
+Uni's framework for updating and so to
+time this I just said great let's have
+200 000 of these and run it and what you
+get is 27 milliseconds of
+um of frosting time to to do this on 200
+000. now in most games you're not gonna
+have 200 000 uh you know monsters but
+it's a useful thing to see the the
+timings
+um
+so uh let's just change this a little
+bit let's get out of the unity framework
+uh because anytime you have a program
+has a framework it almost is always
+going to have some kind of overhead cost
+for that framework and so instead of
+actually just having every uh Monster uh
+handle its own pole we can just
+basically give uh make a monster class
+and give it a poll function and then we
+can have a monster manager that's just
+going to go through that list of the
+monster classes and essentially
+um call poll on them and just doing that
+takes us down to six milliseconds which
+is four and a half times faster for not
+having the framework overhead of the
+update Loop so what this really points
+to is you know if you have some frame
+rate I mean some framework that's doing
+things like handling polling and things
+for that you might want to try just
+owning your data and uh and calling your
+own functions on it instead of using
+that framework in this case we're using
+it to get called once instead of 200 000
+times and it makes us four and a half
+times faster
+so
+um let's fix up that memory layout a
+little bit and instead of actually
+um having that be a separate component
+that's sitting on an object somewhere
+we're just going to make a structure
+instead and we're going to leave the
+exact same stuff in it so we haven't
+changed really anything we've just
+changed the class from a class to a
+struct and made it not a lot of behavior
+sitting on some object somewhere and uh
+so we need to be able to access that so
+instead now what we have is an array of
+monster datas that's 200 000 long and
+we'll see this takes us down gets us
+about three and a half times faster uh
+just doing that and so we're at 1.7
+milliseconds now from 27 milliseconds
+okay and the code if you'll notice the
+only real difference here is that we
+have a struct instead of a class and
+that we are allocating all of that in a
+nice uh linear array of those structures
+and we have a manager class it's just
+calling update on them instead so we
+really haven't introduced new code
+complexity or you know even that many
+lines of code and yet we're already
+16 times faster
+so why is this
+um well it has to do with the way a CPU
+attempts to read memory when you say hey
+go get me this memory it will assume
+that you need the memory right after it
+it also
+um will go ahead and grab certain chunk
+sizes so when you are grabbing a list of
+classes what it's kind of like you can
+think of it as like if you were went to
+Hollywood and you got the map of the
+stars and then you drove to one Star's
+house and then drove to the other Star's
+house right they might be scattered all
+over town you don't you know you you get
+in the car you look at the map you
+decide which one you're going to drive
+to and then you spend 20 minutes driving
+over there in LA traffic right
+um that's kind of like the the class
+model here but when you have an array of
+struct or an array of any data uh the
+the CPU instead of getting the list of
+where everyone lives it's actually
+getting the actual data instead and so
+it's kind of like if you had all the
+stars lined up in row houses and could
+just walk from one door to the other
+right so much much faster you're not
+dealing with a lot of traffic in 20
+minutes of you know or two hours or
+whatever it turns out to be
+um
+so that's kind of the difference between
+having classes spread out all over the
+place and then having data which is
+localized in an array much much faster
+to Traverse
+so where we are right now we're about 16
+times faster
+um I would argue that this code is
+easier to maintain and deal with because
+it owns and knows about the data it's
+working with uh there's not a thing of
+like well how many monsters do I have in
+the game right now they're all
+centralized I don't have to have find
+all T functions that you know uh who
+knows what they do what they cost Patrol
+the whole scene and find all these
+things
+um you know I do have to do some of my
+own bookkeeping when adding and removing
+but it's all fairly straightforward
+stuff and uh what this actually does is
+open us up to even more possibilities
+for optimization and so let's go there
+uh Unity has a thing called jobs uh with
+a system called burst for compiling the
+code faster and unreal has a system like
+this called mass and most modern game
+engines are going to have some kind of
+job system at this point
+um so whatever you're working in uh and
+whether you're working in raw C or you
+know c-sharp code in an application you
+probably have some way to thread code uh
+and the thing with threading code is
+that if you have these really complex
+Tangled data structures it's much harder
+to gather all that data and move it over
+to another core
+and so when you have everything in these
+nice array of structs or structures of
+arrays just plain old data that you can
+zip through and it's you know all in one
+spot it's very easy to thread it
+so in unity's case we switch this to
+what's called native array which is uh
+just what their job system uses and uh
+we get rid of that update from the
+structure and we so we just have the
+structure itself and then what we have
+is this ijob parallel four
+um which basically I'm going to run on a
+thousand of these entities at a time in
+each job and so if we have 200 000 of
+them we're going to make
+um you know 200
+um jobs and we're going to wait for them
+to complete now in in a real case I
+could continue doing more stuff on the
+main thread while this was going on uh
+so a lot of times this actual cost we're
+at now is going to get completely masked
+by the fact that we're still able to do
+other stuff
+um and in this case this takes the 200
+000 entities down to 0.25 milliseconds
+from our original 27 milliseconds right
+so we're orders of magnitude faster at
+this point
+um you know the date the the code does
+look a little bit different at this
+point you have to understand the job
+system a little bit but it's really like
+the actual function here is just our
+execute function is the equivalent of
+our update and that we're using this
+different array type and that we have to
+pass in Delta time so it knows uh time
+and then we kind of launch this job and
+uh and force it to complete right away
+in this case but normally we'd wait for
+that to complete and uh and do other
+things while we're doing that
+um so that's just taking the exact thing
+that we have and converting it over uh
+to a threaded system uh with the burst
+compiler which also helps uh burst knows
+a lot about the data structures and can
+write more optimal C plus code from your
+c-sharp code that's a very Unity
+specific thing
+um
+so you know originally I talked about
+this configuration State versus
+immutable state so let's actually uh
+make a design change here in our
+original uh version all 200 000 monsters
+could have different regeneration States
+different Max Health uh I suspect that
+in most cases this isn't really useful
+and that you're going to have
+um you know all
+whatever the monster type is has the
+same basic config stats so let's pretend
+that that's the case and just see what
+it does to our code and so now we don't
+really need a monster data class we can
+just have a native array of floats for
+health and one for for stamina and uh we
+can set that config State on the job so
+it knows uh you know here's the max
+health and stuff and we don't have to
+um uh you know store that and access and
+load that memory for every uh everything
+that's going on we only need to access
+that one float per thing so what that
+does is means we can get a lot more back
+from the cash and we'll see that this
+just about doubles uh the speed of these
+uh operations again and we get down to
+0.13 milliseconds which is really fast
+right
+so all we've done here really is we've
+uh
+organized our memory in a way that we
+know how it's allocated and control it
+and we've removed some framework
+overhead by just doing the polling
+ourselves and just that gave us a 16x
+speed up but because that made it so
+easy to jobify now we ended up with 108
+times speed up without changing the dot
+uh the design it all and a 216 times
+speed up if we have that one little
+design change and decide that we don't
+want every monster to have its own Max
+health and regeneration rate
+so uh yeah so let's let's take those
+ideas and apply them to real world code
+okay and I'm going to be less in the
+code and more top level in this but uh I
+think it'll give you a good idea so I
+worked on Kerbal Space Program uh two
+and they had a planet rendering system
+it's based on a
+something common technique called a quad
+sphere uh renderer
+um
+and the basic idea is like if you have a
+a planet and you've got to be able to go
+all the way down to the ground and then
+you need to be able to come out all into
+space you need to be able to handle
+levels of detail so that you're not
+suffering from tiny little triangles and
+millions and millions of triangles and
+uh when I got this I don't know what
+state it is is a great talk on Kerbal uh
+one and how they built the planet
+renderer for that game uh it may have
+gone through some changes uh since then
+um but this was the code as it was
+dropped to me and uh what I've noticed
+right away uh was these large hitches
+when you were crossing detail boundaries
+and it would have to recompute and these
+would get worse if you were flying
+really fast right and then had to
+compute more levels of detail
+um
+and they were generating uh basically
+for each of these little uh quads that
+were generating a game object and a mesh
+for it
+um and then
+the way they had structured it was kind
+of in the unity way where you have a
+component on every game object that has
+its state on it much like the monster
+data was originally in the in my example
+and uh it would tessellate up to about I
+think it was about 16 meters per
+triangle at its highest resolution and
+they wanted to get a lot higher than
+that
+um and you know had ideas for features
+and all kinds of stuff and the way that
+this was optimized was by breaking the
+work up over frames so when you if you
+suddenly teleported to the other side of
+the planet what would happen is is that
+you'd see this upresing where it's low
+res and then it would get a little
+higher and a little higher and a little
+higher so you'd see like 13 or 14 frames
+of it constructing the planet
+um and that was kind of how they had
+optimized it I don't consider that
+optimization because it's not it's just
+spreading the work around okay
+um so the basic algorithm for Quad serve
+renderer is pretty simple you figure out
+the desired detail level you need for
+each quad based on where the camera is
+and then if uh if you need it higher
+then you split that quad into four of
+them and if it's lower it's it's uh just
+replace four of them with one of them
+and there's some stuff about edges but
+you know it's not important here and in
+this case because the amortization they
+basically uh never computed more than
+one level change at a time uh but they
+also you never jump more than one detail
+level uh in a distance so you get this
+kind of gradual Fade Out of uh of the
+quads
+and then essentially what what this code
+did and again this may have been
+modified from the first one is that it
+would go through each vertex in the mesh
+and then it would pass it to a processor
+or you know a list of processors
+essentially and they would modify that
+vert and so you could have like you know
+height map look up and noise and all
+kinds of stuff and uh first of all uh
+just inverting the way this works would
+have been a massive savings and so you
+know whoever wrote this code really
+didn't understand that calling virtual
+functions has a significant cost and uh
+just reversing this would
+um would maybe prevent the ear of Mike
+Acton's side eye here
+um so what you really want to do if you
+were really going to do do it this way
+uh is you want to grab the the list of
+verts and then have each process process
+the whole list because that's going to
+be a nice array in linear memory instead
+of calling a virtual function for every
+single vertex right I think the vertex
+count on a quad was a couple hundred
+vertices and so that that just knocks
+out hundreds of virtual function calls
+right there
+um so uh what I did to to fix this is
+first of all I removed a bunch of the
+amortization right I got rid of all of
+those optimizations so I could really
+see what I was dealing with and uh I
+removed the limit that it could only
+adjust I wanted it to adjust all on the
+frame to what it needed to be without
+sort of this gradual upresing right and
+uh what I got on sort of a not even a
+really stress case but like a a general
+moving around was about 1800
+milliseconds per frame when it crossed a
+boundary and had to adjust the detail
+levels
+um which is really really slow
+um so
+uh the first thing I did was fix the
+data structures and again this is
+exactly what we did in the monster
+example so I got rid of the components
+on every game object I still had game
+objects to hold the meshes and get
+rendered at this point
+but I moved all the data into the
+mutable parts of the data anyway into a
+structure
+um that was just allocated at a max
+number of quads in a nice linear array
+it might have been a class instead of a
+structure I'm not going to get into the
+difference there and and why sometimes
+one is fine and not the other
+um but uh but I basically took it off
+all the components and made sure I had
+it in nice linear memory to access and
+um yeah and I'd still create the game
+object to mesh for now and then I took
+out that vertex processing virtual
+function uh it turned out the artists
+were just interested in using a bunch of
+height map operators on a ton of very
+high res height maps and so I just wrote
+that as a single function that would get
+called and it would get past a list of
+vertices and and run that function and
+so at this point I haven't threaded it
+or anything like that it's 300
+milliseconds it's already significantly
+faster than it was just by changing a
+little bit of data and this is really
+only when Crossing and it's like the
+word like not the worst case at this
+point because once you're up in a two
+second delay it's not worth worrying
+about whether you're in the worst case
+anymore
+your case is terrible
+um and so on the second pass of this we
+wanted to make it faster but we also
+wanted to up the detail level and I
+think on this stage it was about two
+meters per triangle so significantly
+higher res and uh I moved the mesh
+construction to Jobs first so that we
+could do it all in parallel and the
+worst case in this when this was done
+ended up being around 10 to 30
+milliseconds uh and so you know at this
+point in a normal game session it's
+actually it's actually fine but there's
+so much stuff going on in a large game
+that taking up 10 milliseconds even
+seems like a it's a lot because you
+still have to render you still have to
+do physics and all the other stuff going
+on so I definitely wanted to get that on
+lower and so kind of in a third pass
+what we did is I took the LOD
+calculations I made them all uh into
+jobs bursts so that they could be done
+in parallel which saves some time
+and then I moved all that geometry
+construction uh to compute Shader
+actually that was a co-worker of mine
+who did a lot of that work but once you
+have things in jobs and bursts it's
+really not that hard to move them to a
+computer and we increase the detail
+level some more and we added a decal
+system so that you could like stamp on
+local geometry and move it around uh
+which is very useful
+um and at this point the construction of
+the actual geometry is stateless from
+frame to frame we're not reusing
+geometry each frame we're actually fully
+constructing the geometry every frame
+from scratch right we're not generating
+the new pieces we need and trying to use
+the old one we're just boom just
+generate it all every frame and there
+can be no caching errors or bugs from
+the fact that it's using the wrong piece
+or or whatever it just goes from the
+beginning and uh what this does is now
+it's taking about half a millisecond on
+the CPU and about a millisecond on the
+GPU to do all the work and by the way
+this was on essentially a um uh when I
+was doing these timings it was on a a
+Macbook essentially
+um excuse me one second my alarm keeps
+going off
+um
+so yeah so we're at a point now where
+the detail levels are probably I think
+16 times higher uh we're not getting
+this kind of janky you know
+upresing of the world and popping stuff
+going on uh we've got more features in
+the system uh it does exactly what the
+artists need and uh we've still seen it
+it's 1800 times faster than the old
+system was uh in its worst case scenario
+and it's about half the code of the old
+case uh so much easier to maintain with
+less code the code is simple we know
+where the data is it's not scattered all
+over the place it's not a bunch of
+virtual you know function calls that you
+have to go figure out what actually they
+do on random objects it's a very simple
+to read system and why we did that we
+also um or actually Leonard did this he
+uh compacted all the mesh uh the little
+meshes into one mesh so now we just get
+a single draw call for the whole planet
+and we don't have this giant game object
+transform hierarchy for all those render
+objects and stuff because we're just
+drawing
+one mesh
+um
+and so I just want to reiterate
+reiterate that this was basically the
+same stuff that we did for the monster
+example except we moved some stuff to
+compute uh to be done on the GPU and um
+and there's a lot more details in in all
+of this stuff I mean I'm just trying to
+get a get the point across about uh just
+fixing your data structures and
+understanding the code that you write
+and what it's really doing right so I
+worked on a game called march to work uh
+I did a whole presentation at unite in
+2017 you can search for Walking Dead
+unite 2017 to find it Earl's there
+um that talk is like a ton of like low
+end optimization tricks and and kind of
+old coder uh hacks from you know older
+times uh because we had to get this to
+work on a low end mobile device which
+was an opengl 2.0 device at the time
+um and so this was a thing where we had
+massive cities built out of lots of
+little Parts
+um it was a streaming world we wanted
+full post processing running even on the
+low end uh mobile phones that we were
+working on and it shipped in unity 5.6
+and to do this we ended up building a
+lot of our own uh systems for things
+like we had this randomizing prefab
+system that was nested and uh we used
+this basically to generate all our
+levels and then stored in a custom
+format and so if we just saved our data
+in the scene format it turned out to be
+41 megabytes for one of those blocks the
+blocks I'm talking about are these
+blocks we had a ton of these in game I
+think there was a grid of 64 by 32 of
+them
+um so 41 Megs times that many blocks
+it's a lot of data uh 41k that's way
+better
+um
+so uh a prefab for some reason was half
+the size of the scene I'm not sure
+exactly why I didn't bother to look uh
+but we wrote Our Own serialization model
+and essentially we called it a pack
+transform and it was 64 bits in total uh
+basically because we didn't need all the
+rotational axes we didn't need all the
+non-linear scale and stuff so we
+basically just packed that down into the
+Precision level that we needed and
+stored it as this object is drawn in all
+these positions which just happens to be
+how you want to draw things on a graphic
+card anyway so that all kinds of works
+works out and massive reduces download
+size for streaming
+um but we did this kind of packing with
+everything the navigation map for the AI
+so we needed AI groups to basically not
+only a star their way to places through
+these structures but have local
+avoidance of both the objects uh that
+were in the level and also of each other
+other
+so
+um because we packed this down into
+essentially a bit field at a low
+resolution
+it ends up being half a k and so when
+you're writing code that needs to do uh
+lots of memory operations like
+raycasting through something
+um if you have that memory is is all
+packed really tight then it doesn't need
+to go uh and grab more of that data from
+some cached uh memory in some cache
+somewhere or from disk you know uh so
+0.5 kilobytes half a k will fit in the
+cache on pretty much anything and so all
+that data once it's there and doing its
+lookups like the lookups become really
+really cheap because it's just right
+there as soon as the processor uh has to
+get memory that's not in its immediate
+cache it's much much slower and there's
+like different levels of memory and they
+get slower and slower the slower being
+the network right and you know then the
+disk then uh the the ram then these
+little caches the different processors
+have different Arrangements of so just
+squeezing that data down makes the code
+run faster
+um
+and I did this on everything so this is
+a height map we use to do camera
+avoidance and we build a nice spline
+path and you might think well okay doing
+a nice blind path over everything must
+be computationally expensive
+I mean not really because as long as I
+can fetch the memory for the data I need
+it's really really quick and so
+um you know again computation is fast
+fetching memory is slow and so by
+packing these things down into the
+smallest memory possible we're uh pretty
+much guaranteed that things will run
+fast even on a really low end mobile
+device
+um another example player bases uh and
+then like because all this data around
+um our game is being packed so tightly
+we can afford to do more with it and so
+for fun we wanted birds in the level and
+I do a whole flocking system for the
+birds flying through the level and they
+fly through that height mass that I had
+earlier so they're flying through this
+kind of low res
+version of the level up high and uh and
+then because our trans we can pack these
+transforms down really small and when we
+just need a position we're just using
+three uh shorts essentially so we had
+all these bird Landing spots which is
+what you see here these little yellow
+balls on things they wouldn't render to
+the user but that's how we place them
+and we just place them in the prefabs
+and they just showed up all over the
+level and then Birds could seek for one
+of those spots and and land on it
+because again all the data they're
+working with is Tiny so if you you know
+go through a list of birds to update
+their positions and then they go through
+this little bit mask here to figure out
+where they can fly and et cetera then it
+all just goes really fast and uh you
+know again I'm not even I did some
+classical optimizations here like not
+using unity's math library and writing
+my own because the the old math library
+in unity was really really bad the new
+one's fine
+um it's pretty good uh so you know there
+were some classical optimizations but
+for the most part it's really about
+memory
+and how you access it so to summarize uh
+packing your data down for your systems
+like this it not only makes it easier to
+stream to users makes your app smaller
+uh you know makes you take less memory
+and stuff like that but really it's
+about making it fast to work with and
+writing custom systems that only do what
+you need right can massively help your
+performance and you can write simple
+code because it only has to do what it
+needs not some future thing that it
+might need one day you know like all of
+that kind of stuff is slow and so
+um this is how you get you know massive
+numbers of zombies and birds and
+buildings and you know we were drawing
+ten thousand objects on a frame uh
+because it was all simple and customized
+and used small data
+um
+so I do a lot of assets for the asset
+store if you're on this channel you
+probably already know that uh but one of
+them is microsplat it's a train Shader
+and train shaders
+um can be very expensive and there's all
+kinds of tricks that different engines
+use to get around this expense now uni
+strain system is pretty old I think they
+coded it in 1871 or 90 no 1897. yeah it
+was it was around the you know before
+the Model T had come out
+um it's a very basic terrain system and
+um
+uh and so when I looked at other shaders
+and why they were so slow uh because uh
+somebody had asked me to do that
+um I realized they're all a natural
+extension of the unity Shader and so the
+way the unity Shader works is that if
+you have 16 textures on a on a Terrain
+or um what it'll do is it'll sample four
+control Maps which can which are
+basically just weight maps with rgba uh
+mapping to how much each texture is used
+so if you have 16 textures you have four
+control Maps
+um and then it would sample all those
+textures all 16 of them uh and then
+their their Albedo they're normal their
+mask map whatever you know actual
+textures they were and uh and after it
+does all that it Blends it all together
+and so if you just add like triplanar
+texturing to that uh and you do the
+Brute Force thing you're going to end up
+with 148 samples because triplaner has
+to sample from the side the top and the
+front right
+and another comment really
+is distance resampling which is just
+resampling everything at a certain
+distance uh at uh with a a different UV
+scale so that you can still see the rock
+details and it doesn't just turn to a
+color
+um that doubles the number of samples
+and so if you have those two features on
+you're looking at 292 texture samples
+um per pixel which is a brutal amount of
+memory lookup
+um so stepping back on this if you
+really look at a Terrain most of the
+time most of the areas of the train are
+only using like one to three textures
+you know if it's blending between areas
+or something but it's like generally
+it's like grass or grass with some dirt
+in it stuff like that and uh and so why
+are we sampling all 16 of these right
+so the first optimization was just just
+let's just stop doing that let's just
+pick a number and uh um so what I do is
+I get the weights from those backing
+textures I sort them so I know which
+ones are the most important and I just
+get rid of the other ones I just say
+this four weights I'm going to sample
+because
+quite frankly you can't see more than
+four anyway and especially if you're
+doing height blending and things like
+that where one texture tends to dominate
+so I'm just going to only sample uh four
+of these textures texture sets ever and
+so what that does if we compare is a
+traditional technique with triplanar and
+distance resampling on is 288 samples
+and mine would be 52. so we've seen a
+massive Savings in memory bandwidth from
+just kind of looking at our scene
+reasoning about it and figuring out how
+to not do wasted work right
+and so that leaves us space for more
+features that we can add so
+um you know not just more speed
+optimization is a feature it's giving
+you the ability to have other features
+so why stop there though there's other
+things we're not noticing here and
+shaders can do Dynamic flow control
+which is basically branching if
+statements
+um and everybody everything you read
+online is like never do an if statement
+in Shader they are wrong if statements
+are wonderful things you just have to
+understand a little bit about them and
+how a GPU process is to understand how
+to do them and I have a blog post on all
+of that
+um so first what I'm going to do is just
+Branch by the Splat weight if it turns
+out there's only one texture set being
+used because it's a big plane of grass
+why am I sampling the other three right
+or the other 16 if I wasn't doing uh my
+first kind of cut pass
+and then I just go down the feature
+stack okay do I need all three triplanar
+angles I have a thing called statistics
+stochastic texture clustering that's
+technically you know requires three
+samples of a texture and it kind of
+breaks up tiling maybe I can branch on
+that or distance free sampling and so I
+just went through my various feature
+stacks and things and basically uh put
+that in and I wrote visualization so I
+could see what was going on and so if
+you have a render like this of a train
+um what you actually see is the darker
+areas are where we don't where we have
+less textures so all the dark areas were
+basically only sampling one texture and
+uh all the
+um you know lighter areas are where
+we're sampling more of them
+so recall by this four we're all uh by
+this uh first we're also culling all
+future things like triplanar and stuff
+so it that's like the first big savings
+and if we look at triplanar most of the
+time it's only going to be what's facing
+up or it's going to be the two side
+textures you'll notice that uh we see
+the two side textures all along here but
+you'll see these little spots where it's
+lighter that's where you actually needed
+all three textures so you rarely ever
+need all three textures
+and turns out stochastic is the same
+thing in the blend area you need uh more
+samples than everywhere else you don't
+and so by analyzing this we can figure
+out kind of how we should set up our
+branching it also means that higher
+contrast Blends and things get you more
+speed uh because they call better
+and distance resampling of course you
+don't need it up close so
+um you you call all of that in the near
+field which is where the textures are
+higher res right you're going to be
+sampling like the
+2048 textures there instead of like the
+maps that are 64 by 64. so we actually
+save a ton by not doing it up close
+um
+and yeah so if we go back and compare
+our Brute Force 16 texture terrain with
+uh in this case it's going to be the the
+basic texturing triplanar stochastic and
+distance resampling right which are all
+great features for making your train
+look good it would be 864 samples plus
+four for the original control Maps
+that's an insane amount of samples with
+the culling that I originally did and
+the dynamic branching I visualize how
+many samples it actually takes and you
+can see here it's on that same scene
+you're getting between 14 and 52 samples
+per pixel so that's a four X increase
+from the the from not having the dynamic
+branching from just doing the call down
+to four and I haven't timed it against
+um you know doing it the brute force
+method at all but radically faster to go
+to 52 samples per pixel from 864.
+um
+so
+really a big thing I want to point out
+here is that optimization is a design
+time thing you know there's this sort of
+oh wait till the end wait till you see
+what needs the optimization and I think
+that's true of algorithmic optimizations
+of like moving things to simdi or like
+getting really Nitty Gritty but you can
+design your code in such a way that you
+can get massive speed UPS
+without even like
+doing much in terms of just
+understanding hey don't put the virtual
+on the inside of the loop don't you know
+uh don't just go and randomly spew
+memory everywhere for things like just
+keep it organized keep your data
+organized think top down about your data
+so you your class knows what it's
+working with and uh you'll see massive
+speed UPS to your your code and that's
+not making your code less maintainable
+or uglier uh it's just thinking about
+your data right
+um
+and performance when you get performance
+software is a feature like uh you know
+people are talking about how like a text
+editor is slow
+um which is ridiculous in this day and
+age you know
+um and
+uh Meanwhile we're drawing these like
+massive worlds and the only way we do
+that is by having performant code and if
+we have performing code that means we
+can add more features we can have the
+little birds that land we can have
+storms you know hundreds of little
+zombies on our map that we couldn't have
+before and uh and and all fit within the
+same budget we did before
+um so your games get better when you
+write performance code performing code
+and really what I should be saying is is
+that you want to write optimizable code
+right like if you're
+data structures are terrible and it's
+just your processor is just sitting
+there waiting all the time for the data
+and so it doesn't matter if you go in
+and make this routine a little faster or
+like you know try to do something smart
+where it doesn't do it every frame like
+none of that stuff matters until you fix
+your data structures and once you do fix
+those data structures it makes it really
+easy to thread things and do all kinds
+of wonderful things for performance and
+you know you might not even need to do a
+lot of those things because you reach
+the point where you're like well you
+know what I got so much other stuff to
+work on I can make this 40 times faster
+but we don't call it enough so who cares
+right I just make sure my code is in a
+state that if I need to thread it if I
+need to make it run faster I need to
+really get in with the profiler and like
+tweak every little thing of it I can do
+that if I want because it's in the right
+structure that that those optimizations
+can actually count instead of having to
+go back you know like the process of
+taking a very large entrenched
+object-oriented system and fixing it is
+way slower than just writing the code
+the good way the first time
+um and you know you can
+write that the good way without having
+to like spend hours in in the profiler
+or make your code ugly I don't buy any
+of those arguments
+um you know you can still use Virtual
+functions you can still use like
+inheritance and uh and interfaces and
+and sort of object-oriented things to
+help structure your code you just put
+them in the right space you don't stick
+them in the Inner Loop you know you you
+realize you're paying a cost for that
+flexibility of adding the thing later
+that you might need and there are places
+where that's perfectly acceptable but
+whenever you're writing anything that
+might need to go fast or you know you
+might not need to add to in the future
+like I think that the assumption that
+all code should be extensible as a first
+basis is is is harmful because it sends
+us down this idea of making everything
+in a way that is incredibly slow uh and
+uh and just ends up with you know the
+the
+text editing software that can't keep up
+with your typing I mean that's just
+absurd for the machines that we have
+today
+so I want to tell One More Story
+um another optimization technique which
+is probably the greatest of them all if
+you can do it and uh I'm going to take
+you back to when I was working on Rock
+Band for the Wii and the PS2
+um
+well really we're working on Rock Band
+for the next gen consoles and
+you know I'd ask over and over are we
+going to do this thing for PlayStation 2
+we've got a lot of people with Hardware
+like we should consider it and over and
+over and over I was told no no no we're
+not we're just next-gen console
+and then our publisher came to us and
+basically had a chart of the Mountain of
+money that we would make if we could
+ship by Christmas and I think at this
+point
+we were you know maybe July
+uh so the idea of taking a next-gen or
+what was next gen at the time
+game and back porting it to the
+PlayStation 2 and to the Wii by
+Christmas was kind of insane and so what
+happened is is that we all got in a room
+and everybody was talking and they were
+like well what if we cut out the
+Character Creator and we just had
+you know three characters what if we cut
+out the stages that we just had one
+stage okay and I basically just said why
+don't we if we're going to cut all that
+stuff out
+then why don't we just record the 360
+version to video and put the live track
+over it because all of that stuff you're
+talking about cut cutting is all about
+customization so that you can you know
+customize your avatar and customize the
+choose which background you're running
+in and if we manage to even with a
+reduced scope get all that working it's
+going to look Far West worse than the
+video and they kind of like looked at me
+like I had three heads for about a week
+because they just thought no we can't
+get away with that it'll never work and
+and then came back and realized it was
+the only way to make it work by
+Christmas and so that's what we actually
+did and uh you know that made millions
+of dollars for the company
+um by basically just considering a
+radically different option and uh and
+figuring out how we could still deliver
+a compelling experience but without the
+presumptions of how we had to do it
+um and I'm often amazed you know I've
+been doing this for a long time but I'm
+not the greatest coder like people are
+always like you're a Shader wizard I'm
+like not the greatest at any of these
+things uh what I tend to have is a an
+overview of things that allows me to
+find different options uh to get what I
+want done and to meet the goals without
+doing as much of the work my math is not
+great for instance and I often find
+solutions to hard math problems another
+way and I often walk in and uh like at
+work I'd walk in and see you know some
+programmer that I was friends with who
+was absolutely brilliant could code
+circles around me and understood math
+and physics and things in a way that I
+don't and they would be taking you know
+trying to solve some really hard problem
+and I would just be like why don't we
+just do this instead and you know
+a lot of times it was like oh crap okay
+great we don't have to do this work so
+if you can get out of it uh that's
+that's like the best so in conclusion
+um anytime you use a framework or build
+a framework realize that it has overhead
+it's in you know any of these kind of
+like extensible Frameworks are going to
+add a lot of overhead so you want to
+think about them as link points and you
+want to reduce the amount that you use
+them if you need your code to go fast
+right
+um and in the case of this example it's
+unity's update Loop
+but you'll find this with almost any
+framework if something's going to do
+something hundreds and hundreds of times
+try to get it out of the framework the
+same thing is true of like unity's old
+math Library if you called math F dot
+ABS on something and you pass it a float
+it's going to convert that float to a
+double and then it's going to pass it to
+C which will then
+ABS it that it's going to cast it back
+to a double or if maybe it does it
+already in in double space but it's
+going to pass it back to the c-sharp
+framework and then
+um uh it will cast that back to a float
+and return you the absolute value right
+that's a ridiculous amount of framework
+overhead and round tripping for a very
+simple operation so
+um so I'm always suspicious of
+Frameworks even libraries math libraries
+things like that I want to know what
+they do and get a sense for them because
+oftentimes getting rid of that is a big
+win
+or at least minimizing it if you if you
+need to use it
+um so when you write systems you know a
+lot of times you really just want to
+write exactly what you want it's you
+know people get into this whole thing
+about extensibility and what if a
+customer needs to add you know a new
+type of shape or whatever you know a lot
+of times it never gets used uh it's only
+used internally by the same programmer
+who wrote it so you know if you're going
+to do things like that make sure that
+the binding is something very large that
+won't get called a thousand times uh and
+make sure that
+um you know you you aren't just better
+off modifying the code the only time you
+really need an extensible system is when
+you don't have access to the code
+yourself
+um you know you're you can if you have
+at full access to the code you just go
+modify the code
+um
+uh packing data I often see people think
+about this as like memory savings and
+memory saving is great but modern
+consoles have like eight gigs of RAM on
+them you don't really need to save
+memory but what you do need to save is
+bandwidth bandwidth of the processor
+dealing with this memory uh bandwidth of
+loading and unloading this memory and
+bandwidth of streaming this memory
+uh so you really want to pack for
+bandwidth
+um uh when anything is going to be used
+uh a lot of times in a frame
+um and then write your data to access
+memory linearly
+um don't go door to door I mean go to
+door-to-door not you know across the
+whole town looking for your data and if
+you want to really understand that
+better you can read up on some data
+oriented design stuff about classes and
+structures and then array of structure
+versus array of class uh the the short
+thing on array of structure versus array
+of class is you don't want really large
+structures of data to work with because
+chances are operations might only be
+using a little bit of it so sometimes
+you want to have a structure which has a
+bunch of arrays in it so you can just
+grab the data that you need to access
+and work with it
+um
+and uh yeah don't that's basically don't
+don't make it so that when you load that
+structure or class you're loading up all
+kinds of stuff you're not using you just
+want to work with what your transform is
+doing uh programming is about
+transforming data right so your
+transform should only load the data it
+needs and only work with the data it
+needs and that'll make it go faster and
+if you can do it all linearly and stuff
+and I generally look at complex
+solutions for things and abstractions as
+a code smell there's always times where
+they're useful and abstraction and uh
+you know interfaces and things like that
+can be really wonderful for modularizing
+things and things like that but they are
+a code smell and you should really
+um you know think about uh those
+connection points and which ones you
+need versus which ones are just
+introducing a lot of hidden performance
+problems so
+um and that's all because CPUs are fast
+memory is plentiful but it's slow uh if
+you especially if you access it out of
+order and
+um yeah organize it accessing an order
+packet
+and minimal data per transform and
+always do these optimizations before you
+get into threading and amortization if
+you just take a bunch of code and
+you run it on multiple processors all
+you're doing is spreading around
+you're not improving your code you're
+not optimizing it you're just
+making more bad code run on more
+processors
+um
+and do you really have to do the hard
+thing
+um you know is it performant enough is
+there a way out of this particular thing
+you're trying to do and so think about
+this as a design time problem right of
+how do I make my systems so that they
+are performant and uh and not as a hey
+I've found a performance problem and now
+I'm going to restructure all the data in
+the world because uh a lot of times what
+I see in programs is that they're just
+written in a style that is
+fundamentally non-performing and
+They Don't Really gain much from it they
+mostly just lose and nowadays the losses
+we're looking at are they're not 2x
+slower they're not 5x slower they're a
+thousand times slower so you know uh
+just get in the habit you know I had a
+music teacher who told me
+I was playing a piece and she
+um yelled at me because I was just
+playing the piece and she's like what
+are you doing and I'm like I'm playing
+the piece for you and she's like nope
+you're practicing mediocrity right she
+was like you were practicing playing it
+without
+all the passion and the feeling and the
+notes that you need and so you're
+practicing how to be mediocre and I
+think when you code you should think
+about the things you want that code to
+do whether it's whether it's to be
+optimal whether it's to to generate a
+feel in a game uh whether it's to be
+um you know uh functionally important in
+whichever aspect you choose right
+whether that's
+um you know speed or or uh code beauty
+or whatever whatever your your um your
+problem space you're solving is
+and you should really try to get in the
+habit of always writing uh to that level
+of excellence and so I don't even when
+I'm scratching out
+basic code I just reach for a raise I
+don't read reach for dictionaries unless
+I know it's worth the convenience you
+know what I mean and I get used to
+indexing things like every Graphics
+programmer is just used to indexing
+things into arrays and like you know
+even if you have like instead of having
+a multi-dimensional array you'll just
+have a single array with a little you
+know X Plus y times length thing in
+there uh to basically like convert the
+the index into the right index a
+multi-darray index into our single array
+you know it's just you get into in
+habits of these things and then it's all
+easy and it and everything works out and
+is fast so yeah that's the point of my
+talk
+um you know I uh I don't believe there
+is any one way to design everything
+um and I think that's important in all
+these conversations about optimizations
+and uh before people nitpick there's a
+lot of glancing over stuff and this one
+the point is to give you
+a basic overview of how you should think
+about writing optimal code and or code
+that can be optimized and run fast so
+hope you enjoyed it hope it's useful and
+uh yeah thanks

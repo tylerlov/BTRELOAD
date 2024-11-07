@@ -56,8 +56,7 @@ namespace MoreMountains.Feedbacks
 		public float InstantFill = 1f;
 		/// the curve to use when interpolating towards the destination fill
 		[Tooltip("the curve to use when interpolating towards the destination fill")]
-		[MMFEnumCondition("Mode", (int)Modes.OverTime, (int)Modes.ToDestination)]
-		public MMTweenType Curve = new MMTweenType(MMTween.MMTweenCurve.EaseInCubic);
+		public MMTweenType Curve = new MMTweenType(MMTween.MMTweenCurve.EaseInCubic, "", "Mode", (int)Modes.OverTime, (int)Modes.ToDestination);
 		/// the value to which the curve's 0 should be remapped
 		[Tooltip("the value to which the curve's 0 should be remapped")]
 		[MMFEnumCondition("Mode", (int)Modes.OverTime)]
@@ -79,7 +78,18 @@ namespace MoreMountains.Feedbacks
 
 		protected Coroutine _coroutine;
 		protected float _initialFill;
+		protected float _initialInstantFill;
 		protected bool _initialState;
+		
+		protected override void CustomInitialization(MMF_Player owner)
+		{
+			base.CustomInitialization(owner);
+
+			if (Active)
+			{
+				_initialInstantFill = BoundImage.fillAmount;
+			}
+		}
 
 		/// <summary>
 		/// On Play we turn our Image on and start an over time coroutine if needed
@@ -99,7 +109,7 @@ namespace MoreMountains.Feedbacks
 			switch (Mode)
 			{
 				case Modes.Instant:
-					BoundImage.fillAmount = InstantFill;
+					BoundImage.fillAmount = NormalPlayDirection ? InstantFill : _initialInstantFill;
 					break;
 				case Modes.OverTime:
 					if (!AllowAdditivePlays && (_coroutine != null))
@@ -209,6 +219,20 @@ namespace MoreMountains.Feedbacks
 			
 			Turn(_initialState);
 			BoundImage.fillAmount = _initialFill;
+		}
+		
+		/// <summary>
+		/// On Validate, we init our curves conditions if needed
+		/// </summary>
+		public override void OnValidate()
+		{
+			base.OnValidate();
+			if (string.IsNullOrEmpty(Curve.EnumConditionPropertyName))
+			{
+				Curve.EnumConditionPropertyName = "Mode";
+				Curve.EnumConditions[(int)Modes.OverTime] = true;
+				Curve.EnumConditions[(int)Modes.ToDestination] = true;
+			}
 		}
 	}
 }

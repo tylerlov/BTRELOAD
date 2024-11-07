@@ -4,7 +4,7 @@ using UnityEngine.Rendering.PostProcessing;
 
 namespace MoreMountains.Feedbacks
 {
-	[AddComponentMenu("More Mountains/Springs/MMSpringChromaticAberrationIntensity")]
+	[AddComponentMenu("More Mountains/Springs/MM Spring Chromatic Aberration Intensity")]
 	public class MMSpringChromaticAberrationIntensity : MMSpringFloatComponent<PostProcessVolume>
 	{
 		protected ChromaticAberration _chromaticAberration;

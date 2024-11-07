@@ -10,7 +10,7 @@ namespace MoreMountains.Feedbacks
 	/// Add this to a light 2D to have it receive MMLightShakeEvents from feedbacks or to shake it locally
 	/// </summary>
 	#if MM_URP
-	[AddComponentMenu("More Mountains/Feedbacks/Shakers/Lights/MMLight2DShaker_URP")]
+	[AddComponentMenu("More Mountains/Feedbacks/Shakers/Lights/MM Light 2DShaker URP")]
 	[RequireComponent(typeof(Light2D))]
 	#endif
 	public class MMLight2DShaker_URP : MMShaker

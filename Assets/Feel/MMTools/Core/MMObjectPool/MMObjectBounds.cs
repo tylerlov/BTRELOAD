@@ -3,7 +3,7 @@ using System;
 
 namespace MoreMountains.Tools
 {
-	[AddComponentMenu("More Mountains/Tools/Object Bounds/MMObjectBounds")]
+	[AddComponentMenu("More Mountains/Tools/Object Bounds/MM Object Bounds")]
 	public class MMObjectBounds : MonoBehaviour
 	{
 		public enum WaysToDetermineBounds { Collider, Collider2D, Renderer, Undefined }

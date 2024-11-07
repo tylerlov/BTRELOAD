@@ -72,6 +72,7 @@ namespace MoreMountains.FeedbacksForThirdParty
 
 		protected Coroutine _coroutine;
 		protected Color _initialColor;
+		protected Color _initialInstantColor;
 
 		/// <summary>
 		/// On init we turn the Image off if needed
@@ -82,6 +83,7 @@ namespace MoreMountains.FeedbacksForThirdParty
 			base.CustomInitialization(owner);
 
 			HandleApplyInitialColors();
+			_initialInstantColor = GetInitialColor();
 		}
 
 		protected virtual void HandleApplyInitialColors()
@@ -142,7 +144,14 @@ namespace MoreMountains.FeedbacksForThirdParty
 				case Modes.Instant:
 					if (ModifyColor)
 					{
-						ApplyColor(InstantColor);
+						if (NormalPlayDirection)
+						{
+							ApplyColor(InstantColor);
+						}
+						else
+						{
+							ApplyColor(_initialInstantColor);
+						}
 					}
 					break;
 				case Modes.OverTime:

@@ -5,7 +5,7 @@ using UnityEngine.Rendering.Universal;
 
 namespace MoreMountains.Feedbacks
 {
-	[AddComponentMenu("More Mountains/Springs/MMSpringBloomIntensity_URP")]
+	[AddComponentMenu("More Mountains/Springs/MM Spring Bloom Intensity URP")]
 	public class MMSpringBloomIntensity_URP : MMSpringFloatComponent<Volume>
 	{
 		protected Bloom _bloom;

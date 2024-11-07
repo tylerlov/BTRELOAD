@@ -91,7 +91,7 @@ namespace MoreMountains.Feedbacks
 				}
 			#endif
 			
-			MMCameraShaker camShaker = (MMCameraShaker)Object.FindObjectOfType(typeof(MMCameraShaker));
+			MMCameraShaker camShaker = (MMCameraShaker)Object.FindAnyObjectByType(typeof(MMCameraShaker));
 			if (camShaker != null)
 			{
 				return;

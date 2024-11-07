@@ -8,7 +8,7 @@ namespace MoreMountains.Tools
 	/// Adds this class to a UnityStandardAssets.ImageEffects.GlobalFog to change its color
 	/// Why this is not native, I don't know.
 	/// </summary>
-	[AddComponentMenu("More Mountains/Tools/Particles/MMChangeFogColor")]
+	[AddComponentMenu("More Mountains/Tools/Particles/MM Change Fog Color")]
 	public class MMChangeFogColor : MonoBehaviour 
 	{
 		/// Adds this class to a UnityStandardAssets.ImageEffects.GlobalFog to change its color

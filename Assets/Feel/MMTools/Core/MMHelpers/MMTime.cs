@@ -8,7 +8,7 @@ namespace MoreMountains.Tools
 	/// Time helpers
 	/// </summary>
 
-	public class MMTime : MonoBehaviour 
+	public class MMTime  
 	{
 		/// <summary>
 		/// Turns a float (expressed in seconds) into a string displaying hours, minutes, seconds and hundredths optionnally

@@ -14,7 +14,7 @@ namespace MoreMountains.Tools
 	/// </summary>
 	[RequireComponent(typeof(Rect))]
 	[RequireComponent(typeof(CanvasGroup))]
-	[AddComponentMenu("More Mountains/Tools/Controls/MMTouchButton")]
+	[AddComponentMenu("More Mountains/Tools/Controls/MM Touch Button")]
 	public class MMTouchButton : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IPointerExitHandler, IPointerEnterHandler, ISubmitHandler
 	{
 		[Header("Interaction")] 
@@ -115,6 +115,10 @@ namespace MoreMountains.Tools
 		/// If you set this to true, you'll need to actually press the button for it to be triggered, otherwise a simple hover will trigger it (better for touch input).
 		[Tooltip("If you set this to true, you'll need to actually press the button for it to be triggered, otherwise a simple hover will trigger it (better for touch input).")]
 		public bool MouseMode = false;
+
+		public bool PreventLeftClick = false;
+		public bool PreventMiddleClick = true;
+		public bool PreventRightClick = true;
 
 		public virtual bool ReturnToInitialSpriteAutomatically { get; set; }
 
@@ -274,6 +278,32 @@ namespace MoreMountains.Tools
 		{
 			ButtonStateChange?.Invoke(newState, data);
 		}
+
+		/// <summary>
+		/// Checks whether or not the specified click is allowed, if in mouse mode
+		/// </summary>
+		/// <param name="data"></param>
+		/// <returns></returns>
+		protected virtual bool AllowedClick(PointerEventData data)
+		{
+			if (!MouseMode)
+			{
+				return true;
+			}
+			if (PreventLeftClick && data.button == PointerEventData.InputButton.Left)
+			{
+				return false;
+			}
+			if (PreventMiddleClick && data.button == PointerEventData.InputButton.Middle)
+			{
+				return false;
+			}
+			if (PreventRightClick && data.button == PointerEventData.InputButton.Right)
+			{
+				return false;
+			}
+			return true;
+		}
 			
 		/// <summary>
 		/// Triggers the bound pointer down action
@@ -281,6 +311,11 @@ namespace MoreMountains.Tools
 		public virtual void OnPointerDown(PointerEventData data)
 		{
 			if (!Interactable)
+			{
+				return;
+			}
+
+			if (!AllowedClick(data))
 			{
 				return;
 			}
@@ -324,6 +359,10 @@ namespace MoreMountains.Tools
 		public virtual void OnPointerUp(PointerEventData data)
 		{
 			if (!Interactable)
+			{
+				return;
+			}
+			if (!AllowedClick(data))
 			{
 				return;
 			}
@@ -389,6 +428,10 @@ namespace MoreMountains.Tools
 			{
 				return;
 			}
+			if (!AllowedClick(data))
+			{
+				return;
+			}
 			if (!MouseMode)
 			{
 				OnPointerDown (data);
@@ -401,6 +444,10 @@ namespace MoreMountains.Tools
 		public virtual void OnPointerExit(PointerEventData data)
 		{
 			if (!Interactable)
+			{
+				return;
+			}
+			if (!AllowedClick(data))
 			{
 				return;
 			}

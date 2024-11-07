@@ -34,7 +34,7 @@ namespace MoreMountains.Feedbacks
 			string previousType = "";
 			for (int i = 0; i < types.Count; i++)
 			{
-				MMFeedbacksEditor.FeedbackTypePair newType = new MMFeedbacksEditor.FeedbackTypePair();
+				MMF_PlayerEditorUITK.FeedbackTypePair newType = new MMF_PlayerEditorUITK.FeedbackTypePair();
 				newType.FeedbackType = types[i];
 				newType.FeedbackName = FeedbackPathAttribute.GetFeedbackDefaultPath(types[i]);
 				if (newType.FeedbackName == "MMF_FeedbackBase")

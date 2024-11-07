@@ -123,7 +123,7 @@ namespace MoreMountains.Feedbacks
 			}
 			#endif
 			
-			MMCameraZoom camZoom = (MMCameraZoom)Object.FindObjectOfType(typeof(MMCameraZoom));
+			MMCameraZoom camZoom = (MMCameraZoom)Object.FindAnyObjectByType(typeof(MMCameraZoom));
 			if (camZoom != null)
 			{
 				return;

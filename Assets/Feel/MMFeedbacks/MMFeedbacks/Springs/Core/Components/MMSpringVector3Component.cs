@@ -78,7 +78,7 @@ namespace MoreMountains.Feedbacks
 		
 		[MMInspectorGroup("Spring Settings", true, 18)]
 		[Header("SpringVector3")]
-		public MMSpringVector3 SpringVector3;
+		public MMSpringVector3 SpringVector3 = new MMSpringVector3();
 		
 		[MMInspectorGroup("Randomness", true, 12, true)]
 		

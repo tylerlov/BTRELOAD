@@ -32,7 +32,7 @@ namespace MoreMountains.Feedbacks
 			}
 		}
 
-		public MMSpringClampSettings ClampSettings;
+		public MMSpringClampSettings ClampSettings = new MMSpringClampSettings();
 		
 		/// the value towards which this spring is trending, and that it'll reach once it stops oscillating
 		[Tooltip("the value towards which this spring is trending, and that it'll reach once it stops oscillating")]

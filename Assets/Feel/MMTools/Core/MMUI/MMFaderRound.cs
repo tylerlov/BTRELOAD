@@ -6,7 +6,7 @@ namespace MoreMountains.Tools
 	/// The Fader class can be put on an Image, and it'll intercept MMFadeEvents and turn itself on or off accordingly.
 	/// </summary>
 	[RequireComponent(typeof(CanvasGroup))]
-	[AddComponentMenu("More Mountains/Tools/GUI/MMFaderRound")]
+	[AddComponentMenu("More Mountains/Tools/GUI/MM Fader Round")]
 	public class MMFaderRound : MMMonoBehaviour, MMEventListener<MMFadeEvent>, MMEventListener<MMFadeInEvent>, MMEventListener<MMFadeOutEvent>, MMEventListener<MMFadeStopEvent>
 	{
 		public enum CameraModes { Main, Override }

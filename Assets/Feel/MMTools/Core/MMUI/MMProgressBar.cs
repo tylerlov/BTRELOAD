@@ -16,7 +16,7 @@ namespace MoreMountains.Tools
 	/// See the HealthBar.cs script for a use case
 	/// </summary>
 	[MMRequiresConstantRepaint]
-	[AddComponentMenu("More Mountains/Tools/GUI/MMProgressBar")]
+	[AddComponentMenu("More Mountains/Tools/GUI/MM Progress Bar")]
 	public class MMProgressBar : MMMonoBehaviour
 	{
 		#if MM_UI
@@ -687,7 +687,7 @@ namespace MoreMountains.Tools
 			}
 			else // if the value is increasing
 			{
-				newFill = ComputeNewFill(LerpForegroundBar, LerpForegroundBarSpeedIncreasing, LerpForegroundBarDurationIncreasing, LerpForegroundBarCurveIncreasing, 0f, _delayedBarIncreasingProgress, out t1);
+				newFill = ComputeNewFill(LerpForegroundBar, LerpIncreasingDelayedBarSpeed, LerpIncreasingDelayedBarDuration, LerpIncreasingDelayedBarCurve, 0f, _delayedBarIncreasingProgress, out t1);
 				SetBarInternal(newFill, DelayedBarIncreasing, _delayedIncreasingImage, _initialBarSize);
 				
 				DelayedBarIncreasingProgress = newFill;

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEditor;
 using System.Linq;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace MoreMountains.Feedbacks
 {
@@ -50,7 +51,7 @@ namespace MoreMountains.Feedbacks
 
 		private static void StoreRuntimeChanges()
 		{
-			foreach (MMF_Player player in MonoBehaviour.FindObjectsOfType<MMF_Player>(true).Where(p => p.KeepPlayModeChanges))
+			foreach (MMF_Player player in Object.FindObjectsByType<MMF_Player>(FindObjectsInactive.Include, FindObjectsSortMode.None).Where(p => p.KeepPlayModeChanges))
 			{
 				MMF_PlayerCopy.StoreRuntimeChanges(player);
 			}
@@ -58,7 +59,7 @@ namespace MoreMountains.Feedbacks
 
 		private static void ApplyRuntimeChanges()
 		{
-			foreach (MMF_Player player in MonoBehaviour.FindObjectsOfType<MMF_Player>(true).Where(MMF_PlayerCopy.RuntimeChanges.ContainsKey))
+			foreach (MMF_Player player in Object.FindObjectsByType<MMF_Player>(FindObjectsInactive.Include, FindObjectsSortMode.None).Where(MMF_PlayerCopy.RuntimeChanges.ContainsKey))
 			{
 				MMF_PlayerCopy.ApplyRuntimeChanges(player);
 			}
@@ -97,7 +98,7 @@ namespace MoreMountains.Feedbacks
 
 		// Multiple Copy ----------------------------------------------------------
 
-		static public void PasteAll(MMF_PlayerEditor targetEditor)
+		static public void PasteAll(MMF_PlayerEditorUITK targetEditor)
 		{
 			foreach (MMF_Feedback feedback in MMF_PlayerCopy.CopiedFeedbacks)
 			{

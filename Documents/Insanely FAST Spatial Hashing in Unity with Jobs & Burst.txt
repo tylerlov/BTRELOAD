@@ -1,0 +1,670 @@
+today we're going to create a system for
+efficiently finding objects in 3D space
+using spatial hashing this is a
+technique used to efficiently partition
+3D space into a grid of discrete cells
+and it allows fast lookup and querying
+of objects based on their positions by
+mapping them to specific grid cells
+using a hash function using this
+technique means we don't have to query
+the entire space to find the objects
+that we're looking for and not just that
+but we're going to use jobs and burst
+today so that we can efficiently find
+thousands of objects every frame we'll
+demonstrate this by finding every object
+that falls into a certain area of the
+grid every frame and update their colors
+to Red let's get into
+it I'm going to expose a few properties
+to the editor here I've already created
+a prefab for the particles which is just
+a little sphere with a black material
+we'll have a count how many particles we
+want to have actually moving in the area
+let's also have a bound struck that'll
+Define the area the particles can move
+in I might want to change the max radius
+of these spheres and a cell size this
+will be how small we want to divide up
+the 3D space into now within this 3D
+space where the particles are flying
+around we're going to want to query a
+specific area in today's example we're
+going to use a sphere and we'll just
+reference that by its transform and
+we're going to want to be able to change
+its radius at runtime so let's expose a
+float for that as well and finally I've
+set up a small UI just so we can use
+sliders and toggles for all these things
+so I'll just add some boxes here so I
+can can drag in the references so I've
+got a slider that will allow us to
+change how many particles there are and
+another one for dividing up the 3D space
+and a third one for changing the size of
+the query area I'll also add a field so
+we can output some text about our
+results and finally I'll just have a
+little toggle that'll allow us to turn
+gizmos on and off and we can store the
+result of that toggle in a little
+Boolean here for the actual query area
+I'm going to create the visual using
+Code but I am going to get a reference
+to a semi-opaque material from
+so with all that setup done I think we
+can collapse up these dependencies and
+all of these settings and references and
+give ourselves some space the next thing
+to do is inside of the start method
+let's hook up our UI elements to do
+different things I want the particle
+slider value to be the same value as our
+actual count that we've set inside this
+component but whenever that value
+changes I want to make sure that we've
+spawned the right amount of particles
+let's create a separate method for that
+whenever I click on the grid toggle I
+want to just flip that boolean's value
+then I have another slider that defines
+the actual size of the grid let's do the
+same thing here make sure it starts at
+the right value but whenever I change it
+I want to make sure that our cell size
+actually gets updated as well we can
+hook up the slider for the query radius
+in exactly the same manner and when
+that's done I want to run initialized
+particles for the very first time now
+the first thing to do when spawning the
+particles to make sure that we're
+working with an integer value and we're
+going to need to store them somewhere so
+right here let's define find an array of
+game objects that we can stash them in
+but let's also have an array of
+renderers because I don't want to get
+component all the time and I want to
+change their colors as they come in and
+out of our query area now anytime we
+come into this method it means that
+we've changed the number of particles
+that exist if we've already created some
+particles let's Loop over the ones that
+do exist and Destroy them all now we've
+got a clean slate so let's initialize
+the two arrays from earlier and I'm just
+going to hit page down here to give some
+room now here we can run a for Loop over
+the actual number of particles that we
+want to be spawning for each one I'm
+going to choose a random position where
+the X Y and Z fall within the particle
+bounds area then we can give it a random
+radius that falls between something
+small like 0.5 and whatever the max
+radius was that I set in the inspector
+and then we can actually instantiate one
+of these prefabs at that position let's
+make sure that its size is exactly
+Vector 3.1 multiplied by the radius
+multiplied by two of course and then
+keep our hierarchy from overflowing
+let's actually parent that under this
+game object okay I think we're set up
+pretty nice for a simulation let's have
+a sanity check really
+quick okay well I've already connected
+up all my references and my UI elements
+if we click play we should see 500 black
+spheres spawn right in this area good
+enough well how about we start using the
+job system to move them around to pass
+in information about each one of these
+sphere particles I'm going to create a
+new struct here we'll need to pass in
+information about its position velocity
+and radius we're going to store all of
+those in a native array a normal array
+uses managed memory to allocate on the
+Heap on the other hand a native array
+gives us direct access to Native memory
+outside of the managed environment this
+results in Faster performance especially
+for tasks like physics rendering or
+anything that's multi-threaded that also
+means it's not managed by the garbage
+collection system so when we're finished
+using this memory we need to release it
+using the dis dispose method you never
+want to call dispose on an array that
+was never initialized because Unity will
+throw an exception this is because the
+native array is in an uninitialized
+State and there is no allocated native
+memory to release so before calling the
+dispose method it's a good practice to
+check the is created Property so let's
+come down a little bit where we're
+initializing the other arrays let's also
+initialize our native array and I'm
+going to pass in allocator do persistent
+this is useful if you need a native
+array to last for multiple frames there
+are other types of allocator settings
+you can use for just one frame or just a
+few frames but persistent is for a
+longer period of time where we're
+creating other settings here let's also
+add a velocity we'll just pick a random
+Vector 3 for that and that's all the
+settings we need so at position I inside
+of the Native array let's create a new
+particle with the position radius and
+velocity now in our regular arrays we
+should also stash our instance and I
+want to stash that renderer as well okay
+well let's zoom out here and we could
+probably collapse up a few things before
+we start writing our very first job
+we're going to be firing off the job
+inside of the update method and the very
+first thing I'm going to do here is have
+a guard Clause if we haven't initialized
+our native array let's just bail out of
+here now we actually need create a job
+to run here so let's define a new struct
+we'll call it update particles job a job
+can't be a class and it can't accept
+parameters that are references because
+classes and reference types are stored
+on the Heap that violates the job
+systems requirements for bitable Value
+type data that ensures thread safety and
+efficient memory access now bitable
+refers to types that have a direct
+memory representation and can be copied
+without any transformation between
+managed and unmanaged memory that means
+the memory layout is fixed and it
+doesn't require marshalling making them
+safe for performance critical operations
+examples of bitable types are Primitives
+like int and float and strs that contain
+only bitable Fields like the particle
+struct we defined earlier so let's have
+our job implement the I job parallel 4
+interface now this interface defines a
+multi-threaded job that will run in
+parallel across multiple elements of an
+array or collection it has one main
+method execute which takes in an index
+of the array or collection you're
+working on beyond that I'm going to add
+the burst compile attribute here so that
+we make sure that we compile this job
+into efficient platform specific machine
+code so this first job is just about
+moving particles around it's going to
+need a native array of all those
+particles it's going to need to know
+what the Min and Max of our bounds are
+I'm also going to pass in Delta time
+then in the execute method let's grab
+out the particle that's at that index
+then we'll adjust its position by its
+velocity multiplied by Delta time now
+it's possible as we're adjusting the
+position here that we could go out of
+bounds so let's make it bounce off the
+bounds instead if we hit the Min or the
+max of the bounds in the X Direction
+Let's just flip our velocity let's do
+the same for y and for Zed at the end of
+this we'll just make sure that we assign
+that particle back into the native array
+at our index so let's collapse up this
+job that we just wrote and we're going
+to come back into the update method and
+actually fire it off so let's create a
+new update particles job here and we can
+initialize it with our native array our
+particle bounds Min and Max and we'll
+pass in Delta time we can run this job
+by using the schedule method I'm going
+to pass in 64 here and that represents
+the batch size that's how many
+iterations of the job each worker thread
+processes at a time we can store the
+running job in a job handle and before
+we access the results we need to call
+complete that Mak sure that it's fully
+finished executing before we access the
+results and move on to any other
+operations now the results have all the
+updated positions so let's iterate over
+our particle particles and update all of
+their positions using these new
+calculated values and that's it all of
+the particles will get a new position
+every frame just one more thing to do I
+want to make sure that we properly
+dispose of this native memory so let's
+add an on Destroy in here let's just
+check is created and if it is let's
+dispose okay hot reload did its thing
+all we have to do is hit play and sure
+enough we have hundreds of black spheres
+moving around within the bounds and
+they're all at different velocities and
+size and bouncing off the edges so far
+it looks pretty smooth right what if we
+Crank It Up to several thousand let's
+see how that looks I'll just adjust the
+slider up a little bit here there we go
+that should be about 2,000 maybe so zoom
+out actually looks kind of cool now that
+this is all working nicely we can set up
+our spatial
+hash to create the spatial hash we're
+going to split up our bounds area into
+smaller cubes each of these smaller
+sections of our 3D space will be
+identified by a hash and it can contain
+zero or more particles so we're going to
+create a struct here that will associate
+a hash with an index from our array of
+particles I'm going to implement I
+comparable here because I want to be
+able to quickly tell if a particle at
+any given index is in the same hash as
+another one so we'll just compare hash
+values to create these hash values for
+the smaller cubes of our 3D space let's
+have a new static method here it'll take
+in an INT three grid position I'm going
+to multiply the X the Y and the Z all by
+large prime numbers and I'm going to
+combine them with bitwise xor I'm going
+to wrap it in an unchecked block so that
+it can overflow without throwing an
+exception and we'll be able to use this
+as our identifier for all of the small
+subdivisions of our space okay so now we
+can ID all the subdivisions and we can
+associate particles with each of the
+subdivisions let's page down to the
+bottom of the class we're going to
+create a new job that will associate
+each particle
+with one of these subdivisions of our
+space let's set up a hashed particles
+job marked as burst compile and
+implementing I job parallel 4 it's going
+to need all of the particles I'm going
+to mark it as read only even though
+that's not strictly necessary for what
+we're doing today but marking something
+as read only would mean that two jobs
+running in parallel could both safely
+read from this particular array a native
+array behaves like a pointer to the
+underlying native memory which holds the
+actual data so when you pass a native
+array to multiple jobs you're passing a
+copy of the reference to the same
+underlying data buffer the data itself
+is not duplicated okay moving on we're
+going to need to know a cell size so
+that we know how small we're going to
+subdivide our space into and we're also
+going to need a native array of type
+hash and index so that we can associate
+all of our particles with one of these
+small spaces the first thing we can do
+inside of execute is grab out one of
+those particles from the Native array
+next let's create a helper method here
+that will divide a position in the world
+by the cell size then we can use map.
+floor and convert it into a new int
+three that'll give us a discrete grid
+cell that the world position falls into
+Now using this helper method we can get
+a grid position for this particular
+particle and then we can pass that grid
+position into our hash method to give us
+that unique hash now we've got
+everything we need we can assign a new
+hash and index into our native array and
+we can populate it with the hash and
+index in fact we could probably skip
+using that int three and just inline
+this grid position right into the hash
+method here there we go so now we've got
+our hashing method ready we've split up
+our 3D space into all these smaller
+chunks and Associated all of our
+particles with the smaller chunks but
+we're going to have to come back up to
+our update method and actually run the
+job but first let's jump all the way up
+to the top of the class and I'm going to
+define a new native array just for these
+hash and index values then let's come
+down to our initialized particles method
+here let's make sure that we dispose of
+that array before we start doing any of
+the operations that follow and Below
+where we're initializing our particles
+native array let's also initialize our
+hash and indices native array as well
+let's collapse up this method and come
+into update so down here in the update
+method we were calling complete on our
+last job handle I'm going to comment
+that out instead what we're going to do
+is create a new job here our hash and
+particles job let's pass in all the data
+we need which is our particles native
+array the cell size and our hash and
+indices array now when I go to run this
+job I'm going to call the schedule
+method but I'm also going to pass in the
+previous job handle that's going to make
+sure that the previous job finishes
+running before this job starts running
+then I can now call complete on the
+second job okay so that will make sure
+that our 3D space is all subdivided and
+all of our particles are sorted into
+those subdivisions let's make use of
+this information by actually starting to
+query to find out if particles land
+within a certain area so now we've
+essentially bucketed all of the
+particles into smaller subsections of
+our 3D World before we do anything else
+though let's come down into on Destroy
+make sure that we dispose of that new
+native array we started using now I'm
+going to jump down to the bottom of our
+class here where we were defining our
+jobs we're going to create two more jobs
+the first one is going to be very simple
+I just want to sort sort that entire
+array now because it's going to be a
+sort I'm not going to do the I job
+parallel 4 instead we'll just run it on
+one thread using iob it's going to take
+all of our hash and index values and in
+the execute method we'll just run the
+sort method on that native array let's
+jump back up to our update method and
+make sure that we're running this job
+next all comment out our complete we
+don't need that anymore because we're
+going to create a new sort job here
+where we just pass in the hash and
+indices array and and here we can run
+this again we'll save a reference to
+this as a sort job handle but we'll pass
+in the handle from our previous job now
+we've got one more job to make let's
+come back to the bottom of the class and
+write that one as well so the reason
+that we sorted the values in the
+previous step is because we're going to
+do a binary search here so again we're
+going to use the I job interface and
+we'll call this the query job the query
+job is going to take values from the
+particles and from our hash and index
+array and we're going to figure out
+based on a central position and a radius
+whether or not any particles fall into
+that area we'll need to know the cell
+size here as well so that we can
+correctly calculate hash values now any
+particles that we do find within the
+area will store their index values in a
+native list that'll be our results I'll
+just declare it right above here and
+I'll move it later to the top of the
+class now in our execute method we're
+going to run our binary search there's a
+few ways we could check distance I'm
+going to use radius squared so let's
+save that value here next let's get the
+grid bounds of the query area by
+calculating the Min and the max grid
+positions this tells us which grid cells
+need to be checked based on the query
+position and radius now I already have a
+grid position method that I put inside
+of another job let's pull it out of that
+job and make it a static method here
+that way all of the jobs can use it okay
+let's jump back down to the query job
+and I'll give myself a little bit more
+space here what we want to do now is
+iterate over all the grid cells that
+fall within the query bounds so let's
+have some nested for Loops so that we
+get the X the Y and the Z for every
+single grid cell we're looking through
+now we've got an X Y and Z let's convert
+this grid position to a unique hash now
+we can perform a binary search on the
+hash and indices array to find the first
+particle with the matching hash let's
+write the binary search before we deal
+with the results we're just going to do
+a standard binary search algorithm here
+we need to know a left a right and a
+result which will start at minus1 we'll
+run a while loop while the left is less
+than or equal to the right let's check
+the value right in the middle if that
+hash at that midpoint is the one that
+we're looking for then we can say the
+result equals mid and we can keep
+looking into the left to see if there's
+another value earlier in the array that
+matches otherwise we can say if midash
+was less than the hash then we're going
+to say left equals mid + 1 cuz we're
+only going to look in the right side and
+otherwise we're only going to look on
+the left side so we'll set the right
+value to be mid minus one when we're out
+of here we should have our result let's
+return now it's possible that our binary
+search return to minus one so if that's
+the case we could say if the start index
+is less than zero then let's just
+continue and look in the next grid cell
+otherwise we know that there's at least
+one particle in this grid cell so we can
+Loop through all the particles in this
+grid cell that have the same hash let's
+get the index of the particle from the
+hash and indices array then we'll
+retrieve the actual particle data from
+the particles array using the index then
+we can calculate the vector from the
+query position to the particle position
+after that we can check if the particles
+within the query radius by comparing the
+squared distances if the particles
+within the radius will add its index to
+the results list okay now we've written
+all of our jobs let's make sure that we
+run this one with the others if we come
+back into our update method right after
+we ran the sort job let's start another
+query job now the query job needed quite
+a bit of information the particles
+native the hash and indices native array
+it also needed a query position query
+radius it needed to know the cell size
+and it needed somewhere to store the
+results here I'm going to initialize our
+native list in line notice also that I'm
+going to use allocator dot job because
+we don't need this one to persist now we
+can run this query job and I'll pass in
+the previous jobs handle this time we're
+actually done running all of our jobs so
+let's actually call complete on this job
+that means that all four of our jobs
+will have run in sequence here we've now
+completed and we can do something with
+these results now I'm going to make a
+local native list to hold these results
+and I'll do that in a minute but here
+let's say that if it was created let's
+dispose of it and then we can populate
+it with the references that come back
+from our query job now potentially we
+could just use the results that were
+from the query job as well since we
+really only care about it for this Frame
+either way we can now Loop over all of
+our renderers and let's start by making
+all of them white but then we can use
+our results and for each of the ones
+from the results let's grab it out of
+the particle renders at that index and
+set those ones to be red so the ones
+that fell within our query will be red
+the ones outside will be white now if
+you did declare a local native list make
+sure that you just ose of it in on
+Destroy okay hot reload and press play
+and here we go so in the middle of our
+simulation here you can see a lot of the
+Spheres are turning red and the ones on
+the outskirts are all white it's a
+little bit hard to see though why don't
+we quickly make some gizmos and come
+back to this so let's add an on draw
+gizmos method right under the start
+method I'll make them green and we can
+say if the query sphere is not null
+let's draw a wire sphere around it and
+then we can check our grid Boolean if
+that was toggled on let's actually draw
+our grid that we've divided our 3D space
+up into for that I'm going to create a
+new method here we'll just figure out
+the grid XC count y count and Zed count
+which is just the particle bounds
+divided by our cell size and then we'll
+have a triple nested Loop here similar
+to what we were doing down in our job
+before but this time we're going to go
+all the way to the far edges not just
+the area that we're searching in we'll
+just do a little bit of math to figure
+out the cell center and then then we'll
+draw a wire Cube around it now you know
+looking at the wire Sphere for trying to
+see where the actual query bounds are is
+going to be a little bit tricky let's
+have another method here where we
+actually draw a real sphere so inside of
+this method let's create a new primitive
+of type sphere and we can set its parent
+to be the query sphere transform and
+then we can get the renderer and we'll
+assign a semi-opaque material to it so
+we can see through and we'll turn off
+the collider now I need another method
+here to update the visual because we're
+going to be able to resize it in real
+time so as long as it's not null let's
+make sure that it's sized correctly now
+we can run this method from our start
+method but we could also run it every
+update too to make sure if we've moved
+the slider our visual stays up to date
+so I'll blowen up start here let's add a
+call here and then I'll jump down to the
+update method and we can call that right
+at the start okay well that should give
+us some nice visuals to see what's going
+on not only with how we've divided up
+our 3D space but how we're actually
+searching for things and finding them
+within that space let's go have a look
+all right well now we've got a nice
+semi-opaque sphere right in the middle
+that defines our search area we can make
+it bigger or smaller using the slider as
+I bring it up to kind of Max size here
+you can get a real good idea of how the
+search query is actually working any
+particle that enters into that sphere by
+its midpoint turns red and all of the
+ones that are outside of that range are
+white let's crank up the number of
+particles and see how it's doing so
+that's performing pretty well and it
+still looks like it's doing its job why
+don't we toggle the grid there we go so
+you can see here we've got fairly small
+grid sizes that means it's quite
+accurate but a little bit more
+processing if I were to make the grid
+cells bigger like this that would mean
+there's less cells to check but there
+might be more particles inside of them
+to actually check the distance on if I
+were to make them even bigger you can
+see now we're at a basically a 3X3 grid
+and our sphere occupies all of them that
+means that we're not really getting any
+advantage to the system if we' make the
+grilled cell size this big you'd have to
+check the whole Space so coming down to
+a smaller size like this and even if we
+crank up the particles to halfway you
+can see in my text there that I've
+connected it's detecting thousands of
+particles within that system and we've
+kind of built in two advantages to this
+system first of all it's not checking
+every single Cube inside of the frame
+there only checking the ones where the
+query area is and the other advantage of
+courses that we're using first and jobs
+so I hope building a little system like
+this helps explain what spatial hashing
+is all about and how you can rapidly
+search for an area in 3D space to find
+things that match certain query and even
+perform Logic on them like we're doing
+here which is changing the color of
+course this sort of thing is great for
+any kind of game or you need to do
+efficient searching in 3D space for
+objects so whether it's an RTS or youve
+got some big RPG that you're building or
+any kind of game where you need to find
+things in a 3D area splitting it up like
+this just like we did with opt trees the
+other day is a very efficient way of
+finding things within a large space and
+it works great in 2D just like it does
+here for 3D so I think that's where
+we'll wrap it up for today I'll leave
+this code in a gist I think and uh don't
+forget to join the Discord like And
+subscribe if you feel so inclined I'll
+leave a couple videos linked up on the
+screen here maybe I'll see you there

@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using MoreMountains.Tools;
 using UnityEngine;
 using UnityEngine.Scripting.APIUpdating;
 
@@ -17,6 +18,7 @@ namespace MoreMountains.Feedbacks
 		/// sets the color of this feedback in the inspector
 		#if UNITY_EDITOR
 		public override Color FeedbackColor { get { return MMFeedbacksInspectorColors.LooperStartColor; } }
+		public override Color DisplayColor { get { return MMFeedbacksInspectorColors.LooperStartColor.MMDarken(0.35f); } }
 		#endif
 		public override bool LooperStart { get { return true; } }
 

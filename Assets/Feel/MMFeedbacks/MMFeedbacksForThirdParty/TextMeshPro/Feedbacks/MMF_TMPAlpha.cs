@@ -68,8 +68,7 @@ namespace MoreMountains.Feedbacks
 
 		/// the curve to use when interpolating towards the destination alpha
 		[Tooltip("the curve to use when interpolating towards the destination alpha")]
-		[MMFEnumCondition("AlphaMode", (int)AlphaModes.Interpolate, (int)AlphaModes.ToDestination)]
-		public MMTweenType Curve = new MMTweenType(MMTween.MMTweenCurve.EaseInCubic);
+		public MMTweenType Curve = new MMTweenType(MMTween.MMTweenCurve.EaseInCubic, "", "AlphaMode", (int)AlphaModes.Interpolate, (int)AlphaModes.ToDestination);
 		/// the value to which the curve's 0 should be remapped
 		[Tooltip("the value to which the curve's 0 should be remapped")]
 		[MMFEnumCondition("AlphaMode", (int)AlphaModes.Interpolate)]
@@ -128,7 +127,7 @@ namespace MoreMountains.Feedbacks
 			switch (AlphaMode)
 			{
 				case AlphaModes.Instant:
-					TargetTMPText.alpha = InstantAlpha;
+					TargetTMPText.alpha = NormalPlayDirection ? InstantAlpha : _initialAlpha;
 					break;
 				case AlphaModes.Interpolate:
 					if (!AllowAdditivePlays && (_coroutine != null))
@@ -226,6 +225,20 @@ namespace MoreMountains.Feedbacks
 			#if (MM_TEXTMESHPRO || MM_UGUI2)
 			TargetTMPText.alpha = _initialAlpha;
 			#endif
+		}
+		
+		/// <summary>
+		/// On Validate, we init our curves conditions if needed
+		/// </summary>
+		public override void OnValidate()
+		{
+			base.OnValidate();
+			if (string.IsNullOrEmpty(Curve.EnumConditionPropertyName))
+			{
+				Curve.EnumConditionPropertyName = "AlphaMode";
+				Curve.EnumConditions[(int)AlphaModes.Interpolate] = true;
+				Curve.EnumConditions[(int)AlphaModes.ToDestination] = true;
+			}
 		}
 	}
 }

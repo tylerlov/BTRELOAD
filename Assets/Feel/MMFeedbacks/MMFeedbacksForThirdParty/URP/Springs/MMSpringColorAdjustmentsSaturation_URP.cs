@@ -5,7 +5,7 @@ using UnityEngine.Rendering.Universal;
 
 namespace MoreMountains.Feedbacks
 {
-	[AddComponentMenu("More Mountains/Springs/MMSpringColorAdjustmentsSaturation_URP")]
+	[AddComponentMenu("More Mountains/Springs/MM Spring Color Adjustments Saturation URP")]
 	public class MMSpringColorAdjustmentsSaturation_URP : MMSpringFloatComponent<Volume>
 	{
 		protected ColorAdjustments _colorAdjustments;

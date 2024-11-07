@@ -10,7 +10,7 @@ namespace MoreMountains.Tools
 	/// <summary>
 	/// Add this class to a UI slider and it'll let you trigger events when the cursor moves past a certain step
 	/// </summary>
-	[AddComponentMenu("More Mountains/Tools/GUI/MMSliderStep")]
+	[AddComponentMenu("More Mountains/Tools/GUI/MM Slider Step")]
 	[RequireComponent(typeof(Slider))]
 	public class MMSliderStep : MonoBehaviour
 	{

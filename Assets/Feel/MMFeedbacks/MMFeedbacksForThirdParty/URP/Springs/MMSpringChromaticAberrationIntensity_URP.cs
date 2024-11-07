@@ -5,7 +5,7 @@ using UnityEngine.Rendering.Universal;
 
 namespace MoreMountains.Feedbacks
 {
-	[AddComponentMenu("More Mountains/Springs/MMSpringChromaticAberrationIntensity_URP")]
+	[AddComponentMenu("More Mountains/Springs/MM Spring Chromatic Aberration Intensity URP")]
 	public class MMSpringChromaticAberrationIntensity_URP : MMSpringFloatComponent<Volume>
 	{
 		protected ChromaticAberration _chromaticAberration;

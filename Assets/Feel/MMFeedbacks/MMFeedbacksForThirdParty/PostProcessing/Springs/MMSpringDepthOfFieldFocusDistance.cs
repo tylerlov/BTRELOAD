@@ -4,7 +4,7 @@ using UnityEngine.Rendering.PostProcessing;
 
 namespace MoreMountains.Feedbacks
 {
-	[AddComponentMenu("More Mountains/Springs/MMSpringDepthOfFieldFocusDistance")]
+	[AddComponentMenu("More Mountains/Springs/MM Spring Depth Of Field Focus Distance")]
 	public class MMSpringDepthOfFieldFocusDistance : MMSpringFloatComponent<PostProcessVolume>
 	{
 		protected DepthOfField _depthOfField;

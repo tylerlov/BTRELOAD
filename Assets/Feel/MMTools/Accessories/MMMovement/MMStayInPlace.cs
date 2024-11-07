@@ -5,7 +5,7 @@ namespace MoreMountains.Tools
 	/// <summary>
 	/// This class forces a transform to stay at a fixed position, rotation and/or scale.
 	/// </summary>
-	[AddComponentMenu("More Mountains/Tools/Movement/MMStayInPlace")]
+	[AddComponentMenu("More Mountains/Tools/Movement/MM Stay In Place")]
 	public class MMStayInPlace : MonoBehaviour
 	{
 		public enum Spaces { World, Local }

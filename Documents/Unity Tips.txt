@@ -1,0 +1,296 @@
+I don't want to waste your time this
+video is all about making the most of
+the time that you have to make games no
+matter if it's full time or just a
+couple minutes a day this video will
+mostly be about all the time saves that
+I personally found so most of these will
+be in the unity game engine but some of
+these should apply to other game engines
+anyways be sure to subscribe for more
+Unity tips and tricks also liking and
+commenting helps my small Channel and
+the algorithm so it is really
+appreciated but no more wasting time
+let's start these first few tips are
+related to the most obvious and most
+frustrating waste of time that anybody
+who has used Unity has had to deal with
+the loading screens so if you're
+struggling with loading your project
+reloading your scripts and all that
+compilation then try dropping a few
+thousand dollars on a brand new pc with
+the top of the line SSD and 4 million
+gigabytes of ddr19 RAM but if throwing
+excessive amounts of money at the issue
+doesn't really suit you then I have a
+few other tips that might really help
+first off whenever you go to click play
+in unity there is always this long delay
+between you pressing and it going but
+you can actually just skip this on
+Modern versions of unity you can just go
+into the settings and under the editor
+tab there is a section called interplay
+mode settings then enable this
+experimental option and make sure to
+disable the options under it boom now
+whenever you click the play button it'll
+play this does have some drawbacks
+though usually during this loading time
+EMD is not only saving your game which
+you now needs to do manually before
+going into play mode but it is also
+reloading the scene and everything in it
+to make sure that play mode in the
+editor is almost exactly equal to what
+you will get in the actual build of the
+game so basically if you disable it you
+might have some bugs that have to do
+with the scene not properly resetting
+personally I use the faster method 99 of
+the time especially whenever I'm rapidly
+iterating or something or debugging
+something unrelated to the scene but
+when I am bug fixing I also try turning
+editor reloading back on occasionally to
+make sure this is not the source of the
+problem personally I think the
+convenience and time saving is worth a
+little bit of extra effort the other
+main loading screens that you have to
+deal with in unity are when you open the
+project and when you compile after
+changing some scripts whenever you're
+opening your project my main piece of
+advice is to go on a run or watch a
+movie or something because that takes
+forever and there's no real getting
+around it especially with 3D games Unity
+is a big program and there's just a lot
+of stuff to load but with recompiling
+you actually do have a few options you
+can use assembly definitions which I
+already covered slightly before my last
+tips and tricks video but basically they
+make it so that you only have to
+recompile parts of your code they
+probably aren't worth the effort in
+smaller projects where it only takes a
+few seconds to recompile but for the big
+ones they are very important in Saving
+Time and keeping your quote clean here's
+a link to a video on how to do this
+moving on from these loading screens I'm
+going to go over some small things that
+you can do to replace slow and annoying
+tasks with easier and faster versions of
+themselves or a few ways you can
+automate them all together first off
+animation controllers are slow not only
+are they slow to work with but they are
+also pretty bad performance wise so if
+you only have one animation for an
+object that it does continually then
+consider just using the Legacy animation
+component the unity engine seems to warn
+against doing it but it actually is
+better for performance second up you
+don't actually have to use use the steam
+machine GUI thing if you don't want to
+you can do it all manually and
+personally I do a manually for some of
+my more simple animated characters in my
+game the main reason that I'll do it
+manually is that for example with this
+enemy in my game it can transition from
+any animation that it has to any other
+one at any time so it doesn't really
+make sense to make an animation State
+machine because it would just be a
+spaghetti a boxes connected to each
+other instead I just throw all these
+boxes together in the animator and don't
+even bother connecting them and then I
+Crossfade from animations directly in
+code this is pretty easy to do already
+but I also set up a custom script to
+make it even easier and smoother to go
+through and also added things like
+holding the States you can just look at
+my code here for this stuff but also
+tarodev who seems to be my favorite guy
+to mention in these tips and tricks
+videos has a great video on this and you
+should watch it presets are pretty
+simple to understand there are basically
+some default settings you can easily
+apply to textures sounds and anything
+else that you import into your project
+make sure they use these but you can
+actually make these defaults into
+default defaults uh let me explain go to
+edit project things preset manager and
+here you can put in all the default
+resets that you want so for a pixel art
+game you probably want to import all
+your assets with a PPU of whatever your
+tile set grid size is so 32 in my case
+and then also make sure the texture is
+uncompressed and on point filter this is
+kind of a basic tip but it actually took
+me forever to find out that this existed
+so hopefully it helps somebody who also
+didn't notice this
+but in game development no matter what
+engine you are using the biggest
+possible waste of time and effort you
+could have is losing all of your
+progress so you should use a source
+control program to back up your game I
+previously suggested using GitHub but I
+actually moved to Classic SCM a little
+while ago and it's way better for me
+GitHub had the habit of breaking on me
+every few weeks and since I'm not
+proficient in git or the command line I
+just made a new repo and moves
+everything over and hoped that it never
+happened again and of course it always
+happened again plastic sem on the other
+hand is actually designed for big
+projects and video games specifically
+and transitioning to it was easy and I
+haven't had any issues with it so I
+recommend it for sure one of the biggest
+time scenes for game development is
+definitely an asset creation especially
+for people like me who aren't really
+artists by trade it can take a while to
+make all the art that is needed so I
+have a few suggestions and this first
+one is pretty controversial in fact I
+used to disagree with this practice but
+I have been convinced of its legitimacy
+recently by a fantastic example of it
+kid bashing is the practice of taking
+pre-made asset hacks and combining them
+with some Artistry and shaders to create
+assets for a game and don't get me wrong
+it's hard to get this to work it really
+is an art form in itself if you do it
+poorly your game will look like an asset
+flip and it will lack any uniqueness and
+style in its environments but it's
+proven to me by project feline which is
+another deadlock series which you really
+should watch with enough care and effort
+you can create an amazing looking world
+with kit bashing but be warned this is
+expensive as you have to buy tons of
+asset packs so this technique is
+probably a bit risky for most developers
+but I think that it has led to some of
+the most oppressive environments
+possible in an indie game another
+alternative to Kit bashing and stuff
+like that could possibly be using AI to
+create textures and stuff for your game
+now personally I don't know much about
+this and also there's a lot up in the
+air currently about the legality of AR
+art generators so be careful if you're
+making a game around it because it's
+possible that in a few years all of your
+assets will be in violation of copyright
+laws but I think that once properly
+regulated this technology will be
+incredible for independent developers
+whenever creating all their assets but
+moving on the only other tip I have
+receive eating up asset creation is
+simply to try and recycle assets if you
+can especially in animation is motion is
+hard to get to look right so after you
+get a Run Cycle done it is definitely
+not cheating to use it as a base for
+your other characters runs personally I
+do try to make changes to distinguished
+characters for instance in my game
+project Seaborn this character Yuri is
+one pixel taller than the first
+character and his idle pose is slightly
+different and also in a 3D environment
+you really don't need a huge amount of
+variation of assets as I got by with
+only about five different Rock models in
+my previous game it's simply rotating
+scaling and positioning the rocks in
+Geometry it got them to look very
+different from each other obviously if
+you can you should make as much unique
+art as possible if you want your game to
+look beautiful but if you don't have the
+time or team members for that then just
+be smart with what you spend your time
+doing in my opinion making a ton of
+average assets with one or two fantastic
+seeing their assets like a landmark or a
+nice animation will likely look better
+and leave a bigger impact on the player
+than making a ton of slightly above
+average asses that take significantly
+longer to make even if you have all the
+time in the world to work work on your
+game if you don't actually work on it
+you won't get anywhere so keeping
+yourself reductive and motivated is
+difficult and one of the things I have
+struggled with most in game development
+but I do have a few tips that have
+helped me in the past the absolute
+biggest thing for me has actually been
+this YouTube channel making videos
+sharing my game and getting feedback
+from people in the comments has been
+incredible for motivation I feel like I
+need to make progress in that
+interesting things to the game in order
+to make the videos better and at the end
+of the slight pressure to perform and
+the deadlines that come from releasing a
+devlog every month or so really helps me
+to be consistent in my work however
+burnout is still an issue and the amount
+of distractions that I have around me at
+all times for my computer phone or just
+wall if I'm that unfocused get in the
+way also it can be hard to have the
+energy to continue to work in the
+afternoon after a day of school
+athletics and homework ultimately it
+just comes down to having practice
+staying on task instead of
+procrastinating to just take scheduled
+breaks as for Bernat on large projects
+I've always renovated this by just
+having a variety of smaller projects and
+game jams that I work on to take breaks
+and explore other skills not all these
+are game development related a lot of
+these are actually video essays that I
+make on this channel but some of these
+game jams and little projects also end
+up as other videos for my channel so it
+kind of works out well for me there are
+so many tips and tricks for motivation
+that I have likely missed in this video
+and if you have any suggestions or tips
+of your own on motivation or time
+management or game development in
+general then be sure to post them in the
+comments but the last tip I have and the
+most important one is to get off YouTube
+and work on your game just kidding
+not really

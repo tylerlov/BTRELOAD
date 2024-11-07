@@ -8,3 +8,10 @@ ShaderImporter:
   userData: 
   assetBundleName: 
   assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 231313
+  packageName: 'Chroma: Easy Pro Shaders'
+  packageVersion: 2.1.5
+  assetPath: Assets/Chroma/Demos/[Quickstart]/Skybox.shader
+  uploadId: 702278

@@ -21,7 +21,7 @@ namespace MoreMountains.Tools
 		protected virtual void OnEnable()
 		{
 			_audioListener = this.gameObject.GetComponent<AudioListener>();
-			_otherListeners = FindObjectsOfType(typeof(AudioListener)) as AudioListener[];
+			_otherListeners = FindObjectsByType(typeof(AudioListener), FindObjectsSortMode.None) as AudioListener[];
 
 			foreach (AudioListener audioListener in _otherListeners)
 			{

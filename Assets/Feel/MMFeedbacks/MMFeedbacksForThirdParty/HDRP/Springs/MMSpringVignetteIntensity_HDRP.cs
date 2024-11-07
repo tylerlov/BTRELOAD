@@ -5,7 +5,7 @@ using UnityEngine.Rendering.HighDefinition;
 
 namespace MoreMountains.Feedbacks
 {
-	[AddComponentMenu("More Mountains/Springs/MMSpringVignetteIntensity_HDRP")]
+	[AddComponentMenu("More Mountains/Springs/MM Spring Vignette Intensity HDRP")]
 	public class MMSpringVignetteIntensity_HDRP : MMSpringFloatComponent<Volume>
 	{
 		protected Vignette _vignette;

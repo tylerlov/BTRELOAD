@@ -11,7 +11,7 @@ namespace MoreMountains.Tools
 	/// Add this component to an object and it will show a healthbar above it
 	/// You can either use a prefab for it, or have the component draw one at the start
 	/// </summary>
-	[AddComponentMenu("More Mountains/Tools/GUI/MMHealthBar")]
+	[AddComponentMenu("More Mountains/Tools/GUI/MM Health Bar")]
 	public class MMHealthBar : MonoBehaviour 
 	{
 		#if MM_UI

@@ -14,7 +14,7 @@ namespace Chroma {
 
 [ExecuteAlways]
 public class Readme : ScriptableObject {
-    [NonSerialized]public readonly string AssetVersion = "2.0.1";
+    [NonSerialized]public readonly string AssetVersion = "2.1.5";
     [NonSerialized][CanBeNull]public string PackageManagerError;
     [NonSerialized]public string UnityVersion = Application.unityVersion;
     public Gradient lineGradient = new Gradient();

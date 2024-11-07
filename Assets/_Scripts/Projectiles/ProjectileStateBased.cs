@@ -323,10 +323,7 @@ public class ProjectileStateBased : MonoBehaviour
         // Use property block instead of directly modifying material
         if (modelRenderer != null)
         {
-            if (_propertyBlock == null)
-            {
-                _propertyBlock = new MaterialPropertyBlock();
-            }
+            _propertyBlock = ProjectileEffectManager.Instance.GetPropertyBlock();
             _propertyBlock.SetColor(ColorProperty, originalProjectileColor);
             modelRenderer.SetPropertyBlock(_propertyBlock);
         }
@@ -349,7 +346,7 @@ public class ProjectileStateBased : MonoBehaviour
         // Optimize LockedFX handling
         if (currentLockedFX != null)
         {
-            ProjectileEffectManager.Instance.ReturnLockedFXToPool(currentLockedFX);
+            currentLockedFX.Stop();
             currentLockedFX = null;
         }
 
@@ -368,12 +365,6 @@ public class ProjectileStateBased : MonoBehaviour
 
     private void OnDisable()
     {
-        // Handle projectile pool return
-        if (rb != null && !rb.isKinematic)
-        {
-            ProjectilePool.Instance?.ReturnProjectile(this);
-        }
-
         // Handle audio cleanup
         if (isPlayingSound && soundInstance.isValid())
         {
@@ -387,8 +378,55 @@ public class ProjectileStateBased : MonoBehaviour
 
         if (_propertyBlock != null)
         {
-            ProjectileEffectManager.Instance.ReturnPropertyBlock(_propertyBlock);
+            ProjectileEffectManager.Instance.ReturnPropertyBlock(gameObject);
             _propertyBlock = null;
+        }
+
+        // Store world position before deactivation
+        Vector3 lastPosition = transform.position;
+
+        // Return effects to pool
+        if (shotEffect != null)
+        {
+            ProjectileEffectManager.Instance.ReturnEnemyShotFXToPool(shotEffect);
+            shotEffect = null;
+        }
+
+        if (radarSymbol != null)
+        {
+            radarSymbol.SetActive(false);
+            radarSymbol = null;
+        }
+
+        // Handle projectile pool return
+        if (rb != null && !rb.isKinematic)
+        {
+            ProjectilePool.Instance?.ReturnProjectile(this);
+        }
+    }
+
+    private void CleanupEffects()
+    {
+        // Clean up shot effect
+        if (shotEffect != null)
+        {
+            if (shotEffect.transform.parent == transform)
+            {
+                shotEffect.transform.SetParent(null);
+            }
+            ProjectileEffectManager.Instance.ReturnEnemyShotFXToPool(shotEffect);
+            shotEffect = null;
+        }
+
+        // Clean up radar symbol
+        if (radarSymbol != null)
+        {
+            if (radarSymbol.transform.parent == transform)
+            {
+                radarSymbol.transform.SetParent(null);
+            }
+            ProjectileEffectManager.Instance.ReturnRadarSymbolToPool(radarSymbol);
+            radarSymbol = null;
         }
     }
 
@@ -648,7 +686,7 @@ public class ProjectileStateBased : MonoBehaviour
 
         if (currentLockedFX != null)
         {
-            ProjectileEffectManager.Instance.ReturnLockedFXToPool(currentLockedFX);
+            currentLockedFX.Stop();
             currentLockedFX = null;
         }
 
@@ -898,5 +936,17 @@ public class ProjectileStateBased : MonoBehaviour
         }
     }
 
-}
+    private GameObject shotEffect;
+    private GameObject radarSymbol;
 
+    public void SetShotEffect(GameObject effect)
+    {
+        shotEffect = effect;
+    }
+
+    public void SetRadarSymbol(GameObject symbol)
+    {
+        radarSymbol = symbol;
+    }
+
+}

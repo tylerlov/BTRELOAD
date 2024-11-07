@@ -7,7 +7,7 @@ namespace MoreMountains.Tools
 	/// <summary>
 	/// A helper class that will hash a animation parameter and update it on demand
 	/// </summary>
-	[AddComponentMenu("More Mountains/Tools/Animation/MMAnimationParameter")]
+	[AddComponentMenu("More Mountains/Tools/Animation/MM Animation Parameter")]
 	public class MMAnimationParameter : MonoBehaviour
 	{
 		/// the name of the animation parameter to hash

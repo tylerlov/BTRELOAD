@@ -1,0 +1,452 @@
+today I want to walk through an
+implementation of stats and modifiers
+using the broker chain pattern this is a
+variation on the classic chain of
+responsibility pattern but instead of
+walking through a linear chain of
+objects a broker or mediator handles all
+the requests for information so the
+broker chain is really a combination of
+the chain of responsibility and mediator
+patterns in our example today we'll have
+a stats mediator that makes sure that
+all the modifiers that do apply to a
+given stat are calculated it can be used
+for pickups equipment environment Buffs
+or anything else you can imagine let's
+take a
+look let's have a quick look at what
+we're actually shooting for here what I
+want to do is start applying modifiers
+to this character's stats the character
+only has two stats attack and defense
+and they're going to show up in the top
+right corner here along with some little
+buff icons as I get different Buffs and
+debuffs they'll just kind of Stack up
+like you'd seen in MMO now let's
+actually just hit play here and I'll
+show you what'll happen so this first
+one is a defense buff you can see my
+defense just went up a few points and I
+have a little icon then I've got one
+that raises my attack and then this one
+here is actually a debuff on attack so
+it went down and now without the first
+buff it's down to zero eventually
+everything comes back to normal when
+they all wear off and that's it let's
+have a quick look at a diagram so at the
+topmost level is going to be a class
+that's going to contain our stats it's
+more like a an interface into the world
+of our stats it'll have a reference to
+our base stats but it'll also have a
+reference to the stats mediator it's
+going to be the broker in this pattern
+so our stats class is going to be able
+to make requests to the stats mediator
+and say Here's my base value calculate
+whatever modifiers apply to this and
+give me back the actual result this way
+anytime we're trying to access a stat
+from the stats class we're going to get
+the calculated value with all the
+applied modifiers now when we're adding
+a modifier so we run into an object in
+the game or we equip a magic item we're
+going to add that onto the chain of
+modifiers inside the mediator we're
+going to need some base stats to work
+with so I'm going to create a scriptable
+object here and we'll keep it super
+simple for this demo just two stats
+attack and defense let's add a way to
+make one of these in unity and then
+we'll move on that's all we have to do
+here let's start with the stats class
+for ease of use I'm going to Define all
+the types of stats that I have in an
+enum and now our stats class itself will
+need a reference to those base stats
+we're going to keep this private because
+I want the only way to be able to read a
+stat will be through a public property
+and when you go to read the public
+property I want it to return the base
+Value Plus every modifier that's been
+applied to that particular stat so I'll
+expose attack and defense in the same
+way once we're finished implementing the
+pattern we can come back and fill these
+out so for the next part of the pattern
+we're going to implement a mediator
+that's going to sit in between the stats
+class and all of the stat model
+modifiers now in the spirit of the
+original gang of four implementation of
+chain of responsibility we can implement
+this as a linked list but it can really
+be any type of data structure that you
+want that you can iterate over in a
+broker chain it's not strictly necessary
+to keep all of your modifiers in one
+list where you can iterate over all of
+them but it is extremely convenient
+because all of them are going to have
+timers or perhaps other logic that needs
+to be updated every frame so it's good
+to have a reference point for all of
+them in a broker chain we're going to
+make queries against all of the things
+in the chain the query is going to be
+specific to a type of stat and it's
+going to contain a value that gets
+mutated by everything in the chain as it
+goes through each of them let's add a
+simple Constructor for this and then
+we're done with the query if we come
+back up to the stats mediator now we can
+add an event handler of type query and
+we'll just call that queries you could
+go with an action here too but I kind of
+like the idea of being able to pass in
+details of the object that initiated the
+query now whenever we want to know about
+a specific stats modifiers we can
+perform a query so we'll have a public
+method here that will just invoke all of
+the queries that we've stored inside of
+that queries variable every time we add
+a new modifier we are also going to
+register it with the queries so down
+here let's add another public method to
+add a modifier it'll take in a modifier
+and add it into our list and then we're
+also going to register the modifiers
+handle method into our queries so you
+can probably see where this is going
+already every time we we perform a query
+that's going to be specific to a type of
+stat every single modifier is going to
+get its handle method called so let's
+add a bit of functionality to a stat
+modifier I'm just going to collapse up
+this query class because we're not going
+to be making any more changes to it
+let's add an abstract method for the
+handle now handle on an event handler is
+going to need to accept an object as a
+sender but it's also going to accept
+that query for us I also want all of my
+modifiers to be I disposable which means
+they are going to have to implement a
+dispose method so let's add that as well
+each step modifier might need a little
+bit different handling when we're
+disposing of them so instead of having
+anything concrete in here let's just
+create an action and we can invoke that
+action whenever we're running the
+dispose how about before we make this
+class any bigger than it already is we
+move it into its own file now once we've
+got this over here in a new file I'm
+going to continue adding a little bit
+more to it I want to be able to mark one
+of these for removal when it's actually
+done doing what it was supposed to do so
+if it had a timer and the timers run out
+we'll mark it for removal and when we're
+kind of done all the operations on a
+modifier for that frame we can check all
+the ones that need to be removed and
+we'll remove them so in the dispose
+method we'll set marked for removal to
+be true now almost all stat modifiers in
+this implementation are going to need a
+timer for people new to the channel
+countdown timer is a class that we use
+often and I'll put a link to that in the
+description in the Constructor for this
+class let's accept a duration for the
+timer but let's say if we pass in 0 or-1
+it means that this particular modifier
+is either permanent or it's permanent
+until we manually remove it so for
+example a potion might last 30 seconds
+but if you're equipping the magic sword
+plus one to attack strength then you
+want that to persist for as long as you
+have the weapon equipped so assuming we
+did pass in a positive number for the
+duration here we can create a new
+countdown timer for that duration and
+then we can say when the timer stops
+let's add an event there just to run the
+dispose method and get rid of this one
+and of course we also need to start this
+timer and with all timers like this we
+need to pass it Delta time every update
+okay well that's it for this abstract
+class let's jump back over to the
+mediator and try and wrap up that class
+as well we can add an update method here
+that will accept Delta time and pass
+that down into all of the different
+modifiers so that if they have a
+countdown timer it continues to update
+itself so we'll start with the first
+node in the modifiers list as long as
+it's not null let's get a reference to
+the modifier in that node and we'll pass
+in Delta time and then we'll grab the
+next node in the
+chain once we've gone through and
+updated all the modifiers now we might
+have some that actually are finished and
+we should remove them so let's do
+another pass again let's just grab the
+first node there and we'll do another
+while loop inside the loop let's first
+get a reference to the next node in the
+chain because we might be removing this
+one if this modifier was marked for for
+removal we need to do two things we need
+to remove it from the list and we also
+need to call its dispose method then we
+can just move on to the next value in
+the list we can make this even simpler
+by hooking into the on dispose method of
+every single modifier instead of
+removing the modifier from the list down
+here in our Loop let's actually hook
+into that on dispose method we can both
+remove it from the list and remove the
+handle method from the queries okay so
+how can we use result of this in our
+actual stats class well let's come back
+here to the public property let's start
+with attack let's create a new query for
+the stat type attack and we're going to
+start with that base stats. attack value
+next the mediator can perform this query
+and that'll make sure that every single
+modifier will have a chance to
+potentially modify this particular stat
+before we get to the final line here
+which will return that value after it's
+been through all the modifiers let's
+jump down to defense here I'll let
+co-pilot fill it out cuz it's going to
+be basically the exact same thing but
+we're going to use a different stat type
+and a different starting value just a
+few things left to do now we need a
+Constructor of course for this and that
+should take in a mediator as well as our
+base stats there we go and let's
+actually overwrite the two string here
+just so we can use it for some debugging
+we'll just output these two stats attack
+and defense only one more thing to do
+before we can start using this and that
+is we need some kind of concrete stat
+modifier we can use I want to make a
+simple one that will just do math
+operations on a stat so it can add a
+little bit or multiply it by a value so
+let's have it know which type of stat
+it's going to affect but also have an
+operation it can perform on that value
+then we need a Constructor for this the
+Constructor will take in the type
+duration and operation pass the duration
+down into the base class and then set
+that type and operation then we can
+finally implement the handle method here
+and what the handle method will do is
+say if this stat modifier affects the
+stat in the query then all we have to do
+is run the operation on that value so
+that's almost the entire pattern
+implemented although we don't have any
+practical usage yet and I'm sure that
+will help with the understanding a lot
+so what I want to do next is just
+Implement a pickup system like imagine
+you're picking up potions or whatever in
+the game or some kind of powerups and
+let's see how this actually all plays
+out together I'm going to implement
+pickups using the visitor programming
+pattern and I'll actually put a link up
+here on the screen to that video If
+you're not familiar with this but
+whenever we bump into a pickup on the
+ground I want to run a method called
+apply pickup effect and that'll actually
+add the modifier to the player or
+creature that ran into this pickup in
+order to do that we have to actually
+visit the player or other entity that
+bumped into this particular pickup so
+we'll add the visit method here whenever
+we visit something as long as it is an
+entity then we will apply the pickup
+effect to that entity then in order to
+run this visit method we actually have
+to have the thing that we bumped into to
+accept the visitor so let's add an ont
+trigger enter as long as this thing has
+an i visitable component we can ask it
+to accept this object this pickup and
+then we'll destroy it though maybe you
+want to kick it back into an object pool
+and spawn it somewhere else okay so
+that's an abstract pickup what does a
+concrete pickup look like well let's
+there could be all kinds of pickups so
+let's make one that's actually a stat
+modifying pickup for this class we want
+to be able to define the kind of
+operation we want to do so could be add
+or multiply we can add or multiply by
+negative numbers as well then let's
+expose some fields to the unity editor
+so we can make some settings here you
+could also wrap these in some kind of
+scriptable object if you wanted but
+let's just go ahead with a few
+serialized Fields here we can Define the
+type we can Define the Operation to
+perform we'll also need to set the value
+for this operation and then potentially
+if we're going to have a timer we should
+set the duration of how long this modif
+actually lasts then we can override this
+apply pickup effect method and in here
+we could have a switch the switch will
+assign a modifier into a variable that
+we can use in a minute so we can say if
+the operator type was add we'll create a
+new basic stat modifier with the type
+duration and an add operation if it was
+type multiply we'll do the same thing
+but we'll do a multiplication any other
+type of operation we'll throw an
+exception and now once we're out of this
+switch statement we can take this model
+modifier that we've created and we'll
+add it to our stats mediator okay that's
+all we have to do with pickups we also
+need to do a little bit of work with the
+entity just to make sure that it can
+accept visitors and has its own stats
+and all of that so let's jump over
+there this class here is going to be the
+base class for all the creatures in my
+game and the Heroes all the players they
+all need some starting base stats and
+they all need an instance of the stats
+class in our awake method we can
+initialize our stats remember that the
+stats class needs a new stats mediator
+and it also needs a reference to these
+base stats the stats mediator class also
+needs to receive time. Delta time every
+update so that it can update all the
+modifiers it's keeping track of let's
+pass that in through our update method
+here in this mono Behavior then let's
+not also forget that we need to accept
+visitors when we're running into pickups
+so when we accept a visitor we're going
+to run the visitor's visit method on
+this particular entity now I just want
+to do one little bit of cleanup and
+that's back in the stats modifier class
+in the dispose method we don't actually
+have to mark this for removal instead
+what we could do especially because the
+mediator is already calling the dispose
+method is let's just mark this for
+removal when the timer stops and that's
+it let's go have a look at the setup in
+unity okay so let's start by having a
+look at the hero now the hero inherits
+from The Entity class so you can see
+it's already exposed some base stats
+here I've already made them and dragged
+them in so I've got a base attack of 10
+a base defense of 20 that's it super
+simple and I've set up three little
+Buffs the first one is an attack buff
+here and it's this sort of orange orb
+that spins around now I added some icons
+and sound effects and stuff just to make
+it a little bit more apparent what's
+going on but this is a type attack that
+multiplies by two and has a duration of
+5 Seconds the next one here is a debuff
+so it's going to play a slightly
+different sound and it has a different
+color you can see it's kind of purple
+and what this one is going to do is on
+the attack stat it's going to add minus
+10 and again last for 5 seconds and this
+last one here will affect the other stat
+the defense one it's going to add 14
+defense for 5 seconds and yeah that's it
+um I'm just going to move this purple
+one a little bit because it's right on
+top of the hero and then we can try this
+out so if I press play let's come over
+to the debuff first you can see that
+right away it took my attack down to
+zero and they all stack up there and
+they're going to come off one by one
+so that's a little bit fast but uh let's
+uh just for an example again of the
+stacking let's duplicate the multiplier
+of the attack buff so if we hit first
+let's hit this defense one so that goes
+up by 14 then you see my attack doubled
+and then doubled again and then went
+down by 10 points and as these come off
+it'll come back to a normal 10 and
+that's it that's the one way you can
+handle stats and modifiers with a broker
+chain just just before I say goodbye I
+just wanted to show you one more thing
+and that is what would you do if you
+were equipping an item and you wanted to
+apply a modifier now this is going to be
+a very Bare Bones extremely naive
+implementation just for an example but
+let's suppose we have an interface I
+equipable that has a method get stat
+modifier on it and then let's further
+suppose that we have a magical sword we
+call it sword plus one it's going to
+return a stat modifier that is exactly
+like you think it would be is it works
+exactly the same as the pickups now
+since I don't have an inventory system
+set up in this demo let's just have some
+public methods on the entity to equip or
+unequip an item when we equip the item
+we need to add the modifier to our stats
+mediator now co-pilot kind of has the
+right idea but actually all we need to
+do when we unequip an item is we need to
+mark that particular modifier as marked
+for removal the mediator will take care
+of the cleanup all right well if you
+learn something new today hit the like
+button don't forget we have a Discord
+where there's lots of interesting
+conversations going on all the time I'll
+put some boxes up on the screen in case
+you want to watch anything else from the
+channel and I'll see you there

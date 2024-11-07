@@ -7,7 +7,7 @@ namespace MoreMountains.Tools
 	/// <summary>
 	/// Array helpers
 	/// </summary>
-	public class MMArray : MonoBehaviour
+	public class MMArray 
 	{
 		/// <summary>
 		/// Rounds an int to the closest int in an array (array has to be sorted)

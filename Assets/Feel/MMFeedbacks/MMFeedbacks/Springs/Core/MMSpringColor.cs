@@ -126,7 +126,7 @@ namespace MoreMountains.Feedbacks
 			SpringG.MoveToInstant(newValue.g);
 			SpringB.MoveToInstant(newValue.b);
 			SpringA.MoveToInstant(newValue.a);
-			ColorSpring.MoveToInstant(newValue.Sum());
+			ColorSpring.MoveToInstant(newValue.MMSum());
 		}
 
 		public override void Stop()
@@ -169,7 +169,7 @@ namespace MoreMountains.Feedbacks
 			SpringG.MoveTo(newValue.g);
 			SpringB.MoveTo(newValue.b);
 			SpringA.MoveTo(newValue.a);
-			ColorSpring.MoveTo(newValue.Sum());
+			ColorSpring.MoveTo(newValue.MMSum());
 		}
 		
 		public override void MoveToAdditive(Color newValue)
@@ -178,7 +178,7 @@ namespace MoreMountains.Feedbacks
 			SpringG.MoveToAdditive(newValue.g);
 			SpringB.MoveToAdditive(newValue.b);
 			SpringA.MoveToAdditive(newValue.a);
-			ColorSpring.MoveToAdditive(newValue.Sum());
+			ColorSpring.MoveToAdditive(newValue.MMSum());
 		}
 		
 		public override void MoveToSubtractive(Color newValue)
@@ -187,7 +187,7 @@ namespace MoreMountains.Feedbacks
 			SpringG.MoveToSubtractive(newValue.g);
 			SpringB.MoveToSubtractive(newValue.b);
 			SpringA.MoveToSubtractive(newValue.a);
-			ColorSpring.MoveToSubtractive(newValue.Sum());
+			ColorSpring.MoveToSubtractive(newValue.MMSum());
 		}
 
 		public override void MoveToRandom(Color min, Color max)
@@ -196,17 +196,17 @@ namespace MoreMountains.Feedbacks
 			SpringG.MoveToRandom(min.g, max.g);
 			SpringB.MoveToRandom(min.b, max.b);
 			SpringA.MoveToRandom(min.a, max.a);
-			ColorSpring.MoveToRandom(min.Sum(), max.Sum());
+			ColorSpring.MoveToRandom(min.MMSum(), max.MMSum());
 		}
 
 		public override void Bump(Color bumpAmount)
 		{
-			ColorSpring.Bump(bumpAmount.Sum());
+			ColorSpring.Bump(bumpAmount.MMSum());
 		}
 
 		public override void BumpRandom(Color min, Color max)
 		{
-			ColorSpring.BumpRandom(min.Sum(), max.Sum());
+			ColorSpring.BumpRandom(min.MMSum(), max.MMSum());
 		}
 		
 		public override void Finish()

@@ -9,7 +9,7 @@ namespace MoreMountains.Tools
 	/// <summary>
 	/// This class is used to display an achievement. Add it to a prefab containing all the required elements listed below.
 	/// </summary>
-	[AddComponentMenu("More Mountains/Tools/Achievements/MMAchievementDisplayItem")]
+	[AddComponentMenu("More Mountains/Tools/Achievements/MM Achievement Display Item")]
 	public class MMAchievementDisplayItem : MonoBehaviour 
 	{		
 		public Image BackgroundLocked;

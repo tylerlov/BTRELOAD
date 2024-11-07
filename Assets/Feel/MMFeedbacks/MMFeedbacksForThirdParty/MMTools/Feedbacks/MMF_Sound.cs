@@ -513,7 +513,7 @@ namespace MoreMountains.Feedbacks
 			{
 				return;
 			}
-			MMSoundManager soundManager = (MMSoundManager)UnityEngine.Object.FindObjectOfType(typeof(MMSoundManager));
+			MMSoundManager soundManager = (MMSoundManager)UnityEngine.Object.FindAnyObjectByType(typeof(MMSoundManager));
 			if (soundManager == null)
 			{
 				GameObject soundManagerGo = new GameObject("MMSoundManager");

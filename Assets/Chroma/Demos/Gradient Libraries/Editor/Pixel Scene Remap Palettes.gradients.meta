@@ -6,3 +6,10 @@ NativeFormatImporter:
   userData: 
   assetBundleName: 
   assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 231313
+  packageName: 'Chroma: Easy Pro Shaders'
+  packageVersion: 2.1.5
+  assetPath: Assets/Chroma/Demos/Gradient Libraries/Editor/Pixel Scene Remap Palettes.gradients
+  uploadId: 702278

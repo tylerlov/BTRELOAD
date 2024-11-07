@@ -7,7 +7,7 @@ namespace MoreMountains.Tools
 	/// <summary>
 	/// A class used to make a camera orbit around a target
 	/// </summary>
-	[AddComponentMenu("More Mountains/Tools/Camera/MMOrbitalCamera")]
+	[AddComponentMenu("More Mountains/Tools/Camera/MM Orbital Camera")]
 	public class MMOrbitalCamera : MonoBehaviour
 	{
 		/// the possible input modes for this camera

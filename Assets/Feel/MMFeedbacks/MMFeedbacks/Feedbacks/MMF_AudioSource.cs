@@ -28,7 +28,7 @@ namespace MoreMountains.Feedbacks
 		/// the possible ways to interact with the audiosource
 		public enum Modes { Play, Pause, UnPause, Stop }
 
-		[MMFInspectorGroup("Audiosource", true, 28, true)]
+		[MMFInspectorGroup("Audiosource", true, 5, true)]
 		/// the target audio source to play
 		[Tooltip("the target audio source to play")]
 		public AudioSource TargetAudioSource;

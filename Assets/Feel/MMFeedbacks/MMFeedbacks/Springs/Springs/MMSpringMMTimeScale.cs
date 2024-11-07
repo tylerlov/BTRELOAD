@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace MoreMountains.Feedbacks
 {
-	[AddComponentMenu("More Mountains/Springs/MMSpringMMTimeScale")]
+	[AddComponentMenu("More Mountains/Springs/MM Spring MMTimeScale")]
 	public class MMSpringMMTimeScale : MMSpringFloatComponent<Transform>
 	{
 		protected override void Initialization()

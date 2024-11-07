@@ -33,7 +33,7 @@ namespace MoreMountains.Tools
 		/// <returns></returns>
 		protected virtual IEnumerator InitializeInputModule()
 		{
-			EventSystem eventSystem = GameObject.FindObjectOfType<EventSystem>();
+			EventSystem eventSystem = Object.FindAnyObjectByType<EventSystem>();
 
 			if (eventSystem == null)
 			{

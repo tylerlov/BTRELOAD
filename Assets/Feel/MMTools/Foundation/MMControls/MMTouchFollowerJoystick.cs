@@ -11,7 +11,7 @@ namespace MoreMountains.Tools
 	/// Add this component to a UI rectangle and it'll act as a detection zone for a follower joystick.
 	/// Note that this component extends the MMTouchJoystick class so you don't need to add another joystick to it. It's both the detection zone and the stick itself.
 	/// </summary>
-	[AddComponentMenu("More Mountains/Tools/Controls/MMTouchFollowerJoystick")]
+	[AddComponentMenu("More Mountains/Tools/Controls/MM Touch Follower Joystick")]
 	public class MMTouchFollowerJoystick : MMTouchJoystick
 	{
 		[MMInspectorGroup("Follower Joystick", true, 23)]

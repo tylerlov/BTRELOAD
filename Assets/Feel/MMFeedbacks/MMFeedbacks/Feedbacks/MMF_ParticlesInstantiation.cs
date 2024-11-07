@@ -111,6 +111,11 @@ namespace MoreMountains.Feedbacks
 		[MMFCondition("ForceSimulationSpeed", true)]
 		public Vector2 ForcedSimulationSpeed = new Vector2(0.1f,1f);
 
+		/// the particle system instantiated by this feedback
+		public ParticleSystem InstantiatedParticleSystem => _instantiatedParticleSystem;
+		/// the particle systems instantiated by this feedback
+		public List<ParticleSystem> InstantiatedRandomParticleSystems => _instantiatedRandomParticleSystems;
+
 		protected ParticleSystem _instantiatedParticleSystem;
 		protected List<ParticleSystem> _instantiatedRandomParticleSystems;
 

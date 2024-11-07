@@ -1,0 +1,356 @@
+today we're going to look at an
+implementation pattern that solves a big
+problem for us as Unity devs we're
+always looking for ways to communicate
+between components and game objects
+without needing them to be aware of each
+other as a software engineer I often
+implement the event bus pattern to solve
+this problem in the real world in this
+video we're going to build an event bus
+system for Unity and also bootstrap it
+on game load along the way I'm going to
+explain each of these Advanced unity and
+C techniques at the end you'll have a
+powerful message system to use in your
+projects let's get into
+it the system will have two parts the
+event bus and its events and then the
+code that will bootstrap and configure
+the system when the game starts we'll
+create the event bus first let's start
+with interfaces all events in our system
+will implement the I event interface and
+the I event binding interface will
+represent a relationship between action
+and an event of type T we'll have two
+public properties here so the action we
+add to the binding could either use the
+event type as the argument or it could
+be a no ARS action in the concrete
+binding I'm going to store the actions
+in private fields and we'll expose them
+using an explicit interface an explicit
+interface implementation will enforce
+the requirement to store bindings as the
+interface type and not the concrete
+event binding type we'll see that when
+we declare new bindings now I'm also
+going to store an empty delegate into
+each of these events so that they're
+never null and we don't have to waste
+time with null checks on a binding we
+can also write this in
+shorthand like
+so let's declare two public Constructors
+for The Binding the first one can pass
+in an action with a parameter of type T
+and assign that to the onevent variable
+the other can pass in our no AR's action
+and assign that as well all right I'm
+just going to tidy this up a little bit
+to some expression bodies here
+and let's add a couple more public
+methods here so that we can add a few
+more actions or remove them if we want
+at runtime so after we've declared an
+event binding with one action and we
+decide oh we want two actions to
+actually happen we can just do that in
+whatever class is declaring this binding
+so that's just about everything we need
+related to bindings I'm just going to
+move all the binding related classes
+into their own file here called event
+binding then we can come back here and
+start working on the actual bus so our
+bus is going to be the Hub of activity
+for an event type we're going to store
+all of the bindings related to a type of
+event and we'll put all those into a
+hash set let's have two public methods
+to register and deregister a binding
+from the bus and we'll need a public
+method that will accept an event and
+invoke both the actions on The Binding
+normally there will only be one action
+defined but recall that we assigned
+empty delegates already so neither
+action should be null I'm also using the
+at symbol here so that I can use the
+event keyword as a variable name this
+isn't really necessary but I wanted to
+show that in case anyone wasn't sure
+what that means next I want to start
+working on concrete events so I'm going
+to create a new file called events and
+I'm going to move all event related code
+into there we don't need too much here
+but I want to have a couple that we can
+test with let's have a test event that
+has no data let's have a player event
+that sends around a little bit of data
+about the player that way we'll be able
+to test it out in unity I also think I'm
+going to use strs over classes because
+strs are allocated on the stack not the
+Heap and so it'll put way less pressure
+on the garbage collector so let's come
+over to our hero now our hero will need
+two bindings one for our test event
+binding and one for the player event
+binding and we're going to need to run
+some methods when those events get
+raised so let's just make a really
+simple ones that up put some debug
+statements so the first one the test
+event EV isn't going to receive any data
+so we can just debug a statement but the
+other one will receive a player event
+and that player event has two variables
+in it so let's output those to the
+console as
+well okay now on enable let's define the
+bindings and register them to the event
+bus of their various types look like
+co-pilot figured that one out no problem
+let's also make sure to deregister from
+these events on disable one more thing
+before we leave the hero behind for now
+uh let's define an update method where
+we have a few key presses which will
+raise these events so whenever we press
+a key it should tell the event bus raise
+the event and any Bindings that have
+been registered to that bus should fire
+off their actions okay so at this point
+we' basically written all the code we
+need to have a working event bus except
+you may have noticed one thing we
+haven't actually defined any concrete
+types of event buses and that's what
+we're going to look at next year what
+we're going to do is bootstrap this
+system up by looking through these four
+assemblies that Unity puts together when
+it's compiling your project there are
+four total two for runtime and two for
+the editor I'll put a link in the
+description to these stocks now before
+the game even starts running we are
+going to find every type of event in
+these assemblies and we're going to
+create a bus for them this won't include
+your own assembly definitions but you
+can add them to the tools we're about to
+make I'm going to split this into two
+parts first let's make a tool that will
+search through these assemblies and find
+all instances of a type I'm going to
+define the assembly types as an enum
+because I don't want to make any
+spelling mistakes later when we're
+searching through the assemblies we're
+going to get the values back as strings
+so we can just relate those to these
+enum types and use those enums going
+forward so what I'll do is just make a
+little method here that will translate a
+string response into an enum value I'll
+set up a switch in here that will return
+the correct enum value based on whatever
+string we pass in here looks like
+co-pilot already has that figured out so
+this looks good uh remember it could
+possibly return null because Unity isn't
+going to compile any of these if there's
+actually nothing in them to compile so
+if you didn't have any editor scripts
+for example those those editor ones
+won't even exist so moving on let's have
+a public method where we pass in a type
+of interface and we get back all the
+list of concrete types so in our case
+we're looking for all the I events and
+we want to get back things like player
+event Test event first of all let's grab
+all the assemblies from the current
+domain now we need a dictionary here so
+that we can store all of the types we
+find in each assembly and Associate it
+with one of our enum values what we'll
+do is we'll just iterate over all of
+those assemblies as long as the assembly
+isn't null We'll add every single type
+we've found into our dictionary and
+we're going to refine that search in a
+moment okay now that we have a good
+organization of what types were found in
+which assemblies let's make a helper
+method that will further refine our
+search it'll take in all those types
+it'll take in a reference to the type
+we're looking for and it'll have a
+results as well we'll just call that
+types so that the types will be
+represented as an Eye collection and
+that's what we're going to return when
+we're done this whole method so I'll
+just come up here private method it'll
+take in those arguments and then it all
+we're going to do is make sure that the
+assembly that's containing all the types
+isn't null if it is like there's there
+was nothing inside of it let's just bail
+out uh otherwise let's just iterate over
+it and if we find one that matches the
+interface that we're looking for let's
+put it into the types collection and
+we'll just keep populating that with all
+the types that we find so here if the
+type wasn't the actual interface like
+it's not I event and we'll use the
+method is assignable from to make sure
+it actually implements the interface if
+it matches those criteria it's going
+into the types collection okay well that
+class was somewhat complicated so what
+I'm going to do is get the jet brains AI
+assistant to quickly write up some
+documentation for this so that I can put
+this in the repository and if you guys
+are looking at it later it'll have all
+these notes and whatnot in there I also
+see I need to rearrange my argument down
+here in this method
+calls okay now for the really exciting
+part I'm going to create a new class
+that'll hold all of the utilities for
+our event bus and I'll move it into its
+own file here before I start writing any
+code this is going to need references to
+all of those event types that we just
+found using our other tool we can just
+make it an I readon list and we can do
+the same for all of the event buses that
+we're about to create so what we're
+going to do here is use a special
+attribute that Unity has that lets us
+execute code before our game even starts
+running and that is the runtime
+initialize on load method attribute and
+here you can specify when you want this
+thing to actually go off and we're going
+to say before scen load what we're going
+to do is run a method I'll just call it
+initialize let's get all of those types
+using our static method that we just
+wrote and then I'm going to initialize
+all of the buses in a different method
+so this next method here will just
+return a list of types of our new
+generic buses that we're creating let's
+store those in a private variable first
+I'm going to also store the type of a
+generic event bus into a variable and
+then I'm just going to Loop over all of
+the event types that we found and use
+the make generic type method that's from
+the type class to create an event of
+each types that means we're going to
+make an event bus of type test Event
+Event bus of type player event and so on
+now finally before we leave here let's
+make one more utility method that we're
+going to need and that is to clear all
+the buses all we need to do here is
+iterate over all of the buses we made
+and let's use reflection to find a
+method on it called clear clear we'll
+have to write that in one second here
+but it'll just empty out all the
+bindings let's jump over to the event
+bus class and just add that clear method
+very simple I want to add a little bit
+more functionality here just a very
+quick little cleanup when we come out of
+play mode and back into the editor we
+should ensure that each bus that we've
+created is empty this will remove any
+potentially unresolved references to
+objects which would prevent them from
+being garbage collected could lead to a
+memory leak clearing these bindings when
+play mode changes is a best practice to
+do this I'm going to use another
+attribute called initialize onload
+method this is just like the runtime
+version except it's for the editor so if
+we keep a variable that knows which
+state we're in and we start listening to
+the play mode State changed on the
+editor application then every time that
+goes off we can register our state and
+if it is exiting play mode we'll clear
+all the buses might as well get jet
+brains AI to write up a bunch of
+documentation here I'll read over it and
+make sure it's all correct and maybe add
+some links right in here too and then
+this will be in the repository for you
+um to have a look at later if there's
+one thing the AI is really good at it's
+very good at writing
+documentation
+so I've compiled the code and clicked
+play and right away you can see it's
+initialized both the buses that I
+expected to
+have now if I click the a key there we
+go test event received so the player got
+the message if I click B yep we get the
+player event with the expected values
+both my health component and Mana
+component were set to 100 I'll come out
+of play mode and right away we can see
+it's clearing all the buses the test
+event bindings and the player event
+bindings so this is all working as
+expected but let's do one more
+test I've pulled in these sample orbs
+from The Chronic liquid volume 2 package
+I want to use them in my UI for health
+and Mana now I've already written a
+little script as you can see this is
+very similar to our
+hero we've got a player event binding
+we're going to Define it on enable and
+register it on disable we'll deregister
+it and all it's going to do is bump our
+health up by about 10% every
+time I'm just going to come back into
+unity and add that to the game object so
+I'm going to hit play and start clicking
+the b key you can see my health orb
+starts filling up by 10% each time and
+we're still getting the messages about
+the player event on the hero sending its
+debug message out to the console I had a
+lot of fun creating this event bus I
+plan to add more features to it in the
+future and I'd like to hear your
+suggestions in the comments Maybe a few
+months we can revisit this topic and
+create an even more powerful event bus
+based on your suggestions there will be
+more advanced Unity videos like this in
+the future so if you want to see more
+content like this don't forget to like
+And subscribe I'm also going to put a
+link up on the screen to my video about
+event channels another powerful way to
+decouple your game objects in unity make
+sure to check that one out too so you
+have that option available and I'll see
+you
+there

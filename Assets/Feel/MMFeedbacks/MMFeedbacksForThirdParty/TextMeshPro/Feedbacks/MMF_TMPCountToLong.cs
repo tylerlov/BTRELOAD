@@ -99,6 +99,7 @@ namespace MoreMountains.Feedbacks
 		/// <returns></returns>
 		protected virtual IEnumerator CountCo()
 		{
+			IsPlaying = true;
 			_lastRefreshAt = -float.MaxValue;
 			long currentValue = CountFrom;
 			_startTime = FeedbackTime;
@@ -115,6 +116,7 @@ namespace MoreMountains.Feedbacks
 				yield return null;
 			}
 			UpdateText(CountTo);
+			IsPlaying = false;
 		}
 
 		/// <summary>

@@ -176,8 +176,9 @@ namespace MoreMountains.Feedbacks
 		protected float _initialRange;
 		protected float _initialShadowStrength;
 		protected float _initialIntensity;
-		protected Coroutine _coroutine;
 		protected Color _initialColor;
+		
+		protected Coroutine _coroutine;
 		protected Color _targetColor;
 
 		/// <summary>
@@ -237,12 +238,12 @@ namespace MoreMountains.Feedbacks
 			switch (Mode)
 			{
 				case Modes.Instant:
-					BoundLight.intensity = InstantIntensity * intensityMultiplier;
-					BoundLight.shadowStrength = InstantShadowStrength;
-					BoundLight.range = InstantRange;
+					BoundLight.intensity = NormalPlayDirection ? InstantIntensity * intensityMultiplier : _initialIntensity;
+					BoundLight.shadowStrength = NormalPlayDirection ? InstantShadowStrength : _initialShadowStrength;
+					BoundLight.range = NormalPlayDirection ? InstantRange : _initialRange;
 					if (ModifyColor)
 					{
-						BoundLight.color = InstantColor;
+						BoundLight.color = NormalPlayDirection ? InstantColor : _initialColor;
 					}                        
 					break;
 				case Modes.OverTime:

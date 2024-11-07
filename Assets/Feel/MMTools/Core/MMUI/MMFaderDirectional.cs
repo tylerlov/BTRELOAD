@@ -8,7 +8,7 @@ namespace MoreMountains.Tools
 	/// This specific fader will move from left to right, right to left, top to bottom or bottom to top
 	/// </summary>
 	[RequireComponent(typeof(CanvasGroup))]
-	[AddComponentMenu("More Mountains/Tools/GUI/MMFaderDirectional")]
+	[AddComponentMenu("More Mountains/Tools/GUI/MM Fader Directional")]
 	public class MMFaderDirectional : MMMonoBehaviour, MMEventListener<MMFadeEvent>, MMEventListener<MMFadeInEvent>, MMEventListener<MMFadeOutEvent>, MMEventListener<MMFadeStopEvent>
 	{
 		/// the possible directions this fader can move in

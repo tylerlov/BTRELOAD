@@ -19,7 +19,7 @@ namespace MoreMountains.Tools
 	/// <summary>
 	/// Add this class to a gameobject, and it'll enable/disable it based on platform context, using Application.platform to detect the platform
 	/// </summary>
-	[AddComponentMenu("More Mountains/Tools/Activation/MMApplicationPlatformActivation")]
+	[AddComponentMenu("More Mountains/Tools/Activation/MM Application Platform Activation")]
 	public class MMApplicationPlatformActivation : MonoBehaviour
 	{
 		/// the possible times at which this script can run

@@ -12,7 +12,7 @@ namespace MoreMountains.FeedbacksForThirdParty
 	/// <summary>
 	/// Add this to a Cinemachine brain and it'll be able to accept custom blend transitions (used with MMFeedbackCinemachineTransition)
 	/// </summary>
-	[AddComponentMenu("More Mountains/Feedbacks/Shakers/Cinemachine/MMCinemachinePriorityBrainListener")]
+	[AddComponentMenu("More Mountains/Feedbacks/Shakers/Cinemachine/MM Cinemachine Priority Brain Listener")]
 	#if MM_CINEMACHINE || MM_CINEMACHINE3
 	[RequireComponent(typeof(CinemachineBrain))]
 	#endif

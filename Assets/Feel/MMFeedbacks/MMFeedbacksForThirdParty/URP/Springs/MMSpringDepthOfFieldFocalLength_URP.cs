@@ -5,7 +5,7 @@ using UnityEngine.Rendering.Universal;
 
 namespace MoreMountains.Feedbacks
 {
-	[AddComponentMenu("More Mountains/Springs/MMSpringDepthOfFieldFocalLength_URP")]
+	[AddComponentMenu("More Mountains/Springs/MM Spring Depth Of Field Focal Length URP")]
 	public class MMSpringDepthOfFieldFocalLength_URP : MMSpringFloatComponent<Volume>
 	{
 		protected DepthOfField _depthOfField;

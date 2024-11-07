@@ -6,7 +6,7 @@ namespace MoreMountains.Tools
 	/// <summary>
 	/// Adds this class to particles to force their sorting layer
 	/// </summary>
-	[AddComponentMenu("More Mountains/Tools/Particles/MMVisibleParticle")]
+	[AddComponentMenu("More Mountains/Tools/Particles/MM Visible Particle")]
 	public class MMVisibleParticle : MonoBehaviour {
 
 		/// <summary>

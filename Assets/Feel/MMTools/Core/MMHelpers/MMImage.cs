@@ -7,7 +7,7 @@ namespace MoreMountains.Tools
 	/// Image helpers
 	/// </summary>
 
-	public class MMImage : MonoBehaviour 
+	public class MMImage  
 	{
 		/// <summary>
 		/// Coroutine used to make the character's sprite flicker (when hurt for example).

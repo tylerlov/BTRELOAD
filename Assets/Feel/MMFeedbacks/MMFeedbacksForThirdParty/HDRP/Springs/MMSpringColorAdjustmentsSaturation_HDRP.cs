@@ -5,7 +5,7 @@ using UnityEngine.Rendering.HighDefinition;
 
 namespace MoreMountains.Feedbacks
 {
-	[AddComponentMenu("More Mountains/Springs/MMSpringColorAdjustmentsSaturation_HDRP")]
+	[AddComponentMenu("More Mountains/Springs/MM Spring Color Adjustments Saturation HDRP")]
 	public class MMSpringColorAdjustmentsSaturation_HDRP : MMSpringFloatComponent<Volume>
 	{
 		protected ColorAdjustments _colorAdjustments;

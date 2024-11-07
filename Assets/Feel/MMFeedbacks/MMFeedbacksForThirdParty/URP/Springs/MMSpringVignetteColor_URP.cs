@@ -5,7 +5,7 @@ using UnityEngine.Rendering.Universal;
 
 namespace MoreMountains.Feedbacks
 {
-	[AddComponentMenu("More Mountains/Springs/MMSpringVignetteColor_URP")]
+	[AddComponentMenu("More Mountains/Springs/MM Spring Vignette Color URP")]
 	public class MMSpringVignetteColor_URP : MMSpringColorComponent<Volume>
 	{
 		protected Vignette _vignette;

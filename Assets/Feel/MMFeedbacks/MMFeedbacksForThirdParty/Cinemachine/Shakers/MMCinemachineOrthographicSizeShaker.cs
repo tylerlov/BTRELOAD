@@ -12,7 +12,7 @@ namespace MoreMountains.FeedbacksForThirdParty
 	/// <summary>
 	/// Add this to a Cinemachine virtual camera and it'll let you control its orthographic size over time, can be piloted by a MMFeedbackCameraOrthographicSize
 	/// </summary>
-	[AddComponentMenu("More Mountains/Feedbacks/Shakers/Cinemachine/MMCinemachineOrthographicSizeShaker")]
+	[AddComponentMenu("More Mountains/Feedbacks/Shakers/Cinemachine/MM Cinemachine Orthographic Size Shaker")]
 	#if MM_CINEMACHINE
 	[RequireComponent(typeof(CinemachineVirtualCamera))]
 	#elif MM_CINEMACHINE3

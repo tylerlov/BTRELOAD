@@ -1,0 +1,437 @@
+today I want to talk about three
+misconceptions that we often have about
+programming in c as it pertains to Unity
+and while these misconceptions are
+usually geared towards Unity beginners I
+do want to go a little bit further with
+each one so that even those of you who
+are at a more advanced level might be
+able to pick up some useful tips or
+maybe you have something you want to add
+in the comments as well these kinds of
+videos always generate some great tips
+and insights in the comments below so
+let's get started here I want to see if
+you know what will happen with the first
+statement
+I'm going to start with this one here
+let's zoom in a little bit I'm going to
+put a oneliner in here I want you to
+think about this just for a second what
+do you suppose is going to happen when I
+go back into unity and press play Rider
+isn't showing me any errors do you think
+it will run so if I'm back over here and
+I click on play look what we get in the
+log invalid cast exception a nice purple
+message for us it's going to cause Big
+Time problems in our game now where I
+positioned this in the start method of
+course we're going to see this right
+away while we're developing but if you
+were doing this nested in to some logic
+that you've created deep down inside of
+your program you might never see it
+until you've actually sent it off for
+play testing now the C misconception I
+want to talk about is not about casting
+transforms into direct transforms I
+think most of you could probably see
+that one coming a mile off the
+misconception that I actually want to
+talk about is that we should avoid
+exception throwing methods as much as
+possible but how would we actually do
+that
+but we could do it with the as keyword
+using the as keyword if it were to
+actually fail instead of throwing an
+exception we'll just get a null so now
+this really becomes a null check and I
+would say this is probably a fine
+approach if this is a non-critical path
+in your program so if we get the rec
+transform then great we can do something
+with it if not let's just put a message
+out letting us know that you know
+something that we didn't expect happened
+why don't we make sure this works as
+expected just going to click play here
+and yeah right away we see we get our
+message saying that yeah this is not
+actually a w transform and the game just
+carries on now let's go back into code
+and suppose that this is a critical path
+meaning we need the game to stop and we
+have to handle this exception what I'll
+do here is just select all of this code
+that we just were working on with the as
+keyword let's get rid of this instead
+what I'm going to do is start a TR catch
+block just above my old code that was
+throwing the exception before and this
+time what we'll do is actually catch
+that exception and handle it so I'm
+going to uncomment out the code here and
+then I'm going to add a catch block or
+rather I'm going to let co-pilot do it
+because it already knows what kind of
+exception this is going to be it's going
+to be an invalid cast exception and we
+can handle it
+accordingly so of course when I press
+play here we're seeing our red error
+message and not that purple exception so
+the main takeaway here is that
+exceptions are beneficial when the
+presence of a component or a condition
+is critical and failure to meet the
+expectations should immediately halt
+execution or flag and error non-
+exception methods like the tripar method
+or first store default or using the as
+keyword are suitable when there is a
+logical alternative or some default
+action to take if the operation doesn't
+succeed now while we're on the subject I
+want to point out a feature in unity
+that is often overlooked you see here on
+the top of my console Pro I've got a
+button here that says error pause this
+button is also available in the regular
+console let me just open that up and
+show you what this will do is pause the
+game anytime that you log an error
+anytime an exception is thrown or
+anytime you make an assertion a debug
+assert and it fails so I'm going to hit
+play here and of course we see our
+message again but this time the game
+pauses itself so this is extremely
+convenient if you want to start catching
+these little errors and doing some
+debugging so that's just a little
+convenience that's been there all along
+probably right under your nose hit that
+like button if you didn't know that one
+before today okay so just to recap this
+if it's Mission critical it's useful to
+put it into a try catch and actually do
+something catching the exception here
+forces you to handle the exception at
+the source if you were to just use the
+as keyword you might not even know that
+there was some problem until you
+actually checked it for null later on in
+your program if you even remember to
+check it for null in which case you're
+going to get an entirely different
+exception thrown okay let's open up a
+can of worms here and address the
+misconception that the equality operator
+or the equals equals operator represents
+the same thing as the equals method on
+an object now typically you can operate
+under the assumption that value types
+will always try to compare by value
+reference types will always try to
+compare by reference but this isn't
+always the case let's start by looking
+at strings I'm going to initialize two
+strings here both with exactly the same
+value and then let's see what happens
+with equals equals and with the equals
+method remember that strings are a
+reference type in C but they do have
+different Behavior than other reference
+types both the equals equals operator
+and the equals method are overwritten to
+compare value types not reference types
+and so both equals equals and the equals
+method should return true when comparing
+these two string instances even though
+they are separate objects in memory
+let's jump back into unity and make sure
+that's correct if I zoom in on the
+console there you'll see yep both of
+those return true okay let's move on to
+look at
+objects okay let's start a new class
+here I'm just going to call it my class
+and it's just going to have one property
+an integer called value we'll have a
+Constructor that'll take in a value and
+set it and that's really all we need for
+this simple test back in our example
+class let's make a few instances of my
+class so object one will be my class the
+value of one let's make the exact same
+thing for object two same value and then
+let's make object 3 equals object one
+now we can have a few debug statements
+to test this out so object one equals
+equals object 2 object 1 equals object
+two and then let's check equals equals
+between object one and object
+3 if I hit play here let's have a look
+at the console so equals equals between
+the first two objects was false we know
+they were different references but look
+at the equals method also false this is
+because system.object falls back on the
+reference equals method so both of those
+comparisons are by reference now it is
+true that many developers will use the
+equals method in their custom types to
+compare by value and equals equals to
+compare by reference but it's not always
+the case you just have to be mindful of
+that let's have a look at how we can can
+actually override equals in our custom
+type here to compare by value instead of
+by reference let's start with a guard
+Clause if the object coming into this
+method is null or it's not the same type
+as this object return false let's get
+out of here otherwise let's cast that
+object into this type and then we can
+return whether or not the value of this
+object is equal to the value of the
+other object so here we're using equals
+equals again but remember we're
+comparing integers here so we're making
+a value comparison when overriding the
+equals method it's a good practice to
+also override the get hash code method
+because doing so ensures that the
+objects considered equal will have the
+same hash code which is crucial for the
+correct functioning of hash based
+collections like hash set and dictionary
+so let's find out what happens when I
+click play now so first of all we can
+see that object one and object two are
+not the same reference but they do have
+the same value they both had the value
+PED in of one the reference comparison
+between object one and object object 3
+Remains the
+Same so for interest sake let's make our
+my class just a little bit more
+complicated let's add one more property
+we'll just make it a string called name
+we can pass that in through the
+Constructor and then set it as well now
+we're going to want to update our equals
+method because we have another public
+property that kind of defines the value
+of this object so instead of just
+comparing the value property let's also
+compare the name property and if both of
+those things are true let's return true
+now we can also update our get hash code
+method to incorporate the name property
+you can do that easily using the hash
+code static method combine that'll let
+you pass in up to eight values that you
+can combine into a unique hash code now
+this is a very effective way of
+generating hash codes based on values
+contained in a class but it's not 100%
+Collision free in fact it's impossible
+to write your own hash code method that
+will be 100% Collision free some people
+like to implement this this common
+algorithm that is very effective it has
+to be wrapped in an unchecked block
+because get hash code must never throw
+an exception start your hash with an odd
+prime number then we start multiplying
+that hash by another odd prime number
+plus the get hash code of the different
+properties inside of this object after
+we're done all the multiplication we can
+pass it back now the prime numbers
+promote uh even distribution throughout
+the hash table so this is a very common
+and effective way of creating hash codes
+but even this this is not 100% Collision
+free before we start talking about
+Collision free let's do a sanity check
+and make sure this works let's jump back
+into the example class and make sure
+that we're passing in a string value to
+each of these and then we'll just jump
+into Unity
+again okay so I hit play and nothing's
+really changed object one and object two
+still have different references but in
+terms of value equality they are the
+same if you do need to guarantee zero
+collisions the best way to do this is
+with a unique identifier let's go
+through an example just doing that with
+an integer let's make a static integer
+we'll call it next ID starting at number
+one we can initialize a property called
+ID on each instance of my class with the
+value of next ID and as soon as we've
+initialized it we just bump up the next
+ID by one now with that ID in place we
+don't need to compare these other values
+of the object because the index
+determines the uniqueness of this
+instance down in the equals method we
+can just compare IDs between the two
+objects and if we scroll down a little
+bit we can actually simplify this get
+hash code method now we can return id.
+get has code if we want however in C the
+get hash code method of an integer
+simply Returns the integer itself so
+instead of doing this we can actually
+just return the ID now of course this is
+not 100% Collision free because you know
+eventually after you've used two billion
+plus integers it's going to roll all the
+way back back around and try to use
+integer number one again anyway coming
+back to the misconception we can't
+always assume that equals does the same
+thing as the equality operator because
+both of these things can be overridden
+and how would we do this on a custom
+type Well we'd use the operator keyword
+and indicate which operator we want to
+overload here we need to pass in the two
+things we're going to compare we can say
+if both of these things are equal to
+null we could return true because they
+technically are equal if one of them is
+equal to null but not the other let's
+return Falls and if not then let's just
+make our comparison against the ID like
+we were doing before or you could
+compare the values as we did before that
+now you need to be symmetrical about
+this whenever you implement the equality
+operator you should also implement the
+not equals operator okay so now we have
+a custom type that is using both the
+equals method and the equality operator
+to confirm the value of the ID of each
+instance okay well I hope that gives you
+some ideas on how you can handle these
+things in your own custom types let's
+move on to another misconception if
+you're coming from a background in
+python or JavaScript you're used to
+Dynamic types that means that the
+language runtime determines the type of
+the variable as it's required so it's a
+common misconception in C that the VAR
+keyword indicates a dynamic type this
+isn't the case let's dig into this so
+the dynamic keyword does exist in C and
+it was introduced in C 4 however Unity
+does not support it for the immediate
+language to C++ scripting back end which
+means means that for quite a lot of your
+builds it's not available and for that
+reason most people just avoid the
+dynamic keyword altogether so the VAR
+keyword in C is used for implicitly
+typing a variable this allows the
+compiler to infer the variable's type
+based on the assigned value at compile
+time that's why we're able to write VAR
+my number equals 42 and the compiler is
+able to infer the type of my number
+based on the value that we've assigned
+to it of course if we try to assign a
+different type into my number now we're
+going to get an error now I realize that
+most of you who watch this channel are
+already familiar with the fact that
+Dynamic is not the same thing as an
+implicitly typed variable so we're not
+going to dwell on this too much but I
+did want to talk about how we initialize
+these kinds of variables if we declare a
+more complex type so a dictionary of
+type int that has a list of strings as
+the values here we're explicitly seeing
+what type this is twice and it's
+unnecessary it's just a bunch of visual
+noise so we could use VAR in the
+beginning here and then when we're
+assigning a new dictionary into this
+variable that infers the type for us we
+can tell just by reading it one time
+what type dictionary one is let's make
+another one though because there's
+another way to do this what if we make a
+dictionary two and in this time instead
+of using the VAR keyword we use the
+target type new keyword these are
+semantically the exact same thing the
+one limitation with VAR is that you can
+only use it in a local Scope when you're
+declaring and initializing a variable in
+the same line that means we have to use
+the second syntax when we're declaring
+things at a field level we can't use VAR
+there is another time though that I will
+make it explicit and that's if I'm
+getting something back from a function
+and it's not really clear what the
+return type is at least not at a glance
+so let's suppose we had this method here
+that's down off screen somewhere and I
+can't see it immediately if I was to use
+the VAR keyword here it say VAR
+something equals whatever the result of
+this function was now just looking at
+this I have no idea what something is at
+all in fact if I was to do even this
+something. transform. rotation well you
+know almost everything in unity has a
+transform I still don't know what this
+is it's not clear without hovering over
+it or going to look at the actual method
+or anything like that so here in this
+case I would definitely opt to
+explicitly Define the type instead of
+using the VAR keyword another time you
+might want to use the VAR keyword is
+when you're returning non-trivial or
+sometimes impossible to predict types so
+for example from a link expression okay
+that's probably enough about the VAR
+keyword but if you have anything to add
+feel free to leave a comment below so
+I'm just going to add one more thing and
+that is that all of these things that
+I've talked about today came from
+comments under YouTube videos or
+discussions on Discord from the last
+couple months so if you have a question
+about Unity or C that you'd like me to
+talk about on this channel please post
+it in the comments under this video so I
+can keep track of it in case I do a
+followup because I actually have several
+other misconceptions I'd like to talk
+about in the future that's all I've got
+time for today but I do have a whole
+week off coming up so next week's video
+is going to be a banger hit the
+notification Bell if you want to stay on
+top of that one and of course if you're
+not sick of the channel yet I'll put a
+few videos up on the screen and don't
+forget we've got a great Discord server
+that you can join if you want to discuss
+these kinds of topics with more
+like-minded peers maybe I'll see you
+there

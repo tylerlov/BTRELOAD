@@ -7,7 +7,7 @@ namespace MoreMountains.Tools
 	/// <summary>
 	/// A class used to pilot a MMPlaylist
 	/// </summary>
-	[AddComponentMenu("More Mountains/Tools/Audio/MMPlaylistRemote")]
+	[AddComponentMenu("More Mountains/Tools/Audio/MM Playlist Remote")]
 	public class MMPlaylistRemote : MonoBehaviour
 	{
 		public int Channel = 0;

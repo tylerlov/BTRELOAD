@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using MoreMountains.Tools;
 using UnityEngine;using UnityEngine.Scripting.APIUpdating;
 
 namespace MoreMountains.Feedbacks
@@ -17,6 +18,7 @@ namespace MoreMountains.Feedbacks
 		public static bool FeedbackTypeAuthorized = true;
 		#if UNITY_EDITOR
 		public override Color FeedbackColor { get { return MMFeedbacksInspectorColors.PauseColor; } }
+		public override Color DisplayColor { get { return MMFeedbacksInspectorColors.PauseColor.MMDarken(0.25f); } }
 		public override bool DisplayFullHeaderColor => true;
 		#endif
 		public override IEnumerator Pause { get { return PauseWait(); } }

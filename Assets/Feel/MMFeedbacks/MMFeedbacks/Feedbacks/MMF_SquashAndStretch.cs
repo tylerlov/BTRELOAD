@@ -14,7 +14,7 @@ namespace MoreMountains.Feedbacks
 	[AddComponentMenu("")]
 	[MovedFrom(false, null, "MoreMountains.Feedbacks")]
 	[FeedbackPath("Transform/Squash and Stretch")]
-	[FeedbackHelp("This feedback will let you modify the scale of an object on an axis while the other two axis (or only one) get automatically modified to conserve mass.")]
+	[FeedbackHelp("This feedback will let you modify the scale of an object on an axis while the other two axis (or only one) get automatically modified to conserve mass. Careful, the object you'll target with this needs to have a normalized scale.")]
 	public class MMF_SquashAndStretch : MMF_Feedback
 	{
 		/// sets the inspector color for this feedback

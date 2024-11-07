@@ -5,7 +5,7 @@ using UnityEngine.Rendering.Universal;
 
 namespace MoreMountains.Feedbacks
 {
-	[AddComponentMenu("More Mountains/Springs/MMSpringPaniniProjectionDistance_URP")]
+	[AddComponentMenu("More Mountains/Springs/MM Spring Panini Projection Distance URP")]
 	public class MMSpringPaniniProjectionDistance_URP : MMSpringFloatComponent<Volume>
 	{
 		protected PaniniProjection _paniniProjection;

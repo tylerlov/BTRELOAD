@@ -36,14 +36,10 @@ public class EnemyBasicSetup : BaseBehaviour, IDamageable, IAttackAgent
     [SerializeField]
     private GameObject enemyModel;
 
-    [SerializeField]
-    private GameObject birthParticlesPrefab;
-
-    [SerializeField]
-    private GameObject deathParticlesPrefab;
-
-    [SerializeField]
-    private GameObject lockOnDisabledParticlesPrefab;
+    [Header("VFX Settings")]
+    [SerializeField] private string birthEffectName = "EnemyBirth";
+    [SerializeField] private string deathEffectName = "EnemyDeath";
+    [SerializeField] private string lockDisabledEffectName = "LockDisabled";
 
     [SerializeField]
     private int birthParticlesInitialCount = 10;
@@ -114,18 +110,11 @@ public class EnemyBasicSetup : BaseBehaviour, IDamageable, IAttackAgent
     // Flag to prevent multiple registrations
     private bool isRegisteredWithGameManager = false;
 
-    [SerializeField]
-    private ParticleSystem trailParticleSystem;
+    private bool hasLineOfSight = false;
+    public bool HasLineOfSight => hasLineOfSight;
 
-    private const string birthParticlesKey = "EnemyBirth";
-    private const string deathParticlesKey = "EnemyDeath";
-    private const string lockOnDisabledParticlesKey = "LockOnDisabled";
-
-    private ParticleSystem currentBirthParticleInstance;
-    private ParticleSystem currentDeathParticleInstance;
-    private ParticleSystem currentLockDisabledParticleInstance;
-
-    private bool wasLockedOn = false;
+    [SerializeField] private ParticleSystem trailParticleSystem;
+    private bool wasLockedOn;
 
     // Awake method
     private void Awake()
@@ -137,7 +126,6 @@ public class EnemyBasicSetup : BaseBehaviour, IDamageable, IAttackAgent
         {
             ResetHealth();
         }
-        RegisterParticleSystems();
     }
 
     private void CacheComponents()
@@ -201,6 +189,9 @@ public class EnemyBasicSetup : BaseBehaviour, IDamageable, IAttackAgent
         ActivateEnemy();
         ResetHealth();
         EnableTrail(true); // Enable the trail when the enemy becomes active
+        
+        // Register with EnemyShootingManager
+        EnemyShootingManager.Instance?.RegisterEnemy(this);
     }
 
     private void ActivateEnemy()
@@ -215,29 +206,17 @@ public class EnemyBasicSetup : BaseBehaviour, IDamageable, IAttackAgent
 
     private void PlayBirthParticles()
     {
-        if (currentBirthParticleInstance != null)
-        {
-            ParticleSystemManager.Instance.StopAndReturnToPool(currentBirthParticleInstance, birthParticlesKey);
-        }
-        currentBirthParticleInstance = ParticleSystemManager.Instance.PlayParticleSystem(birthParticlesKey, cachedTransform.position, Quaternion.identity);
+        ProjectileEffectManager.Instance.PlayEffect(ProjectileEffectManager.EffectType.EnemyShot, transform.position, Quaternion.identity);
     }
 
     private void PlayDeathParticles()
     {
-        if (currentDeathParticleInstance != null)
-        {
-            ParticleSystemManager.Instance.StopAndReturnToPool(currentDeathParticleInstance, deathParticlesKey);
-        }
-        currentDeathParticleInstance = ParticleSystemManager.Instance.PlayParticleSystem(deathParticlesKey, cachedTransform.position, Quaternion.identity);
+        ProjectileEffectManager.Instance.PlayEffect(ProjectileEffectManager.EffectType.ProjectileDeath, transform.position, Quaternion.identity);
     }
 
     private void PlayLockDisabledParticles()
     {
-        if (currentLockDisabledParticleInstance != null)
-        {
-            ParticleSystemManager.Instance.StopAndReturnToPool(currentLockDisabledParticleInstance, lockOnDisabledParticlesKey);
-        }
-        currentLockDisabledParticleInstance = ParticleSystemManager.Instance.PlayParticleSystem(lockOnDisabledParticlesKey, cachedTransform.position, Quaternion.identity);
+        ProjectileEffectManager.Instance.PlayEffect(ProjectileEffectManager.EffectType.Locked, transform.position, Quaternion.identity);
     }
 
     // OnDisable method
@@ -245,24 +224,9 @@ public class EnemyBasicSetup : BaseBehaviour, IDamageable, IAttackAgent
     {
         UnregisterForEvents();
         EnableTrail(false);
-
-        if (currentBirthParticleInstance != null)
-        {
-            ParticleSystemManager.Instance.StopAndReturnToPool(currentBirthParticleInstance, birthParticlesKey);
-            currentBirthParticleInstance = null;
-        }
-
-        if (currentDeathParticleInstance != null)
-        {
-            ParticleSystemManager.Instance.StopAndReturnToPool(currentDeathParticleInstance, deathParticlesKey);
-            currentDeathParticleInstance = null;
-        }
-
-        if (currentLockDisabledParticleInstance != null)
-        {
-            ParticleSystemManager.Instance.StopAndReturnToPool(currentLockDisabledParticleInstance, lockOnDisabledParticlesKey);
-            currentLockDisabledParticleInstance = null;
-        }
+        
+        // Unregister from EnemyShootingManager
+        EnemyShootingManager.Instance?.UnregisterEnemy(this);
     }
 
     private void RegisterForEvents()
@@ -579,11 +543,21 @@ public class EnemyBasicSetup : BaseBehaviour, IDamageable, IAttackAgent
         // Remove any trail-related cleanup if it existed
     }
 
-    // In the Awake or Start method, register the particle systems
-    private void RegisterParticleSystems()
+    // Add this method to handle the raycast results
+    public void HandleLineOfSightResult(bool lineOfSight)
     {
-        ParticleSystemManager.Instance.RegisterParticleSystem(birthParticlesKey, birthParticlesPrefab, birthParticlesInitialCount);
-        ParticleSystemManager.Instance.RegisterParticleSystem(deathParticlesKey, deathParticlesPrefab, deathParticlesInitialCount);
-        ParticleSystemManager.Instance.RegisterParticleSystem(lockOnDisabledParticlesKey, lockOnDisabledParticlesPrefab, lockOnDisabledParticlesInitialCount);
+        hasLineOfSight = lineOfSight;
+        
+        // You can add additional logic here based on line of sight
+        if (hasLineOfSight)
+        {
+            // Enemy can see player, maybe enable shooting or tracking
+            ConditionalDebug.Log($"[EnemyBasicSetup] {gameObject.name} has line of sight to player");
+        }
+        else
+        {
+            // Enemy's view is blocked
+            ConditionalDebug.Log($"[EnemyBasicSetup] {gameObject.name} view is blocked");
+        }
     }
 }

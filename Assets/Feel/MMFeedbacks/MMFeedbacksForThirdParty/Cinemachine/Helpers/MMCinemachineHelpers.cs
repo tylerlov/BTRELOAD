@@ -23,7 +23,7 @@ namespace MoreMountains.FeedbacksForThirdParty
 			
 			#if MM_CINEMACHINE 
 				//looks for a Cinemachine Brain in the scene
-				CinemachineBrain cinemachineBrain = (CinemachineBrain)Object.FindObjectOfType(typeof(CinemachineBrain));
+				CinemachineBrain cinemachineBrain = (CinemachineBrain)Object.FindAnyObjectByType(typeof(CinemachineBrain));
 				if (cinemachineBrain == null)
 				{
 					cinemachineBrain = Camera.main.gameObject.AddComponent<CinemachineBrain>();
@@ -31,7 +31,7 @@ namespace MoreMountains.FeedbacksForThirdParty
 				}
 			
 				// looks for a vcam in the scene
-				CinemachineVirtualCamera virtualCamera = (CinemachineVirtualCamera)Object.FindObjectOfType(typeof(CinemachineVirtualCamera));
+				CinemachineVirtualCamera virtualCamera = (CinemachineVirtualCamera)Object.FindAnyObjectByType(typeof(CinemachineVirtualCamera));
 				if (virtualCamera == null)
 				{
 					GameObject newVirtualCamera = new GameObject("CinemachineVirtualCamera");
@@ -52,14 +52,14 @@ namespace MoreMountains.FeedbacksForThirdParty
 			}
 			#elif MM_CINEMACHINE3
 				//looks for a Cinemachine Brain in the scene
-				CinemachineBrain cinemachineBrain = (CinemachineBrain)Object.FindObjectOfType(typeof(CinemachineBrain));
+				CinemachineBrain cinemachineBrain = (CinemachineBrain)Object.FindAnyObjectByType(typeof(CinemachineBrain));
 				if (cinemachineBrain == null)
 				{
 					cinemachineBrain = Camera.main.gameObject.AddComponent<CinemachineBrain>();
 					additions += "Added a Cinemachine Brain to the scene. ";
 				}
 				// looks for a vcam in the scene
-				CinemachineCamera virtualCamera = (CinemachineCamera)Object.FindObjectOfType(typeof(CinemachineCamera));
+				CinemachineCamera virtualCamera = (CinemachineCamera)Object.FindAnyObjectByType(typeof(CinemachineCamera));
 				if (virtualCamera == null)
 				{
 					GameObject newVirtualCamera = new GameObject("CinemachineCamera");

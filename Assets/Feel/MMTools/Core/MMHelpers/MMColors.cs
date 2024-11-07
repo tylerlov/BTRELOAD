@@ -329,6 +329,21 @@ namespace MoreMountains.Tools
 				{ 141, BestRed }
 			};
 		}
+		
+		
+		
+		/// <summary>
+		/// Creates a new Color from sensible values (0-255)
+		/// </summary>
+		/// <param name="r"></param>
+		/// <param name="g"></param>
+		/// <param name="b"></param>
+		/// <param name="a"></param>
+		/// <returns></returns>
+		public static Color CreateColor(int r, int g, int b, int a)
+		{
+			return new Color(r / 255f, g / 255f, b / 255f, a / 255f);
+		}
 
 		/// <summary>
 		/// Returns a random color between the two min/max specified

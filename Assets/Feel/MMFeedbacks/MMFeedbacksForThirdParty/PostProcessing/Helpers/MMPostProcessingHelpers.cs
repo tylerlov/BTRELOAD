@@ -24,7 +24,7 @@ namespace MoreMountains.FeedbacksForThirdParty
 			}
 		
 			// looks for a post process layer
-			PostProcessLayer postProcessLayer = Object.FindObjectOfType<PostProcessLayer>();
+			PostProcessLayer postProcessLayer = Object.FindAnyObjectByType<PostProcessLayer>();
 			if (postProcessLayer == null)
 			{
 				postProcessLayer = Camera.main.gameObject.AddComponent<PostProcessLayer>();
@@ -33,7 +33,7 @@ namespace MoreMountains.FeedbacksForThirdParty
 			}
 				
 			// looks for a post processing volume
-			PostProcessVolume volume = (PostProcessVolume)Object.FindObjectOfType(typeof(PostProcessVolume));
+			PostProcessVolume volume = (PostProcessVolume)Object.FindAnyObjectByType(typeof(PostProcessVolume));
 			if (volume == null)
 			{
 				GameObject postProcessingObject = GameObject.Instantiate(Resources.Load<GameObject>("MMDefaultPostProcessingVolume"));

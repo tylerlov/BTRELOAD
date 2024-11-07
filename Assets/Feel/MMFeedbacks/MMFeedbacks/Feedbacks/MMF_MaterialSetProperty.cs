@@ -1,6 +1,8 @@
-﻿using MoreMountains.Tools;
+﻿using System;
+using MoreMountains.Tools;
 using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine.Scripting.APIUpdating;
 
 namespace MoreMountains.Feedbacks
@@ -28,11 +30,21 @@ namespace MoreMountains.Feedbacks
 		protected override void AutomateTargetAcquisition() => TargetRenderer = FindAutomatedTarget<Renderer>();
 		
 		public enum PropertyTypes { Color, Float, Integer, Texture, TextureOffset, TextureScale, Vector }
+
+		[Serializable]
+		public class ExtraRendererData
+		{
+			public Renderer TargetRenderer;
+			public int MaterialID = 0;
+		}
 		
 		[MMFInspectorGroup("Material", true, 12, true)]
 		/// the renderer to change the material on
 		[Tooltip("the renderer to change the material on")]
 		public Renderer TargetRenderer;
+		/// the renderer to change the material on
+		[Tooltip("a list of extra renderers to change the material on")]
+		public List<ExtraRendererData> ExtraTargetRenderers;
 		/// the ID of the material to target on the renderer
 		[Tooltip("the ID of the material to target on the renderer")]
 		public int MaterialID = 0;
@@ -46,6 +58,7 @@ namespace MoreMountains.Feedbacks
 		/// if the property is a color, the new color to set
 		[Tooltip("if the property is a color, the new color to set")]
 		[MMFEnumCondition("PropertyType", (int)PropertyTypes.Color)]
+		[ColorUsage(true, true)]
 		public Color NewColor = Color.red;
 		/// if the property is a float, the new float to set
 		[Tooltip("if the property is a float, the new float to set")]
@@ -82,8 +95,7 @@ namespace MoreMountains.Feedbacks
 		public float Duration = 2f;
 		/// the curve over which to interpolate the value
 		[Tooltip("the curve over which to interpolate the value")]
-		[MMFCondition("InterpolateValue", true)]
-		public MMTweenType InterpolationCurve = new MMTweenType(new AnimationCurve(new Keyframe(0, 0), new Keyframe(0.3f, 1f), new Keyframe(1, 0)));
+		public MMTweenType InterpolationCurve = new MMTweenType(new AnimationCurve(new Keyframe(0, 0), new Keyframe(0.3f, 1f), new Keyframe(1, 0)), "InterpolateValue");
 		
 		public override float FeedbackDuration { get { return (InterpolateValue) ? ApplyTimeMultiplier(Duration) : 0f; } set { if (InterpolateValue) { Duration = value; } } }
 		
@@ -166,25 +178,25 @@ namespace MoreMountains.Feedbacks
 				switch (PropertyType)
 				{
 					case PropertyTypes.Color:
-						TargetRenderer.materials[MaterialID].SetColor(_propertyID, NewColor);
+						SetColor(NewColor);
 						break;
 					case PropertyTypes.Float:
-						TargetRenderer.materials[MaterialID].SetFloat(_propertyID, NewFloat);
+						SetFloat(NewFloat);
 						break;
 					case PropertyTypes.Integer:
-						TargetRenderer.materials[MaterialID].SetInt(_propertyID, NewInt);
+						SetInt(NewInt);
 						break;
 					case PropertyTypes.Texture:
-						TargetRenderer.materials[MaterialID].SetTexture(_propertyID, NewTexture);
+						SetTexture(NewTexture);
 						break;
 					case PropertyTypes.TextureOffset:
-						TargetRenderer.materials[MaterialID].SetTextureOffset(_propertyID, NewOffset);
+						SetTextureOffset(NewOffset);
 						break;
 					case PropertyTypes.TextureScale:
-						TargetRenderer.materials[MaterialID].SetTextureScale(_propertyID, NewScale);
+						SetTextureScale(NewScale);
 						break;
 					case PropertyTypes.Vector:
-						TargetRenderer.materials[MaterialID].SetVector(_propertyID, NewVector);
+						SetVector(NewVector);
 						break;
 				}
 			}
@@ -227,30 +239,30 @@ namespace MoreMountains.Feedbacks
 				case PropertyTypes.Color:
 					float evaluated = MMTween.Tween(t, 0f, 1f, _initialFloat, NewFloat, InterpolationCurve);
 					_newColor = Color.Lerp(_initialColor, NewColor, evaluated);
-					TargetRenderer.materials[MaterialID].SetColor(_propertyID, _newColor);
+					SetColor(_newColor);
 					break;
 				case PropertyTypes.Float:
 					float newFloatValue = MMTween.Tween(t, 0f, 1f, _initialFloat, NewFloat, InterpolationCurve);
-					TargetRenderer.materials[MaterialID].SetFloat(_propertyID, newFloatValue);
+					SetFloat(newFloatValue);
 					break;
 				case PropertyTypes.Integer:
 					int newIntValue = (int)MMTween.Tween(t, 0f, 1f, _initialInt, NewInt, InterpolationCurve);
-					TargetRenderer.materials[MaterialID].SetInt(_propertyID, newIntValue);
+					SetInt(newIntValue);
 					break;
 				case PropertyTypes.Texture:
-					TargetRenderer.materials[MaterialID].SetTexture(_propertyID, NewTexture);
+					SetTexture(NewTexture);
 					break;
 				case PropertyTypes.TextureOffset:
 					_newVector2 = MMTween.Tween(t, 0f, 1f, _initialOffset, NewOffset, InterpolationCurve);
-					TargetRenderer.materials[MaterialID].SetTextureOffset(_propertyID, _newVector2);
+					SetTextureOffset(_newVector2);
 					break;
 				case PropertyTypes.TextureScale:
 					_newVector2 = MMTween.Tween(t, 0f, 1f, _initialScale, NewScale, InterpolationCurve);
-					TargetRenderer.materials[MaterialID].SetTextureScale(_propertyID, _newVector2);
+					SetTextureScale(_newVector2);
 					break;
 				case PropertyTypes.Vector:
 					_newVector4 = MMTween.Tween(t, 0f, 1f, _initialVector, NewVector, InterpolationCurve);
-					TargetRenderer.materials[MaterialID].SetVector(_propertyID, _newVector4);
+					SetVector(_newVector4);
 					break;
 			}
 		}
@@ -285,26 +297,101 @@ namespace MoreMountains.Feedbacks
 			switch (PropertyType)
 			{
 				case PropertyTypes.Color:
-					TargetRenderer.materials[MaterialID].SetColor(_propertyID, _initialColor);
+					SetColor(_initialColor);
 					break;
 				case PropertyTypes.Float:
-					TargetRenderer.materials[MaterialID].SetFloat(_propertyID, _initialFloat);
+					SetFloat(_initialFloat);
 					break;
 				case PropertyTypes.Integer:
-					TargetRenderer.materials[MaterialID].SetInt(_propertyID, _initialInt);
+					SetInt(_initialInt);
 					break;
 				case PropertyTypes.Texture:
-					TargetRenderer.materials[MaterialID].SetTexture(_propertyID, _initialTexture);
+					SetTexture(_initialTexture);
 					break;
 				case PropertyTypes.TextureOffset:
-					TargetRenderer.materials[MaterialID].SetTextureOffset(_propertyID, _initialOffset);
+					SetTextureOffset(_initialOffset);
 					break;
 				case PropertyTypes.TextureScale:
-					TargetRenderer.materials[MaterialID].SetTextureScale(_propertyID, _initialScale);
+					SetTextureScale(_initialScale);
 					break;
 				case PropertyTypes.Vector:
-					TargetRenderer.materials[MaterialID].SetVector(_propertyID, _initialVector);
+					SetVector(_initialVector);
 					break;
+			}
+		}
+
+		protected virtual void SetColor(Color newColor)
+		{
+			TargetRenderer.materials[MaterialID].SetColor(_propertyID, newColor);
+			foreach (ExtraRendererData data in ExtraTargetRenderers)
+			{
+				data.TargetRenderer.materials[data.MaterialID].SetColor(_propertyID, newColor);
+			}
+		}
+
+		protected virtual void SetFloat(float newFloat)
+		{
+			TargetRenderer.materials[MaterialID].SetFloat(_propertyID, newFloat);
+			foreach (ExtraRendererData data in ExtraTargetRenderers)
+			{
+				data.TargetRenderer.materials[data.MaterialID].SetFloat(_propertyID, newFloat);
+			}
+		}
+
+		protected virtual void SetInt(int newInt)
+		{
+			TargetRenderer.materials[MaterialID].SetInt(_propertyID, newInt);
+			foreach (ExtraRendererData data in ExtraTargetRenderers)
+			{
+				data.TargetRenderer.materials[data.MaterialID].SetInt(_propertyID, newInt);
+			}
+		}
+
+		protected virtual void SetTexture(Texture newTexture)
+		{
+			TargetRenderer.materials[MaterialID].SetTexture(_propertyID, newTexture);
+			foreach (ExtraRendererData data in ExtraTargetRenderers)
+			{
+				data.TargetRenderer.materials[data.MaterialID].SetTexture(_propertyID, newTexture);
+			}
+		}
+
+		protected virtual void SetTextureOffset(Vector2 newOffset)
+		{
+			TargetRenderer.materials[MaterialID].SetTextureOffset(_propertyID, newOffset);
+			foreach (ExtraRendererData data in ExtraTargetRenderers)
+			{
+				data.TargetRenderer.materials[data.MaterialID].SetTextureOffset(_propertyID, newOffset);
+			}
+		}
+
+		protected virtual void SetTextureScale(Vector2 newScale)
+		{
+			TargetRenderer.materials[MaterialID].SetTextureScale(_propertyID, newScale);
+			foreach (ExtraRendererData data in ExtraTargetRenderers)
+			{
+				data.TargetRenderer.materials[data.MaterialID].SetTextureScale(_propertyID, newScale);
+			}
+		}
+
+		protected virtual void SetVector(Vector4 newVector)
+		{
+			TargetRenderer.materials[MaterialID].SetVector(_propertyID, newVector);
+			foreach (ExtraRendererData data in ExtraTargetRenderers)
+			{
+				data.TargetRenderer.materials[data.MaterialID].SetVector(_propertyID, newVector);
+			}
+		}
+		
+		/// <summary>
+		/// On Validate, we migrate our deprecated animation curves to our tween types if needed
+		/// </summary>
+		public override void OnValidate()
+		{
+			base.OnValidate();
+			if (string.IsNullOrEmpty(InterpolationCurve.ConditionPropertyName))
+			{
+				InterpolationCurve.ConditionPropertyName = "InterpolateValue";
 			}
 		}
 	}

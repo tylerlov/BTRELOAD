@@ -24,7 +24,7 @@ namespace MoreMountains.Tools
 	/// </summary>
 	[RequireComponent(typeof(Rect))]
 	[RequireComponent(typeof(CanvasGroup))]
-	[AddComponentMenu("More Mountains/Tools/Controls/MMTouchJoystick")]
+	[AddComponentMenu("More Mountains/Tools/Controls/MM Touch Joystick")]
 	public class MMTouchJoystick : MMMonoBehaviour, IDragHandler, IEndDragHandler, IPointerDownHandler, IPointerUpHandler
 	{
 		public enum MaxRangeModes { Distance, DistanceToTransform }

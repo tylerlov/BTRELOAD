@@ -1,0 +1,310 @@
+hey guys in this video you're going to
+learn a whole bunch of optimization
+techniques to help you keep your game
+running fast and smooth ready let's go
+so if we hit play and we go to window
+analysis frame debugger and we hit
+enable this tool will let you step
+through all the draw a calls to see step
+by step how Unity is rendering your
+final image for that frame to your
+screen and you'll notice for me that
+under the draw all renderers section I
+have five draw calls I've got the
+background the floor the enemies the
+player and the player's weapon and right
+now this makes sense because all of
+these are separate Sprites that have
+been imported into the project but it
+would definitely be faster if we could
+use fewer draw calls to achieve the same
+result and we can do that with a Sprite
+Atlas so let's make one I'm going to
+right click create 2D Sprite Atlas now
+we want to add all the different Sprites
+into this objects for packing
+here and just note that this has a lot
+of the same settings as the Sprite
+importer so if you're using pixel art
+for example you're going to want to
+change this to point and this to none
+for example and when you're ready hit
+pack preview now if we run this and look
+at the frame
+debugger you'll see we only have three
+draw calls I had expected it to be one
+but you can see it didn't batch the
+enemies with the player because they
+have different materials and if I didn't
+necessarily need them to have different
+materials I could change
+that and now they're actually all being
+drawn with just one draw call which is
+significantly faster on the GPU side all
+right next I want to move on to
+scripting and show you one of the most
+meaningful ways that I've changed
+performance on the CPU side so right now
+on all of these enemies I have this
+running in the update function this here
+makes them always face the player and
+this here is checking for a certain
+distance threshold and if it's met we
+aggro the enemy to the player now in the
+grand scheme of things Unity can run
+this every frame on many many instances
+of this mono behavior and run just fine
+however this is a complete waste of
+resour ources and there's no need to do
+it every single frame while in play mode
+if we open up the profiler here and we
+just click anywhere on the graph our
+game will pause so that we can analyze
+it and let's drill down into the enemy
+Behavior update this is taking up 1.2%
+of the CPU usage right now and as we
+said that is completely unnecessary this
+is every single frame and so what we're
+going to do is Implement a tick system
+this will basically allow us to create
+our own update function and choose how
+often we want that to run so I'm going
+to create a script called
+ticker and attach it to my game manager
+here let's set up a float for tick time
+and for this I'm only going to run it
+every 0.2 seconds that's still nice and
+often so we shouldn't notice a
+difference in enemy Behavior but we
+should get a nice performance Boost from
+it and let's make this static so that we
+can reference it easily I'll need a tick
+timer
+float and this is going to be an event
+so I'll set up a delegate void tick
+action and a static event of type tick
+action called ontick action now in
+update we can increment tick timer and
+once it's passed our tick
+time we reset the timer and call our
+tick event
+function which will invoke the
+event now over in our enemy Behavior
+script I'm going to create a function
+called tich and we'll just subscribe to
+that event in on
+enable and unsubscribe in on disable and
+now this tick function will fire every
+0.2 seconds so let's move our logic in
+there and there you go you can see the
+enemies are still always facing the
+player but instead of running that logic
+every single frame it's just running way
+less often but it's not making a
+noticeable difference in our enemy's
+behavior in my game samur I actually
+have multiple tick timer events at
+different time intervals for things I
+need to happen regularly but not
+regularly enough to Warrant them being
+done in update so you've seen the
+profiler and you've seen the frame
+debugger but when it comes to certain
+Snippets of code it can be really hard
+to tell with those tools alone what is
+actually more performant and sometimes
+you just need to test things yourself so
+let me show you how to set up a
+benchmark test to let you run your own
+tests and this is actually a lot of fun
+to do so I've set up this little bench
+marker test script we can choose between
+0 to 1 million iterations to actually
+get a nice sample size to see how long
+things take to run as for getting the
+button on this script here that is
+outside the scope of this video but if
+you want to know how to do that really
+easily you can check out my video on
+setting up custom editor scripts right
+here but if you don't care about that
+then I suppose you could just perform
+this function in the start method
+instead and that would still work just
+fine so we need to add the system.
+diagnostics namespace at the top we have
+our iterations float and I'm actually
+running whatever function we want to
+test inside a separate script called
+benchmark test just so that we never
+need to touch this script again but in
+order to actually time the number of
+milliseconds it takes for certain Loops
+to run we set set up a new stopwatch
+start it run our function however many
+times we set in our iterations stop the
+stopwatch and then print out the elapsed
+milliseconds so you saw in our enemy
+behavior that we were doing a distance
+check using Vector 2. distance and I've
+actually heard online that this is very
+slow because internally this uses a
+square root in the calculations which is
+known to be slow so let's test that for
+ourselves in our benchmark test I'm just
+going to plug in one of our enemies at
+random I really don't care which one
+it's just so that I compare the distance
+between them and the
+player so we'll say okay our distance is
+equal our Vector 2. distance between the
+player and the enemy's
+position and then we could do something
+like if the distance is less than the
+aggro
+range then we can do something with this
+right so let's crank this up to 1
+million iterations and test
+it and it seems to be averaging around
+390 Mill seconds or so which you know
+for a million iterations is really not
+so bad but let's try what I've heard is
+supposed to be a more performant
+approach what we can do is just subtract
+the enemy from the player and use Square
+magnitude to return the squared length
+now this returns a less friendly number
+we can't just say if the distance is
+less than the aggro range because this
+returns a squared result so what we
+would do in this case is set up a
+squared aggro range and raise it to the
+power of
+two
+and then we could effectively compare
+distances that way which is a bit more
+of a pain and if we test this it's maybe
+a few milliseconds faster on average but
+it's barely enough to even show the
+difference so it turns out I will
+continue to use Vector 2. distance
+because I just think it's far more
+readable and the performance saved using
+the other methods seems negligible let
+me show you a cool trick and we'll use
+our Benchmark tool to test it it is
+extremely common to use strings in our
+animator just like this you're going to
+see that everywhere on line and you'll
+see it takes a little over 90
+milliseconds to complete that a million
+times but there is a better way because
+what happens is Unity needs to take this
+string and hash it behind the scenes
+afterwards so we can save time by just
+doing that ourselves once so up here
+we'll just set up an INT called attack
+trigger and use animator do string to
+hash and pass in the string there and
+we'll pass in that integer instead of a
+string and that is saving almost 30
+milliseconds and we want to do the same
+thing with with changing Shader
+properties as well I've gone ahead and
+changed the material on my one enemy
+because I want to change this one color
+here which I called tint color so first
+we need a reference to the material from
+the array of Sprite
+renderers and then we can set the color
+again using a string here for the first
+test so it's around 615 milliseconds now
+let's try hashing the string ourselves
+first you can do that by again setting
+up an INT and say Shader do property2
+ID and pass in the int
+there this one is a lot faster actually
+I'm pretty surprised by this okay next I
+want to give you just a few more General
+tips in your renderer asset if you know
+you do not need depth texture or or
+opaque textures turn them off because
+these ones end up drawing depth or
+opacity to a texture based on what your
+camera sees and that ends up using a lot
+of unnecessary memory if you don't need
+them okay next tip and this is one of
+the most fundamental ones you will ever
+hear about but if you were doing a lot
+of instantiating and destroying for
+example if you have a game with a lot of
+bullets then you will want to implement
+an object pooling system there are so
+many great resources out there online
+for it but if you want I have a video
+here that shows you how you can set up
+the same system that I'm using in my
+game another tip I actually didn't know
+about this until recently but if you
+have empty functions in your script
+delete them do it to keep your code
+clean anyways but apparently there's
+also a slight overhead cost for each
+function even if it's not actually
+executing anything inside of it okay
+next let's talk about import settings
+they make a big difference in memory
+usage take a look at my background here
+with no compression it is 6.8 MB with
+lowquality compression it's 1 1.1 MB and
+honestly I cannot even tell the
+difference between the two so this is
+just an example this involves a lot of
+testing but do it with your textures and
+your Sprites and your audio as well just
+play around with the import compression
+settings test everything out and make
+sure that you're not reducing your
+quality in a noticeable way but
+compression is going to be your friend a
+lot of the time and the last tip I will
+give you is how using scriptable objects
+can save you memory you will notice that
+every single one of my enemies has this
+enemy Behavior script here with some
+variables on it now I'm just using this
+as a configuration for this enemy I have
+no plans of changing these variables
+between different enemy instances now
+when I hit play every single one of
+these scripts will have its own instance
+and on every single one of those class
+instances these variables will have
+their own copy in memory and for this
+scenario that's completely wasteful what
+we could do instead is create a
+scriptable object and move those
+variables we don't want to be changing
+across multiple game objects and then
+just plug in that scriptable
+object this is also really nice for
+designers because they just have this
+nice little asset file to change and
+we're not creating dozens of copies of
+these variables to sit in memory it's
+just one which sits on the scriptable
+object and every enemy just points to
+that scriptable object and even if you
+do want different enemy configurations
+then you just create another scriptable
+object asset and plug that in instead
+this can also make testing your game a
+lot easier as well CU you can just plug
+in different behaviors I'm going to
+leave a link for a performance and
+optimization ebook down below this can
+teach you how to do deep profiling how
+to avoid garbage collection and it's
+filled with lots of General tips to
+further help you optimize your games
+that's all I got guys bye

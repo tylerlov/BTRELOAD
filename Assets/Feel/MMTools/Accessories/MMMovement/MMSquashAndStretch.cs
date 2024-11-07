@@ -16,7 +16,7 @@ namespace MoreMountains.Tools
 	/// Make sure this intermediary layer only has one child
 	/// If movement feels glitchy make sure your rigidbody is on Interpolate
 	/// </summary>
-	[AddComponentMenu("More Mountains/Tools/Movement/MMSquashAndStretch")]
+	[AddComponentMenu("More Mountains/Tools/Movement/MM Squash And Stretch")]
 	public class MMSquashAndStretch : MonoBehaviour
 	{
 		public enum Timescales { Regular, Unscaled }

@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: 797a42d69b67e334fab43182b6c3e881
+guid: f2a14a6b7bb5eca45a4a9f840a971bf1
 MonoImporter:
   externalObjects: {}
   serializedVersion: 2
@@ -9,3 +9,10 @@ MonoImporter:
   userData: 
   assetBundleName: 
   assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 231313
+  packageName: 'Chroma: Easy Pro Shaders'
+  packageVersion: 2.1.5
+  assetPath: Assets/Chroma/Core/Editor/Facade/Chroma.cs
+  uploadId: 702278

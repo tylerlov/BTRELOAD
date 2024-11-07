@@ -88,7 +88,7 @@ namespace MoreMountains.Tools
 				BoxCollider2D boxCollider2D = _confinerGameObject.AddComponent<BoxCollider2D>();
 				boxCollider2D.size = _boxCollider2D.size;
 				boxCollider2D.offset = _boxCollider2D.offset;
-				boxCollider2D.usedByComposite = true;
+				boxCollider2D.compositeOperation = Collider2D.CompositeOperation.Merge;
 				boxCollider2D.isTrigger = true;
 			}
 
@@ -96,7 +96,7 @@ namespace MoreMountains.Tools
 			{
 				CircleCollider2D circleCollider2D = _confinerGameObject.AddComponent<CircleCollider2D>();
 				circleCollider2D.isTrigger = true;
-				circleCollider2D.usedByComposite = true;
+				circleCollider2D.compositeOperation = Collider2D.CompositeOperation.Merge;
 				circleCollider2D.offset = _circleCollider2D.offset;
 				circleCollider2D.radius = _circleCollider2D.radius;
 			}
@@ -105,7 +105,7 @@ namespace MoreMountains.Tools
 			{
 				PolygonCollider2D polygonCollider2D = _confinerGameObject.AddComponent<PolygonCollider2D>();
 				polygonCollider2D.isTrigger = true;
-				polygonCollider2D.usedByComposite = true;
+				polygonCollider2D.compositeOperation = Collider2D.CompositeOperation.Merge;
 				polygonCollider2D.offset = _polygonCollider2D.offset;
 				polygonCollider2D.points = _polygonCollider2D.points;
 			}

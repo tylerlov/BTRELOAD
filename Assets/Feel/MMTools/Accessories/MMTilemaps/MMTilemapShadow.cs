@@ -10,7 +10,7 @@ namespace MoreMountains.Tools
 	/// Offsetting the tilemap and changing its sorting order etc is done via the regular components
 	/// </summary>
 	[ExecuteAlways]
-	[AddComponentMenu("More Mountains/Tools/Tilemaps/MMTilemapShadow")]
+	[AddComponentMenu("More Mountains/Tools/Tilemaps/MM Tilemap Shadow")]
 	[RequireComponent(typeof(Tilemap))]
 	public class MMTilemapShadow : MonoBehaviour
 	{        

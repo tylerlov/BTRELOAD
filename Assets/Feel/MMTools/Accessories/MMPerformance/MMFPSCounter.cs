@@ -9,7 +9,7 @@ namespace MoreMountains.Tools
 	/// Add this class to a gameObject with a Text component and it'll feed it the number of FPS in real time.
 	/// </summary>
 	[RequireComponent(typeof(Text))]
-	[AddComponentMenu("More Mountains/Tools/Performance/MMFPSCounter")]
+	[AddComponentMenu("More Mountains/Tools/Performance/MM FPS Counter")]
 	public class MMFPSCounter : MonoBehaviour
 	{
 		public enum Modes { Instant, MovingAverage, InstantAndMovingAverage }

@@ -7,7 +7,7 @@ namespace MoreMountains.Tools
 	/// <summary>
 	/// Add this component to an object to have it pick a new order in layer on start, useful to have unique sorting layer numbers
 	/// </summary>
-	[AddComponentMenu("More Mountains/Tools/Sprites/MMAutoOrderInLayer")]
+	[AddComponentMenu("More Mountains/Tools/Sprites/MM Auto Order In Layer")]
 	public class MMAutoOrderInLayer : MonoBehaviour 
 	{
 		static int CurrentMaxCharacterOrderInLayer = 0;

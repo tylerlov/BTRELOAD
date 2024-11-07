@@ -123,7 +123,7 @@ namespace MoreMountains.Feedbacks
 			}
 			#endif
 			
-			MMCameraOrthographicSizeShaker orthographicSizeShaker = (MMCameraOrthographicSizeShaker)Object.FindObjectOfType(typeof(MMCameraOrthographicSizeShaker));
+			MMCameraOrthographicSizeShaker orthographicSizeShaker = (MMCameraOrthographicSizeShaker)Object.FindAnyObjectByType(typeof(MMCameraOrthographicSizeShaker));
 			if (orthographicSizeShaker != null)
 			{
 				return;

@@ -48,8 +48,7 @@ namespace MoreMountains.FeedbacksForThirdParty
 
 		/// the curve to use when interpolating towards the destination value
 		[Tooltip("the curve to use when interpolating towards the destination value")]
-		[MMFEnumCondition("Mode", (int)Modes.Interpolate, (int)Modes.ToDestination)]
-		public MMTweenType Curve = new MMTweenType(MMTween.MMTweenCurve.EaseInCubic);
+		public MMTweenType Curve = new MMTweenType(MMTween.MMTweenCurve.EaseInCubic, "", "Mode", (int)Modes.Interpolate, (int)Modes.ToDestination);
 		/// the value to which the curve's 0 should be remapped
 		[Tooltip("the value to which the curve's 0 should be remapped")]
 		[MMFEnumCondition("Mode", (int)Modes.Interpolate)]
@@ -106,6 +105,10 @@ namespace MoreMountains.FeedbacksForThirdParty
 			{
 				case Modes.Instant:
 					float newInstantValue = RelativeValue ? InstantValue + _initialValue : InstantValue;
+					if (!NormalPlayDirection)
+					{
+						newInstantValue = _initialValue;
+					}
 					SetValue(newInstantValue);
 					break;
 				case Modes.Interpolate:
@@ -211,6 +214,20 @@ namespace MoreMountains.FeedbacksForThirdParty
 				return;
 			}
 			SetValue(_initialValue);
+		}
+		
+		/// <summary>
+		/// On Validate, we init our curves conditions if needed
+		/// </summary>
+		public override void OnValidate()
+		{
+			base.OnValidate();
+			if (string.IsNullOrEmpty(Curve.EnumConditionPropertyName))
+			{
+				Curve.EnumConditionPropertyName = "Mode";
+				Curve.EnumConditions[(int)Modes.Interpolate] = true;
+				Curve.EnumConditions[(int)Modes.ToDestination] = true;
+			}
 		}
 	}
 }

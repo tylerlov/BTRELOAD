@@ -108,8 +108,7 @@ namespace MoreMountains.Feedbacks
 		public float FadeDuration = 1f;
 		/// if fading, the tween over which to fade the sound 
 		[Tooltip("if fading, the tween over which to fade the sound ")]
-		[MMCondition("Fade", true)]
-		public MMTweenType FadeTween = new MMTweenType(MMTween.MMTweenCurve.EaseInOutQuartic);
+		public MMTweenType FadeTween = new MMTweenType(MMTween.MMTweenCurve.EaseInOutQuartic, "Fade");
         
 		[Header("Solo")]
 		/// whether or not this sound should play in solo mode over its destination track. If yes, all other sounds on that track will be muted when this sound starts playing

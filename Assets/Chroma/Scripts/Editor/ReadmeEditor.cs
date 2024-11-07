@@ -264,7 +264,7 @@ public class ReadmeEditor : Editor {
     }
 
     private void OpenPackageManager() {
-        const string packageName = "Chroma: Creative Shader Tools";
+        const string packageName = "Chroma: Easy Pro Shaders";
         UnityEditor.PackageManager.UI.Window.Open(packageName);
     }
 

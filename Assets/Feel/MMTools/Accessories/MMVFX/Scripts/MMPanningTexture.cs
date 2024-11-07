@@ -9,7 +9,7 @@ namespace MoreMountains.Tools
 	/// Use this class on a sprite or mesh to have its texture pan according to the specified speed
 	/// You can also force a sorting layer name 
 	/// </summary>
-	[AddComponentMenu("More Mountains/Tools/VFX/PanningTexture")]
+	[AddComponentMenu("More Mountains/Tools/VFX/Panning Texture")]
 	public class MMPanningTexture : MonoBehaviour
 	{
 		[MMInformation("This script will let you pan a texture on an attached Renderer.",MoreMountains.Tools.MMInformationAttribute.InformationType.Info,false)]

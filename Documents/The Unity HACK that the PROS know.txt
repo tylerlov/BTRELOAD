@@ -1,0 +1,646 @@
+today we're going to get into hooking
+our own systems into the low-level
+player Loop now the reason I put
+forbidden unity in the thumbnail is
+because nobody ever talks about this for
+one thing and unity doesn't really
+document it for another and it's not
+without some risks and gotchas which
+we're going to talk about what I want to
+do today is improve our timer system
+even though the timer class is pure car
+I still want it to be updated every
+frame the way that a mono behavior is
+and we can do that by injecting our own
+system into the player Loop this can
+lead into all kinds of other Improv
+systems such as data binding or input
+rebinding so that's what we're building
+today let's get
+started I thought I'd decompile the
+player Loop class so that we can take a
+look at it quickly and this is in
+unity's lowlevel nam space there are
+three useful public methods here for us
+the first one will get us the default
+player Loop which is an order of all the
+Engine Systems in unity the default
+order that is the next one is to get the
+current player Loop which is the current
+state of it which could have been
+modified and will be modified by by us
+and the last one here is set player Loop
+and this is when we've made some changes
+and we want to actually set the player
+Loop to be the state that we want it to
+be in I'm just going to jump to the
+bottom of this class so we can see a
+player loop
+system a player loop system is
+represented by a struct and you can see
+an example of one being created here in
+this class but it's actually a
+graph-like system you can see there's a
+subsystem list which is an array of more
+player Loop systems so whenever we
+create a player loop system think of it
+as a node in a graph those three public
+methods we are looking at expect to deal
+with the root of this whole structure
+but what we want to do is be able to add
+our own C classes as subsystems of the
+main player Loop so we're going to have
+to come up with a system here that will
+grab that Loop modify it and then set it
+the way we want it to be at the top of
+the system we're going to have a
+bootstrapper class the bootstrapper just
+needs one static method that'll be
+called initialize I want this class to
+run as soon as all the assemblies have
+loaded so I'm going to add the runtime
+initialize on load method attribute
+before I go any further I'm going to
+also add using statements for Unity
+engine. lowlevel and Unity engine.
+Player Loop so in the initialized method
+the first thing we need to do is get the
+current state of the player Loop so
+let's use that public static method we
+were looking at earlier and get a
+reference to that now before we start
+messing with it I think it would be
+useful for us to actually look at what's
+inside this entire structure so to do
+this I've started a new file here and
+I'm going to call this class player Loop
+utils and so what we want to do is
+create a method that will recursively
+Traverse this graph and output
+everything to the console so let's
+create a new string Builder here that we
+can pass down recursively might as well
+give it a title as well now assume that
+we've passed in the root of the player
+loop system graph now we can iterate
+over every single subsystem in its
+subsystem list array we'll make a little
+helper for that in a second and when we
+get through that we can just output the
+entire string Builder to the console so
+our little recursive helper needs to
+accept that subsystem as a parameter and
+also take in the string Builder and the
+level that we're at in our recursion
+then we can just do a little indentation
+and then we can add the system type into
+the string Builder if this is a leaf in
+the graph then we've got nowhere else to
+go and we can just return otherwise
+let's iterate over every subsystem in
+this particular node and again we'll
+just recursively call that print
+subsystem method now that we've got our
+helper method written we can come back
+into the main method and kick off the
+recursion in inside of the 4 each Loop
+here with that done let's jump back over
+to the bootstrapper and make sure that
+where I put that comment we're actually
+calling this method that's really all we
+have to do to be able to take a peak
+into the Unity Player Loop let's go have
+a look so I've reloaded everything and I
+just need to click play here and there
+we go we've got some output in the
+console so what I'm going to do actually
+it's a little easier to see this in the
+regular console so I'm just going to
+stop the game and then I'm going to drag
+in the plain General console here and
+you can see I've got a lot of output you
+got the title there that I specified
+Unity Player Loop and then we start
+going through the different systems you
+can see fixed update pre- late update
+and here's the one that I want I want to
+hook right into the update so that my
+timers class is going to run every
+single frame you can see you got lots of
+other choices there there's post late
+update there's fixed update there's all
+kinds of stuff I'll let you guys explore
+this at your leisure let's get back to
+the business of creating our own player
+loop system that we can inject into here
+the system I actually want to inject
+into the player Loop is going to be
+called a timer manager and that's going
+to manage all of our timers so for now
+I'm just going to have an abstract class
+to represent the timers and it needs one
+method which is to tick I want it to
+tick every update and the timer manager
+is going to facilitate that to do that
+it's going to need a list of all the
+timers in my game we're going to need a
+way for timers to add and remove
+themselves I'm going to call those
+methods register timer and deregister
+timer and the most important part is we
+actually need some code that's going to
+run every update I'm going to call this
+a method update timers sure most of you
+see where this is going already just
+iterate over every timer in the list and
+make them tick and finally I need a
+cleanup method too that we're going to
+put into effect a little later and so
+I'm just going to have a method here
+that will clear out the list this file
+is already starting to get a little bit
+long so what I'm going to do is move
+timer manager into its own file and I'm
+also going to move timer into its own
+file okay now we have a system we can
+actually insert into the player Loop how
+are we going to do that well first of
+all we're going to have to wrap it up in
+a player loop system as its own small
+subsystem let's keep a reference to that
+right at the top of the class because
+we're going to have to actually Define
+and then insert this system into the
+loop I'm going to create some methods to
+kind of separate concerns a bit I'm
+going to make this helper method generic
+because I want the T to represent which
+system in the player loop I want my
+system to be a subsystem of in my case
+it's going to be update but you could
+make it a child really of any of the
+subsystems as parameters let's bring in
+a reference to the player Loop and also
+an index of where in the subsystem we
+want to position this so let's define
+our player loop system we'll call it
+timer system it needs to know the type
+which is type of timer manager it needs
+an update delegate that's which method
+is going to get called inside of that
+class and that's our update timers
+method and we can just set subsystem
+list to be null now this was fairly
+specific to the timer manager but for
+the actual injection into the player
+loop I think what I'm going to do is
+make a helper method in our utility
+class because we could use it for other
+systems in the future it's not really
+specific to the timer system I'll just
+add the signature here as a reference
+and we can jump over to the utility
+class I think I'll put it up at the top
+here so that we don't have a lot of
+scrolling I'll just push everything else
+down so we're going to insert a system
+into the player loop with a public
+method here this method is going to
+accept the loop it's going to accept the
+system to insert and also that index
+number again we're going to use a little
+bit of recursion to find where we want
+to actually insert this thing
+so if we've passed in the root of our
+player loop system we can just start
+checking is this the one that we want is
+this type T if it's not let's start
+going recursively through everything
+until we find it let's deal with the
+recursion first and we'll come back to
+what happens when we've successfully
+found it so our little recursive method
+here is going to be very similar to what
+we did with the print subsystem we're
+going to basically just check to see if
+we're at a leaf if there's no more
+subsystems to recurse then let's just
+get out of here otherwise let's go go
+over every single subsystem that belongs
+to this particular node and we're going
+to check them too we can easily check
+them just by calling the insert system
+method again if that failed just
+continue to the next subsystem if it was
+successful we're going to return true if
+we actually get to the end then there is
+no type T and we can just return false
+okay so what if we did find a match what
+are we going to do well this is where
+we're actually going to inject it let's
+make a list that'll hold all of the
+subsystems of our type T and we can
+check if the subsystem list is not null
+if it's not null then let's add all the
+elements from that list into the list
+that we just defined then we can insert
+our system at the index we chose into
+this new list now that we've inserted
+our system into this list we've got a
+complete list in the right sequence that
+we want to be under this type T let's
+set that to be the subsystem list of
+type T then we can come back well
+believe it or not that's actually the
+most complicated part of this entire
+video so why don't we actually see this
+in action or I left a comment here in
+the timer bootstrapper instead let's
+actually call the method we just wrote
+and insert our system into the player
+Loop up in our initialized method we can
+now call this helper method where T is
+going to be of type update I want our
+system to become a subsystem of the
+update loop system I'm going to wrap it
+in an if condition and say if it didn't
+work that means it returned false let's
+have a warning out in the console that
+says that our timer system was not
+initialized now something that's very
+important to remember is just because we
+modified this graph of player Loop
+systems we haven't actually set it to be
+the one that Unity is going to use so
+let's do that as a final step here we
+can leave the print statement because I
+want to show you all something in a
+second so first things first I need to
+hit play and it's going to reload my
+domain here quickly but we'll be able to
+take a look at the log and what we want
+to do is make sure that our timer system
+our timer manager actually got injected
+into there let's have a look under
+update let's scroll down here and look
+there it is rate at index zero the first
+subsystem under the update system
+perfect that's exactly what I wanted now
+you could have injected it under any
+system it could have gone under fixed
+update or whatever you want really
+depends what kind of thing you're
+building but for us we want every frame
+for our timers to be ticking now here's
+the first gotcha I want to show you I
+had specifically turned on reload domain
+and scene for this but normally I don't
+have that activated what do you think
+will happen in this case the domain
+didn't get reloaded let's take a quick
+look at our player Loop output again
+you're going to notice something very
+interesting I'm sure quite a few of you
+are going to guess what has happened and
+yes we have two versions of the timer
+manager now if this was a real scenario
+that means I've got two managers that
+are exactly the same and they are going
+to double the speed of all my timers
+which isn't good let's do a little bit
+of cleanup so just like we had an insert
+system let's have a remove system now
+this really just has to walk the graph
+until it finds our system system we
+don't need to specify an index or
+anything again we're just going to kind
+of do the inverse of the insert so first
+let's check if the subsystem list is
+null if it is we're done this level of
+recursion we can return otherwise let's
+get a copy of that list because we
+potentially are going to modify it let's
+iterate over everything and look for our
+system and we can do that by matching
+type which might be enough but we can
+also check the update delegate that we
+assigned which in our case was the
+update timers method if we find our
+system let's remove it and then let's
+assign that list back as the subsystem
+list of this particular node now
+potentially we could have inserted it in
+more places so we got to check all the
+children too let's make a helper here
+we'll call it handle subsystem Loop for
+removal so let's define the signature
+really quick and the first order of
+business in here is if the subsystem
+list is null we can just bail out
+otherwise let's iterate the entire
+subsystem list and we can check each of
+them just by calling our remove system
+method again eventually this method will
+go through the entire graph and remove
+any instances that we might have placed
+in there of our system now we can go
+back to the bootstrapper and make sure
+that when we come out of play mode we
+can clean everything up let's do that
+with a little hook into the play mode
+State changed event so let's wrap that
+up in a pre-processor directive and what
+we can do is first of all unsubscribe
+because I don't want to be subscribed
+more than one time and then we'll just
+resubscribe ourselves with a little
+helper method now this little helper is
+going to accept the state the state can
+represent whether we're coming in and
+out of place play mode and so on there's
+several different kinds but what we want
+is when we're exiting play mode we're
+going to do our cleanup we're going to
+get our current player Loop and we're
+going to create a helper just like our
+insert timer manager of type T we're
+going to do a remove timer manager of
+type T I don't necessarily need the type
+t for this because as you recall we're
+recursing the entire list but it might
+be a consideration for some systems in
+the future something to think about
+anyway so this is just a wrapper around
+our helper method that's going to pass
+in the loop that we provide as well as
+our timer system for those of you
+unfamiliar with the in keyword it means
+that we're passing something in by
+reference but it is read only within the
+context of the method that it's being
+provided to now back up where we're
+dealing with the play mode State change
+let's actually call the remove timer
+manager we'll pass in update as the type
+T when that's done we can again call the
+set player Loop method now one more
+gotcha in unity is that Unity does not
+guarantee the clearing of Statics so
+let's make sure we call the timer
+manager clear method that'll make sure
+that our static list of all the timers
+gets cleared every time we exit play
+mode okay I'm going to click play and
+when I do I expect to only see one
+instance of my timer manager there no
+matter how many times I come in and out
+of play mode now I expect to only see
+one version of the timer manager in here
+now and yeah sure enough there is only
+one now I've recompiled and run it a few
+times while I was recording this it's
+all working as expected and you'll see
+that too when we actually hook it up to
+these dials I've got on the screen
+because time timer manager is a static
+class if I register it as a subsystem
+multiple times it's going to tick all
+the timers multiple times so that's a
+real problem for this system but it
+could be a real problem for other
+systems too like suppose you're building
+a binding system that ties into all this
+okay last piece of the puzzle is we need
+to implement the actual timer class now
+this is going to be very similar to the
+timer class that we've been using
+Forever on this channel with just some
+small modifications to work with our new
+system let's walk through it really
+quickly and get this thing implemented
+so a timer of course needs to know what
+its current time is and be able to
+provide that to the consumer likewise a
+Boolean indicating whether the timer is
+running or not is useful let's keep a
+protected variable here with the initial
+time let's expose a public property that
+would show progress we can clamp that
+between 0er and one just like our old
+timer let's also have events that will
+get fired when the timer starts and when
+the timer stops then let's have a
+Constructor that'll accept our initial
+time through as a parameter and set it
+then we're going to need some public
+methods to interact with the timer the
+first one will be of course to start the
+timer running calling the start method
+will set the current time to the initial
+time again and if the timer wasn't
+already running then let's turn is
+running on to true now that our timer
+started let's register it with the timer
+manager and let's also fire off that on
+timer start event and that's it for
+start but we also need a stop method in
+case we want to ever stop the timer and
+that's just basically going to do the
+inverse so we can say if it is running
+then we're going going to do everything
+we need to do to stop it is running
+becomes false we deregister from the
+timer manager and we fire off that event
+I'll just jump down to the bottom of the
+file again give us some room
+implementors of the timer class are
+going to have to provide their own tick
+method but I also want them to provide
+an is finished property that's because a
+countdown timer definitely has a finish
+point when it reaches zero it's done but
+if you making a stopwatch timer it might
+count up forever okay just a few more
+methods let's have a resume and a pause
+that'll this toggle is running really so
+if we needed to pause a timer and then
+get back to it later we could I'm also
+going to want to be able to reset the
+timer so that would be setting current
+time right back to the initial time or
+we could have a reset method that
+accepts a new time so we don't have to
+create a new timer if we just want to
+reuse an old one with a new time okay
+we're almost done I just want to do one
+more thing and that is I want to
+implement the dispose pattern with this
+particular object and that's because
+there could be some scenarios where a
+timer doesn't deregister itself from the
+timer manager never gets garbage
+collected so going forward with our
+timer class let's just make sure that if
+we create a timer when we're done using
+it let's dispose of it too to do this
+we're going to implement the I
+disposable interface which has one
+method called dispose but I'm also going
+to have a virtual method that will
+accept a Boolean true or false are we
+disposing or not and that's because I
+want to be able to call this from the
+finalizer and I want implementers to be
+able to override it if they want so the
+finalizer will call dispose with with
+false but our dispose method is going to
+call the virtual dispose method with a
+value of true and then suppress the
+finalizer that's the same thing as
+telling the garbage collector that it
+doesn't need to call the finalizer
+because all the resources have been
+freed already so let's fill out this
+virtual method first we'll have a
+private Boolean disposed because I don't
+want to run this virtual method more
+than once if disposed has been set to
+true we're going to bail out of this
+otherwise if we are disposing meaning
+we're coming here from the disposal
+method let's make sure that our timer
+manager does not have a pointer to this
+timer anymore by deregistering and then
+let's set that disposed value to be true
+I'll just add a quick comment over the
+dispose method here and probably revisit
+this with some documentation at some
+point in the future but not during this
+video all right well I don't really like
+having destruction logic right at the
+top of the class so I'm just going to
+come down to the bottom and paste it in
+there there we go now how about we make
+a concrete implementation of this class
+so that we can actually test it and
+that's going to be our classic countdown
+timer there's actually not much to do
+here because the abstract class has most
+of the logic however we do need a public
+Constructor and we have two abstract
+members we have to implement the first
+one is Tick so what do we want to do on
+a tick well if it is running and the
+current time is greater than zero then
+we want to decrement the current time by
+time. Delta time if we're still running
+and the current time is less than equal
+to zero stop the timer now for our is
+finished property we can just say that
+we are finished if the current time is
+less than equal to zero and that's
+really it so how about we set up a
+little demo where we connect up our
+timers to some
+visuals I'm going to be using this
+awesome asset from the store that I
+bought quite a while ago and I really
+like this one it's so easy to use I'll
+have a link to it in the
+description so I've got a little mono
+Behavior here where I've already set up
+some references to two of those radial
+progress bars so let's have two
+countdown timers timer and timer two I'm
+also going to make some Fields here
+where I can Define the duration for both
+of those let's come down a little bit
+and Define our start method where we can
+actually create two new countdown timers
+all we need to do is create a new timer
+and pass in its initial duration and
+then we can start it right away we'll do
+the same thing with timer two now we
+don't have to call the tick method or
+anything in update but we should dispose
+of them in our on Destroy method and
+maybe just for interest sake let's add
+some debug messages to the events on
+both timers so that we get a little
+message in the log when the timer starts
+and when it stops now I do actually need
+an update method but not for the timers
+I need it for my visuals to stay updated
+with each timer's progress so let's
+Implement an update method here where
+I'm just going to do a little bit of
+setup these progress bars have a very
+straightforward API just going to Define
+how many segments I want in a bar how
+many segments I want to show which is
+going to be based on the timer's
+progress then on the first timer I'm
+going to set it segment count and I'm
+also going to set how many segments are
+actually been removed from it now on the
+child I'm going to make it simpler I'm
+just going to have one segment which
+means continuous bar and we'll set a
+percentage on that one so that I'll just
+pass in the timer 2's
+progress now I just have to press play
+because I've already connected up the
+references so here we go you can see
+that my 10-second one had 10 segments
+it's just counting down every second and
+the slightly faster timer at 8 seconds
+finished already I stopped it a little
+early there cuz I just want to run it
+again and make sure that it was it's
+actually removing itself from the player
+Loop and we don't have two of them
+registered in the player Loop for some
+reason and yes of course it's still
+working great we're going to keep
+working with this timer system in the
+future because a lot of you have been
+asking questions about packaging about
+assembly definitions and I think
+building our own system like this you
+know as a channel and something that
+we're going to use in many videos in the
+future this is a perfect opportunity for
+us to start diving into those types of
+Concepts and ideas you know and maybe
+more importantly than that I hope this
+video is giving you some insights into
+how you can actually hook into the
+player Loop now you might notice up on
+my screen there I've got some text that
+says binding test and that's because I
+actually at the same time as I was
+building the code for this video I built
+a small binding system too and there's
+nothing that's beyond reach and nothing
+beyond your imagination and just to show
+you I'm just going to hook it up to the
+progress as well so I've bound up the
+progress of the Red Bar to the text
+that's up in the right corner and so you
+can see that it says counting down so
+this is a very simple bind system that r
+before every update it just makes sure
+that one variable has the same value as
+another one I'm sure you can imagine
+just from watching this video that it's
+not really a big stretch from what we
+did with the timers that being said it's
+more code than I want to get into during
+this video but I'm sure we'll be talking
+about it more and these kinds of ideas
+in the future so that's all I've got for
+you today thanks for watching click the
+like button if you haven't subscribe if
+you want to watch more and I'll put a
+few video links up on the screen maybe
+I'll see you there

@@ -5,7 +5,7 @@ using UnityEngine.UI;
 
 namespace MoreMountains.Feedbacks
 {
-	[AddComponentMenu("More Mountains/Springs/MMSpringImageAlpha")]
+	[AddComponentMenu("More Mountains/Springs/MM Spring Image Alpha")]
 	public class MMSpringImageAlpha : MMSpringFloatComponent<Image>
 	{
 		protected Color _color;

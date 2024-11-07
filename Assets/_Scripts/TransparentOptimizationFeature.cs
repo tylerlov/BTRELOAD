@@ -69,6 +69,14 @@ public class TransparentOptimizationFeature : ScriptableRendererFeature
 
     public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
     {
-        renderer.EnqueuePass(m_TransparentPass);
+        if (Application.isPlaying)
+        {
+            renderer.EnqueuePass(m_TransparentPass);
+        }
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        m_TransparentPass?.OnCameraCleanup(null);
     }
 }

@@ -9,7 +9,7 @@ using UnityEngine.UI;
 namespace MoreMountains.Tools
 {
 	[RequireComponent(typeof(Text))]
-	[AddComponentMenu("More Mountains/Tools/Time/MMCountdown")]
+	[AddComponentMenu("More Mountains/Tools/Time/MM Countdown")]
 	public class MMCountdown : MMMonoBehaviour
 	{
 		[Serializable]

@@ -56,7 +56,7 @@ MonoBehaviour:
   - name: Spawn Rate
     path: Spawn Rate
     tooltip: 
-    space: 0
+    space: -1
     spaceable: 0
     sheetType: m_Float
     realType: Single
@@ -72,7 +72,7 @@ MonoBehaviour:
   - name: Lifetime
     path: Lifetime
     tooltip: 
-    space: 0
+    space: -1
     spaceable: 0
     sheetType: m_Float
     realType: Single
@@ -88,7 +88,7 @@ MonoBehaviour:
   - name: Size
     path: Size
     tooltip: 
-    space: 0
+    space: -1
     spaceable: 0
     sheetType: m_Float
     realType: Single
@@ -104,7 +104,7 @@ MonoBehaviour:
   - name: Upward Speed
     path: Upward Speed
     tooltip: 
-    space: 0
+    space: -1
     spaceable: 0
     sheetType: m_Float
     realType: Single

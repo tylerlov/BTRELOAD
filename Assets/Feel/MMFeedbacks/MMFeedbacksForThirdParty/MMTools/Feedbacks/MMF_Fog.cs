@@ -112,6 +112,24 @@ namespace MoreMountains.Feedbacks
 		protected float _initialStartDistance;
 		protected float _initialEndDistance;
 		protected float _initialDensity;
+		
+		protected Color _initialInstantColor;
+		protected float _initialInstantStartDistance;
+		protected float _initialInstantEndDistance;
+		protected float _initialInstantDensity;
+		
+		protected override void CustomInitialization(MMF_Player owner)
+		{
+			base.CustomInitialization(owner);
+
+			if (Active)
+			{
+				_initialInstantColor = RenderSettings.fogColor;
+				_initialInstantStartDistance = RenderSettings.fogStartDistance;
+				_initialInstantEndDistance = RenderSettings.fogEndDistance;
+				_initialInstantDensity = RenderSettings.fogDensity;
+			}
+		}
 
 		/// <summary>
 		/// On Play we change the values of our fog
@@ -136,22 +154,22 @@ namespace MoreMountains.Feedbacks
 				case Modes.Instant:
 					if (ModifyColor)
 					{
-						RenderSettings.fogColor = InstantColor;
+						RenderSettings.fogColor = NormalPlayDirection ? InstantColor : _initialColor;
 					}
 
 					if (ModifyStartDistance)
 					{
-						RenderSettings.fogStartDistance = StartDistanceInstantChange;
+						RenderSettings.fogStartDistance = NormalPlayDirection ? StartDistanceInstantChange : _initialInstantStartDistance;
 					}
 
 					if (ModifyEndDistance)
 					{
-						RenderSettings.fogEndDistance = EndDistanceInstantChange;
+						RenderSettings.fogEndDistance = NormalPlayDirection ? EndDistanceInstantChange : _initialInstantEndDistance;
 					}
 
 					if (ModifyFogDensity)
 					{
-						RenderSettings.fogDensity = DensityInstantChange * intensityMultiplier;
+						RenderSettings.fogDensity = NormalPlayDirection ? DensityInstantChange * intensityMultiplier : _initialInstantDensity;
 					}
 					break;
 				case Modes.OverTime:

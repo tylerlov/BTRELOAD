@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using UnityEngine;
 using UnityEngine.Events;
 #if (MM_TEXTMESHPRO || MM_UGUI2)
@@ -113,6 +114,31 @@ namespace MoreMountains.Feedbacks
 				if (DurationMode == DurationModes.TotalDuration)
 				{
 					RevealDuration = value;
+					
+					if (TargetTMPText != null)
+					{
+						if (ReplaceText)
+						{
+							_originalText = TargetTMPText.text;
+							TargetTMPText.text = NewText;
+						}
+						switch (RevealMode)
+						{
+							case RevealModes.Character:
+								IntervalBetweenReveals = value / RichTextLength(TargetTMPText.text);
+								break;
+							case RevealModes.Lines:
+								IntervalBetweenReveals = value / TargetTMPText.textInfo.lineCount;
+								break;
+							case RevealModes.Words:
+								IntervalBetweenReveals = value / TargetTMPText.textInfo.wordCount;
+								break;
+						}
+						if (ReplaceText)
+						{
+							TargetTMPText.text = _originalText;
+						}
+					}
 				}
 				else
 				{
@@ -163,6 +189,9 @@ namespace MoreMountains.Feedbacks
 		/// whether or not to replace the current TMP target's text on play
 		[Tooltip("whether or not to replace the current TMP target's text on play")]
 		public bool ReplaceText = false;
+		/// if this is true, the maxVisible Characters/Lines/Words will be set to 0 on initialization
+		[Tooltip("if this is true, the maxVisible Characters/Lines/Words will be set to 0 on initialization")]
+		public bool HideTextOnInitialization = false;
 		/// the new text to replace the old one with
 		[Tooltip("the new text to replace the old one with")]
 		[TextArea]
@@ -199,7 +228,45 @@ namespace MoreMountains.Feedbacks
 		protected int _totalWords;
 		protected string _initialText;
 		protected int _indexLastTime = -1;
-        
+
+		/// <summary>
+		/// Sets the maximum amount of visible characters/words/lines to 0 if needed 
+		/// </summary>
+		/// <param name="owner"></param>
+		protected override void CustomInitialization(MMF_Player owner)
+		{
+			base.CustomInitialization(owner);
+			if (!Active || !FeedbackTypeAuthorized)
+			{
+				return;
+			}
+
+			#if (MM_TEXTMESHPRO || MM_UGUI2)
+            
+			if (TargetTMPText == null)
+			{
+				return;
+			}
+			
+			if (HideTextOnInitialization)
+			{
+				switch (RevealMode)
+				{
+					case RevealModes.Character:
+						TargetTMPText.maxVisibleCharacters = 0;
+						break;
+					case RevealModes.Lines:
+						TargetTMPText.maxVisibleLines = 0;
+						break;
+					case RevealModes.Words:
+						TargetTMPText.maxVisibleWords = 0;
+						break;
+				}
+			}
+			
+			#endif
+		}
+
 		/// <summary>
 		/// On play we change the text of our target TMPText
 		/// </summary>
@@ -217,6 +284,11 @@ namespace MoreMountains.Feedbacks
 			if (TargetTMPText == null)
 			{
 				return;
+			}
+
+			if (DurationMode == DurationModes.TotalDuration)
+			{
+				FeedbackDuration = RevealDuration;
 			}
 
 			_initialText = TargetTMPText.text;
@@ -261,7 +333,7 @@ namespace MoreMountains.Feedbacks
 			float startTime = FeedbackTime;
 			_totalCharacters = _richTextLength;
 			int visibleCharacters = 0;
-			float lastCharAt = 0f;
+			float lastCharAt = FeedbackTime;
 	            
 			IsPlaying = true;
 			while ((visibleCharacters <= _totalCharacters) && !Owner.SkippingToTheEnd)
@@ -275,7 +347,13 @@ namespace MoreMountains.Feedbacks
 		            
 				TargetTMPText.maxVisibleCharacters = visibleCharacters;
 				InvokeRevealEvents();
-				visibleCharacters++;                
+
+				float timeSinceLastChar = time - lastCharAt;
+				int numberOfIntervals = (int)Mathf.Round(timeSinceLastChar / IntervalBetweenReveals);
+				for (int i = 0; i < numberOfIntervals; i++)
+				{
+					visibleCharacters++;
+				}            
 				lastCharAt = time;
 
 				// we adjust our delay
@@ -420,24 +498,30 @@ namespace MoreMountains.Feedbacks
 			bool insideTag = false;
 
 			richText = richText.Replace("<br>", "-");
-		        
+			var tagName = new StringBuilder();
 			foreach (char character in richText)
 			{
 				if (character == '<')
 				{
 					insideTag = true;
+					tagName.Clear();
 					continue;
 				}
 				else if (character == '>')
 				{
+					if(tagName.ToString().StartsWith("sprite")) richTextLength++;
 					insideTag = false;
 				}
 				else if (!insideTag)
 				{
 					richTextLength++;
 				}
+				else
+				{
+					tagName.Append(character);
+				}
 			}
-	 
+
 			return richTextLength;
 		}
 

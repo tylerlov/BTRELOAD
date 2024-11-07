@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace MoreMountains.Feedbacks
 {
-	[AddComponentMenu("More Mountains/Springs/MMSpringScale")]
+	[AddComponentMenu("More Mountains/Springs/MM Spring Scale")]
 	public class MMSpringScale : MMSpringVector3Component<Transform>
 	{
 		protected override void Initialization()

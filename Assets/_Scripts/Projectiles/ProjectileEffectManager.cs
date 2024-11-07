@@ -1,43 +1,50 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.VFX;
+using System.Collections.Generic;
+using System.Linq;
 
 public class ProjectileEffectManager : MonoBehaviour
 {
     public static ProjectileEffectManager Instance { get; private set; }
 
-    [SerializeField]
-    private GameObject deathEffectPrefab;
+    public enum EffectType
+    {
+        ProjectileDeath,
+        EnemyShot,
+        Locked,
+        RadarSymbol
+    }
 
-    [SerializeField]
-    private int initialDeathEffectPoolSize = 10;
-    private const string deathEffectKey = "DeathEffect";
+    [System.Serializable]
+    public class EffectConfig
+    {
+        public EffectType effectType;
+        public GameObject effectPrefab;
+        public float minTimeBetweenSpawns = 0.01f;
+        public int maxConcurrentInstances = 200;
+        public int poolSize = 200;
+        public Material effectMaterial;
+    }
 
-    [SerializeField]
-    private GameObject enemyShotFXPrefab;
+    [Header("Effect Configurations")]
+    [SerializeField] private EffectConfig[] effectConfigs;
+    [SerializeField] private bool enableSpawnLimits = true;
+    
+    [Header("Position Control")]
+    [SerializeField] private float minDistanceBetweenEffects = 0.05f;
+    [SerializeField] private float positionCheckTimeWindow = 0.05f;
 
-    [SerializeField]
-    private int initialEnemyShotFXPoolSize = 10;
-    private const string enemyShotFXKey = "EnemyShotFX";
+    private Dictionary<EffectType, Queue<GameObject>> effectPools;
+    private Dictionary<EffectType, float> lastEffectSpawnTimes;
+    private Dictionary<EffectType, int> activeEffectCounts;
+    private List<EffectPositionData> recentEffectPositions;
+    private Queue<MaterialPropertyBlock> propertyBlockPool;
+    private Dictionary<GameObject, MaterialPropertyBlock> activePropertyBlocks;
 
-    public GameObject projectileRadarSymbol;
-    [SerializeField]
-    private int radarSymbolPoolSize = 50;
-    private Queue<GameObject> radarSymbolPool = new Queue<GameObject>();
-
-    [SerializeField]
-    private GameObject lockedFXPrefab;
-
-    [SerializeField]
-    private int initialLockedFXPoolSize = 10;
-    private const string lockedFXKey = "LockedFX";
-
-    [SerializeField]
-    private float poolWarningThreshold = 0.8f;
-
-    private Queue<MaterialPropertyBlock> propertyBlockPool = new Queue<MaterialPropertyBlock>();
-    private const int PROPERTY_BLOCK_POOL_SIZE = 20;
+    private struct EffectPositionData
+    {
+        public Vector3 position;
+        public float time;
+    }
 
     private void Awake()
     {
@@ -45,132 +52,234 @@ public class ProjectileEffectManager : MonoBehaviour
         {
             Instance = this;
             DontDestroyOnLoad(gameObject);
+            InitializeSystem();
         }
         else
         {
             Destroy(gameObject);
         }
-
-        // Initialize property block pool
-        for (int i = 0; i < PROPERTY_BLOCK_POOL_SIZE; i++)
-        {
-            propertyBlockPool.Enqueue(new MaterialPropertyBlock());
-        }
     }
 
-    private void Start()
+    private void InitializeSystem()
     {
+        effectPools = new Dictionary<EffectType, Queue<GameObject>>();
+        lastEffectSpawnTimes = new Dictionary<EffectType, float>();
+        activeEffectCounts = new Dictionary<EffectType, int>();
+        recentEffectPositions = new List<EffectPositionData>();
+        propertyBlockPool = new Queue<MaterialPropertyBlock>();
+        activePropertyBlocks = new Dictionary<GameObject, MaterialPropertyBlock>();
+
         InitializeAllPools();
     }
 
     public void InitializeAllPools()
     {
-        ParticleSystemManager.Instance.RegisterParticleSystem(deathEffectKey, deathEffectPrefab, initialDeathEffectPoolSize);
-        ParticleSystemManager.Instance.RegisterParticleSystem(enemyShotFXKey, enemyShotFXPrefab, initialEnemyShotFXPoolSize);
-        ParticleSystemManager.Instance.RegisterParticleSystem(lockedFXKey, lockedFXPrefab, initialLockedFXPoolSize);
-        InitializeRadarSymbolPool();
-    }
-
-    private void InitializeRadarSymbolPool()
-    {
-        for (int i = 0; i < radarSymbolPoolSize; i++)
+        foreach (var config in effectConfigs)
         {
-            GameObject radarSymbol = Instantiate(projectileRadarSymbol, transform);
-            radarSymbol.SetActive(false);
-            radarSymbolPool.Enqueue(radarSymbol);
+            InitializePool(config);
+            lastEffectSpawnTimes[config.effectType] = 0f;
+            activeEffectCounts[config.effectType] = 0;
         }
-    }
 
-    public void PlayDeathEffect(Vector3 position)
-    {
-        ParticleSystem effect = ParticleSystemManager.Instance.PlayParticleSystem(deathEffectKey, position, Quaternion.identity);
-        if (effect == null)
+        // Initialize property block pool
+        for (int i = 0; i < 100; i++)
         {
-            ConditionalDebug.LogWarning($"Death effect pool is empty. Consider increasing pool size.");
-        }
-    }
-
-    public GameObject GetRadarSymbolFromPool()
-    {
-        if (radarSymbolPool.Count > 0)
-        {
-            GameObject radarSymbol = radarSymbolPool.Dequeue();
-            radarSymbol.SetActive(true);
-            return radarSymbol;
-        }
-        return null;
-    }
-
-    public void ReturnRadarSymbolToPool(GameObject radarSymbol)
-    {
-        if (radarSymbol != null)
-        {
-            radarSymbol.SetActive(false);
-            radarSymbol.transform.SetParent(transform);
-            radarSymbolPool.Enqueue(radarSymbol);
-        }
-    }
-
-    public VisualEffect GetLockedFXFromPool()
-    {
-        ParticleSystem lockedFX = ParticleSystemManager.Instance.PlayParticleSystem(lockedFXKey, Vector3.zero, Quaternion.identity);
-        return lockedFX?.GetComponent<VisualEffect>();
-    }
-
-    public void ReturnLockedFXToPool(VisualEffect effect)
-    {
-        if (effect != null)
-        {
-            ParticleSystem ps = effect.GetComponent<ParticleSystem>();
-            if (ps != null)
-            {
-                ParticleSystemManager.Instance.StopAndReturnToPool(ps, lockedFXKey);
-            }
-        }
-    }
-
-    public GameObject CreateEnemyShotFX(Transform parent, Vector3 localPosition, Vector3 scale)
-    {
-        ParticleSystem enemyShotFX = ParticleSystemManager.Instance.PlayParticleSystem(enemyShotFXKey, parent.TransformPoint(localPosition), Quaternion.identity);
-        if (enemyShotFX != null)
-        {
-            enemyShotFX.transform.SetParent(parent);
-            enemyShotFX.transform.localPosition = localPosition;
-            enemyShotFX.transform.localScale = scale;
-            SetChildrenScale(enemyShotFX.gameObject, scale);
-            return enemyShotFX.gameObject;
-        }
-        return null;
-    }
-
-    private void SetChildrenScale(GameObject parent, Vector3 scale)
-    {
-        foreach (Transform child in parent.transform)
-        {
-            child.localScale = scale;
-            SetChildrenScale(child.gameObject, scale);
+            propertyBlockPool.Enqueue(new MaterialPropertyBlock());
         }
     }
 
     public void ClearPools()
     {
-        // This method is no longer needed as ParticleSystemManager handles the pools
+        foreach (var pool in effectPools.Values)
+        {
+            foreach (var obj in pool)
+            {
+                if (obj != null) Destroy(obj);
+            }
+            pool.Clear();
+        }
+        effectPools.Clear();
+        propertyBlockPool.Clear();
+        activePropertyBlocks.Clear();
     }
 
     public MaterialPropertyBlock GetPropertyBlock()
     {
-        if (propertyBlockPool.Count == 0)
-        {
-            propertyBlockPool.Enqueue(new MaterialPropertyBlock());
-        }
-        return propertyBlockPool.Dequeue();
+        return propertyBlockPool.Count > 0 ? propertyBlockPool.Dequeue() : new MaterialPropertyBlock();
     }
 
-    public void ReturnPropertyBlock(MaterialPropertyBlock block)
+    public void ReturnPropertyBlock(GameObject target)
     {
-        if (block != null)
+        if (activePropertyBlocks.TryGetValue(target, out MaterialPropertyBlock block))
         {
             propertyBlockPool.Enqueue(block);
+            activePropertyBlocks.Remove(target);
         }
+    }
+
+    public GameObject CreateEnemyShotFX(Vector3 position, Quaternion rotation)
+    {
+        var fx = SpawnEffectObject(EffectType.EnemyShot, position, rotation);
+        return fx;
+    }
+
+    public void ReturnEnemyShotFXToPool(GameObject fx)
+    {
+        ReturnEffectToPool(fx, EffectType.EnemyShot);
+    }
+
+    public GameObject GetRadarSymbolFromPool()
+    {
+        return SpawnEffectObject(EffectType.RadarSymbol, Vector3.zero, Quaternion.identity);
+    }
+
+    public void ReturnRadarSymbolToPool(GameObject symbol)
+    {
+        ReturnEffectToPool(symbol, EffectType.RadarSymbol);
+    }
+
+    public void ReturnLockedFXToPool(GameObject fx)
+    {
+        ReturnEffectToPool(fx, EffectType.Locked);
+    }
+
+    private GameObject SpawnEffectObject(EffectType type, Vector3 position, Quaternion rotation)
+    {
+        if (!effectPools.ContainsKey(type) || effectPools[type].Count == 0)
+            return null;
+
+        var effect = effectPools[type].Dequeue();
+        effect.transform.SetPositionAndRotation(position, rotation);
+        effect.SetActive(true);
+        TrackEffectSpawn(type);
+        return effect;
+    }
+
+    private void ReturnEffectToPool(GameObject effect, EffectType type)
+    {
+        if (effect == null || !effectPools.ContainsKey(type)) return;
+
+        effect.SetActive(false);
+        effectPools[type].Enqueue(effect);
+        OnEffectComplete(type);
+    }
+
+    public void PlayEffect(EffectType effectType, Vector3 position, Quaternion rotation = default)
+    {
+        var config = effectConfigs.FirstOrDefault(c => c.effectType == effectType);
+        if (config == null)
+        {
+            Debug.LogWarning($"No configuration found for effect: {effectType}");
+            return;
+        }
+
+        if (IsPositionTooClose(position)) return;
+        if (!CanSpawnEffect(effectType)) return;
+
+        if (effectPools[effectType].Count > 0)
+        {
+            var effect = effectPools[effectType].Dequeue();
+            effect.transform.SetPositionAndRotation(position, rotation);
+            effect.SetActive(true);
+            
+            StartCoroutine(ReturnToPool(effect, effectType, 2f));
+            TrackEffectSpawn(effectType);
+        }
+    }
+
+    private System.Collections.IEnumerator ReturnToPool(GameObject effect, EffectType effectType, float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        
+        if (effect != null)
+        {
+            effect.SetActive(false);
+            effectPools[effectType].Enqueue(effect);
+            OnEffectComplete(effectType);
+        }
+    }
+
+    private bool IsPositionTooClose(Vector3 position)
+    {
+        float currentTime = Time.time;
+        recentEffectPositions.RemoveAll(p => currentTime - p.time > positionCheckTimeWindow);
+
+        foreach (var data in recentEffectPositions)
+        {
+            if (Vector3.Distance(position, data.position) < minDistanceBetweenEffects)
+            {
+                return true;
+            }
+        }
+
+        recentEffectPositions.Add(new EffectPositionData 
+        { 
+            position = position, 
+            time = currentTime 
+        });
+
+        return false;
+    }
+
+    private bool CanSpawnEffect(EffectType effectType)
+    {
+        if (!enableSpawnLimits) return true;
+
+        var config = effectConfigs.FirstOrDefault(c => c.effectType == effectType);
+        if (config == null) return false;
+
+        float timeSinceLastSpawn = Time.time - lastEffectSpawnTimes[effectType];
+        return timeSinceLastSpawn >= config.minTimeBetweenSpawns && 
+               activeEffectCounts[effectType] < config.maxConcurrentInstances;
+    }
+
+    private void TrackEffectSpawn(EffectType effectType)
+    {
+        lastEffectSpawnTimes[effectType] = Time.time;
+        activeEffectCounts[effectType]++;
+    }
+
+    private void OnEffectComplete(EffectType effectType)
+    {
+        activeEffectCounts[effectType] = Mathf.Max(0, activeEffectCounts[effectType] - 1);
+    }
+
+    public void ResetEffectCounts()
+    {
+        foreach (var key in activeEffectCounts.Keys.ToList())
+        {
+            activeEffectCounts[key] = 0;
+        }
+    }
+
+    // Helper methods
+    public void PlayDeathEffect(Vector3 position) => 
+        PlayEffect(EffectType.ProjectileDeath, position);
+
+    public void PlayEnemyShotEffect(Vector3 position, Quaternion rotation) => 
+        PlayEffect(EffectType.EnemyShot, position, rotation);
+
+    public void PlayLockedEffect(Vector3 position) => 
+        PlayEffect(EffectType.Locked, position);
+
+    private void OnDestroy()
+    {
+        if (Instance == this)
+        {
+            Instance = null;
+            ClearPools();
+        }
+    }
+
+    private void InitializePool(EffectConfig config)
+    {
+        Queue<GameObject> pool = new Queue<GameObject>();
+        for (int i = 0; i < config.poolSize; i++)
+        {
+            GameObject obj = Instantiate(config.effectPrefab, transform);
+            obj.SetActive(false);
+            pool.Enqueue(obj);
+        }
+        effectPools[config.effectType] = pool;
     }
 }

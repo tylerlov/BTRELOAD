@@ -3,7 +3,7 @@ using UnityEngine.Tilemaps;
 
 namespace MoreMountains.Tools
 {
-	[AddComponentMenu("More Mountains/Tools/Tilemaps/MMTilemapBoolean")]
+	[AddComponentMenu("More Mountains/Tools/Tilemaps/MM Tilemap Boolean")]
 	public class MMTilemapBoolean : MonoBehaviour
 	{
 		public Tilemap TilemapToClean;

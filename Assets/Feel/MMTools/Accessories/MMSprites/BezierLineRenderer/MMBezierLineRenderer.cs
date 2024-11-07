@@ -8,7 +8,7 @@ namespace MoreMountains.Tools
 	/// </summary>
 	[ExecuteAlways]
 	[RequireComponent(typeof(LineRenderer))]
-	[AddComponentMenu("More Mountains/Tools/Sprites/MMBezierLineRenderer")]
+	[AddComponentMenu("More Mountains/Tools/Sprites/MM Bezier Line Renderer")]
 	public class MMBezierLineRenderer : MonoBehaviour
 	{
 		/// a list of handles to control your line. Usually 4, but you can have more.

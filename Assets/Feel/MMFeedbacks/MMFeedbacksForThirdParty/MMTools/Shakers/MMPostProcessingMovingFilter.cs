@@ -47,7 +47,7 @@ namespace MoreMountains.Tools
 	/// MMPostProcessingMovingFilterEvent.Trigger(MMTween.MMTweenCurve.EaseInOutCubic, TrueOrFalse, Duration, ChannelID);
 	/// 
 	/// </summary>
-	[AddComponentMenu("More Mountains/Tools/Camera/MMPostProcessingMovingFilter")]
+	[AddComponentMenu("More Mountains/Tools/Camera/MM Post Processing Moving Filter")]
 	public class MMPostProcessingMovingFilter : MonoBehaviour
 	{
 		public enum TimeScales

@@ -8,7 +8,7 @@ namespace MoreMountains.Tools
 	/// Use this class to enable or disable other gameobjects automatically on Start or Awake
 	/// </summary>
 
-	[AddComponentMenu("More Mountains/Tools/Activation/MMActivationOnStart")]
+	[AddComponentMenu("More Mountains/Tools/Activation/MM Activation On Start")]
 	public class MMActivationOnStart : MonoBehaviour
 	{
 		/// The possible modes that define whether this should run at Awake or Start

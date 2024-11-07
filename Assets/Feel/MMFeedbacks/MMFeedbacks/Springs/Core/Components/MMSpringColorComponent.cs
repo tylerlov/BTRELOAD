@@ -81,7 +81,7 @@ namespace MoreMountains.Feedbacks
 		[Header("Spring")]
 		/// the spring definition driving all sub spring components for this color spring
 		[Tooltip("the spring definition driving all sub spring components for this color spring")]
-		public MMSpringColor ColorSpring;
+		public MMSpringColor ColorSpring = new MMSpringColor();
 		/// the multiplier to apply when bumping this color spring (increase this if you're not getting enough of the bump color on bump)
 		[Tooltip("the multiplier to apply when bumping this color spring (increase this if you're not getting enough of the bump color on bump)")]
 		public float BumpMultiplier = 20f;

@@ -58,6 +58,7 @@ namespace MoreMountains.Feedbacks
 		/// sets the color of this feedback in the inspector
 		#if UNITY_EDITOR
 		public override Color FeedbackColor { get { return MMFeedbacksInspectorColors.LooperColor; } }
+		public override Color DisplayColor { get { return MMFeedbacksInspectorColors.LooperColor.MMDarken(0.25f); } }
 		#endif
 		public override bool LooperPause { get { return true; } }
 

@@ -5,7 +5,7 @@ using UnityEngine.Rendering.Universal;
 
 namespace MoreMountains.Feedbacks
 {
-	[AddComponentMenu("More Mountains/Springs/MMSpringWhiteBalanceTint_URP")]
+	[AddComponentMenu("More Mountains/Springs/MM Spring White Balance Tint URP")]
 	public class MMSpringWhiteBalanceTint_URP : MMSpringFloatComponent<Volume>
 	{
 		protected WhiteBalance _whiteBalance;

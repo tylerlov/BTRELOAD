@@ -5,7 +5,7 @@ using UnityEngine.Rendering.Universal;
 
 namespace MoreMountains.Feedbacks
 {
-	[AddComponentMenu("More Mountains/Springs/MMSpringMotionBlurIntensity_URP")]
+	[AddComponentMenu("More Mountains/Springs/MM Spring Motion Blur Intensity URP")]
 	public class MMSpringMotionBlurIntensity_URP : MMSpringFloatComponent<Volume>
 	{
 		protected MotionBlur _motionBlur;

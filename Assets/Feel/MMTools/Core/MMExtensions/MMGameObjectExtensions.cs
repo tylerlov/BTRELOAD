@@ -82,7 +82,7 @@ namespace MoreMountains.Tools
 		/// <returns></returns>
 		public static (T newComponent, bool createdNew) MMFindOrCreateObjectOfType<T>(this GameObject @this, string newObjectName, Transform parent, bool forceNewCreation = false) where T : Component
 		{
-			T searchedObject = (T)Object.FindObjectOfType(typeof(T));
+			T searchedObject = (T)Object.FindAnyObjectByType(typeof(T));
 			if ((searchedObject == null) || forceNewCreation)
 			{
 				GameObject newGo = new GameObject(newObjectName);

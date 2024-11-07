@@ -5,6 +5,8 @@ using FMODUnity;
 using MoreMountains.Feedbacks;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using Unity.Collections;
+using Unity.Jobs;
 
 public class PlayerLocking : MonoBehaviour
 {
@@ -77,6 +79,15 @@ public class PlayerLocking : MonoBehaviour
     public Color rayColor = Color.red;
     public Color boxCastColor = Color.blue;
 
+    #region Raycast Batching
+    private const int MAX_RAYCAST_BATCH_SIZE = 20;
+    private RaycastHit[] raycastHitBuffer;
+    private RaycastCommand[] raycastCommands;
+    private NativeArray<RaycastHit> raycastHits;
+    private NativeArray<RaycastCommand> raycastCommandsArray;
+    private bool isRaycastBatchInitialized;
+    #endregion
+
     private void Awake()
     {
         if (Instance == null)
@@ -121,6 +132,8 @@ public class PlayerLocking : MonoBehaviour
         {
             Debug.LogError("AimAssistController not found on the same GameObject.");
         }
+
+        InitializeRaycastBatching();
     }
 
     private void Update()
@@ -389,17 +402,67 @@ public class PlayerLocking : MonoBehaviour
 
     private RaycastHit[] PerformBulletLockBoxCast()
     {
-        RaycastHit[] hits = new RaycastHit[20]; // Increased from 10 for more potential targets
-        int hitsCount = Physics.BoxCastNonAlloc(
-            crosshairCore.RaySpawn.transform.position,
-            bulletLockBoxSize / 2,
-            crosshairCore.RaySpawn.transform.forward,
-            hits,
-            crosshairCore.RaySpawn.transform.rotation,
-            range
+        if (!isRaycastBatchInitialized)
+        {
+            InitializeRaycastBatching();
+        }
+
+        Vector3 origin = crosshairCore.RaySpawn.transform.position;
+        Vector3 direction = crosshairCore.RaySpawn.transform.forward;
+        
+        // Create a spread of raycasts within the box area
+        int rayCount = 0;
+        for (float x = -bulletLockBoxSize.x/2; x <= bulletLockBoxSize.x/2; x += bulletLockBoxSize.x/2)
+        {
+            for (float y = -bulletLockBoxSize.y/2; y <= bulletLockBoxSize.y/2; y += bulletLockBoxSize.y/2)
+            {
+                if (rayCount >= MAX_RAYCAST_BATCH_SIZE) break;
+                
+                Vector3 offset = crosshairCore.RaySpawn.transform.right * x + 
+                               crosshairCore.RaySpawn.transform.up * y;
+                
+                raycastCommands[rayCount] = new RaycastCommand(
+                    origin + offset,
+                    direction,
+                    range,
+                    Physics.DefaultRaycastLayers,
+                    1
+                );
+                rayCount++;
+            }
+        }
+
+        // Copy commands to native array
+        for (int i = 0; i < rayCount; i++)
+        {
+            raycastCommandsArray[i] = raycastCommands[i];
+        }
+
+        // Schedule and complete raycast batch
+        JobHandle handle = RaycastCommand.ScheduleBatch(
+            raycastCommandsArray,  // Changed from Slice to direct array
+            raycastHits,
+            1,
+            default(JobHandle)
         );
-        System.Array.Resize(ref hits, hitsCount);
-        return hits;
+        handle.Complete();
+
+        // Copy results to managed array
+        int hitCount = 0;
+        for (int i = 0; i < rayCount; i++)
+        {
+            if (raycastHits[i].collider != null)
+            {
+                raycastHitBuffer[hitCount] = raycastHits[i];
+                hitCount++;
+            }
+        }
+
+        // Resize array to actual hit count
+        RaycastHit[] results = new RaycastHit[hitCount];
+        System.Array.Copy(raycastHitBuffer, results, hitCount);
+        
+        return results;
     }
 
     private bool IsValidBulletHit(RaycastHit hit) =>
@@ -619,20 +682,52 @@ public class PlayerLocking : MonoBehaviour
         return false;
     }
 
+    private void InitializeRaycastBatching()
+    {
+        raycastHitBuffer = new RaycastHit[MAX_RAYCAST_BATCH_SIZE];
+        raycastCommands = new RaycastCommand[MAX_RAYCAST_BATCH_SIZE];
+        raycastHits = new NativeArray<RaycastHit>(MAX_RAYCAST_BATCH_SIZE, Allocator.Persistent);
+        raycastCommandsArray = new NativeArray<RaycastCommand>(MAX_RAYCAST_BATCH_SIZE, Allocator.Persistent);
+        isRaycastBatchInitialized = true;
+    }
+
+    private void OnDestroy()
+    {
+        if (isRaycastBatchInitialized)
+        {
+            if (raycastHits.IsCreated) raycastHits.Dispose();
+            if (raycastCommandsArray.IsCreated) raycastCommandsArray.Dispose();
+        }
+    }
+
     private void OnDrawGizmos()
     {
         if (!showDebugVisuals || crosshairCore == null || crosshairCore.RaySpawn == null)
             return;
 
-        // Draw the raycast
         Gizmos.color = rayColor;
-        Vector3 rayDirection = crosshairCore.RaySpawn.transform.forward * range;
-        Gizmos.DrawRay(crosshairCore.RaySpawn.transform.position, rayDirection);
+        
+        // Draw the raycast spread
+        for (float x = -bulletLockBoxSize.x/2; x <= bulletLockBoxSize.x/2; x += bulletLockBoxSize.x/2)
+        {
+            for (float y = -bulletLockBoxSize.y/2; y <= bulletLockBoxSize.y/2; y += bulletLockBoxSize.y/2)
+            {
+                Vector3 offset = crosshairCore.RaySpawn.transform.right * x + 
+                               crosshairCore.RaySpawn.transform.up * y;
+                Vector3 origin = crosshairCore.RaySpawn.transform.position + offset;
+                Gizmos.DrawRay(origin, crosshairCore.RaySpawn.transform.forward * range);
+            }
+        }
 
-        // Draw the box cast
+        // Draw the box cast volume
         Gizmos.color = boxCastColor;
-        Vector3 boxCenter = crosshairCore.RaySpawn.transform.position + (crosshairCore.RaySpawn.transform.forward * range / 2f);
-        Gizmos.matrix = Matrix4x4.TRS(boxCenter, crosshairCore.RaySpawn.transform.rotation, Vector3.one);
+        Vector3 boxCenter = crosshairCore.RaySpawn.transform.position + 
+                           (crosshairCore.RaySpawn.transform.forward * range / 2f);
+        Gizmos.matrix = Matrix4x4.TRS(
+            boxCenter, 
+            crosshairCore.RaySpawn.transform.rotation, 
+            Vector3.one
+        );
         Gizmos.DrawWireCube(Vector3.zero, new Vector3(bulletLockBoxSize.x, bulletLockBoxSize.y, range));
     }
 }

@@ -5,7 +5,7 @@ using UnityEngine.Rendering.HighDefinition;
 
 namespace MoreMountains.Feedbacks
 {
-	[AddComponentMenu("More Mountains/Springs/MMSpringPaniniProjectionDistance_HDRP")]
+	[AddComponentMenu("More Mountains/Springs/MM Spring Panini Projection Distance HDRP")]
 	public class MMSpringPaniniProjectionDistance_HDRP : MMSpringFloatComponent<Volume>
 	{
 		protected PaniniProjection _paniniProjection;

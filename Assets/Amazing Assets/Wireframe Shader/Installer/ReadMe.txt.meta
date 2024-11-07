@@ -5,3 +5,10 @@ TextScriptImporter:
   userData: 
   assetBundleName: 
   assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 181386
+  packageName: Wireframe Shader
+  packageVersion: 2024.1
+  assetPath: Assets/Amazing Assets/Wireframe Shader/Installer/ReadMe.txt
+  uploadId: 704223

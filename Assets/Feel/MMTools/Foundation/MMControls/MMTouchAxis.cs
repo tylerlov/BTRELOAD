@@ -17,7 +17,7 @@ namespace MoreMountains.Tools
 	/// </summary>
 	[RequireComponent(typeof(Rect))]
 	[RequireComponent(typeof(CanvasGroup))]
-	[AddComponentMenu("More Mountains/Tools/Controls/MMTouchAxis")]
+	[AddComponentMenu("More Mountains/Tools/Controls/MM Touch Axis")]
 	public class MMTouchAxis : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IPointerExitHandler, IPointerEnterHandler
 	{
 		public enum ButtonStates { Off, ButtonDown, ButtonPressed, ButtonUp }

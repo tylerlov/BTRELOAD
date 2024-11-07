@@ -12,7 +12,7 @@ namespace MoreMountains.FeedbacksForThirdParty
 	/// <summary>
 	/// Add this to a Cinemachine virtual camera and it'll let you control its field of view over time, can be piloted by a MMFeedbackCameraFieldOfView
 	/// </summary>
-	[AddComponentMenu("More Mountains/Feedbacks/Shakers/Cinemachine/MMCinemachineFieldOfViewShaker")]
+	[AddComponentMenu("More Mountains/Feedbacks/Shakers/Cinemachine/MM Cinemachine Field Of View Shaker")]
 	#if MM_CINEMACHINE
 	[RequireComponent(typeof(CinemachineVirtualCamera))]
 	#elif MM_CINEMACHINE3

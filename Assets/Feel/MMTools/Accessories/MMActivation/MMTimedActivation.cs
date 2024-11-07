@@ -8,7 +8,7 @@ namespace MoreMountains.Tools
 	/// <summary>
 	/// Add this component to an object and it'll be auto destroyed X seconds after its Start()
 	/// </summary>
-	[AddComponentMenu("More Mountains/Tools/Activation/MMTimedActivation")]
+	[AddComponentMenu("More Mountains/Tools/Activation/MM Timed Activation")]
 	public class MMTimedActivation : MonoBehaviour
 	{
 		/// the possible activation modes

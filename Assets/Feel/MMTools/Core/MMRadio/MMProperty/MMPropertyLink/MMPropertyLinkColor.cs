@@ -85,7 +85,7 @@ namespace MoreMountains.Tools
 		{
 			_color = _getterSetterInitialized ? GetColorDelegate() : (Color)GetPropertyValue(property);
 
-			return _color.MeanRGB();
+			return _color.MMMeanRGB();
 		}
 
 		/// <summary>

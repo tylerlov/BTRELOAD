@@ -39,7 +39,7 @@ namespace MoreMountains.Feedbacks
 		[Tooltip("the duration (in seconds) of the position wiggle")]
 		public float WigglePositionDuration;
 
-		[MMFInspectorGroup("Rotation", true, 56)]
+		[MMFInspectorGroup("Rotation", true, 26)]
 		/// whether or not to wiggle rotation
 		[Tooltip("whether or not to wiggle rotation")]
 		public bool WiggleRotation;

@@ -88,7 +88,7 @@ namespace MoreMountains.Feedbacks
 		public MMChannel MMChannelDefinition = null;
 		
 		[MMInspectorGroup("Spring Settings", true, 18)]
-		public MMSpringFloat FloatSpring;
+		public MMSpringFloat FloatSpring = new MMSpringFloat();
 		
 		[MMInspectorGroup("Randomness", true, 12, true)]
 		/// the min (x) and max (y) values between which a random target value will be picked when calling MoveToRandom

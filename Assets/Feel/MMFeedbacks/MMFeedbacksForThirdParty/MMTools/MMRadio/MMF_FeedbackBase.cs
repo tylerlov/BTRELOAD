@@ -169,7 +169,8 @@ namespace MoreMountains.Feedbacks
 
 			foreach (MMF_FeedbackBaseTarget target in _targets)
 			{
-				target.Target.SetLevel(target.InstantLevel);
+				float newLevel = NormalPlayDirection ? target.InstantLevel : target.InitialLevel; 
+				target.Target.SetLevel(newLevel);
 			}
 		}
 

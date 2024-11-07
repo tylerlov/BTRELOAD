@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace MoreMountains.Feedbacks
 {
-	[AddComponentMenu("More Mountains/Springs/MMSpringCameraOrthographicSize")]
+	[AddComponentMenu("More Mountains/Springs/MM Spring Camera Orthographic Size")]
 	public class MMSpringCameraOrthographicSize : MMSpringFloatComponent<Camera>
 	{
 		public override float TargetFloat

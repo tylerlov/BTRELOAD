@@ -127,7 +127,14 @@ namespace MoreMountains.Feedbacks
 			switch (Mode)
 			{
 				case Modes.Instant:
-					ApplyValue(InstantScale * intensityMultiplier);
+					if (NormalPlayDirection)
+					{
+						ApplyValue(InstantScale * intensityMultiplier);	
+					}
+					else
+					{
+						ApplyValue(_initialValue);
+					}
 					break;
 				case Modes.OverTime:
 					if (!AllowAdditivePlays && (_coroutine != null))

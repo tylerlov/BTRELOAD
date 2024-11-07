@@ -194,7 +194,7 @@ namespace MoreMountains.Feedbacks
 		/// </summary>
 		public override void AutomaticShakerSetup()
 		{
-			if (GameObject.FindObjectOfType<MMFader>() != null)
+			if (Object.FindAnyObjectByType<MMFader>() != null)
 			{
 				return;
 			}

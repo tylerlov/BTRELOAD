@@ -16,7 +16,7 @@ namespace MoreMountains.Tools
 		public enum LoadingStatus
 		{
 			LoadStarted, BeforeEntryFade, EntryFade, AfterEntryFade, UnloadOriginScene, LoadDestinationScene,
-			LoadProgressComplete, InterpolatedLoadProgressComplete, BeforeExitFade, ExitFade, DestinationSceneActivation, UnloadSceneLoader, LoadTransitionComplete
+			LoadProgressComplete, InterpolatedLoadProgressComplete, BeforeSceneActivation, ExitFade, DestinationSceneActivation, UnloadSceneLoader, LoadTransitionComplete, AfterSceneActivation
 		}
 
 		public struct LoadingSceneEvent

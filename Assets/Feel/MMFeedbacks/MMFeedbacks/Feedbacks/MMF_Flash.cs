@@ -103,7 +103,7 @@ namespace MoreMountains.Feedbacks
 		/// </summary>
 		public override void AutomaticShakerSetup()
 		{
-			if (GameObject.FindObjectOfType<MMFlash>() != null)
+			if (Object.FindAnyObjectByType<MMFlash>() != null)
 			{
 				return;
 			}

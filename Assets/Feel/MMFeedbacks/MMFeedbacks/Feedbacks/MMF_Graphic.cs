@@ -69,6 +69,7 @@ namespace MoreMountains.Feedbacks
 
 		protected Coroutine _coroutine;
 		protected Color _initialColor;
+		protected Color _initialInstantColor;
 
 		/// <summary>
 		/// On init we turn the Graphic off if needed
@@ -84,6 +85,7 @@ namespace MoreMountains.Feedbacks
 				{
 					Turn(false);
 				}
+				_initialInstantColor = TargetGraphic.color;
 			}
 		}
 
@@ -106,7 +108,7 @@ namespace MoreMountains.Feedbacks
 				case Modes.Instant:
 					if (ModifyColor)
 					{
-						TargetGraphic.color = InstantColor;
+						TargetGraphic.color = NormalPlayDirection ? InstantColor : _initialInstantColor;
 					}
 					break;
 				case Modes.OverTime:

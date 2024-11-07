@@ -86,7 +86,7 @@ namespace MoreMountains.Feedbacks
 			PlayFeedbacksOnlyIfReversed,
 			PlayFeedbacksOnlyIfNormalDirection,
 			ResetFeedbacks,
-			Revert,
+			ChangeDirection,
 			SetDirectionTopToBottom,
 			SetDirectionBottomToTop,
 			RestoreInitialValues,
@@ -150,7 +150,7 @@ namespace MoreMountains.Feedbacks
 					foreach (MMF_Player player in TargetPlayers) { player.Initialization(); }
 					break;
 				case Modes.PlayFeedbacksInReverse:
-					foreach (MMF_Player player in TargetPlayers) { player.PlayFeedbacksInReverse(position, feedbacksIntensity); }
+					foreach (MMF_Player player in TargetPlayers) { player.PlayFeedbacksInReverse(position, feedbacksIntensity, true); }
 					break;
 				case Modes.PlayFeedbacksOnlyIfReversed:
 					foreach (MMF_Player player in TargetPlayers) { player.PlayFeedbacksOnlyIfReversed(position, feedbacksIntensity); }
@@ -161,8 +161,8 @@ namespace MoreMountains.Feedbacks
 				case Modes.ResetFeedbacks:
 					foreach (MMF_Player player in TargetPlayers) { player.ResetFeedbacks(); }
 					break;
-				case Modes.Revert:
-					foreach (MMF_Player player in TargetPlayers) { player.Revert(); }
+				case Modes.ChangeDirection:
+					foreach (MMF_Player player in TargetPlayers) { player.ChangeDirection(); }
 					break;
 				case Modes.SetDirectionTopToBottom:
 					foreach (MMF_Player player in TargetPlayers) { player.SetDirectionTopToBottom(); }

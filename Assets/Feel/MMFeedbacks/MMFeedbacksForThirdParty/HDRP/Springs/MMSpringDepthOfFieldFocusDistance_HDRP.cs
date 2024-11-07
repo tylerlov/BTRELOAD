@@ -5,7 +5,7 @@ using UnityEngine.Rendering.HighDefinition;
 
 namespace MoreMountains.Feedbacks
 {
-	[AddComponentMenu("More Mountains/Springs/MMSpringDepthOfFieldFocusDistance_HDRP")]
+	[AddComponentMenu("More Mountains/Springs/MM Spring Depth Of Field Focus Distance HDRP")]
 	public class MMSpringDepthOfFieldFocusDistance_HDRP : MMSpringFloatComponent<Volume>
 	{
 		protected DepthOfField _depthOfField;

@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.Serialization;
 
 namespace  MoreMountains.Feedbacks
 {
@@ -11,7 +12,7 @@ namespace  MoreMountains.Feedbacks
 	/// - play : when a MMFeedbacks starts playing
 	/// - pause : when a holding pause is met
 	/// - resume : after a holding pause resumes
-	/// - revert : when a MMFeedbacks reverts its play direction
+	/// - changeDirection : when a MMFeedbacks changes its play direction
 	/// - complete : when a MMFeedbacks has played its last feedback
 	///
 	/// to listen to these events :
@@ -39,7 +40,7 @@ namespace  MoreMountains.Feedbacks
 		static public void Register(Delegate callback) { OnEvent += callback; }
 		static public void Unregister(Delegate callback) { OnEvent -= callback; }
 
-		public enum EventTypes { Play, Pause, Resume, Revert, Complete, SkipToTheEnd, RestoreInitialValues, Loop, Enable, Disable, InitializationComplete }
+		public enum EventTypes { Play, Pause, Resume, ChangeDirection, Complete, SkipToTheEnd, RestoreInitialValues, Loop, Enable, Disable, InitializationComplete }
 		public delegate void Delegate(MMFeedbacks source, EventTypes type);
 		static public void Trigger(MMFeedbacks source, EventTypes type)
 		{
@@ -86,9 +87,10 @@ namespace  MoreMountains.Feedbacks
 		/// This event will fire every time this MMFeedbacks resumes after a holding pause
 		[Tooltip("This event will fire every time this MMFeedbacks resumes after a holding pause")]
 		public UnityEvent OnResume;
-		/// This event will fire every time this MMFeedbacks reverts its play direction
-		[Tooltip("This event will fire every time this MMFeedbacks reverts its play direction")]
-		public UnityEvent OnRevert;
+		/// This event will fire every time this MMFeedbacks changes its play direction
+		[FormerlySerializedAs("OnRevert")] 
+		[Tooltip("This event will fire every time this MMFeedbacks changes its play direction")]
+		public UnityEvent OnChangeDirection;
 		/// This event will fire every time this MMFeedbacks plays its last MMFeedback
 		[Tooltip("This event will fire every time this MMFeedbacks plays its last MMFeedback")]
 		public UnityEvent OnComplete;
@@ -111,7 +113,7 @@ namespace  MoreMountains.Feedbacks
 		public virtual bool OnPlayIsNull { get; protected set; }
 		public virtual bool OnPauseIsNull { get; protected set; }
 		public virtual bool OnResumeIsNull { get; protected set; }
-		public virtual bool OnRevertIsNull { get; protected set; }
+		public virtual bool OnChangeDirectionIsNull { get; protected set; }
 		public virtual bool OnCompleteIsNull { get; protected set; }
 		public virtual bool OnRestoreInitialValuesIsNull { get; protected set; }
 		public virtual bool OnSkipToTheEndIsNull { get; protected set; }
@@ -127,7 +129,7 @@ namespace  MoreMountains.Feedbacks
 			OnPlayIsNull = OnPlay == null;
 			OnPauseIsNull = OnPause == null;
 			OnResumeIsNull = OnResume == null;
-			OnRevertIsNull = OnRevert == null;
+			OnChangeDirectionIsNull = OnChangeDirection == null;
 			OnCompleteIsNull = OnComplete == null;
 			OnRestoreInitialValuesIsNull = OnRestoreInitialValues == null;
 			OnSkipToTheEndIsNull = OnSkipToTheEnd == null;
@@ -188,19 +190,19 @@ namespace  MoreMountains.Feedbacks
 		}
 
 		/// <summary>
-		/// Fires revert events if needed
+		/// Fires change direction events if needed
 		/// </summary>
 		/// <param name="source"></param>
-		public virtual void TriggerOnRevert(MMFeedbacks source)
+		public virtual void TriggerOnChangeDirection(MMFeedbacks source)
 		{
-			if (!OnRevertIsNull && TriggerUnityEvents)
+			if (!OnChangeDirectionIsNull && TriggerUnityEvents)
 			{
-				OnRevert.Invoke();
+				OnChangeDirection.Invoke();
 			}
 
 			if (TriggerMMFeedbacksEvents)
 			{
-				MMFeedbacksEvent.Trigger(source, MMFeedbacksEvent.EventTypes.Revert);
+				MMFeedbacksEvent.Trigger(source, MMFeedbacksEvent.EventTypes.ChangeDirection);
 			}
 		}
 
@@ -252,7 +254,7 @@ namespace  MoreMountains.Feedbacks
 		}
 
 		/// <summary>
-		/// Fires revert events if needed
+		/// Fires restore initial values events if needed
 		/// </summary>
 		/// <param name="source"></param>
 		public virtual void TriggerOnRestoreInitialValues(MMFeedbacks source)

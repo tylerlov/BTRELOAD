@@ -59,8 +59,7 @@ namespace MoreMountains.Feedbacks
 		public float Duration = 0.5f;
 		/// the curve to tween on
 		[Tooltip("the curve to tween on")]
-		[MMFEnumCondition("Mode", (int)MMFeedbackBase.Modes.OverTime)]
-		public MMTweenType DilateCurve = new MMTweenType(new AnimationCurve(new Keyframe(0, 0.5f), new Keyframe(0.3f, 1f), new Keyframe(1, 0.5f)));
+		public MMTweenType DilateCurve = new MMTweenType(new AnimationCurve(new Keyframe(0, 0.5f), new Keyframe(0.3f, 1f), new Keyframe(1, 0.5f)), "", "Mode", (int)MMFeedbackBase.Modes.OverTime);
 		/// the value to remap the curve's 0 to
 		[Tooltip("the value to remap the curve's 0 to")]
 		[MMFEnumCondition("Mode", (int)MMFeedbackBase.Modes.OverTime)]
@@ -120,7 +119,8 @@ namespace MoreMountains.Feedbacks
 				switch (Mode)
 				{
 					case MMFeedbackBase.Modes.Instant:
-						TargetTMPText.fontMaterial.SetFloat(ShaderUtilities.ID_FaceDilate, InstantDilate);
+						float newDilate = NormalPlayDirection ? InstantDilate : _initialDilate;
+						TargetTMPText.fontMaterial.SetFloat(ShaderUtilities.ID_FaceDilate, newDilate);
 						TargetTMPText.UpdateMeshPadding();
 						break;
 					case MMFeedbackBase.Modes.OverTime:
@@ -210,6 +210,19 @@ namespace MoreMountains.Feedbacks
 			TargetTMPText.fontMaterial.SetFloat(ShaderUtilities.ID_FaceDilate, _initialDilate);
 			TargetTMPText.UpdateMeshPadding();
 			#endif
+		}
+		
+		/// <summary>
+		/// On Validate, we init our curves conditions if needed
+		/// </summary>
+		public override void OnValidate()
+		{
+			base.OnValidate();
+			if (string.IsNullOrEmpty(DilateCurve.EnumConditionPropertyName))
+			{
+				DilateCurve.EnumConditionPropertyName = "Mode";
+				DilateCurve.EnumConditions[(int)MMFeedbackBase.Modes.OverTime] = true;
+			}
 		}
 	}
 }

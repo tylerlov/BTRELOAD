@@ -9,7 +9,7 @@ namespace MoreMountains.Tools
 	/// <summary>
 	/// the AI brain is responsible from going from one state to the other based on the defined transitions. It's basically just a collection of states, and it's where you'll link all the actions, decisions, states and transitions together.
 	/// </summary>
-	[AddComponentMenu("More Mountains/Tools/AI/AIBrain")]
+	[AddComponentMenu("More Mountains/Tools/AI/AI Brain")]
 	public class AIBrain : MonoBehaviour
 	{
 		[Header("Debug")]

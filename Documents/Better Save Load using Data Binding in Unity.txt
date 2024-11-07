@@ -1,0 +1,535 @@
+today we're going to take a look at data
+binding as a way to save data this means
+that all the data you want to persist is
+known all the time making saving your
+game State very fast data persistence in
+my opinion is something you should think
+about near the beginning of any project
+not only is it much easier than trying
+to shoehorn it in near the end but it
+will also help you create better data
+models we'll build a save load system
+first then we'll apply it to a player as
+well as an inventory system let's take a
+look at a
+diagram
+so the Hub of our system we'll call the
+save load system it has two dependencies
+or rather it has one dependency the data
+service which has its own dependency a
+serializer now we already have two
+things in our game a player and an
+inventory but what we want to do is have
+a central game data object that contains
+player data as well as inventory data
+now we're going to bind the player data
+and the inventory data to the player and
+the inventory so that that data is
+always up to the date ready for us to
+save load delete delete all Etc and then
+our data service will handle putting it
+into a file serializing it and whatnot
+and that's really the gist of it so
+let's start with interfaces first any
+class that implements our I serializer
+interface is going to need to know how
+to serialize and deserialize a type of
+object I'm going to build this under the
+assumption that we're going to save
+everything as Json but we can extend
+this in the future likewise we're going
+to have an ID data service that's going
+to be responsible for saving our data in
+a particular location we'll default the
+override to true so we'll override
+existing saves then we're also going to
+need a load method that will return our
+game data and we're going to need some
+other helper methods so that we can
+delete a save and maybe we want to
+delete all of our saves and we probably
+also want to be able to produce a list
+of all of our existing saves so that we
+can show them to the player and let them
+choose later on so let's make concrete
+implementations of both these let's
+start with a Json serializer just needs
+to implement those two methods now
+there's nothing very complicated about a
+Json serializer these are just on line
+operations we could extend this in the
+future to add some encryption or some
+other type of serialization now our data
+service is going to be a little bit more
+complex with five methods so I'm going
+to call this one file data service and
+we're just going to write this data
+locally so Implement all of the members
+here any data service that we create is
+going to need its own serializer so
+let's have a private reference to that
+and we'll pass it in with Constructor
+injection let's have a few more
+variables for data path and file
+extension which we might want to modify
+in the future as well for now let's just
+create a Constructor that accepts one
+parameter maybe we want to inject the
+other ones later but for now this is
+okay we'll set our data path to be our
+application persistent data path
+likewise we can have a default file
+extension on co-pilot suggesting Json I
+think that's okay for now then we can
+add our reference to the serializer
+we've injected and I'm going to add one
+helper method here that's going to help
+us combine paths together so we using
+the path. combine method we'll put
+together the data path the file name and
+the file extension together so that we
+can easily get this without having to
+repeat this code over and over let's
+have a think about what to do in the
+save method first of all let's get a
+reference to that file location using
+our helper method then we can say if
+we're not allowed to overwrite but the
+file exists there let's throw an
+exception now let's assume everything's
+good after that we can just use file
+write all text into the file location
+and we'll call our serializers serialize
+method on the data and that's it that's
+all we have to do for saving load is
+basically going to be the inverse of
+that again let's get a reference to our
+file location and let's make sure the
+file actually exists at that location
+with that particular name and then we
+can return the serializer deserialize
+method just by again file read all text
+this time on the file location our other
+methods in this class aren't too
+complicated delete get the file location
+if it exists use file delete on it
+delete all almost the same thing this
+time we can just use the data path grab
+all the files there and delete them all
+be careful with this one you might want
+to have a look in that folder and just
+see what else you're storing in there
+then add some validation if necessary
+then for our last method we can actually
+enumerate all the files that are in a
+particular directory so we can check at
+that path and then we'll just do a
+little bit of validation here because we
+really only want the ones that match our
+file extension and then we can just
+return them as an ie numerable
+so let's have a look at the class that's
+actually going to show up in unity for
+us I'm going to call this save load
+system and it is a monob behavior but
+I'm inheriting from our persistent
+Singleton I'll put a link to the
+Singleton video here in case you're not
+familiar with that basically it's a
+Singleton that doesn't destroy onload
+I've got a serializable data class here
+just called game data and all it has
+right now is a name that we'll use to
+represent it in the game but also as a
+file name we're also going to need a
+reference to the data service that we're
+going to use now because I'm inheriting
+from the the persistent Singleton class
+which has an awake method I'll create an
+override awake method here call the base
+awake and then we want to create our
+data service so we can create a new file
+data service that has a dependency of a
+new Json serializer let's create a few
+methods to work with our data service
+here so we can have a public new game we
+can create a new game data object and we
+can just give it a name of whatever we
+like let's also create a variable to
+store our current level name so that's
+going to be the scene that we're
+currently playing in right now I only
+have one scene in this game that I
+called demo so I'm just going to default
+it to that for now for Simplicity sake
+instead of building a whole scene
+management system right here when we
+fire off new game I'm actually going to
+load this scene right from here all
+right I think that's good enough for new
+game let's move on down to save game
+there's actually nothing too fancy we
+have to do here because our game data
+already knows the file name to save and
+our service already knows what to do so
+we can just call the data service and
+ask it to save our game data data load
+game will be very similar but we need to
+pass in the file name that we want to
+load then we can call the data service
+load method let's add a check in here
+just in case the current level wasn't
+saved we can just go with the default
+again and once that's all set we can
+load the scene the last few methods are
+very
+straightforward if we want to delete a
+game we're basically just going to pass
+through to the data service we can
+Implement similar methods for our delete
+all and list all in the future
+right now I'm just going to turn this
+into an expression body method then I
+think I'll do the same for the save game
+since it's a oneline operation maybe to
+help with testing I'll add a Reload game
+here that'll just reload the exact same
+game we're on instead of having to pass
+a parameter into the load game method
+now for ease of testing I've gone ahead
+and made an editor class I'm not going
+to type it out here I'll just show it on
+the screen this is basically just going
+to draw the default inspector and then
+give me some helper buttons so that I
+can easily save load or delete any given
+game based on the data that I'm using
+when I'm play testing now just before we
+give this a trial run I did make one
+typo back in the file data service and
+that was I don't need this extra little
+period here I'm just going to delete
+that there we
+go all right so I'm going to create a
+new game object to hold this system and
+I'll just call it something like save
+load save load manager that'll do and
+then we'll add our save load system
+right onto here now you can see already
+it's got some of the characteristics of
+my persistent Singleton but it's also
+got my three buttons and exposes our
+game data so this way we'll be able to
+see what's going on as we start testing
+here now I forgot to add a new game
+button in here so for now I'll just fill
+out the name and current level data
+myself so we're not saving anything too
+important yet but let's make sure at
+least that it's going to create that
+file for us so if I click play right
+away you'll see the game starts showing
+my UI and everything I'll click save
+game now I'll come back out of play mode
+I'm going to jump over to my persistent
+data path and open up this file so we
+can have a look at it so here it is just
+called game. Json and it only has two
+fields in it right now it's got our name
+and our current level name just like we
+expect so this is good so far why don't
+we start saving some information about
+the player to relate things that exist
+in the save file to things that exist in
+our game we're going to need to use some
+kind of identification system now I've
+created a class called serializable guid
+for Simplicity sake you might want to
+use strings instead but I like the
+serializable guid class because it lets
+me do quick comparisons using integers
+which is much faster than strings so
+when the number of objects in the game
+really starts to grow it's a lot faster
+to be able to reference things by
+numbers now when we're talking about IDs
+in this context this refers to the owner
+of the data all the owners of data are
+going to be issued an ID in our game
+that means each player is going to have
+an ID the player's inventory will have
+an ID all the enemies in the game will
+have an ID and you know and so on and so
+forth so the serializable good class
+will be in the repository for you to
+have a look at and consider but if it
+makes it easier you can start with
+strings just watch out for duplicates so
+the I savable interface will help us
+relate data to an object in our game
+those objects in our game need to be
+able to bind that data to themselves
+that means each of those game objects
+needs to haveb their ID represented and
+they need to have a method that will let
+us bind the data to them so every game
+object in our game that's going to be
+able to be saved we'll have to implement
+the I bind interface let's jump over to
+the hero class and Implement that
+interface here I've defined the player
+data here as an i savable it's going to
+have a reference to the hero's ID and
+position and rotation for now then we're
+going to implement the I bind player
+data interface add an ID so that we can
+identify the hero then we'll also need a
+reference of course to the player data
+for this hero now because player data is
+a class we are passing a reference to
+this data so we can say the hero's data
+is now equal to the data that we're
+going to use in our save system that
+means the data reference we passed in is
+now the same reference being kept by our
+hero now that we've bound this data
+let's make sure it has the correct idea
+of our hero then we can update our
+position and rotation based on that data
+and then from this point forward we can
+use update to constantly update our
+position and rotation so that the data
+we want to save at any time will be
+correct
+now let's jump back over to our save
+system and implement this binding the
+first thing we need to do is in our game
+data we're also going to now be saving
+some player data with that in place in
+our data structure let's Implement some
+methods to actually do this binding if I
+scroll down a little bit here I think
+I'll put it right above the new game
+method now the first bind method is
+going to assume that there's only one of
+a particular type so I only have one
+hero I only have one inventory and what
+the signature says here is we're looking
+for a type T that's a monob behavior and
+implements I bind and the data that we
+pass in has to be an i savable and has
+to be a class that we can create a new
+one of now as long as we can find one of
+these type T's we're going to bind some
+data to it and if for some reason our
+data was null we'll just make a new one
+suppose maybe it's a new game so the
+signature looks complicated but it's
+actually a simple method Let's Make A
+variation on this method that can handle
+a list of data suppose we have many
+enemies or many spawns of something in
+the game and in this case we want to
+iterate over all them and actually look
+for matching IDs and then we follow the
+same process if there was no data for a
+particular entity then we can just give
+it an empty data structure to fill out
+now let's make this binding fire anytime
+we've loaded a scene so let's hook into
+the scene loaded event whenever the
+scene loads we'll bind a reference to
+the player data to our hero now it could
+be that on certain scenes you don't
+actually want to do any finding like
+your loading scenes or your menu or
+whatnot so you could just have a guard
+Clause here that says you know if the
+scene name falls into a list of scenes
+that you don't want to be binding on
+then just return early again at some
+point in the future you'd want to
+separate the scene management from your
+saving and loading of data well we've
+done all the hard Parts how about a test
+and see if we can actually save some
+player data into our
+file if we take a closer look at the
+inspector now you can see all of our
+player data is exposed here notice that
+our play data hasn't been associated
+with an ID yet but our hero does have an
+ID so when I click play I expect the
+scene to load the bind to Fire and
+suddenly our player data should have the
+same ID as our hero and you can see in
+the window there that that is correct
+and it's now showing our position and
+updating our rotation as I move around
+here in the game as a test I'm going to
+save the game then I'm going to click
+new game that should set me right back
+to the start and open my inventory
+window again of course let just put that
+away and move a bit and now let's try
+loading and make sure I come back to
+that position again so that opened my
+inventory because the scene loaded again
+but here I am at the end of this path
+it's exactly the way that I expect I got
+back my position and rotation if I pop
+back out of play mode and let's open up
+that file again and have a look let's
+see what kind of information is now
+stored there I expect to see my
+four-part serialized goodd yep and my
+position XYZ and I've got a rotation as
+well
+this is exactly what I wanted you'll
+notice that for my ID that actually
+serialized my backing field now if
+you're using strings for IDs you might
+see a string here instead of course but
+uh this is looking good let's carry
+on we can come over to my inventory
+class here and also Implement I bindable
+here now if the inventory is going to
+bind to inventory data this is a class
+that I've set up in another file let's
+have a quick look at that you'll notice
+some similarities between the player
+data this also implements iable it has
+an ID it's going to have a list of
+serialized items and it's going to keep
+a capacity in our coins and anything
+else that we decide that we're going to
+store as inventory for the player in the
+future so back in the inventory class
+let's make sure that the inventory has
+an ID number that we can associate with
+the data for loading in the future the
+inventory also needs to implement the
+bind method but if you recall from last
+week's video it's the model that
+actually holds all the data so so we're
+going to pass this through we got to
+pass it down into the controller and
+then the controller can actually hand it
+off to the model for
+binding so there's just a few little
+pass through methods to implement here
+and then once we get over into the model
+we can actually have a bind method
+that's going to perform our various bits
+of logic here so it's going to accept
+our inventory data now we have
+configured our inventory to have a few
+starter items so there's going to be a
+little bit of extra logic here what we
+want to know is is the data coming in
+about a new game or are we loading an
+existing game first let's store this
+data into a field we'll just call it
+inventory data and we can also set the
+capacity in that inventory data to
+whatever the capacity of this inventory
+actually is now I need to create a few
+new Fields here so up at the top I'll
+create a new field for inventory data
+and a new field for capacity then let's
+make sure that capacity has a value in
+it we already passing that in through
+the Constructor so let's just set it
+right there now one way we can handle
+the inventory being new or not is we
+could just check and see if the data
+coming in is actually empty so we could
+have a Boolean here let's just say is
+new that would be if the data items is
+null or the data items length is equal
+to zero so if it is new let's
+instantiate a new array to hold our
+items in the inventory data that way
+we'll be able to store all of our
+inventory items in our savable data then
+we can also say if we're new but there
+are some starter items already let's
+iterate over all of those items that
+exist in the inventory now and add them
+into our savable data now that we've
+synchronized those two things we just
+have to bind the savable data to our
+actual inventory items this way when our
+inventory changes at runtime it's really
+changing the data that we're going to
+save now before we forget let's jump
+over to our save system and make sure
+that inventory is an item in our game
+data then we also need to make sure that
+when we're binding everything up we're
+also binding data to the inventory we
+can do that right after we're binding
+the player data to the hero and that's
+it if we jump back into unity and press
+play now you see we have our starter
+items here and you can see over in the
+side it's actually started to populate
+our save data so in our save load system
+we can see we have a capacity of 20 our
+coins is still zero so we'll have to do
+something about that but we can actually
+see our items there so I'll expand that
+and just pull some things around and
+we'll see it change in real time so now
+you can see slot two has nothing in it
+now it has two mushrooms now it has
+three
+mushrooms let swap some things around so
+it's looking good right but can we save
+this and is it going to look correct
+I'll click save and let's find out now
+the easy way to test is to click new
+game there we go everything's reset the
+way it starts as and load our existing
+game the three mushrooms are back in the
+first position it looks just how we
+saved
+it let's do something with these coins
+this is actually an easy change we
+already have coins being stored in our
+inventory data so we're just going to
+use that as a backing field for the
+coins property now when the coins change
+in the game it's really being changed in
+our inventory
+data so now I've quickly loaded and
+saved a new game and I just want to have
+a look at the file and make sure that
+the coins are being represented
+correctly so if we have a look in here
+everything's looking good let's have a
+quick look at the inventory now every
+inventory item has its own guid so you
+can see it's been split up into its
+integer parts and everything has
+quantities those are looking good now we
+got a bunch of empty slots where there's
+nothing and then at the very bottom we
+can see capacity 20 and coins 10 so
+that's exactly what we expect in the
+file so far anyway looking good so I
+hope that gives you a good idea of how
+you can use data binding to help with
+your save load systems not only that but
+how to extend it a little bit in the
+future if you needed encrypted Json or
+you just totally wanted to change from
+Json to Binary maybe or change to saving
+to the cloud none of those changes would
+be very hard to do with the system
+that's it for today thanks for watching
+next week we're going to look into
+another exciting topic but if you can't
+wait till then click on one of these
+boxes on your screen and I'll see you
+there

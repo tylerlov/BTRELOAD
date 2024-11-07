@@ -1,0 +1,546 @@
+the next few videos on the channel are
+going to be about the MVC MVP
+architectures these architectures make
+testing really easy because you're
+centralizing your logic generally into
+pure C classes that are fast to run and
+easy to test before we dive into that
+let me know in the comments if you know
+this channel hey there it's Josh welcome
+back to Let's game it out this guy takes
+games and exploits the bugs and logical
+flaws in front of millions of people I
+can't think of a better reason to start
+unit testing games with that in mind
+let's get into
+it I'm just going to run around my game
+scene for a second so you can see what's
+going on because we'll be coming back to
+this over the next few videos I've got
+some pickups here I run over them you
+can see my coin counter which is really
+just a score is going up every time I
+pick up an object the coin collection
+system is an MVC the character also has
+an MVC that's running its physics system
+although in this demo I'm just using
+point and click to move them around
+after we have a good understanding of
+how we can unit test these things we're
+going to dive deeper into both of those
+systems in unity test Runner assemblies
+are used to group and organize test
+scripts I only have one assembly
+definition in this project at the top
+level of my scripts folder and I've
+referenced all the other assemblies I
+need such as the input system and my own
+library in newer versions of unity the
+test framework will already be installed
+but if you need to find it of course
+it's going to be in the package manager
+some of the sample Solutions towards the
+bottom of the sample section are
+actually kind of interesting with the
+test Runner installed we're going to
+install one more package so that we can
+have some mocks and spies that's the
+unity 3D and substitute open source
+library then we can come back into Unity
+install that repository from the git URL
+and then we'll have that inside of our
+project as well I've already got mine
+installed so I'm just going to come over
+to the in Project View and show you what
+it looks like I'm going to create a
+little folder called test to keep all my
+tests in and then open the test runner
+up you can go to window General test
+runner for that and once you have the
+window open there's two tabs up here
+play mode and edit mode we're going to
+start with edit mode and then there's a
+button that will create a folder with an
+assembly for you now I'm going to call
+mine editor. tests and then my assembly
+is also going to be called editor. tests
+so if we have a quick look at that here
+let's bring it up in the inspector there
+are already the test Runner references
+here but we need to add the assemblies
+that we're going to include as well so
+that's the substitute library and we
+also need to include our own assembly
+for our code so for me I called that
+architecture notice that editor is the
+only included platform for this assembly
+and don't forget to click apply for
+these changes to take effect now if I
+jump back over to the test Runner
+there's also a button to create a first
+test script now I'm just going to call
+my file coin collection editor tests
+we'll have different test file for
+runtime tests when that's done compiling
+if we look up in the test Runner now you
+can see our new test class here it has
+two tests within it let's go have a look
+at them they're empty and we're going to
+replace
+them so over here we can see there's
+just two dummy tests they're not doing
+anything but you can see the different
+types regular test and a Unity test the
+real difference between these two is
+that a Unity test operates like a
+co-routine means you can yield return
+wait for seconds yield return null and
+so on and it will simulate gameplay
+let's clean up all this noise and we'll
+just focus on the first type of test now
+the first thing I want to talk about
+here is assertion
+assertions can be sometimes thought of
+in tiers a first level of assertions
+would be is has does contains and then a
+second level would be all none some
+exactly you can use logical operators
+and or and not you can use other things
+like is unique co-pilot has some good
+suggestions I'm going to add is ordered
+and then we're of course we're going to
+make statements out of these and assert
+whether they're true or not so let's
+write a simple test just to get a feel
+for assertions if I say that I have a
+username user 1 2 3 we could assert that
+username does start with the letter U we
+could also assert that username does end
+with the number three now to run these
+tests we have two choices the first one
+I'm going to show you is if you're using
+ryer if you come down to the very bottom
+of the window where it says unit test
+click that it'll open up a new window
+for us here you can kick off tests by
+clicking one of the green arrows on the
+left side and you'll see the test Runner
+starts to work but I forgot to save my
+scene so it's going to kick me back to
+Unity I click save and the tests run you
+can see up in the test Runner that all
+my tests passed it doesn't really matter
+where you start the test from and just
+to prove that I'll run it again right
+here by clicking run
+selected there we
+go so the test pass again if we come
+down to the bottom you'll see the
+results and how long it took back and
+ryer we can also see our success message
+here I'm going to close up the unit test
+window here in Ryder and let's continue
+by looking at a few more tests that are
+a little bit more involved let's just
+create a new list with some numbers in
+it 1 to five now we could assert that
+the list does contain the number three
+we could assert that the list is all
+positive
+numbers we might want to assert that our
+list has exactly two items with a value
+less than
+three we could make sure that it's
+ordered and unique let's make one that's
+a little bit more complex what if we
+wanted to know that there were three
+items in this list that were odd numbers
+so we could use exactly matches for this
+and put in an expression here now this
+is a little bit hard to read and you
+might notice that co-pilot actually made
+a mistake here this test is checking for
+even numbers so this test is going to
+fail why don't we prove that by running
+it now I've gotten in the habit of
+reloading my domain whenever I make
+changes so I'm going to jump back into
+Unity hit controlr and then run selected
+so predictably our test fails if we look
+down in the bottom corner we can see
+that it was expecting exactly three
+items matching the Lambda expression but
+it was not provided that so let's jump
+back into the IDE I'm just going to flip
+this to a not equals this is still not
+the easiest thing to read at a glance
+let's make a helper public static class
+number predicates we can just have one
+that is is even one that is is odd
+that'll solve our readability issue then
+I can just replace that Lambda statement
+up there with the actual predicate is
+odd now let's come back to Unity reload
+run the tests and look at that
+everything passes so we're
+good now before we start using Mock and
+spies let's have a really high Lev look
+at the system that collects these coins
+there's a main player component that
+lives on my hero but it's the controller
+that's doing all of the logic and that's
+a pure C class now the model is actually
+storing all the data which is how many
+coins have we collected and it's using
+an observable to do that so that we can
+subscribe to events in our controller
+the view is essentially our UI and it's
+going to show the player on the screen
+how many coins have been collected the
+service has the responsibility of
+loading and saving our data to wherever
+that needs to go one of the best things
+about this kind of Architecture is that
+all of our logic has been centralized to
+the controller so most of our tests can
+happen there and all of the other
+classes can be mocked and we can have
+them return any results we want for our
+tests by far the biggest errors I see in
+software development are logic problems
+so in my opinion if you're going to
+write any tests at all write them for
+that Central Hub of logic second place
+would be testing for null reference
+exceptions third place might be off by
+one errors which would come from your
+loops and not counting things
+properly let's take a closer look at
+this Central Hub of logic the coin
+controller the coin controller
+implements a simple interface there are
+four methods in it when the controller
+collects some coins that's going to
+change the model when we update the view
+that's going to of course update our UI
+now there are two other methods here
+save and load do exactly what they sound
+like if I expand the coin controller
+concrete implementation you'll notice
+that right under the private Constructor
+I have two preconditions here this is a
+class that checks different things it
+has a few extra methods but the primary
+purpose is to check for not nulls on
+Constructor arguments I'm going to be
+building the controller with a build
+Builder and the Builder will allow us to
+inject mocks into the controller so we
+can have a mock view a mock model and a
+mock service the main logic of this
+class lies in the collect and the update
+view methods these are the ones that we
+want to make sure are wired up correctly
+they're doing what we want them to do
+when we collect coins the model needs to
+update itself correctly when we update
+the view we want to have confidence that
+the update coin display method on The
+View class was called correctly with the
+right amount of coins to show to the
+player
+I want to quickly look at the model
+class as well because I've implemented
+it an observable there this will be
+relevant as we start to work with
+properties that are inside of a mock so
+don't worry too much about the internals
+of the controller model and view here
+cuz we're going to go over the whole
+thing in detail in the next video for
+now let's go dig into how we can use
+mocks and spies to mock the different
+components that make up an MBC or MVP
+implementation the n substitute Library
+can work with any interface or any class
+that has virtual methods when it creates
+a substitute the substitute can be used
+as a mock or as a spy a spy is a class
+that can tell us how many times it was
+called and what arguments it was called
+with a mock is a class that can return a
+value that we want it to in this case
+we're going to create substitutes for
+our view model and service that way
+we'll know when they got called what
+arguments they got called with and we
+can make them return any values that we
+want we're going to do this in a method
+that we call setup it can be called
+anything you want but it needs the setup
+attribute this will make the setup
+method execute before any test method
+executes let's run some assertions just
+as a sanity check while we're setting up
+everything next we're going to set up a
+mock return value for our coins property
+remember that it's an observable so what
+we can do is say model. coins. returns
+and tell it what it's going to return
+and that's going to be a new observable
+integer with a starting value of zero
+now it's even more important here to
+make sure that if you're mocking a
+property let's make sure that it was set
+correctly especially one that's as
+complex as this one there's two ways to
+write this actually I'll write them both
+here on the screen the first one's a
+little bit shorter but you could use has
+property as well with that other way our
+service has a load method that's going
+to return the model I want the mock
+service to return our mock model so
+finally let's put it all together by
+creating a controller instance the
+controller can use its normal Builder
+but we're going to supply it with the
+mock service build it with the mock view
+the service is already set up to deliver
+the mock
+model let's assert that it's not null
+and now we're done now the inverse of
+setup is tear down I'm just going to put
+it here to show but we don't actually
+need to tear anything down here before
+continuing let's jump back into unity
+and make sure that setup runs before our
+existing test with no
+problems so here we go I've Reloaded The
+Domain I'm just going to run the test
+again there we go again ran super fast
+no
+problems okay let's test this out we'll
+create a new test and first of all I
+want to make sure that we're not
+throwing any of those argument null
+exceptions from the preconditions in the
+private Constructor of our controller so
+what we can do is run the build
+by passing in a null view to the Builder
+now that should throw an exception it
+can just be a oneliner this simple
+another way to write that is to use the
+assert do throws generic where you pass
+in the type of exception you expect to
+get then you run the Builder in a Lambda
+expression now I'll just keep both of
+these in here and run the whole thing
+again so I've Reloaded The Domain you
+can see we've got our new test listed
+there let's run all
+so there we go took a little bit longer
+to run this time but we definitely
+passed our
+test so I think I like the first way of
+writing this better so I'm just going to
+kill the second one and now we need to
+test that if we were to pass in a null
+service we would also throw an exception
+this is almost going to be exactly the
+same as the previous test except instead
+of a null view we're going to have a
+null service so let's make sure we build
+with the mock View and and the only null
+is going to be the service that should
+throw an argument null exception so now
+we can write a bit of a logic test to
+make sure that our view is updating
+itself correctly when the controller
+collects one coin the update coin
+display method on The View should
+receive exactly one time it should
+receive a call to that method with the
+value of one so that's a very simple
+test to make sure that everything has
+been wired up together nicely now we
+should also run a test on our observable
+and to do that I'm going to show you
+guys one more thing here and that is the
+test case attribute this will let us
+parameterize tests so copilot has a good
+idea what I want to do here what we want
+to say is when we're starting with this
+value of coins and we add this many
+coins our total amount of coins should
+be this many and then we can write a few
+test cases and try a whole bunch of
+different scenarios with it we'll set
+the coins property of our model to
+return an observable of the the starting
+value then we'll collect the amount that
+we want to add and then we'll verify
+that the amount of coins is equal to the
+amount that we
+expect I'll come back in here reload the
+domain you can see our new tests are
+here if I expand the test cases you can
+see all the details there I'll run them
+all there we go very fast again all the
+tests passed that's great let's start
+taking a quick look at play mode tests
+to do this I'm going to create a new
+folder with an assembly in it and
+similar to the other one I'm going to
+call this one runtime. tests so that'll
+name my assembly runtime. tests as well
+um I'm going to create a new script in
+here that will manipulate in a moment to
+add some play mode tests to but before
+we do that I need to jump into the
+assembly here if we come and have a look
+up here in the inspector first of all
+notice under platforms where any
+platform is checked for play mode tests
+and I'm also going to add some more
+references because because we're
+actually going to be creating game
+objects putting components on them
+things that exist in our game so I need
+my own libraries and I'm also going to
+need the n substitute Library don't
+forget to click apply after making
+changes to an assembly definition then
+let's come over here and change some
+code so I'm going to paste in all of the
+using statements that were the same from
+the editor we can include more later if
+we need to rename this class and let's
+start writing the simplest play mode
+test you can have is to verify that your
+application actually plays that's a
+really simple test assert that
+application is playing is true another
+good test would be to make sure that the
+objects we expect to be in the scene are
+actually in the scene when it loads so
+we can use game object find for that and
+we could look for different things and
+if we don't find it let's output a
+message that says this thing didn't show
+up in this scene and that'll give us a
+little bit of information about what
+actually went wrong with the test now
+let's write a Unity test that will run
+as a a code routine my actual coins and
+the coin component act as an
+implementation of the visitor
+programming pattern so my coin component
+can accept visitors when we've accepted
+a visitor we collect its payload of
+coins now I want to talk a little bit
+about arrange act and assert or I like
+to use given when then this is a
+paradigm of setting up your test then
+executing your test logic then asserting
+that you got what you wanted
+we're going to do just that in a moment
+but I need a test visitor sometimes it's
+useful to make a little concrete
+implementation basically it's going to
+be a fake visitor but it's going to keep
+track of whether or not it executed its
+visit logic it's not going to do
+anything when it visits other than set
+this flag to true and then we can verify
+that in our test now let's jump back up
+to the test and we can actually say oh
+here I'll wipe this out so our given
+condition will be that given we have a
+game object that actually has our coin
+component on it that collects coins and
+we have a pickup object that has our
+test visitor component on
+it we'll yield return null now this will
+make sure that our awaken start methods
+have run before we get to the next part
+here now when our coin component
+controller is equal to a substitute
+controller we will accept the visitor
+then we're going to wait for one more
+frame then we can assert that the
+visited property of our test visitor is
+actually true now some of you might be
+wondering why not just use the actual
+player and an actual coin pickup the
+reason is that I only want to test that
+the accept method works if I was to put
+the actual player in and the actual
+pickup object then I'm doing more of an
+endtoend test where everything actually
+has to be working to verify that the
+accept method works but really I don't
+need to do that and that's the beauty of
+unit tests I can test this in isolation
+make sure that the accept test works
+correctly and if you do this with every
+little bit of your logic these very
+small isolated tests you'll have high
+confidence that all the public methods
+public properties and whatnot in your
+game are doing exactly the small job
+that they're supposed to be doing I'm
+just going to make a few changes here
+I'm going to substitute the controller
+before awaken start runs that I'll make
+sure that we're actually using the mock
+I'm also in my verify scene I'm verify
+my hero instead cuz I know that
+in my underwater scene but there's one
+more problem in play mode here it's just
+going to create a dummy scene unless I
+tell it to use a specific scene so if I
+want to check my underwater scene I need
+to do something special to do that I'm
+going to create my own attribute here
+that will load a specific scene for me
+I'm going to implement the eye outer
+Unity Test action interface this gives
+us two methods now what I want to do in
+this attribute is keep a string
+reference to the scene I want to load
+I'll be able to set that before every
+test and now in the before test method
+first let's do a debug assert to make
+sure that the string actually ends with
+unity just a little sanity check there
+and then we can use editor scene manager
+load scene in play mode and we can tell
+it which scene to open up for the test
+our after test co- routine can just
+yield return null so I definitely want
+to use this attribute where I'm
+verifying the objects in this particular
+scene so I'm just going to come up to
+this test and we'll add that attribute
+in here and then I'm going to make sure
+it's going to load my underwater scene
+for this test I'll put it on this other
+test as well it has no real bearing on
+the test so it doesn't really
+matter now back here in unity I've
+Reloaded The Domain let's run all the
+tests it's going to go by fast but
+you'll see it's going to load a dummy
+scene for the application is playing
+test and the other two tests get the
+underwater
+scene and just like that it's all done
+all of our tests are back
+next week we're going to take a deep
+dive into MVC and MVP by looking at this
+coin collection system looking at the
+physics system on that character we
+might even write one or two more tests
+I'll see you
+there

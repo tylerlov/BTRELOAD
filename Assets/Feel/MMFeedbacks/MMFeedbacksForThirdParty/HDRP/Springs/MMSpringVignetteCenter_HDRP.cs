@@ -5,7 +5,7 @@ using UnityEngine.Rendering.HighDefinition;
 
 namespace MoreMountains.Feedbacks
 {
-	[AddComponentMenu("More Mountains/Springs/MMSpringVignetteCenter_HDRP")]
+	[AddComponentMenu("More Mountains/Springs/MM Spring Vignette Center HDRP")]
 	public class MMSpringVignetteCenter_HDRP : MMSpringVector2Component<Volume>
 	{
 		protected Vignette _vignette;
