@@ -60,7 +60,7 @@ public class PlayerShooting : MonoBehaviour
         for (int i = 0; i < lockOnEffectPoolSize; i++)
         {
             GameObject lockOnEffect = Instantiate(
-                crosshairCore.lockOnPrefab,
+                playerLocking.lockOnPrefab,
                 crosshairCore.Reticle.transform
             );
             lockOnEffect.SetActive(false);
@@ -103,7 +103,7 @@ public class PlayerShooting : MonoBehaviour
                 float totalDamage = lockedProjectileCount * damagePerProjectile;
                 List<Transform> enemiesHit = playerLocking.enemyTargetList.ToList();
 
-                for (int i = 0; i < lockedProjectileCount; i++)
+                foreach (Transform enemy in enemiesHit)
                 {
                     AnimateLockOnEffect();
                     yield return launchDelayWait;
@@ -117,7 +117,6 @@ public class PlayerShooting : MonoBehaviour
                 for (int i = 0; i < lockedProjectileCount; i++)
                 {
                     ShootNonTargetedProjectile();
-                    AnimateLockOnEffect();
                     yield return launchDelayWait;
                 }
             }
@@ -128,18 +127,18 @@ public class PlayerShooting : MonoBehaviour
 
     public void AnimateLockOnEffect()
     {
-        if (crosshairCore.lockOnPrefab != null && lockOnEffectPool.Count > 0)
+        if (playerLocking.lockOnPrefab != null && lockOnEffectPool.Count > 0)
         {
             GameObject lockOnInstance = lockOnEffectPool.Dequeue();
             lockOnInstance.SetActive(true);
             lockOnInstance.transform.localPosition = Vector3.zero;
-            lockOnInstance.transform.localScale = Vector3.one * crosshairCore.initialScale;
+            lockOnInstance.transform.localScale = Vector3.one * playerLocking.initialScale;
 
             SpriteRenderer spriteRenderer = lockOnInstance.GetComponent<SpriteRenderer>();
             if (spriteRenderer != null)
             {
                 Color initialColor = spriteRenderer.color;
-                initialColor.a = crosshairCore.initialTransparency;
+                initialColor.a = playerLocking.initialTransparency;
                 spriteRenderer.color = initialColor;
 
                 Color targetColor = spriteRenderer.color;

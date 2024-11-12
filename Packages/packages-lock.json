@@ -31,6 +31,32 @@
       "dependencies": {},
       "url": "https://packages.unity.com"
     },
+    "com.gurbu.gpui-pro": {
+      "version": "file:com.gurbu.gpui-pro",
+      "depth": 0,
+      "source": "embedded",
+      "dependencies": {
+        "com.unity.burst": "1.6.0",
+        "com.unity.collections": "1.2.0",
+        "com.unity.mathematics": "1.2.0"
+      }
+    },
+    "com.gurbu.gpui-pro.prefab": {
+      "version": "file:com.gurbu.gpui-pro.prefab",
+      "depth": 0,
+      "source": "embedded",
+      "dependencies": {
+        "com.gurbu.gpui-pro": "0.9.10"
+      }
+    },
+    "com.gurbu.gpui-pro.terrain": {
+      "version": "file:com.gurbu.gpui-pro.terrain",
+      "depth": 0,
+      "source": "embedded",
+      "dependencies": {
+        "com.gurbu.gpui-pro": "0.9.10"
+      }
+    },
     "com.kyrylokuzyk.primetween": {
       "version": "file:../Assets/Plugins/PrimeTween/internal/com.kyrylokuzyk.primetween.tgz",
       "depth": 0,
@@ -209,6 +235,15 @@
         "com.unity.timeline": "1.7.1"
       },
       "url": "https://packages.unity.com"
+    },
+    "com.unity.ide.cursor": {
+      "version": "https://github.com/boxqkrtm/com.unity.ide.cursor.git",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {
+        "com.unity.test-framework": "1.1.9"
+      },
+      "hash": "2c0153a9bab1abc783e5599fa2d2cc3c69d5e389"
     },
     "com.unity.ide.visualstudio": {
       "version": "2.0.22",

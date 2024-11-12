@@ -222,4 +222,10 @@ public class TimeManager : MonoBehaviour
 
         globalClock.localTimeScale = originalTimeScale;
     }
+
+    public void ResetTimeScale()
+    {
+        Time.timeScale = 1f;
+        InitializeDebugTimeScale();
+    }
 }

@@ -64,12 +64,22 @@ public class PlayerLocking : MonoBehaviour
     private Dictionary<Transform, float> enemyLockTimes = new Dictionary<Transform, float>();
     #endregion
 
-    #region Lock Highlight
+    #region Lock Highlight & Visuals
     [Header("Lock Highlight")]
     [SerializeField]
     private GameObject lockHighlightPrefab;
 
     private Dictionary<Transform, GameObject> lockHighlights = new Dictionary<Transform, GameObject>();
+
+    [Header("Lock-On Visuals")]
+    [SerializeField]
+    public GameObject lockOnPrefab;
+
+    [SerializeField]
+    public float initialScale = 1f;
+
+    [SerializeField]
+    public float initialTransparency = 0.5f;
     #endregion
 
     private int lockedProjectileCount = 0;
@@ -103,8 +113,8 @@ public class PlayerLocking : MonoBehaviour
 
         // Ensure references are assigned
         crosshairCore = GetComponent<CrosshairCore>();
-        uiLockOnEffect = FindObjectOfType<UILockOnEffect>();
-        staminaController = FindObjectOfType<StaminaController>();
+        uiLockOnEffect = FindFirstObjectByType<UILockOnEffect>();
+        staminaController = FindFirstObjectByType<StaminaController>();
         shooterMovement = GetComponent<ShooterMovement>();
         aimAssistController = GetComponent<AimAssistController>();
 
@@ -232,16 +242,15 @@ public class PlayerLocking : MonoBehaviour
             enemyTarget = enemyTransform;
             enemyTargetList.Add(enemyTarget);
             FMODUnity.RuntimeManager.PlayOneShot("event:/Player/LockEnemy");
-            uiLockOnEffect.LockOnTarget(enemyTarget);
+            uiLockOnEffect.LockOnEnemy(enemyTarget);
 
-            // Instantiate lock highlight
             if (lockHighlightPrefab != null && !lockHighlights.ContainsKey(enemyTransform))
             {
                 GameObject highlight = Instantiate(lockHighlightPrefab, enemyTransform);
                 lockHighlights[enemyTransform] = highlight;
             }
 
-            // Play lock-on feedback
+            GetComponent<PlayerShooting>().AnimateLockOnEffect();
             lockFeedback.PlayFeedbacks();
         }
     }
@@ -424,9 +433,13 @@ public class PlayerLocking : MonoBehaviour
                 raycastCommands[rayCount] = new RaycastCommand(
                     origin + offset,
                     direction,
-                    range,
-                    Physics.DefaultRaycastLayers,
-                    1
+                    new QueryParameters
+                    {
+                        hitMultipleFaces = false,
+                        layerMask = Physics.DefaultRaycastLayers,
+                        hitTriggers = QueryTriggerInteraction.UseGlobal
+                    },
+                    range
                 );
                 rayCount++;
             }
@@ -490,13 +503,14 @@ public class PlayerLocking : MonoBehaviour
                     UpdateLastBulletLockTime();
                     HandleMaxTargetsReached();
 
-                    // Restore these lines for feedback
+                    // Add UI lock-on effect for projectiles
+                    uiLockOnEffect.LockOnTarget(hit.transform);
+
                     StartCoroutine(LockVibrate());
                     lockFeedback.PlayFeedbacks();
                     PlayRandomLocking();
                     Locks++;
 
-                    // Restore visual feedback
                     hit.transform.GetChild(0).gameObject.SetActive(true);
 
                     return true;

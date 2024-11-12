@@ -57,8 +57,9 @@ namespace JPG.Universal
                 FetchVolumeComponent();
                 
                 #if UNITY_2022_1_OR_NEWER
-                    source = renderingData.cameraData.renderer.cameraColorTargetHandle;
-                    sourceDepthStencil = renderingData.cameraData.renderer.cameraColorTargetHandle.rt.depth > 0 ? renderingData.cameraData.renderer.cameraColorTargetHandle : renderingData.cameraData.renderer.cameraDepthTargetHandle;
+                    var renderer = renderingData.cameraData.renderer;
+                    source = renderer.cameraColorTargetHandle;
+                    sourceDepthStencil = renderer.cameraDepthTargetHandle;
                 #else
                     source = renderingData.cameraData.renderer.cameraColorTarget;
                     sourceDepthStencil = renderingData.cameraData.renderer.cameraDepthTarget != new RenderTargetIdentifier(BuiltinRenderTextureType.CameraTarget) ? renderingData.cameraData.renderer.cameraDepthTarget : renderingData.cameraData.renderer.cameraColorTarget;
@@ -69,6 +70,7 @@ namespace JPG.Universal
                 ConfigureInput(DoReprojection ? ScriptableRenderPassInput.Motion : ScriptableRenderPassInput.Color);
             }
 
+            [System.Obsolete]
             public override void Configure(CommandBuffer cmd, RenderTextureDescriptor cameraTextureDescriptor)
             {
                 if (mat == null) return;
@@ -135,9 +137,12 @@ namespace JPG.Universal
                 
                 // Have to refetch color target here because post-processing will use texture B instead of A and in OnCameraSetup() it always returns A. So events like AfterRenderingPostProcessing start working.
                 #if UNITY_2022_1_OR_NEWER
-                    source = renderingData.cameraData.renderer.cameraColorTargetHandle;
+                    var renderer = renderingData.cameraData.renderer;
+                    source = renderer.cameraColorTargetHandle;
+                    sourceDepthStencil = renderer.cameraDepthTargetHandle;
                 #else
                     source = renderingData.cameraData.renderer.cameraColorTarget;
+                    sourceDepthStencil = renderingData.cameraData.renderer.cameraDepthTarget != new RenderTargetIdentifier(BuiltinRenderTextureType.CameraTarget) ? renderingData.cameraData.renderer.cameraDepthTarget : renderingData.cameraData.renderer.cameraColorTarget;
                 #endif
 
                 var width = cameraData.cameraTargetDescriptor.width;
@@ -252,7 +257,7 @@ namespace JPG.Universal
                 return;
             }
 
-            if (renderingData.cameraData.postProcessEnabled)
+            if (renderingData.cameraData.postProcessEnabled && !renderingData.cameraData.isSceneViewCamera)
             {
                 renderPass.Setup(shader, renderer, renderingData);
                 renderer.EnqueuePass(renderPass);

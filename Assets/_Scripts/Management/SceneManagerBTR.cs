@@ -430,8 +430,25 @@ public class SceneManagerBTR : MonoBehaviour
 
     public void RestartGame()
     {
+        // Reset scene indices
         currentSceneIndex = 0;
         currentSectionIndex = 0;
+        
+        // Reset wave tracking state
+        completedWaves = 0;
+        expectedWaves = 0;
+        isFirstUpdate = true;
+        isTransitioning = false;
+        currentWaveCount = 0;
+        _isLoadingScene = false;
+
+        // Reset music state by forcing initial section
+        if (currentGroup != null && currentGroup.scenes.Length > 0)
+        {
+            expectedWaves = currentGroup.scenes[0].songSections[0].waves;
+        }
+
+        // Load first scene
         LoadFirstAdditiveSceneAsync();
     }
 

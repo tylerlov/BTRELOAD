@@ -2,6 +2,7 @@ Shader "Custom/TY_Fast Ghost"
 {
     Properties
     {
+        [Toggle(_TRANSPARENT_ON)] _TransparentMode("Transparent Mode", Float) = 1
         _Color("Main Color", Color) = (1,1,1,1)
         [HDR]_FresnelColor("Fresnel Color", Color) = (0.6933962,1,0.9814353,1)
         _SelfIllumination("Self Illumination", Range( 1 , 10)) = 1
@@ -18,8 +19,6 @@ Shader "Custom/TY_Fast Ghost"
     {
         Tags 
         {
-            "RenderType"="Transparent" 
-            "Queue"="Transparent" 
             "RenderPipeline"="UniversalPipeline"
             "DisableBatching"="False"
         }
@@ -36,7 +35,12 @@ Shader "Custom/TY_Fast Ghost"
         Pass
         {
             Name "Forward"
-            Tags {"LightMode" = "UniversalForward"}
+            Tags 
+            {
+                "LightMode" = "UniversalForward"
+                "RenderType" = "Transparent"
+                "Queue" = "Transparent"
+            }
 
             Blend SrcAlpha OneMinusSrcAlpha
             ZWrite Off
@@ -45,6 +49,7 @@ Shader "Custom/TY_Fast Ghost"
             HLSLPROGRAM
             #pragma vertex vert
             #pragma fragment frag
+            #pragma shader_feature_local _TRANSPARENT_ON
             #pragma multi_compile_fog
             #pragma multi_compile_instancing
 
@@ -58,10 +63,9 @@ Shader "Custom/TY_Fast Ghost"
             struct Varyings
             {
                 float4 positionCS : SV_POSITION;
-                float3 normalWS : TEXCOORD0;
-                float3 viewDirWS : TEXCOORD1;
-                float fogFactor : TEXCOORD2;
-                float instanceTime : TEXCOORD3;
+                half fresnel : TEXCOORD0;
+                half amplitude : TEXCOORD1;
+                half fogFactor : TEXCOORD2;
                 UNITY_VERTEX_INPUT_INSTANCE_ID
                 UNITY_VERTEX_OUTPUT_STEREO
             };
@@ -93,13 +97,20 @@ Shader "Custom/TY_Fast Ghost"
 
                 VertexPositionInputs vertexInput = GetVertexPositionInputs(input.positionOS.xyz);
                 output.positionCS = vertexInput.positionCS;
-                output.normalWS = TransformObjectToWorldNormal(input.normalOS);
-                output.viewDirWS = GetWorldSpaceViewDir(vertexInput.positionWS);
-                output.fogFactor = ComputeFogFactor(vertexInput.positionCS.z);
+                
+                float3 normalWS = TransformObjectToWorldNormal(input.normalOS);
+                float3 viewDirWS = GetWorldSpaceViewDir(vertexInput.positionWS);
+                half NdotV = dot(normalize(normalWS), normalize(viewDirWS));
+                half fresnelFactor = _Invert ? NdotV : (1.0 - NdotV);
+                output.fresnel = _FresnelBias + _FresnelIntensity * pow(abs(fresnelFactor), _FresnelPower);
                 
                 float timeOffset = UNITY_ACCESS_INSTANCED_PROP(Props, _TimeOffset);
-                output.instanceTime = _Time.y + timeOffset;
-
+                half instanceTime = _Time.y + timeOffset;
+                half sinVal = sin(instanceTime * _AmplitudeSpeed);
+                output.amplitude = lerp(_MinValueAmplitude, _MaxValueAmplitude, sinVal * 0.5 + 0.5);
+                
+                output.fogFactor = ComputeFogFactor(vertexInput.positionCS.z);
+                
                 return output;
             }
 
@@ -108,21 +119,22 @@ Shader "Custom/TY_Fast Ghost"
                 UNITY_SETUP_INSTANCE_ID(input);
                 UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
 
-                half NdotV = dot(normalize(input.normalWS), normalize(input.viewDirWS));
-                half fresnelFactor = _Invert ? NdotV : (1.0 - NdotV);
-                half fresnel = _FresnelBias + _FresnelIntensity * pow(abs(fresnelFactor), _FresnelPower);
-                half3 fresnelColor = _FresnelColor.rgb * fresnel * _SelfIllumination;
-
-                half amplitude = lerp(_MinValueAmplitude, _MaxValueAmplitude, 
-                    (sin(input.instanceTime * _AmplitudeSpeed) + 1) * 0.5);
+                half3 fresnelColor = _FresnelColor.rgb * input.fresnel * _SelfIllumination;
                 
                 half4 instanceColor = UNITY_ACCESS_INSTANCED_PROP(Props, _Color);
                 half instanceOpacity = UNITY_ACCESS_INSTANCED_PROP(Props, _Opacity);
                 
-                half3 finalColor = fresnelColor * amplitude * instanceColor.rgb;
+                half3 finalColor = fresnelColor * input.amplitude * instanceColor.rgb;
                 finalColor = MixFog(finalColor, input.fogFactor);
                 
-                return half4(finalColor, instanceOpacity * instanceColor.a);
+                half finalAlpha;
+                #ifdef _TRANSPARENT_ON
+                    finalAlpha = instanceOpacity * instanceColor.a;
+                #else
+                    finalAlpha = 1.0;
+                #endif
+                
+                return half4(finalColor, finalAlpha);
             }
             ENDHLSL
         }

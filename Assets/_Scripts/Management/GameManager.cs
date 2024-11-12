@@ -216,9 +216,33 @@ public class GameManager : MonoBehaviour
         isPlayerDead = false;
         pauseMenuManager.AnimatePauseMenu();
 
-        SceneManagerBTR.RestartGame();
-
+        // Clear any remaining enemies and projectiles
+        KillAllEnemies();
+        ProjectileManager.Instance.ClearAllProjectiles();
+        
+        // Reset time scale first
+        TimeManager.ResetTimeScale();
+        
+        // Reset player state
         EnableGameplayElements();
+        if (playerHealth != null)
+        {
+            playerHealth.ResetScore();
+        }
+        else
+        {
+            InitializePlayerHealth();
+            if (playerHealth != null)
+            {
+                playerHealth.ResetScore();
+            }
+        }
+        
+        // Reset invincibility state
+        SetPlayerInvincibility(false);
+        
+        // Restart scene management
+        SceneManagerBTR.RestartGame();
     }
 
     private void DisableGameplayElements()

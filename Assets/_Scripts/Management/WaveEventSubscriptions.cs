@@ -112,9 +112,15 @@ public class WaveEventSubscriptions : MonoBehaviour
             cameraSwitching.SetMainCamera();
         }
 
+        // Only play the start sound if we're in the first scene
         if (fmodOneShots != null)
         {
-            fmodOneShots.PlayOuroborosStart();
+            // Get current scene index
+            string currentScene = SceneManagerBTR.Instance.GetCurrentSceneName();
+            if (currentScene.EndsWith("1") || currentScene == "Ouroboros") // Assuming first scene is named "Ouroboros1" or just "Ouroboros"
+            {
+                fmodOneShots.PlayOuroborosStart();
+            }
         }
 
         if (shooterMovement != null)

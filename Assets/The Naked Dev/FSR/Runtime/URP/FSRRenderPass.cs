@@ -152,7 +152,7 @@ namespace TND.FSR
         private readonly int depthTexturePropertyID = Shader.PropertyToID("_CameraDepthTexture");
         private readonly int motionTexturePropertyID = Shader.PropertyToID("_MotionVectorTexture");
 
-        public FSRBufferPass(FSR3_URP _upscaler, bool usingRenderGraph)
+        public FSRBufferPass(FSR3_URP _upscaler)
         {
             m_upscaler = _upscaler;
 
@@ -209,7 +209,7 @@ namespace TND.FSR
     {
         private FSR3_URP m_upscaler;
 
-        public FSROpaqueOnlyPass(FSR3_URP _upscaler, bool usingRenderGraph)
+        public FSROpaqueOnlyPass(FSR3_URP _upscaler)
         {
             m_upscaler = _upscaler;
 
@@ -282,7 +282,7 @@ namespace TND.FSR
     {
         private FSR3_URP m_upscaler;
 
-        public FSRTransparentPass(FSR3_URP _upscaler, bool usingRenderGraph)
+        public FSRTransparentPass(FSR3_URP _upscaler)
         {
             renderPassEvent = RenderPassEvent.AfterRenderingTransparents;
             m_upscaler = _upscaler;

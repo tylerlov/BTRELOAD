@@ -273,7 +273,7 @@ namespace Highlighters
         */
 
         [Range(0.05f, 1), Tooltip("Render scale of the info buffer. If the render scale is set to e.g. 0.5, the highlighter will be rendered with half the resolution of the camera. Use as low number as possible to improve performance.")]
-        [SerializeField] private float infoRenderScale = 1;
+        [SerializeField] private float infoRenderScale = 0.5f;
 
         /// <summary>
         /// Render scale of the info buffer.
@@ -427,7 +427,7 @@ namespace Highlighters
         }
 
         [Tooltip("Render scale of the blur buffer. If the render scale is set to e.g. 0.5, the outer glow will be rendered with half the resolution of the camera. Use as low value as possible to improve performance.")]
-        [Range(0.05f, 1), SerializeField] private float blurRenderScale = 1;
+        [Range(0.05f, 1), SerializeField] private float blurRenderScale = 0.5f;
 
         /// <summary>
         /// Render scale of the blur buffer.
@@ -808,7 +808,7 @@ namespace Highlighters
         }
 
         [Tooltip("Value that the rendering bounds of the renderers should be increased to avoid outer glow clipping.")]
-        public float RenderingBoundsSizeIncrease = 0.2f;
+        public float RenderingBoundsSizeIncrease = 1.0f;
 
         [Tooltip("Fix rendering bounds when camera is near the center of rendering bounds.")]
         public bool RenderingBoundsDistanceFix = false;
@@ -842,6 +842,18 @@ namespace Highlighters
                 overlayMaterial.SetVector("_RenderingBounds", renderingBounds);
             }
 
+        }
+
+        public void UpdateRenderingBounds(Camera camera)
+        {
+            // Expand the rendering bounds to ensure all highlighters are visible
+            Vector4 expandedBounds = renderingBounds;
+            expandedBounds.x = Mathf.Max(0, expandedBounds.x - RenderingBoundsSizeIncrease);
+            expandedBounds.y = Mathf.Max(0, expandedBounds.y - RenderingBoundsSizeIncrease);
+            expandedBounds.z = Mathf.Min(1, expandedBounds.z + RenderingBoundsSizeIncrease);
+            expandedBounds.w = Mathf.Min(1, expandedBounds.w + RenderingBoundsSizeIncrease);
+            
+            SetRenderBoundsValues(expandedBounds);
         }
 
         #endregion

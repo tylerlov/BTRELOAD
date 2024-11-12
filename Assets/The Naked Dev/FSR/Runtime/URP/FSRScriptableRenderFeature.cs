@@ -23,9 +23,6 @@ namespace TND.FSR
         public override void Create()
         {
             name = "FSRRenderFeature";
-
-
-
             SetupPasses();
         }
 
@@ -44,15 +41,15 @@ namespace TND.FSR
 
             if (!usingRenderGraph)
             {
-                _bufferPass = new FSRBufferPass(m_upscaler, usingRenderGraph);
+                _bufferPass = new FSRBufferPass(m_upscaler);
                 _bufferPass.ConfigureInput(ScriptableRenderPassInput.Depth | ScriptableRenderPassInput.Motion);
             }
 
             _renderPass = new FSRRenderPass(m_upscaler, usingRenderGraph);
             _renderPass.ConfigureInput(ScriptableRenderPassInput.Depth | ScriptableRenderPassInput.Motion);
 
-            _opaqueBufferPass = new FSROpaqueOnlyPass(m_upscaler, usingRenderGraph);
-            _transparentBufferPass = new FSRTransparentPass(m_upscaler, usingRenderGraph);
+            _opaqueBufferPass = new FSROpaqueOnlyPass(m_upscaler);
+            _transparentBufferPass = new FSRTransparentPass(m_upscaler);
         }
 
         public void OnDispose()

@@ -1,0 +1,42 @@
+﻿// GPU Instancer Pro
+// Copyright (c) GurBu Technologies
+
+
+#include_with_pragmas "Packages/com.gurbu.gpui-pro/Runtime/Compute/Include/PlatformDefines.hlsl"
+#include "Packages/com.gurbu.gpui-pro/Runtime/Compute/Include/GPUIDefines.hlsl"
+
+#pragma kernel CSCopyTexture
+#pragma kernel CSCopyTextureArray
+
+uniform Texture2D<float4> source;
+uniform Texture2DArray<float4> textureArray;
+uniform SamplerState sampler_textureArray;
+uniform RWTexture2D<float4> destination;
+uniform uint offsetX;
+uniform uint sourceSizeX;
+uniform uint sourceSizeY;
+uniform uint textureArrayIndex;
+
+[numthreads(GPUI_THREADS_2D, GPUI_THREADS_2D, 1)]
+void CSCopyTexture(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= sourceSizeX || id.y >= sourceSizeY)
+        return;
+
+    uint indexX = id.x + offsetX;
+
+    destination[uint2(indexX, id.y)] = source[id.xy];
+
+}
+
+[numthreads(GPUI_THREADS_2D, GPUI_THREADS_2D, 1)]
+void CSCopyTextureArray(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= sourceSizeX || id.y >= sourceSizeY)
+        return;
+
+    uint indexX = id.x + offsetX;
+
+    destination[uint2(indexX, id.y)] = textureArray.SampleLevel(sampler_textureArray, float3(id.x / float(sourceSizeX), id.y / float(sourceSizeY), textureArrayIndex), 0);
+
+}

@@ -130,7 +130,7 @@ public class EnemyExplodeSetup : BaseBehaviour, IDamageable, IAttackAgent
         // Initialize the pulse sound instance
         if (!pulseSound.IsNull)
         {
-            pulseSoundInstance = AudioManager.Instance.GetOrCreateInstance(pulseSound.Path);
+            pulseSoundInstance = RuntimeManager.CreateInstance(pulseSound);
         }
         else
         {
@@ -140,7 +140,7 @@ public class EnemyExplodeSetup : BaseBehaviour, IDamageable, IAttackAgent
         // Initialize the explosion sound instance
         if (!explosionSound.IsNull)
         {
-            explosionSoundInstance = AudioManager.Instance.GetOrCreateInstance(explosionSound.Path);
+            explosionSoundInstance = RuntimeManager.CreateInstance(explosionSound);
         }
         else
         {

@@ -59,7 +59,7 @@ public class ProjectileAudioManager : MonoBehaviour
     {
         if (!movingSoundEvent.IsNull)
         {
-            var instance = AudioManager.Instance.GetOrCreateInstance(movingSoundEvent.Path);
+            var instance = RuntimeManager.CreateInstance(movingSoundEvent);
             instance.start();
             instance.setVolume(0);
             soundPool.Enqueue(instance);

@@ -32,18 +32,6 @@ public class CrosshairCore : MonoBehaviour
     public GameObject BonusDamage;
     #endregion
 
-    #region Lock-On Visuals
-    [Header("Lock-On Visuals")]
-    [SerializeField]
-    public GameObject lockOnPrefab;
-
-    [SerializeField]
-    public float initialScale = 1f;
-
-    [SerializeField]
-    public float initialTransparency = 0.5f;
-    #endregion
-
     #region Input and Time
     private DefaultControls playerInputActions;
     public float lastProjectileLaunchTime;
