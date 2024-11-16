@@ -10,6 +10,6 @@ AssetOrigin:
   serializedVersion: 1
   productId: 252172
   packageName: FSR 3 - Upscaling for Unity
-  packageVersion: 1.7.4
+  packageVersion: 1.7.5
   assetPath: Assets/The Naked Dev/FSR/Runtime/Plugins/Shaders/FSR3/ffx_fsr3upscaler_autogen_reactive_pass.compute
-  uploadId: 706023
+  uploadId: 707047

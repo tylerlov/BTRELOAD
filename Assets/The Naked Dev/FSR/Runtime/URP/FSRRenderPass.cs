@@ -172,16 +172,7 @@ namespace TND.FSR
             m_upscaler.m_dispatchDescription.Color = new FidelityFX.ResourceView(renderingData.cameraData.renderer.cameraColorTarget, RenderTextureSubElement.Color);
 #endif
             m_upscaler.m_dispatchDescription.Depth = new FidelityFX.ResourceView(Shader.GetGlobalTexture(depthTexturePropertyID));
-
             m_upscaler.m_dispatchDescription.MotionVectors = new FidelityFX.ResourceView(Shader.GetGlobalTexture(motionTexturePropertyID));
-            try
-            {
-                m_upscaler.m_dispatchDescription.DepthFormat = Shader.GetGlobalTexture(depthTexturePropertyID).graphicsFormat == UnityEngine.Experimental.Rendering.GraphicsFormat.None;
-            }
-            catch
-            {
-                m_upscaler.m_dispatchDescription.DepthFormat = true;
-            }
 
             //Stereo
             if (XRSettings.enabled)

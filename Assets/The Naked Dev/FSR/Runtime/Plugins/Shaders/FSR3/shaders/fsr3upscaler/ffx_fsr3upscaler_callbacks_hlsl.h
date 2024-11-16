@@ -170,11 +170,6 @@ FfxFloat32 FrameIndex()
     return fFrameIndex;
 }
 
-FfxFloat32 VelocityFactor()
-{
-    return 0.0f;
-}
-
 #endif // #if defined(FSR3UPSCALER_BIND_CB_FSR3UPSCALER)
 
 #define FFX_FSR3UPSCALER_ROOTSIG_STRINGIFY(p) FFX_FSR3UPSCALER_ROOTSIG_STR(p)

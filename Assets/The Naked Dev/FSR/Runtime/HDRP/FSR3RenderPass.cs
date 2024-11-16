@@ -70,7 +70,6 @@ namespace TND.FSR
             //This is needed because HDRP is potentially missing depth and motion vectors the first rendering of the camera.
             if (m_upscaler.m_skipFirstFrame)
             {
-                m_upscaler.m_dispatchDescription.DepthFormat = false;
                 m_upscaler.m_skipFirstFrame = false;
                 m_upscaler.m_dispatchDescription.Depth = new ResourceView(source.rt);
                 m_upscaler.m_dispatchDescription.MotionVectors = new ResourceView(source.rt);
@@ -78,15 +77,6 @@ namespace TND.FSR
 
             if (m_upscaler.m_dispatchDescription.Color.IsValid && m_upscaler.m_dispatchDescription.Depth.IsValid && m_upscaler.m_dispatchDescription.MotionVectors.IsValid && m_upscaler.m_dispatchDescription.MotionVectorScale.x != 0)
             {
-                if (depthTexture.graphicsFormat != UnityEngine.Experimental.Rendering.GraphicsFormat.None)
-                {
-                    m_upscaler.m_dispatchDescription.DepthFormat = false;
-                }
-                else
-                {
-                    m_upscaler.m_dispatchDescription.DepthFormat = true;
-                }
-
                 if (m_upscaler.generateReactiveMask)
                 {
                     m_upscaler.m_genReactiveDescription.OutReactive = new ResourceView(m_upscaler.m_reactiveMaskOutput);

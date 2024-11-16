@@ -1,52 +1,58 @@
 using UnityEngine;
 using FMODUnity;
 using FMOD;
+using FMOD.Studio;
 
 public class FMODCustomLogger : MonoBehaviour
 {
-    void Awake()
+    private void Awake()
     {
-        // Disable all FMOD logging
-        FMOD.Debug.Initialize(FMOD.DEBUG_FLAGS.NONE, FMOD.DEBUG_MODE.TTY, null, null);
+        UnityEngine.Debug.Log("Initializing FMOD logging settings...");
+        
+        FMOD.Debug.Initialize(
+            FMOD.DEBUG_FLAGS.NONE,
+            FMOD.DEBUG_MODE.TTY,
+            null,
+            null
+        );
 
         if (RuntimeManager.IsInitialized)
         {
-            // Disable studio logging
-            FMOD.Studio.System studioSystem = RuntimeManager.StudioSystem;
-            studioSystem.setCallback(null, FMOD.Studio.SYSTEM_CALLBACK_TYPE.ALL);
+            var studioSystem = RuntimeManager.StudioSystem;
+            var coreSystem = RuntimeManager.CoreSystem;
 
-            // Disable core system logging
-            FMOD.System coreSystem = RuntimeManager.CoreSystem;
-            coreSystem.setCallback(null, FMOD.SYSTEM_CALLBACK_TYPE.ALL);
-
-            // Attempt to disable EventDescription logging
-            DisableEventDescriptionLogging(studioSystem);
-        }
-        else
-        {
-            UnityEngine.Debug.LogError("FMOD is not initialized. Cannot disable logging.");
         }
     }
 
-    private void DisableEventDescriptionLogging(FMOD.Studio.System studioSystem)
+    private void DisableEventLogging(FMOD.Studio.System studioSystem)
     {
-        // Get all banks
-        FMOD.Studio.Bank[] banks;
+        FMOD.Studio.Bank[] banks = new FMOD.Studio.Bank[256];
         int bankCount;
         studioSystem.getBankList(out banks);
         studioSystem.getBankCount(out bankCount);
 
         for (int i = 0; i < bankCount; i++)
         {
-            FMOD.Studio.EventDescription[] eventDescriptions;
+            FMOD.Studio.EventDescription[] events = new FMOD.Studio.EventDescription[256];
             int eventCount;
-            banks[i].getEventList(out eventDescriptions);
+            banks[i].getEventList(out events);
             banks[i].getEventCount(out eventCount);
 
             for (int j = 0; j < eventCount; j++)
             {
-                eventDescriptions[j].setCallback(null, FMOD.Studio.EVENT_CALLBACK_TYPE.ALL);
+                if (events[j].isValid())
+                {
+                    events[j].setCallback(null, EVENT_CALLBACK_TYPE.ALL);
+                }
             }
+        }
+    }
+
+    private void ERRCHECK(FMOD.RESULT result)
+    {
+        if (result != FMOD.RESULT.OK)
+        {
+            UnityEngine.Debug.LogError($"FMOD Error: {result}");
         }
     }
 }

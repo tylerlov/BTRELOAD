@@ -182,7 +182,6 @@ namespace FidelityFX
         {
             public ResourceView Color;
             public ResourceView Depth;
-            public bool DepthFormat;
             public ResourceView MotionVectors;
             public ResourceView Exposure;                       // optional
             public ResourceView Reactive;                       // optional
