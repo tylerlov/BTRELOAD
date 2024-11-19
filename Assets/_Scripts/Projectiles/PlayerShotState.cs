@@ -153,8 +153,8 @@ public class PlayerShotState : ProjectileState
         else
         {
             Debug.Log($"Projectile hit non-enemy object: {hitObject.name}");
-            _projectile.gameObject.SetActive(false); // Deactivate the projectile
-            ProjectilePool.Instance.ReturnProjectileToPool(_projectile); // Return it to the pool
+            //_projectile.gameObject.SetActive(false); // Deactivate the projectile
+            //ProjectilePool.Instance.ReturnProjectileToPool(_projectile); // Return it to the pool
         }
     }
 

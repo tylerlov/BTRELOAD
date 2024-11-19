@@ -75,11 +75,12 @@ namespace FluffyUnderware.Curvy.Controllers
 
         [SerializeField]
         private int maxActivePrefabs = 50;
-        private List<GameObject> activePrefabs = new List<GameObject>();
-        private List<List<GameObject>> prefabsBySection = new List<List<GameObject>>();
+        private List<GameObject> activePrefabs;
+        private List<List<GameObject>> prefabsBySection;
+        private List<GameObject> despawnedPrefabs;
 
         [SerializeField]
-        private List<GameObject> despawnedPrefabs = new List<GameObject>();
+        private List<GameObject> despawnedPrefabsList = new List<GameObject>();
 
         [Header("Prefab Rotation Adjustments")]
         [SerializeField]
@@ -103,7 +104,7 @@ namespace FluffyUnderware.Curvy.Controllers
         [Header("Deformer Settings")]
         [SerializeField]
         private GameObject deformerPrefab;
-        private List<Deformer> cachedDeformers = new List<Deformer>();
+        private List<Deformer> cachedDeformers;
         private bool useDeformers = false; // New flag to check if deformers should be used
 
         private int mInitState = 0;
@@ -126,6 +127,8 @@ namespace FluffyUnderware.Curvy.Controllers
         [SerializeField]
         private MonoBehaviour playerMovement; // Add this field
 
+        private LoadingScreen loadingScreen;
+
         public void OnSplineReady()
         {
             isSplineReady = true;
@@ -140,10 +143,220 @@ namespace FluffyUnderware.Curvy.Controllers
             }
         }
 
+        private void Awake()
+        {
+            // Pre-allocate lists with capacity to avoid resizing
+            activePrefabs = new List<GameObject>(maxActivePrefabs);
+            prefabsBySection = new List<List<GameObject>>(Sections);
+            despawnedPrefabs = new List<GameObject>(maxActivePrefabs);
+            cachedDeformers = new List<Deformer>(Sections);
+
+            // Initialize section lists
+            for (int i = 0; i < Sections; i++)
+            {
+                prefabsBySection.Add(new List<GameObject>(prefabsPerSection));
+            }
+        }
+
         void Start()
         {
-            CacheDeformers();
+            // Create loading screen
+            GameObject loadingObj = new GameObject("LoadingScreen");
+            loadingScreen = loadingObj.AddComponent<LoadingScreen>();
+            
+            StartCoroutine(InitializeAsync());
+        }
+
+        private IEnumerator InitializeAsync()
+        {
+            // Split initialization across multiple frames
+            if (useDeformers)
+            {
+                yield return StartCoroutine(CacheDeformersAsync());
+            }
+
             FindAndAssignController();
+            yield return StartCoroutine(ProgressiveSetup());
+            
+            // Start fade out after initialization is complete
+            if (loadingScreen != null)
+            {
+                loadingScreen.StartFadeOut();
+            }
+            
+            OnSplineReady();
+        }
+
+        // Progressive setup broken down into smaller operations
+        private IEnumerator ProgressiveSetup()
+        {
+            mInitState = 1;
+            
+            if (Controller == null)
+            {
+                FindAndAssignController();
+                if (Controller == null)
+                {
+                    ConditionalDebug.LogError("Failed to find and assign the SplineController. Setup cannot continue.");
+                    yield break;
+                }
+            }
+
+            // Initialize generators array
+            mGenerators = new CurvyGenerator[Sections];
+            
+            // 1. Initial spline setup - do this in one batch
+            TrackSpline.InsertAfter(null, Vector3.zero, true);
+            mDir = Vector3.forward;
+            
+            // Add initial aligned points
+            int initialAlignedPoints = 5;
+            for (int i = 0; i < initialAlignedPoints; i++)
+            {
+                addAlignedTrackCP();
+            }
+            
+            // Add remaining points
+            int remainingPoints = TailCP + HeadCP + Sections * SectionCPCount - initialAlignedPoints;
+            for (int i = 0; i < remainingPoints; i++)
+            {
+                addTrackCP();
+            }
+            
+            TrackSpline.Refresh();
+            yield return null;
+            
+            // 2. Initialize section lists
+            for (int i = 0; i < Sections; i++)
+            {
+                prefabsBySection.Add(new List<GameObject>());
+            }
+            
+            // 3. Build and initialize generators
+            yield return StartCoroutine(BuildGeneratorsProgressivelyAsync());
+            
+            // 4. Final setup
+            if (useDeformers)
+            {
+                AddDeformableComponents();
+            }
+
+            AlignSplineWithWorldUp();
+
+            mInitState = 2;
+            mUpdateIn = SectionCPCount;
+            
+            // Place controller
+            Controller.AbsolutePosition = TrackSpline.ControlPointsList[TailCP + ControllerPlacementOffset].Distance;
+        }
+
+        private IEnumerator BuildGeneratorsProgressivelyAsync()
+        {
+            // Build all generators at once since splitting them causes more overhead
+            for (int i = 0; i < Sections; i++)
+            {
+                mGenerators[i] = buildGenerator();
+                mGenerators[i].name = "Generator " + i;
+            }
+            
+            // Wait for all generators to initialize in one batch
+            yield return new WaitUntil(() => {
+                for (int i = 0; i < Sections; i++)
+                {
+                    if (!mGenerators[i].IsInitialized) return false;
+                }
+                return true;
+            });
+            
+            // Update all generators at once
+            for (int i = 0; i < Sections; i++)
+            {
+                StartCoroutine(updateSectionGenerator(
+                    mGenerators[i],
+                    i * SectionCPCount + TailCP,
+                    (i + 1) * SectionCPCount + TailCP
+                ));
+            }
+            
+            // Wait one frame for generators to start updating
+            yield return null;
+        }
+
+        private IEnumerator UpdateSectionGeneratorsProgressivelyAsync()
+        {
+            // Since we're already handling generator updates in BuildGeneratorsProgressivelyAsync
+            yield break;
+        }
+
+        private IEnumerator InitializeSplineAsync()
+        {
+            // Add the start CP to the spline
+            TrackSpline.InsertAfter(null, Vector3.zero, true);
+            mDir = Vector3.forward;
+            
+            const int pointsPerFrame = 3;
+            int processedPoints = 0;
+            
+            // Add initial aligned points
+            int initialAlignedPoints = 5;
+            while (processedPoints < initialAlignedPoints)
+            {
+                int pointsThisFrame = Mathf.Min(pointsPerFrame, initialAlignedPoints - processedPoints);
+                for (int i = 0; i < pointsThisFrame; i++)
+                {
+                    addAlignedTrackCP();
+                    processedPoints++;
+                }
+                yield return null;
+            }
+            
+            // Add remaining points
+            int remainingPoints = TailCP + HeadCP + Sections * SectionCPCount - initialAlignedPoints;
+            while (processedPoints < initialAlignedPoints + remainingPoints)
+            {
+                int pointsThisFrame = Mathf.Min(pointsPerFrame, (initialAlignedPoints + remainingPoints) - processedPoints);
+                for (int i = 0; i < pointsThisFrame; i++)
+                {
+                    addTrackCP();
+                    processedPoints++;
+                }
+                yield return null;
+            }
+            
+            TrackSpline.Refresh();
+            yield return null;
+        }
+
+        private IEnumerator InitializeSectionListsAsync()
+        {
+            const int sectionsPerFrame = 5;
+            for (int i = 0; i < Sections; i += sectionsPerFrame)
+            {
+                int count = Mathf.Min(sectionsPerFrame, Sections - i);
+                for (int j = 0; j < count; j++)
+                {
+                    prefabsBySection.Add(new List<GameObject>());
+                }
+                yield return null;
+            }
+        }
+
+        private IEnumerator FinalizeSetupAsync()
+        {
+            if (useDeformers)
+            {
+                AddDeformableComponents();
+                yield return null;
+            }
+
+            AlignSplineWithWorldUp();
+            yield return null;
+
+            mInitState = 2;
+            mUpdateIn = SectionCPCount;
+            
+            // Place controller
+            Controller.AbsolutePosition = TrackSpline.ControlPointsList[TailCP + ControllerPlacementOffset].Distance;
         }
 
         void FindAndAssignController()
@@ -169,6 +382,28 @@ namespace FluffyUnderware.Curvy.Controllers
                 ConditionalDebug.LogError(
                     "GameObject with tag 'PlayerPlane' not found in the scene."
                 );
+            }
+        }
+
+        private IEnumerator CacheDeformersAsync()
+        {
+            if (deformerPrefab == null) yield break;
+
+            const int batchSize = 5; // Process 5 deformers per frame
+            int processed = 0;
+
+            while (processed < Sections)
+            {
+                int currentBatch = Mathf.Min(batchSize, Sections - processed);
+                for (int i = 0; i < currentBatch; i++)
+                {
+                    if (deformerPrefab.TryGetComponent<Deformer>(out var deformer))
+                    {
+                        cachedDeformers.Add(deformer);
+                    }
+                    processed++;
+                }
+                yield return null; // Wait for next frame
             }
         }
 
@@ -262,6 +497,7 @@ namespace FluffyUnderware.Curvy.Controllers
 
             mInitState = 2;
             mUpdateIn = SectionCPCount;
+            
             // Placement of the controller
             Controller.AbsolutePosition = TrackSpline
                 .ControlPointsList[TailCP + ControllerPlacementOffset]
@@ -412,27 +648,27 @@ namespace FluffyUnderware.Curvy.Controllers
         // add more CP's, rotating path by random angles
         void addTrackCP()
         {
-            Vector3 p = TrackSpline
-                .ControlPointsList[TrackSpline.ControlPointCount - 1]
-                .transform
-                .localPosition;
-            Vector3 position = TrackSpline.transform.localToWorldMatrix.MultiplyPoint3x4(
-                p + mDir * CPStepSize
-            );
+            Vector3 p = TrackSpline.ControlPointsList[TrackSpline.ControlPointCount - 1].transform.localPosition;
+            Vector3 position = TrackSpline.transform.localToWorldMatrix.MultiplyPoint3x4(p + mDir * CPStepSize);
 
             float rndX = Random.value * CurvationX * DTUtility.RandomSign();
             float rndY = Random.value * CurvationY * DTUtility.RandomSign();
-            mDir = Quaternion.Euler(rndX, rndY, 0) * mDir;
+            
+            // Calculate new direction while maintaining world up
+            Vector3 newDir = Vector3.ProjectOnPlane(
+                Quaternion.Euler(rndX, rndY, 0) * mDir,
+                Vector3.up
+            ).normalized;
+            mDir = newDir;
 
             CurvySplineSegment newControlPoint = TrackSpline.InsertAfter(null, position, true);
+            
+            // Set rotation ensuring up vector alignment
+            Quaternion targetRotation = Quaternion.LookRotation(mDir, Vector3.up);
+            newControlPoint.transform.rotation = targetRotation;
 
-            // Set the rotation using Quaternion.LookRotation to ensure alignment with world up
-            newControlPoint.transform.rotation = Quaternion.LookRotation(mDir, Vector3.up);
-
-            // Force the spline to recalculate
             TrackSpline.Refresh();
 
-            //Set the last control point of each section as an Orientation Anchor, to avoid that Control Points added beyond this point modify the dynamic orientation of previous Control Points
             if ((TrackSpline.ControlPointCount - 1 - TailCP) % SectionCPCount == 0)
                 newControlPoint.SerializedOrientationAnchor = true;
         }
@@ -633,16 +869,21 @@ namespace FluffyUnderware.Curvy.Controllers
         /// </summary>
         void AlignSplineWithWorldUp()
         {
+            bool anyMisaligned = false;
             foreach (var cp in TrackSpline.ControlPointsList)
             {
-                if (cp.transform.up != Vector3.up)
+                if (Vector3.Dot(cp.transform.up, Vector3.up) < 0.99f)
                 {
-                    Debug.LogWarning($"ControlPoint {cp.name} up vector misaligned. Correcting.");
-                    cp.transform.up = Vector3.up;
                     cp.transform.rotation = Quaternion.LookRotation(cp.transform.forward, Vector3.up);
+                    anyMisaligned = true;
                 }
             }
-            TrackSpline.Refresh();
+            
+            if (anyMisaligned)
+            {
+                Debug.LogWarning("Some control points required up vector alignment");
+                TrackSpline.Refresh();
+            }
         }
 
         // New method to add aligned control points
