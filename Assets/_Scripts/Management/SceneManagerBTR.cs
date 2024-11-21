@@ -85,7 +85,22 @@ public class SceneManagerBTR : MonoBehaviour
     {
         await LoadBaseSceneAsync();
 
-        if (!await TryUseOpenOuroborosSceneAsync())
+        bool hasExistingScenes = await TryUseOpenOuroborosSceneAsync();
+        
+        // Initialize loading screen based on scenario
+        if (LoadingScreen.Instance != null)
+        {
+            if (hasExistingScenes)
+            {
+                LoadingScreen.Instance.InitializeForExistingScenes();
+            }
+            else
+            {
+                LoadingScreen.Instance.InitializeForFreshStart();
+            }
+        }
+
+        if (!hasExistingScenes)
         {
             currentSceneIndex = 0;
             currentSectionIndex = 0;
@@ -461,24 +476,22 @@ public class SceneManagerBTR : MonoBehaviour
 
     private async Task<bool> TryUseOpenOuroborosSceneAsync()
     {
-        for (int i = 0; i < UnityEngine.SceneManagement.SceneManager.sceneCount; i++)
+        for (int i = 0; i < SceneManager.sceneCount; i++)
         {
-            Scene openScene = UnityEngine.SceneManagement.SceneManager.GetSceneAt(i);
+            Scene openScene = SceneManager.GetSceneAt(i);
             if (openScene.isLoaded && IsSceneInOuroborosGroup(openScene.name))
             {
+                Debug.Log($"[SceneManager] Found existing Ouroboros scene: {openScene.name}");
                 currentAdditiveScene = openScene;
-                bool setActiveSuccess = UnityEngine.SceneManagement.SceneManager.SetActiveScene(
-                    currentAdditiveScene
-                );
+                bool setActiveSuccess = SceneManager.SetActiveScene(currentAdditiveScene);
 
                 if (!setActiveSuccess)
                 {
-                    ConditionalDebug.LogWarning(
-                        $"<color=orange>[SCENE] Failed to set {currentAdditiveScene.name} as active scene.</color>"
-                    );
+                    Debug.LogWarning($"[SceneManager] Failed to set {currentAdditiveScene.name} as active scene.");
                     continue;
                 }
 
+                // Set current scene index based on found scene
                 for (int j = 0; j < currentGroup.scenes.Length; j++)
                 {
                     if (currentGroup.scenes[j].sceneName == openScene.name)
@@ -495,19 +508,13 @@ public class SceneManagerBTR : MonoBehaviour
                     MusicManager.Instance.ApplyMusicChanges(
                         currentGroup,
                         currentSceneIndex,
-                        currentGroup
-                            .scenes[currentSceneIndex]
-                            .songSections[currentSectionIndex]
-                            .section
+                        currentGroup.scenes[currentSceneIndex].songSections[currentSectionIndex].section
                     );
                 }
 
-                await UnityMainThreadDispatcher
-                    .Instance()
-                    .EnqueueAsync(() =>
-                    {
-                        OnSceneLoaded(currentAdditiveScene, LoadSceneMode.Additive);
-                    });
+                await UnityMainThreadDispatcher.Instance().EnqueueAsync(() => {
+                    OnSceneLoaded(currentAdditiveScene, LoadSceneMode.Additive);
+                });
 
                 return true;
             }
@@ -675,6 +682,17 @@ public class SceneManagerBTR : MonoBehaviour
         {
             isTransitioning = false;
         }
+    }
+
+    public string GetBaseSceneName()
+    {
+        return baseSceneName;
+    }
+
+    public bool IsSceneInCurrentGroup(string sceneName)
+    {
+        if (currentGroup == null) return false;
+        return currentGroup.scenes.Any(scene => scene.sceneName == sceneName);
     }
 
 }

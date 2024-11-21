@@ -2,8 +2,10 @@ using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 using System.Threading.Tasks;
+using System.Linq;
 using JPG.Universal;
 using PrimeTween;
+using UnityEngine.SceneManagement;
 
 public class LoadingScreen : MonoBehaviour
 {
@@ -34,23 +36,41 @@ public class LoadingScreen : MonoBehaviour
 
     private void InitializeEffect()
     {
-        Debug.Log("[LoadingScreen] Initializing effect...");
+        Debug.Log($"[LoadingScreen] Initializing effect...");
         volume = GetComponentInParent<Volume>();
-        Debug.Log($"[LoadingScreen] Found Volume: {volume != null}");
         
         if (volume != null && volume.profile.TryGet(out JPG.Universal.JPG effect))
         {
             jpgEffect = effect;
-            jpgEffect.EffectIntensity.Override(MAX_INTENSITY);
-            volume.enabled = true;
-            jpgEffect.active = true;
             initialized = true;
-            Debug.Log($"[LoadingScreen] Successfully initialized JPG effect. Volume enabled: {volume.enabled}, Effect Active: {jpgEffect.active}, Intensity: {jpgEffect.EffectIntensity.value}");
+            Debug.Log($"[LoadingScreen] Successfully initialized JPG effect.");
         }
         else
         {
             Debug.LogError("[LoadingScreen] Failed to get JPG effect from Volume profile!");
         }
+    }
+
+    public void InitializeForFreshStart()
+    {
+        Debug.Log("[LoadingScreen] Initializing for fresh start (max intensity)");
+        SetInitialState(MAX_INTENSITY);
+    }
+
+    public void InitializeForExistingScenes()
+    {
+        Debug.Log("[LoadingScreen] Initializing for existing scenes (min intensity)");
+        SetInitialState(MIN_INTENSITY);
+    }
+
+    private void SetInitialState(float intensity)
+    {
+        if (!initialized || jpgEffect == null) return;
+        
+        currentIntensity = intensity;
+        jpgEffect.EffectIntensity.Override(currentIntensity);
+        volume.enabled = currentIntensity > MIN_INTENSITY;
+        jpgEffect.active = currentIntensity > MIN_INTENSITY;
     }
 
     public async Task StartFadeOut()
