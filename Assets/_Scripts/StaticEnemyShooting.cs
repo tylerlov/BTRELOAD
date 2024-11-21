@@ -1,5 +1,4 @@
 using UnityEngine;
-using FMODUnity;
 
 public class StaticEnemyShooting : MonoBehaviour
 {
@@ -27,6 +26,9 @@ public class StaticEnemyShooting : MonoBehaviour
     [SerializeField]
     private float minTimeBetweenShots = 0.1f;
 
+    private const string LOG_PREFIX = "[StaticEnemyShooting] ";
+    private static readonly System.Text.StringBuilder logBuilder = new System.Text.StringBuilder(256);
+
     void Awake()
     {
         cachedTransform = transform;
@@ -44,75 +46,106 @@ public class StaticEnemyShooting : MonoBehaviour
 
     public void Shoot()
     {
-        string debugInfo = $"[StaticEnemyShooting:{gameObject.name}] Shoot called:\n";
-
-        // Add FMOD parameter check
-        float lockState = 0f;
-        var musicEmitter = GameObject.Find("FMOD Music")?.GetComponent<StudioEventEmitter>();
-        if (musicEmitter != null && musicEmitter.EventInstance.isValid())
-        {
-            musicEmitter.EventInstance.getParameterByName("Lock State", out lockState);
-            debugInfo += $"- Current Lock State: {lockState}\n";
-        }
+        #if UNITY_EDITOR
+        logBuilder.Clear()
+            .Append(LOG_PREFIX)
+            .Append(gameObject.name)
+            .Append(" Shoot called");
+        #endif
 
         if (this == null)
         {
-            ConditionalDebug.LogError($"{debugInfo} Component is null");
+            #if UNITY_EDITOR
+            ConditionalDebug.LogError(logBuilder.Append(": Component is null").ToString());
+            #endif
             return;
         }
 
         if (!gameObject.activeInHierarchy)
         {
-            ConditionalDebug.Log($"{debugInfo} GameObject is inactive");
+            #if UNITY_EDITOR
+            ConditionalDebug.Log(logBuilder.Append(": GameObject is inactive").ToString());
+            #endif
             return;
         }
 
         if (EnemyShootingManager.Instance == null)
         {
-            ConditionalDebug.LogError($"{debugInfo} EnemyShootingManager.Instance is null");
+            #if UNITY_EDITOR
+            ConditionalDebug.LogError(logBuilder.Append(": EnemyShootingManager.Instance is null").ToString());
+            #endif
             return;
         }
 
         bool shouldShoot = true;
         float currentTime = EnemyShootingManager.Instance.GetCurrentTime();
         float timeSinceLastShot = currentTime - lastShootTime;
-        debugInfo += $"- Time since last shot: {timeSinceLastShot:F3}s (min: {minTimeBetweenShots:F3}s)\n";
+
+        #if UNITY_EDITOR
+        logBuilder.Append("\n- Time since last shot: ")
+            .Append(timeSinceLastShot.ToString("F3"))
+            .Append("s (min: ")
+            .Append(minTimeBetweenShots.ToString("F3"))
+            .Append("s)");
+        #endif
 
         if (timeSinceLastShot < minTimeBetweenShots)
         {
-            ConditionalDebug.Log($"{debugInfo} Too soon to shoot again");
+            #if UNITY_EDITOR
+            ConditionalDebug.Log(logBuilder.Append("\n- Too soon to shoot again").ToString());
+            #endif
             shouldShoot = false;
         }
 
         if (shouldShoot)
         {
-            debugInfo += "- Attempting PerformShoot\n";
+            #if UNITY_EDITOR
+            logBuilder.Append("\n- Attempting PerformShoot");
+            #endif
+            
             bool shotResult = PerformShoot();
-            lastShootTime = shotResult ? currentTime : lastShootTime; // Only update lastShootTime if shot was successful
-            ConditionalDebug.Log($"{debugInfo}- Shot result: {(shotResult ? "Success" : "Failed")}");
+            lastShootTime = shotResult ? currentTime : lastShootTime;
+
+            #if UNITY_EDITOR
+            ConditionalDebug.Log(logBuilder.Append("\n- Shot result: ").Append(shotResult ? "Success" : "Failed").ToString());
+            #endif
         }
     }
 
     private bool PerformShoot()
     {
-        string debugInfo = $"[StaticEnemyShooting:{gameObject.name}] PerformShoot:\n";
+        #if UNITY_EDITOR
+        logBuilder.Clear()
+            .Append(LOG_PREFIX)
+            .Append(gameObject.name)
+            .Append(" PerformShoot:");
+        #endif
 
         if (ProjectileSpawner.Instance == null)
         {
-            ConditionalDebug.LogError($"{debugInfo} ProjectileSpawner.Instance is null");
+            #if UNITY_EDITOR
+            ConditionalDebug.LogError(logBuilder.Append("\nProjectileSpawner.Instance is null").ToString());
+            #endif
             return false;
         }
 
         if (ProjectileManager.Instance == null)
         {
-            ConditionalDebug.LogError($"{debugInfo} ProjectileManager.Instance is null");
+            #if UNITY_EDITOR
+            ConditionalDebug.LogError(logBuilder.Append("\nProjectileManager.Instance is null").ToString());
+            #endif
             return false;
         }
 
         Vector3 shootDirection = cachedTransform.up;
-        debugInfo += $"- Shoot Direction: {shootDirection}\n";
-        debugInfo += $"- Position: {cachedTransform.position}\n";
-        debugInfo += $"- Speed: {shootSpeed}\n";
+        #if UNITY_EDITOR
+        logBuilder.Append("\n- Shoot Direction: ")
+            .Append(shootDirection)
+            .Append("\n- Position: ")
+            .Append(cachedTransform.position)
+            .Append("\n- Speed: ")
+            .Append(shootSpeed);
+        #endif
 
         try
         {
@@ -133,23 +166,35 @@ public class StaticEnemyShooting : MonoBehaviour
 
             if (projectile == null)
             {
-                ConditionalDebug.LogWarning($"{debugInfo} Failed to create projectile");
+                #if UNITY_EDITOR
+                ConditionalDebug.LogWarning(logBuilder.Append("\nFailed to create projectile").ToString());
+                #endif
                 return false;
             }
 
-            debugInfo += $"- Projectile created successfully: ID={projectile.GetInstanceID()}\n";
-            debugInfo += $"- Projectile position: {projectile.transform.position}\n";
+            #if UNITY_EDITOR
+            logBuilder.Append("\n- Projectile created successfully: ID=")
+                .Append(projectile.GetInstanceID())
+                .Append("\n- Projectile position: ")
+                .Append(projectile.transform.position);
             if (projectile.rb != null)
             {
-                debugInfo += $"- Projectile velocity: {projectile.rb.linearVelocity}\n";
+                logBuilder.Append("\n- Projectile velocity: ")
+                    .Append(projectile.rb.linearVelocity);
             }
-
-            ConditionalDebug.Log(debugInfo);
+            ConditionalDebug.Log(logBuilder.ToString());
+            #endif
             return true;
         }
         catch (System.Exception e)
         {
-            ConditionalDebug.LogError($"{debugInfo} Error while shooting: {e.Message}\n{e.StackTrace}");
+            #if UNITY_EDITOR
+            ConditionalDebug.LogError(logBuilder.Append("\nError while shooting: ")
+                .Append(e.Message)
+                .Append("\n")
+                .Append(e.StackTrace)
+                .ToString());
+            #endif
             return false;
         }
     }

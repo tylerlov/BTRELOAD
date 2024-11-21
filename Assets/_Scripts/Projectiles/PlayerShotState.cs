@@ -177,6 +177,7 @@ public class PlayerShotState : ProjectileState
                 _projectile.hasHitTarget = true;
                 
                 _projectile.ReportPlayerProjectileHit(_projectile.currentTarget == hitObject.transform, hitObject.name);
+                ProjectileAudioManager.Instance.PlayEnemyImpactSound(_projectile.transform.position);
 
                 _projectile.Death(true);
                 ProjectileManager.Instance.NotifyEnemyHit(hitObject, _projectile);

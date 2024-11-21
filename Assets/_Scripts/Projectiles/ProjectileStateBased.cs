@@ -11,7 +11,6 @@ using Unity.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.VFX;
-using FMODUnity;
 
 public enum ProjectilePoolType
 {
@@ -180,10 +179,6 @@ public class ProjectileStateBased : MonoBehaviour
     public float maxTargetingRange = 100f;  // How far it can see/track targets
     public float minTargetingRange = 0f;    // Minimum range to start tracking
 
-    // Add this field instead
-    [SerializeField] private string soundEventPath; // Reference the FMOD event path as a string
-
-    private FMOD.Studio.EventInstance soundInstance;
     private bool isPlayingSound = false;
 
     // Add near the top of the class with other fields
@@ -305,104 +300,66 @@ public class ProjectileStateBased : MonoBehaviour
 
     private void OnEnable()
     {
-        // Guard clause to prevent accessing null components
-        if (!gameObject.activeInHierarchy) return;
-
-        // Use the public initialization method
-        InitializeProjectile();
-
-        // Reset state
-        lifetimeExtended = false;
-        projHitPlayer = false;
-
-        if (gameObject.tag == "LaunchableBulletLocked")
+        if (!_componentsInitialized)
         {
-            gameObject.tag = "LaunchableBullet";
+            InternalInitializeComponents();
         }
-
-        // Use property block instead of directly modifying material
-        if (modelRenderer != null)
+        
+        ResetForPool();
+        
+        // Register with audio manager if this is a homing projectile
+        if (homing)
         {
-            _propertyBlock = ProjectileEffectManager.Instance.GetPropertyBlock();
-            _propertyBlock.SetColor(ColorProperty, originalProjectileColor);
-            modelRenderer.SetPropertyBlock(_propertyBlock);
-        }
-
-        // Only change state if needed
-        if (!(currentState is EnemyShotState))
-        {
-            ChangeState(new EnemyShotState(this));
-        }
-
-        // Optimize child handling
-        Transform child = transform.GetChild(0);
-        if (child != null && child.gameObject.activeSelf)
-        {
-            child.gameObject.SetActive(false);
-        }
-
-        _currentTag = gameObject.tag;
-
-        // Optimize LockedFX handling
-        if (currentLockedFX != null)
-        {
-            currentLockedFX.Stop();
-            currentLockedFX = null;
-        }
-
-        // Only create sound instance if needed and not already playing
-        if (!string.IsNullOrEmpty(soundEventPath) && !isPlayingSound)
-        {
-            soundInstance = AudioManager.Instance.GetOrCreateInstance(soundEventPath);
-            if (soundInstance.isValid())
-            {
-                soundInstance.start();
-                isPlayingSound = true;
-                StartCoroutine(ReleaseAudioAfterPlay(soundEventPath, soundInstance));
-            }
+            ProjectileAudioManager.Instance?.RegisterHomingProjectile(GetInstanceID(), transform);
         }
     }
 
     private void OnDisable()
     {
-        // Handle audio cleanup
-        if (isPlayingSound && soundInstance.isValid())
+        // Unregister from audio manager
+        if (homing)
         {
-            soundInstance.stop(FMOD.Studio.STOP_MODE.IMMEDIATE);
-            if (AudioManager.Instance != null)
-            {
-                AudioManager.Instance.ReleaseInstance(soundEventPath, soundInstance);
-            }
-            isPlayingSound = false;
+            ProjectileAudioManager.Instance?.UnregisterHomingProjectile(GetInstanceID());
+        }
+        CleanupEffects();
+    }
+
+    public void EnableHoming(bool enable)
+    {
+        if (homing == enable) return;
+        
+        homing = enable;
+        if (enable)
+        {
+            ProjectileAudioManager.Instance?.RegisterHomingProjectile(GetInstanceID(), transform);
+        }
+        else
+        {
+            ProjectileAudioManager.Instance?.UnregisterHomingProjectile(GetInstanceID());
+        }
+    }
+
+    public void Death(bool hitSomething = false)
+    {
+        if (homing)
+        {
+            ProjectileAudioManager.Instance?.UnregisterHomingProjectile(GetInstanceID());
+        }
+        
+        // Rest of existing Death implementation...
+        ConditionalDebug.Log($"[ProjectileStateBased] Projectile {GetInstanceID()} is dying. Hit something: {hitSomething}");
+        ProjectileManager.Instance.UnregisterProjectile(this);
+
+        if (rb != null)
+        {
+            rb.linearVelocity = Vector3.zero;
+            rb.angularVelocity = Vector3.zero;
+            rb.isKinematic = true;
         }
 
-        if (_propertyBlock != null)
-        {
-            ProjectileEffectManager.Instance.ReturnPropertyBlock(gameObject);
-            _propertyBlock = null;
-        }
-
-        // Store world position before deactivation
-        Vector3 lastPosition = transform.position;
-
-        // Return effects to pool
-        if (shotEffect != null)
-        {
-            ProjectileEffectManager.Instance.ReturnEnemyShotFXToPool(shotEffect);
-            shotEffect = null;
-        }
-
-        if (radarSymbol != null)
-        {
-            radarSymbol.SetActive(false);
-            radarSymbol = null;
-        }
-
-        // Handle projectile pool return
-        if (rb != null && !rb.isKinematic)
-        {
-            ProjectilePool.Instance?.ReturnProjectile(this);
-        }
+        ProjectilePool.Instance.ReturnProjectileToPool(this);
+        transform.DOKill();
+        _visualEffects.PlayDeathEffect(hitSomething);
     }
 
     private void CleanupEffects()
@@ -437,9 +394,12 @@ public class ProjectileStateBased : MonoBehaviour
         TLine.rewindable = true;
         tRn = GetComponent<TrailRenderer>();
         playerProjPath.enabled = false;
-
         _currentTag = gameObject.tag;
-        _lastTargetPosition = currentTarget != null ? currentTarget.position : Vector3.zero;
+
+        if (homing)
+        {
+            ProjectileManager.Instance.RegisterHomingProjectile(GetInstanceID());
+        }
     }
 
     public void CustomUpdate(float timeScale)
@@ -504,30 +464,6 @@ public class ProjectileStateBased : MonoBehaviour
         currentState?.OnCollisionEnter(collision);
     }
 
-    public void Death(bool hitSomething = false)
-    {
-        // Log death event
-        ConditionalDebug.Log($"[ProjectileStateBased] Projectile {GetInstanceID()} is dying. Hit something: {hitSomething}");
-
-        // Unregister from ProjectileManager
-        ProjectileManager.Instance.UnregisterProjectile(this);
-
-        if (rb != null)
-        {
-            // Reset velocities before setting to kinematic
-            rb.linearVelocity = Vector3.zero;
-            rb.angularVelocity = Vector3.zero;
-            rb.isKinematic = true;
-        }
-
-        // Return to pool
-        ProjectilePool.Instance.ReturnProjectileToPool(this);
-
-        transform.DOKill();
-
-        _visualEffects.PlayDeathEffect(hitSomething);
-    }
-
     public void SetLifetime(float seconds)
     {
         lifetime = seconds;
@@ -544,11 +480,6 @@ public class ProjectileStateBased : MonoBehaviour
         currentTarget = target;
         homing = (target != null);
         ConditionalDebug.Log($"[ProjectileStateBased] Homing target set to {(target != null ? target.name : "None")}. Homing: {homing}");
-    }
-
-    public void EnableHoming(bool enable)
-    {
-        homing = enable;
     }
 
     public float maxTurnRate = 360f;
@@ -873,67 +804,6 @@ public class ProjectileStateBased : MonoBehaviour
 
         // Ensure the projectile is in the correct state
         ChangeState(new EnemyShotState(this, target));
-    }
-
-    void Update()
-    {
-        // Only process audio for homing projectiles
-        if (homing && Time.time >= nextAudioUpdateTime)
-        {
-            ProjectileAudioManager.Instance.UpdateProjectileSound(
-                transform.position, 
-                rb.linearVelocity.magnitude,
-                GetInstanceID(),
-                homing  // Pass the homing state
-            );
-            nextAudioUpdateTime = Time.time + AUDIO_UPDATE_INTERVAL;
-        }
-    }
-
-    private IEnumerator ReleaseAudioAfterPlay(string eventPath, FMOD.Studio.EventInstance instance)
-    {
-        FMOD.Studio.PLAYBACK_STATE state;
-        do
-        {
-            instance.getPlaybackState(out state);
-            yield return null;
-        } while (state != FMOD.Studio.PLAYBACK_STATE.STOPPED);
-
-        if (AudioManager.Instance != null)
-        {
-            AudioManager.Instance.ReleaseInstance(eventPath, instance);
-        }
-        isPlayingSound = false;
-    }
-
-    public void PlaySound()
-    {
-        if (!isPlayingSound && !string.IsNullOrEmpty(soundEventPath))
-        {
-            soundInstance = AudioManager.Instance.GetOrCreateInstance(soundEventPath);
-            soundInstance.start();
-            isPlayingSound = true;
-            StartCoroutine(ReleaseAudioAfterPlay(soundEventPath, soundInstance));
-        }
-    }
-
-    // Replace direct material modifications with PropertyBlock:
-    public void SetProjectileColor(Color color)
-    {
-        if (modelRenderer != null && _propertyBlock != null)
-        {
-            _propertyBlock.SetColor(ColorProperty, color);
-            modelRenderer.SetPropertyBlock(_propertyBlock);
-        }
-    }
-
-    public void SetOpacity(float opacity)
-    {
-        if (modelRenderer != null && _propertyBlock != null)
-        {
-            _propertyBlock.SetFloat(OpacityProperty, opacity);
-            modelRenderer.SetPropertyBlock(_propertyBlock);
-        }
     }
 
     private GameObject shotEffect;

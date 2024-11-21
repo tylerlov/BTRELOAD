@@ -2,185 +2,304 @@ using UnityEngine;
 using FMODUnity;
 using FMOD.Studio;
 using System.Collections.Generic;
+using System.Collections;
 
 [DefaultExecutionOrder(-100)]
 public class ProjectileAudioManager : MonoBehaviour
 {
-    private static ProjectileAudioManager _instance;
-    public static ProjectileAudioManager Instance => _instance;
+    public static ProjectileAudioManager Instance { get; private set; }
 
-    [SerializeField] private EventReference movingSoundEvent;
+    [SerializeField]
+    private EventReference playerImpactSoundEvent;
+        
+    private const float MAX_AUDIO_DISTANCE_SQR = 2500f;
+    private const float UPDATE_INTERVAL = 0.1f;
+    private const float DISTANCE_CULLING_CHECK_INTERVAL = 0.5f;
+    private const int MAX_CONCURRENT_SOUNDS = 20;
+    private const float MIN_VOLUME_THRESHOLD = 0.01f;
+
+    private ObjectPool<EventInstance> eventPool;
+    private EventInstance[] activeInstances;
+    private Transform[] activeTransforms;
+    private int[] activeIds;
+    private int activeCount;
+    private float[] volumeCache;
     
-    // Reduced pool size and increased update interval
-    private const int MAX_ACTIVE_SOUNDS = 3; // Drastically reduce simultaneous sounds
-    private const float UPDATE_INTERVAL = 0.25f; // Reduce update frequency
-    private const float AUDIO_CUTOFF_DISTANCE = 20f; // Reduce audio range
-    private const float MIN_VELOCITY_THRESHOLD = 5f; // Only play sound above this velocity
-    
-    private Dictionary<int, EventInstance> activeProjectileSounds;
-    private Queue<EventInstance> soundPool;
+    private Vector3 lastPlayerPosition;
     private float nextUpdateTime;
+    private float nextCullTime;
+    private bool isSoundEnabled;
+    private Transform playerTransform;
+
+    [SerializeField]
+    private Dictionary<string, EventReference> oneShotSoundEvents = new Dictionary<string, EventReference>();
     
-    // Track highest velocity projectiles
-    private struct ProjectileAudioData
-    {
-        public Vector3 Position;
-        public float Velocity;
-        public int ProjectileId;
-    }
-    private List<ProjectileAudioData> pendingAudioUpdates = new List<ProjectileAudioData>();
+    private Dictionary<string, ObjectPool<EventInstance>> oneShotEventPools = 
+        new Dictionary<string, ObjectPool<EventInstance>>();
 
-    void Awake()
+    private void Awake()
     {
-        if (_instance == null)
+        if (Instance == null)
         {
-            _instance = this;
+            Instance = this;
             DontDestroyOnLoad(gameObject);
+            InitializeAudioSystem();
         }
-        else
-        {
-            Destroy(gameObject);
-        }
+        else Destroy(gameObject);
     }
 
-    void Start()
+    private void InitializeAudioSystem()
     {
-        activeProjectileSounds = new Dictionary<int, EventInstance>(MAX_ACTIVE_SOUNDS);
-        soundPool = new Queue<EventInstance>(MAX_ACTIVE_SOUNDS);
-        
-        // Pre-initialize minimal pool
-        for (int i = 0; i < MAX_ACTIVE_SOUNDS; i++)
-        {
-            CreateNewSoundInstance();
-        }
-    }
+        activeInstances = new EventInstance[MAX_CONCURRENT_SOUNDS];
+        activeTransforms = new Transform[MAX_CONCURRENT_SOUNDS];
+        activeIds = new int[MAX_CONCURRENT_SOUNDS];
+        volumeCache = new float[MAX_CONCURRENT_SOUNDS];
+        activeCount = 0;
 
-    private void CreateNewSoundInstance()
-    {
-        if (!movingSoundEvent.IsNull)
+        if (playerImpactSoundEvent.IsNull)
         {
-            var instance = RuntimeManager.CreateInstance(movingSoundEvent);
-            instance.start();
-            instance.setVolume(0);
-            soundPool.Enqueue(instance);
-        }
-    }
-
-    public void UpdateProjectileSound(Vector3 position, float velocity, int projectileId, bool isHoming)
-    {
-        // Skip if not homing - this is the key change
-        if (!isHoming) return;
-        
-        // Skip if too soon or velocity too low
-        if (Time.time < nextUpdateTime || velocity < MIN_VELOCITY_THRESHOLD) return;
-
-        // Skip if too far from camera
-        if (Vector3.Distance(position, Camera.main.transform.position) > AUDIO_CUTOFF_DISTANCE)
-        {
-            ReleaseProjectileSound(projectileId);
+            isSoundEnabled = false;
             return;
         }
 
-        // Add to pending updates
-        pendingAudioUpdates.Add(new ProjectileAudioData 
-        { 
-            Position = position, 
-            Velocity = velocity, 
-            ProjectileId = projectileId 
-        });
-    }
-
-    private void LateUpdate()
-    {
-        if (Time.time < nextUpdateTime) return;
-        
-        // Sort pending updates by velocity (descending)
-        pendingAudioUpdates.Sort((a, b) => b.Velocity.CompareTo(a.Velocity));
-        
-        // Process only the top few fastest projectiles
-        int processCount = Mathf.Min(pendingAudioUpdates.Count, MAX_ACTIVE_SOUNDS);
-        
-        // Release sounds for projectiles no longer in top N
-        foreach (var kvp in new Dictionary<int, EventInstance>(activeProjectileSounds))
+        try
         {
-            bool stillActive = false;
-            for (int i = 0; i < processCount; i++)
+            if (!oneShotSoundEvents.ContainsKey(playerImpactSoundEvent.Path))
             {
-                if (pendingAudioUpdates[i].ProjectileId == kvp.Key)
-                {
-                    stillActive = true;
-                    break;
-                }
+                oneShotSoundEvents[playerImpactSoundEvent.Path] = playerImpactSoundEvent;
             }
-            if (!stillActive)
+            if (!oneShotSoundEvents.ContainsKey(playerImpactSoundEvent.Path))
             {
-                ReleaseProjectileSound(kvp.Key);
+                oneShotSoundEvents[playerImpactSoundEvent.Path] = playerImpactSoundEvent;
             }
         }
-        
-        // Update sounds for top projectiles
-        for (int i = 0; i < processCount; i++)
+        catch (System.Exception)
         {
-            var data = pendingAudioUpdates[i];
+            isSoundEnabled = false;
+        }
+    }
+
+    private void Start()
+    {
+        playerTransform = Camera.main.transform;
+        lastPlayerPosition = playerTransform.position;
+    }
+
+    private void Update()
+    {
+        if (!isSoundEnabled || activeCount == 0) return;
+
+        float currentTime = Time.unscaledTime;
+        
+        if (currentTime >= nextUpdateTime)
+        {
+            BatchUpdateProjectileAudio();
+            BatchCullDistantSounds();
+            nextUpdateTime = currentTime + Mathf.Max(UPDATE_INTERVAL, Time.deltaTime);
+        }
+    }
+
+    private void BatchUpdateProjectileAudio()
+    {
+        Vector3 playerPos = playerTransform.position;
+        bool significantPlayerMovement = (playerPos - lastPlayerPosition).sqrMagnitude > 1f;
+        
+        if (!significantPlayerMovement && Time.frameCount % 2 != 0) return;
+
+        for (int i = 0; i < activeCount; i++)
+        {
+            if (activeTransforms[i] == null) continue;
+
+            var transform = activeTransforms[i];
+            float distanceSqr = (transform.position - playerPos).sqrMagnitude;
             
-            if (!activeProjectileSounds.TryGetValue(data.ProjectileId, out EventInstance sound))
+            if (distanceSqr > MAX_AUDIO_DISTANCE_SQR)
             {
-                if (soundPool.Count > 0)
-                {
-                    sound = soundPool.Dequeue();
-                    activeProjectileSounds[data.ProjectileId] = sound;
-                }
-                else continue;
+                UnregisterHomingProjectile(activeIds[i]);
+                continue;
             }
 
-            if (sound.isValid())
+            float volume = 1f - (distanceSqr / MAX_AUDIO_DISTANCE_SQR);
+            
+            if (Mathf.Abs(volume - volumeCache[i]) > MIN_VOLUME_THRESHOLD || significantPlayerMovement)
             {
-                sound.set3DAttributes(RuntimeUtils.To3DAttributes(data.Position));
-                sound.setParameterByName("Velocity", data.Velocity);
-                sound.setVolume(1);
+                activeInstances[i].set3DAttributes(RuntimeUtils.To3DAttributes(transform));
+                activeInstances[i].setVolume(volume);
+                volumeCache[i] = volume;
             }
         }
-        
-        pendingAudioUpdates.Clear();
-        nextUpdateTime = Time.time + UPDATE_INTERVAL;
+
+        if (significantPlayerMovement)
+        {
+            lastPlayerPosition = playerPos;
+        }
     }
 
-    public void ReleaseProjectileSound(int projectileId)
+    private void BatchCullDistantSounds()
     {
-        if (activeProjectileSounds.TryGetValue(projectileId, out EventInstance sound))
+        Vector3 playerPos = playerTransform.position;
+        
+        for (int i = MAX_CONCURRENT_SOUNDS - 1; i >= 0; i--)
         {
-            sound.setVolume(0);
-            if (soundPool.Count < MAX_ACTIVE_SOUNDS)
+            if (activeTransforms[i] == null) continue;
+
+            if ((activeTransforms[i].position - playerPos).sqrMagnitude > MAX_AUDIO_DISTANCE_SQR)
             {
-                soundPool.Enqueue(sound);
+                UnregisterHomingProjectile(activeIds[i]);
             }
-            else
-            {
-                sound.stop(FMOD.Studio.STOP_MODE.IMMEDIATE);
-                sound.release();
-            }
-            activeProjectileSounds.Remove(projectileId);
         }
+    }
+
+    public void RegisterHomingProjectile(int projectileId, Transform projectileTransform)
+    {
+        if (!isSoundEnabled || activeCount >= MAX_CONCURRENT_SOUNDS) return;
+
+        for (int i = 0; i < MAX_CONCURRENT_SOUNDS; i++)
+        {
+            if (activeTransforms[i] == null)
+            {
+                activeIds[i] = projectileId;
+                activeTransforms[i] = projectileTransform;
+                activeInstances[i] = eventPool.Get();
+                volumeCache[i] = 0f;
+                activeCount++;
+                return;
+            }
+        }
+    }
+
+    public void UnregisterHomingProjectile(int projectileId)
+    {
+        if (!isSoundEnabled || activeInstances == null) return;
+
+        for (int i = 0; i < MAX_CONCURRENT_SOUNDS; i++)
+        {
+            if (activeIds[i] == projectileId && activeTransforms[i] != null)
+            {
+                if (eventPool != null && activeInstances[i].isValid())
+                {
+                    eventPool.Release(activeInstances[i]);
+                }
+                activeInstances[i] = default;
+                activeTransforms[i] = null;
+                activeIds[i] = 0;
+                volumeCache[i] = 0f;
+                activeCount--;
+                return;
+            }
+        }
+    }
+
+    public void PlayOneShotSound(string soundEvent, Vector3 position)
+    {
+        if (!isSoundEnabled || !oneShotSoundEvents.ContainsKey(soundEvent)) return;
+
+        try
+        {
+            if (!oneShotEventPools.ContainsKey(soundEvent))
+            {
+                InitializeOneShotPool(soundEvent);
+            }
+
+            var instance = oneShotEventPools[soundEvent].Get();
+            instance.set3DAttributes(RuntimeUtils.To3DAttributes(position));
+            instance.start();
+            
+            // Auto-release after playing
+            StartCoroutine(ReleaseAfterPlay(soundEvent, instance));
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError($"Failed to play one-shot sound {soundEvent}: {e.Message}");
+        }
+    }
+
+    private void InitializeOneShotPool(string soundEvent)
+    {
+        string eventPath = oneShotSoundEvents[soundEvent].Path;
+        oneShotEventPools[soundEvent] = new ObjectPool<EventInstance>(
+            createFunc: () => RuntimeManager.CreateInstance(eventPath),
+            actionOnGet: instance => instance.setVolume(1f),
+            actionOnRelease: instance => {
+                if (instance.isValid())
+                {
+                    instance.stop(FMOD.Studio.STOP_MODE.IMMEDIATE);
+                    instance.setVolume(0);
+                }
+            },
+            actionOnDestroy: instance => {
+                if (instance.isValid())
+                {
+                    instance.stop(FMOD.Studio.STOP_MODE.IMMEDIATE);
+                    instance.release();
+                }
+            },
+            defaultCapacity: 5
+        );
+    }
+
+    private IEnumerator ReleaseAfterPlay(string soundEvent, EventInstance instance)
+    {
+        PLAYBACK_STATE state;
+        do
+        {
+            instance.getPlaybackState(out state);
+            yield return new WaitForSeconds(0.1f);
+        } while (state != PLAYBACK_STATE.STOPPED);
+
+        if (oneShotEventPools.ContainsKey(soundEvent))
+        {
+            oneShotEventPools[soundEvent].Release(instance);
+        }
+    }
+
+    public void PlayPlayerImpactSound(Vector3 position)
+    {
+        Debug.Log("Playing player impact sound at position: " + position);
+
+        if (playerImpactSoundEvent.IsNull)
+        {
+            Debug.LogError("Player impact sound event is null.");
+            return;
+        }
+
+        EventInstance instance = RuntimeManager.CreateInstance(playerImpactSoundEvent);
+        instance.set3DAttributes(RuntimeUtils.To3DAttributes(position));
+        instance.start();
+        instance.release(); // Release the instance immediately after starting
+    }
+
+    public void PlayEnemyImpactSound(Vector3 position)
+    {
+        PlayOneShotSound(playerImpactSoundEvent.Path, position);
     }
 
     private void OnDestroy()
     {
-        foreach (var sound in soundPool)
+        foreach (var pool in oneShotEventPools.Values)
         {
-            if (sound.isValid())
+            pool.Clear();
+        }
+        oneShotEventPools.Clear();
+
+        if (eventPool != null)
+        {
+            eventPool.Clear();
+        }
+
+        // Clean up native arrays
+        if (activeInstances != null)
+        {
+            for (int i = 0; i < activeInstances.Length; i++)
             {
-                sound.stop(FMOD.Studio.STOP_MODE.IMMEDIATE);
-                sound.release();
+                if (activeInstances[i].isValid())
+                {
+                    activeInstances[i].stop(FMOD.Studio.STOP_MODE.IMMEDIATE);
+                    activeInstances[i].release();
+                }
             }
         }
 
-        foreach (var sound in activeProjectileSounds.Values)
-        {
-            if (sound.isValid())
-            {
-                sound.stop(FMOD.Studio.STOP_MODE.IMMEDIATE);
-                sound.release();
-            }
-        }
+        Instance = null;
     }
 }

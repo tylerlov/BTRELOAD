@@ -49,22 +49,18 @@ public class EnemyShotState : ProjectileState
     {
         if (other.gameObject.CompareTag("Player"))
         {
-            //May be wrong - refer to previous code if not working
             IDamageable damageable = other.gameObject.GetComponent<IDamageable>();
             if (damageable != null)
             {
                 _projectile.ApplyDamage(damageable);
                 _projectile.projHitPlayer = true;
                 _projectile.Death(true);
-                ProjectileManager.Instance.PlayOneShotSound(
-                    "event:/Projectile/Basic/Impact",
-                    _projectile.transform.position
-                );
+                ProjectileAudioManager.Instance.PlayPlayerImpactSound(_projectile.transform.position);
             }
         }
         else if (
-            !other.gameObject.CompareTag("Enemy")
-            && !other.gameObject.CompareTag("LaunchableBullet")
+            !other.gameObject.CompareTag("Enemy") && 
+            !other.gameObject.CompareTag("LaunchableBullet")
         )
         {
             ConditionalDebug.Log(

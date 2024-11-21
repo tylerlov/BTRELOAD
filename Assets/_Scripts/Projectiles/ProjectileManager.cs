@@ -87,6 +87,8 @@ public class ProjectileManager : MonoBehaviour
 
     private bool isTransitioning = false;
 
+    private HashSet<int> homingProjectileIds = new HashSet<int>();
+
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -444,58 +446,24 @@ public class ProjectileManager : MonoBehaviour
 
     public void RegisterProjectile(ProjectileStateBased projectile)
     {
-        if (isTransitioning)
-        {
-            ConditionalDebug.LogWarning("[ProjectileManager] Attempting to register projectile during scene transition. Skipping.");
-            return;
-        }
-
-        if (projectile == null)
-        {
-            ConditionalDebug.LogError("[ProjectileManager] Attempting to register null projectile!");
-            return;
-        }
-
-        if (!ValidateCollections())
-        {
-            ConditionalDebug.LogWarning("[ProjectileManager] Collections were invalid and have been recovered");
-        }
-
-        if (!projectileIds.IsCreated)
-        {
-            ConditionalDebug.LogError("[ProjectileManager] Attempting to register projectile but arrays are not initialized!");
-            return;
-        }
-
-        if (_isJobRunning)
-        {
-            _updateProjectilesJobHandle.Complete();
-            _isJobRunning = false;
-        }
+        if (projectile == null || isTransitioning) return;
 
         int projectileId = projectile.GetInstanceID();
-        if (!projectileLookup.ContainsKey(projectileId))
-        {
-            int currentCount = projectileLookup.Count;
-            
-            // Validate array capacity before adding
-            if (currentCount >= projectileIds.Length)
-            {
-                ResizeNativeArrays(projectileIds.Length * GROWTH_FACTOR);
-            }
+        if (projectileLookup.ContainsKey(projectileId)) return;
 
-            // Validate after resize
-            if (currentCount < projectileIds.Length)
-            {
-                projectileIds[currentCount] = projectileId;
-                projectileLifetimes[projectileId] = projectile.lifetime;
-                projectileLookup[projectileId] = projectile;
-                projectile.SetAccuracy(projectileAccuracy);
-            }
-            else
-            {
-                ConditionalDebug.LogError("[ProjectileManager] Failed to register projectile - insufficient capacity");
-            }
+        // Register projectile
+        int currentCount = projectileLookup.Count;
+        if (currentCount >= projectileIds.Length)
+        {
+            ResizeNativeArrays(projectileIds.Length * GROWTH_FACTOR);
+        }
+
+        if (currentCount < projectileIds.Length)
+        {
+            projectileIds[currentCount] = projectileId;
+            projectileLifetimes[projectileId] = projectile.lifetime;
+            projectileLookup[projectileId] = projectile;
+            projectile.SetAccuracy(projectileAccuracy);
         }
     }
 
@@ -700,14 +668,6 @@ public class ProjectileManager : MonoBehaviour
                 }
             }
         }
-    }
-
-    public void PlayOneShotSound(string soundEvent, Vector3 position)
-    {
-        var instance = AudioManager.Instance.GetOrCreateInstance(soundEvent);
-        instance.set3DAttributes(FMODUnity.RuntimeUtils.To3DAttributes(position));
-        instance.start();
-        AudioManager.Instance.ReleaseInstance(soundEvent, instance);
     }
 
     private void ClearNativeArray<T>(NativeArray<T> array)
@@ -1062,5 +1022,29 @@ public class ProjectileManager : MonoBehaviour
             return useRaycastsOnlyForHoming && projectile.homing;
 
         return false;
+    }
+
+    public ProjectileStateBased GetProjectileById(int id)
+    {
+        if (projectileLookup.TryGetValue(id, out ProjectileStateBased projectile))
+        {
+            return projectile;
+        }
+        return null;
+    }
+
+    public void RegisterHomingProjectile(int projectileId)
+    {
+        homingProjectileIds.Add(projectileId);
+    }
+
+    public void UnregisterHomingProjectile(int projectileId)
+    {
+        homingProjectileIds.Remove(projectileId);
+    }
+
+    public IReadOnlyCollection<int> GetActiveHomingProjectileIds()
+    {
+        return homingProjectileIds;
     }
 }

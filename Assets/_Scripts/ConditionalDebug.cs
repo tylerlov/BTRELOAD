@@ -18,6 +18,18 @@ public static class ConditionalDebug
             }
         }
 
+        public static bool IsLogging
+        {
+            get
+            {
+                #if UNITY_EDITOR
+                    return Debug.isDebugBuild;
+                #else
+                    return false;
+                #endif
+            }
+        }
+
         [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         public static void Log(object message, [CallerFilePath] string sourceFilePath = "")
         {
@@ -45,6 +57,10 @@ public static class ConditionalDebug
             }
         }
     #else
+        public static bool IsLogging
+        {
+            get { return false; }
+        }
         public static void Log(object message, [CallerFilePath] string sourceFilePath = "") { }
         public static void LogWarning(object message, [CallerFilePath] string sourceFilePath = "") { }
         public static void LogError(object message, [CallerFilePath] string sourceFilePath = "") { }

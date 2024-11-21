@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using Chronos;
 using SonicBloom.Koreo;
@@ -5,8 +6,9 @@ using UnityEngine;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Burst;
-using FMODUnity;  // Add this for StudioEventEmitter
-using FMOD.Studio; // Add this for EventInstance
+using FMODUnity;  
+using FMOD.Studio; 
+using System.Linq;
 
 public class EnemyShootingManager : MonoBehaviour
 {
@@ -14,37 +16,50 @@ public class EnemyShootingManager : MonoBehaviour
 
     private List<StaticEnemyShooting> staticEnemyShootings = new List<StaticEnemyShooting>();
     private List<EnemyBasicAI> basicEnemies = new List<EnemyBasicAI>();
-
-    [SerializeField, EventID]
-    private string eventID;
-    private int shootCounter = 0;
-
-    private Timeline managerTimeline;
-
-    private int koreographerEventCount = 0;
-    private float lastLogTime = 0f;
-    private const float LOG_INTERVAL = 5f; // Log every 5 seconds
+    private List<EnemyBasicSetup> registeredEnemies = new List<EnemyBasicSetup>();
 
     [SerializeField]
     private LayerMask obstacleLayerMask;
+    private const int maxRaycastsPerJob = 32;
 
-    [SerializeField]
-    private int maxRaycastsPerJob = 1024;
+    [SerializeField, EventID]
+    private string unlockEventID;
 
-    private StudioEventEmitter musicEmitter;
-    private bool isInLockLoop = false;
-    private float lastLoopPosition = 0f;
-    private float loopLength = 0f;
-    private const float LOOP_THRESHOLD = 0.1f; // Threshold to detect loop points
+    [SerializeField, EventID]
+    private string lockEventID;
 
-    [SerializeField]
-    private float defaultLoopLength = 2000f; // Default value in milliseconds
+    private Timeline managerTimeline;
+    private PlayerLocking playerLocking;
+    private bool previousLockLoopState;
+    private bool isInLockLoop;
 
-    private const float MINIMUM_SHOOT_INTERVAL = 700f; // 700ms
-    private bool shouldSkipNextShot = false;
-    private float currentLoopDuration = 0f;
+    // Cache FMOD event instance
+    private EventInstance musicEventInstance;
+    private const string LOCK_STATE_PARAMETER = "Lock State";
+    private PARAMETER_ID lockStateParameterId;
+    private bool isParameterIdInitialized;
 
-    private List<EnemyBasicSetup> registeredEnemies = new List<EnemyBasicSetup>();
+    // Add FMOD update throttling
+    private const float FMOD_UPDATE_INTERVAL = 0.1f; // Update every 100ms instead of every frame
+    private float lastFMODUpdateTime;
+    private bool pendingLockStateUpdate;
+    private float targetLockValue;
+    private float currentLockValue;
+    private const float LOCK_VALUE_SMOOTH_SPEED = 5f;
+
+    private const int FMOD_BATCH_SIZE = 32;
+    private Queue<FMODParameterUpdate> fmodUpdateQueue = new Queue<FMODParameterUpdate>();
+    private Dictionary<string, float> cachedParameters = new Dictionary<string, float>();
+    
+    private struct FMODParameterUpdate
+    {
+        public PARAMETER_ID ParameterId;
+        public float Value;
+    }
+
+    private const int SHOOT_BATCH_SIZE = 25;
+    private bool isProcessingShooting = false;
+    private Queue<StaticEnemyShooting> shootingQueue = new Queue<StaticEnemyShooting>();
 
     private void Awake()
     {
@@ -53,124 +68,64 @@ public class EnemyShootingManager : MonoBehaviour
             Instance = this;
             DontDestroyOnLoad(gameObject);
             managerTimeline = GetComponent<Timeline>();
-            ConditionalDebug.Log("EnemyShootingManager initialized");
         }
         else
         {
-            ConditionalDebug.Log("Duplicate EnemyShootingManager found, destroying");
             Destroy(gameObject);
         }
     }
 
     private void Start()
     {
-        musicEmitter = GameObject.Find("FMOD Music")?.GetComponent<StudioEventEmitter>();
-        if (musicEmitter == null)
-        {
-            ConditionalDebug.LogError("[EnemyShootingManager] Could not find FMOD Music emitter");
-            return;
-        }
-
-        // Instead of trying to get loop points from FMOD, we'll use position tracking
-        loopLength = defaultLoopLength;
-        ConditionalDebug.Log($"[EnemyShootingManager] Using default loop length: {loopLength}ms");
-
-        StartCoroutine(CheckMusicLoopStateRoutine());
+        InitializeFMOD();
+        InitializePlayerLocking();
     }
 
-    private System.Collections.IEnumerator CheckMusicLoopStateRoutine()
+    private void InitializeFMOD()
     {
-        WaitForSeconds waitTime = new WaitForSeconds(0.1f);
-        int lastPosition = 0;
-        bool positionDecreased = false;
-        int loopStartPosition = 0;
-
-        while (true)
+        var musicEmitter = GameObject.Find("FMOD Music")?.GetComponent<StudioEventEmitter>();
+        if (musicEmitter != null)
         {
-            if (musicEmitter != null && musicEmitter.EventInstance.isValid())
+            musicEventInstance = musicEmitter.EventInstance;
+            if (musicEventInstance.isValid())
             {
-                int currentPosition = 0;
-                musicEmitter.EventInstance.getTimelinePosition(out currentPosition);
+                musicEventInstance.getDescription(out EventDescription eventDescription);
+                eventDescription.getParameterDescriptionByName(LOCK_STATE_PARAMETER, out PARAMETER_DESCRIPTION parameterDescription);
+                lockStateParameterId = parameterDescription.id;
+                isParameterIdInitialized = true;
                 
-                float lockState = 0f;
-                musicEmitter.EventInstance.getParameterByName("Lock State", out lockState);
-                bool isLocked = lockState > 0.5f;
-
-                if (isLocked)
+                // Cache initial parameter value
+                if (musicEventInstance.getParameterByName(LOCK_STATE_PARAMETER, out float initialValue) == FMOD.RESULT.OK)
                 {
-                    if (!isInLockLoop)
-                    {
-                        // Just entered lock state
-                        isInLockLoop = true;
-                        lastPosition = currentPosition;
-                        loopStartPosition = currentPosition;
-                        ConditionalDebug.Log($"[EnemyShootingManager] Entered lock loop at position: {currentPosition}ms");
-                        TriggerAllStaticEnemies();
-                    }
-                    else
-                    {
-                        // Detect if position has decreased (indicating a loop)
-                        if (currentPosition < lastPosition)
-                        {
-                            positionDecreased = true;
-                            currentLoopDuration = lastPosition - loopStartPosition;
-                            loopStartPosition = currentPosition;
-                            
-                            ConditionalDebug.Log($"[EnemyShootingManager] Loop detected. Duration: {currentLoopDuration}ms");
-
-                            if (currentLoopDuration < MINIMUM_SHOOT_INTERVAL)
-                            {
-                                if (!shouldSkipNextShot)
-                                {
-                                    TriggerAllStaticEnemies();
-                                    shouldSkipNextShot = true;
-                                    ConditionalDebug.Log("[EnemyShootingManager] Shot triggered, skipping next loop");
-                                }
-                                else
-                                {
-                                    shouldSkipNextShot = false;
-                                    ConditionalDebug.Log("[EnemyShootingManager] Skipping shot this loop");
-                                }
-                            }
-                            else
-                            {
-                                TriggerAllStaticEnemies();
-                                ConditionalDebug.Log("[EnemyShootingManager] Loop duration sufficient, shooting normally");
-                            }
-                        }
-                        else if (positionDecreased && (currentPosition - lastPosition) > 1000)
-                        {
-                            positionDecreased = false;
-                            lastPosition = currentPosition;
-                        }
-                    }
+                    cachedParameters[LOCK_STATE_PARAMETER] = initialValue;
                 }
-                else if (isInLockLoop)
-                {
-                    // Reset state when exiting lock loop
-                    isInLockLoop = false;
-                    positionDecreased = false;
-                    shouldSkipNextShot = false;
-                    ConditionalDebug.Log("[EnemyShootingManager] Exited lock loop");
-                }
-
-                lastPosition = currentPosition;
             }
-
-            yield return waitTime;
         }
+    }
+
+    private void InitializePlayerLocking()
+    {
+        playerLocking = PlayerLocking.Instance;
+        if (playerLocking == null)
+        {
+            ConditionalDebug.LogError("[EnemyShootingManager] Could not find PlayerLocking instance");
+            return;
+        }
+        previousLockLoopState = false;
     }
 
     private void OnEnable()
     {
-        Koreographer.Instance.RegisterForEvents(eventID, OnMusicalEnemyShoot);
+        Koreographer.Instance.RegisterForEvents(unlockEventID, OnMusicalEnemyShootUnlocked);
+        Koreographer.Instance.RegisterForEvents(lockEventID, OnMusicalEnemyShootLocked);
     }
 
     private void OnDisable()
     {
         if (Koreographer.Instance != null)
         {
-            Koreographer.Instance.UnregisterForEvents(eventID, OnMusicalEnemyShoot);
+            Koreographer.Instance.UnregisterForEvents(unlockEventID, OnMusicalEnemyShootUnlocked);
+            Koreographer.Instance.UnregisterForEvents(lockEventID, OnMusicalEnemyShootLocked);
         }
     }
 
@@ -180,10 +135,6 @@ public class EnemyShootingManager : MonoBehaviour
         {
             staticEnemyShootings.Add(shooting);
         }
-        else
-        {
-            ConditionalDebug.Log($"StaticEnemyShooting {shooting.name} already registered");
-        }
     }
 
     public void RegisterBasicEnemy(EnemyBasicAI enemy)
@@ -191,10 +142,6 @@ public class EnemyShootingManager : MonoBehaviour
         if (!basicEnemies.Contains(enemy))
         {
             basicEnemies.Add(enemy);
-        }
-        else
-        {
-            ConditionalDebug.Log($"EnemyBasicAI {enemy.name} already registered");
         }
     }
 
@@ -229,156 +176,151 @@ public class EnemyShootingManager : MonoBehaviour
 
     private void Update()
     {
-        if (Time.time - lastLogTime >= LOG_INTERVAL)
+        if (playerLocking != null)
         {
-            ConditionalDebug.Log($"[EnemyShootingManager] Koreographer events in the last {LOG_INTERVAL} seconds: {koreographerEventCount}");
-            ConditionalDebug.Log($"[EnemyShootingManager] Current registered StaticEnemyShooting count: {staticEnemyShootings.Count}");
-            ConditionalDebug.Log($"[EnemyShootingManager] Current registered EnemyBasicAI count: {basicEnemies.Count}");
-            ConditionalDebug.Log($"[EnemyShootingManager] Current registered Enemies count: {registeredEnemies.Count}");
-            lastLogTime = Time.time;
-            koreographerEventCount = 0;
-        }
+            bool newLockState = playerLocking.GetLockedProjectileCount() > 0;
+            
+            if (newLockState != isInLockLoop)
+            {
+                isInLockLoop = newLockState;
+                targetLockValue = isInLockLoop ? 1f : 0f;
+                previousLockLoopState = isInLockLoop;
+            }
 
+            if (Mathf.Abs(currentLockValue - targetLockValue) > 0.001f)
+            {
+                currentLockValue = Mathf.MoveTowards(currentLockValue, targetLockValue, 
+                    LOCK_VALUE_SMOOTH_SPEED * Time.deltaTime);
+                
+                if (Time.time - lastFMODUpdateTime >= FMOD_UPDATE_INTERVAL)
+                {
+                    UpdateFMODLockState(currentLockValue);
+                    lastFMODUpdateTime = Time.time;
+                }
+            }
+        }
+        
+        ProcessFMODUpdates();
         CheckLineOfSightBatched();
     }
 
-    private void TriggerAllStaticEnemies()
+    private void UpdateFMODLockState(float lockValue)
     {
-        string debugInfo = "[EnemyShootingManager] Triggering all static enemies on loop:\n";
-        
-        if (staticEnemyShootings == null || staticEnemyShootings.Count == 0)
-        {
-            ConditionalDebug.Log($"{debugInfo} No static enemies to trigger");
+        if (!isParameterIdInitialized || !musicEventInstance.isValid())
             return;
-        }
 
-        int successfulShots = 0;
-        int inactiveCount = 0;
-        int nullCount = 0;
-        int errorCount = 0;
-
-        foreach (var shooting in staticEnemyShootings.ToArray())
+        // Only queue update if value has changed
+        if (!cachedParameters.TryGetValue(LOCK_STATE_PARAMETER, out float currentValue) 
+            || Mathf.Abs(currentValue - lockValue) > 0.001f)
         {
-            if (shooting == null)
-            {
-                nullCount++;
-                continue;
-            }
-
-            if (!shooting.gameObject.activeInHierarchy)
-            {
-                inactiveCount++;
-                continue;
-            }
-
-            try
-            {
-                shooting.Shoot();
-                successfulShots++;
-            }
-            catch (System.Exception e)
-            {
-                errorCount++;
-                ConditionalDebug.LogError($"[EnemyShootingManager] Error triggering enemy: {e.Message}");
-            }
+            fmodUpdateQueue.Enqueue(new FMODParameterUpdate 
+            { 
+                ParameterId = lockStateParameterId, 
+                Value = lockValue 
+            });
+            cachedParameters[LOCK_STATE_PARAMETER] = lockValue;
         }
-
-        ConditionalDebug.Log($"{debugInfo}Results: Success={successfulShots}, Inactive={inactiveCount}, Null={nullCount}, Errors={errorCount}");
     }
 
-    private void OnMusicalEnemyShoot(KoreographyEvent evt)
+    private void ProcessFMODUpdates()
     {
-        // Process this event if we're not in a lock loop
-        if (!isInLockLoop)
+        if (!musicEventInstance.isValid() || fmodUpdateQueue.Count == 0)
+            return;
+
+        int updatesProcessed = 0;
+        while (fmodUpdateQueue.Count > 0 && updatesProcessed < FMOD_BATCH_SIZE)
         {
+            var update = fmodUpdateQueue.Dequeue();
             try
             {
-                koreographerEventCount++;
-                string debugInfo = "[EnemyShootingManager] OnMusicalEnemyShoot triggered:\n";
-                
-                if (managerTimeline == null)
-                {
-                    ConditionalDebug.LogWarning($"{debugInfo} Timeline is null");
-                    return;
-                }
-
-                if (managerTimeline.timeScale == 0f)
-                {
-                    ConditionalDebug.Log($"{debugInfo} Timeline is paused");
-                    return;
-                }
-
-                if (staticEnemyShootings == null)
-                {
-                    ConditionalDebug.LogError($"{debugInfo} staticEnemyShootings list is null");
-                    return;
-                }
-
-                debugInfo += $"- Registered shooters count: {staticEnemyShootings.Count}\n";
-                if (staticEnemyShootings.Count == 0)
-                {
-                    ConditionalDebug.Log($"{debugInfo} No static enemies registered");
-                    return;
-                }
-
-                // Remove any null entries and log removed count
-                int beforeCount = staticEnemyShootings.Count;
-                staticEnemyShootings.RemoveAll(x => x == null);
-                int removedCount = beforeCount - staticEnemyShootings.Count;
-                if (removedCount > 0)
-                {
-                    debugInfo += $"- Removed {removedCount} null entries\n";
-                }
-
-                int successfulShots = 0;
-                int inactiveCount = 0;
-                int nullCount = 0;
-                int errorCount = 0;
-
-                // Create copy to avoid modification during iteration
-                var shooters = staticEnemyShootings.ToArray();
-                foreach (var shooting in shooters)
-                {
-                    if (shooting == null)
-                    {
-                        nullCount++;
-                        continue;
-                    }
-
-                    if (!shooting.gameObject.activeInHierarchy)
-                    {
-                        inactiveCount++;
-                        debugInfo += $"- Shooter {shooting.name} is inactive\n";
-                        continue;
-                    }
-
-                    try
-                    {
-                        ConditionalDebug.Log($"[EnemyShootingManager] Attempting to shoot with {shooting.name}");
-                        shooting.Shoot();
-                        successfulShots++;
-                    }
-                    catch (System.Exception e)
-                    {
-                        errorCount++;
-                        debugInfo += $"- Error with shooter {shooting.name}: {e.Message}\n";
-                        ConditionalDebug.LogError($"[EnemyShootingManager] Error during shooting with {shooting.name}: {e.Message}");
-                    }
-                }
-
-                debugInfo += $"- Results: Success={successfulShots}, Inactive={inactiveCount}, Null={nullCount}, Errors={errorCount}";
-                ConditionalDebug.Log(debugInfo);
-                TriggerAllStaticEnemies();
+                musicEventInstance.setParameterByID(update.ParameterId, update.Value);
+                updatesProcessed++;
             }
             catch (System.Exception e)
             {
-                ConditionalDebug.LogError($"[EnemyShootingManager] Critical error in OnMusicalEnemyShoot: {e.Message}\n{e.StackTrace}");
+                ConditionalDebug.LogError($"[EnemyShootingManager] FMOD parameter update failed: {e.Message}");
             }
         }
-        else
+    }
+
+    private void OnDestroy()
+    {
+        if (musicEventInstance.isValid())
         {
-            ConditionalDebug.Log("[EnemyShootingManager] Skipping Koreographer event during lock loop");
+            // Ensure clean parameter state
+            musicEventInstance.setParameterByID(lockStateParameterId, 0f);
         }
+    }
+
+    private void OnMusicalEnemyShoot(KoreographyEvent evt, bool isLocked)
+    {
+        if (isLocked != isInLockLoop) return;
+
+        try
+        {
+            if (staticEnemyShootings.Count != staticEnemyShootings.Count(x => x != null))
+            {
+                staticEnemyShootings.RemoveAll(x => x == null);
+            }
+
+            // Queue all active shooters
+            foreach (var shooting in staticEnemyShootings)
+            {
+                if (shooting != null && shooting.gameObject.activeInHierarchy)
+                {
+                    shootingQueue.Enqueue(shooting);
+                }
+            }
+
+            // Start processing if not already running
+            if (!isProcessingShooting)
+            {
+                StartCoroutine(ProcessShootingQueue());
+            }
+        }
+        catch (System.Exception e)
+        {
+            ConditionalDebug.LogError($"[EnemyShootingManager] Critical error: {e.Message}");
+        }
+    }
+
+    private IEnumerator ProcessShootingQueue()
+    {
+        isProcessingShooting = true;
+
+        while (shootingQueue.Count > 0)
+        {
+            int batchCount = Mathf.Min(SHOOT_BATCH_SIZE, shootingQueue.Count);
+            
+            for (int i = 0; i < batchCount; i++)
+            {
+                if (shootingQueue.Count == 0) break;
+                
+                var shooter = shootingQueue.Dequeue();
+                try
+                {
+                    shooter?.Shoot();
+                }
+                catch (System.Exception e)
+                {
+                    ConditionalDebug.LogError($"[EnemyShootingManager] Error during shooting: {e.Message}");
+                }
+            }
+
+            yield return new WaitForEndOfFrame();
+        }
+
+        isProcessingShooting = false;
+    }
+
+    private void OnMusicalEnemyShootUnlocked(KoreographyEvent evt)
+    {
+        OnMusicalEnemyShoot(evt, false);
+    }
+
+    private void OnMusicalEnemyShootLocked(KoreographyEvent evt)
+    {
+        OnMusicalEnemyShoot(evt, true);
     }
 
     private void CheckLineOfSightBatched()
@@ -409,7 +351,16 @@ public class EnemyShootingManager : MonoBehaviour
                 {
                     Vector3 origin = registeredEnemies[enemyIndex].transform.position;
                     Vector3 direction = playerTransform.position - origin;
-                    commands[i] = new RaycastCommand(origin, direction.normalized, direction.magnitude, obstacleLayerMask);
+                    float distance = direction.magnitude;
+                    direction.Normalize();
+                    
+                    // Correct constructor parameters for RaycastCommand
+                    commands[i] = new RaycastCommand(
+                        origin,           // From position
+                        direction,        // Direction
+                        distance,         // Max distance
+                        obstacleLayerMask // Layer mask
+                    );
                 }
             }
 
