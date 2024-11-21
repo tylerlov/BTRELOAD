@@ -9,6 +9,7 @@ using static AsyncOperationExtensions;
 public class SceneManagerBTR : MonoBehaviour
 {
     public static SceneManagerBTR Instance { get; private set; }
+    private LoadingScreen loadingScreen;
 
     private void Awake()
     {
@@ -16,6 +17,15 @@ public class SceneManagerBTR : MonoBehaviour
         {
             Instance = this;
             DontDestroyOnLoad(gameObject);
+            
+            // Create loading screen immediately in Awake
+            if (loadingScreen == null)
+            {
+                Debug.Log("<color=cyan>[SceneManager] Creating loading screen in Awake</color>");
+                GameObject loadingObj = new GameObject("LoadingScreen");
+                loadingScreen = loadingObj.AddComponent<LoadingScreen>();
+                DontDestroyOnLoad(loadingObj);
+            }
         }
         else
         {
@@ -79,6 +89,15 @@ public class SceneManagerBTR : MonoBehaviour
 
     public async Task InitializeScenes()
     {
+        // Ensure loading screen exists before any scene loading
+        if (loadingScreen == null)
+        {
+            Debug.LogError("<color=red>[SceneManager] Loading screen missing during InitializeScenes!</color>");
+            GameObject loadingObj = new GameObject("LoadingScreen");
+            loadingScreen = loadingObj.AddComponent<LoadingScreen>();
+            DontDestroyOnLoad(loadingObj);
+        }
+
         await LoadBaseSceneAsync();
 
         if (!await TryUseOpenOuroborosSceneAsync())
@@ -90,8 +109,6 @@ public class SceneManagerBTR : MonoBehaviour
 
         currentWaveCount = 0;
         isFirstUpdate = true;
-
-        // Play initial music (Start section)
         UpdateMusicSection();
     }
 
@@ -109,50 +126,56 @@ public class SceneManagerBTR : MonoBehaviour
 
     public async Task LoadAdditiveSceneAsync(string sceneName)
     {
-        ConditionalDebug.Log(
-            $"<color=cyan>[SCENE] LoadAdditiveSceneAsync called for scene: {sceneName}</color>"
-        );
-        if (currentAdditiveScene.IsValid() && currentAdditiveScene.isLoaded)
+        Debug.Log("<color=cyan>[SceneManager] Starting scene load</color>");
+        
+        // Start fade in before unloading/loading
+        if (loadingScreen != null)
         {
-            ConditionalDebug.Log(
-                $"<color=cyan>[SCENE] Unloading current additive scene: {currentAdditiveScene.name}</color>"
-            );
-            await UnityEngine.SceneManagement.SceneManager.UnloadSceneAsync(currentAdditiveScene);
+            Debug.Log("<color=cyan>[SceneManager] Triggering fade in</color>");
+            await loadingScreen.StartFadeIn();
+        }
+        else
+        {
+            Debug.LogError("<color=red>[SceneManager] Loading screen is null!</color>");
         }
 
         try
         {
-            ConditionalDebug.Log($"<color=cyan>[SCENE] Starting to load additive scene: {sceneName}</color>");
+            if (currentAdditiveScene.IsValid() && currentAdditiveScene.isLoaded)
+            {
+                await UnityEngine.SceneManagement.SceneManager.UnloadSceneAsync(currentAdditiveScene);
+            }
+
             AsyncOperation asyncLoad = UnityEngine.SceneManagement.SceneManager.LoadSceneAsync(
                 sceneName,
                 LoadSceneMode.Additive
             );
             await asyncLoad;
 
-            currentAdditiveScene = UnityEngine.SceneManagement.SceneManager.GetSceneByName(
-                sceneName
-            );
+            currentAdditiveScene = UnityEngine.SceneManagement.SceneManager.GetSceneByName(sceneName);
             if (!currentAdditiveScene.IsValid())
             {
                 throw new System.Exception($"Failed to load scene: {sceneName}");
             }
 
-            ConditionalDebug.Log(
-                $"<color=cyan>[SCENE] Successfully loaded additive scene: {sceneName}</color>"
-            );
             UnityEngine.SceneManagement.SceneManager.SetActiveScene(currentAdditiveScene);
-
             ScoreManager.Instance.CurrentSceneWaveCount = 0;
-
             OnSceneLoaded(currentAdditiveScene, LoadSceneMode.Additive);
         }
         catch (System.Exception e)
         {
-            ConditionalDebug.LogError(
-                $"<color=red>[SCENE] Error loading additive scene {sceneName}: {e.Message}</color>"
-            );
+            ConditionalDebug.LogError($"<color=red>[SCENE] Error loading additive scene {sceneName}: {e.Message}</color>");
             Debug.LogException(e);
             throw;
+        }
+        finally
+        {
+            // Fade out after scene is fully loaded
+            if (loadingScreen != null)
+            {
+                Debug.Log("<color=cyan>[SceneManager] Triggering fade out</color>");
+                await loadingScreen.StartFadeOut();
+            }
         }
     }
 
@@ -260,6 +283,12 @@ public class SceneManagerBTR : MonoBehaviour
 
         isTransitioning = true;
 
+        // Start fade in
+        if (loadingScreen != null)
+        {
+            await loadingScreen.StartFadeIn();
+        }
+
         try
         {
             await CleanupCurrentScene();
@@ -315,8 +344,12 @@ public class SceneManagerBTR : MonoBehaviour
         }
         finally
         {
+            // Start fade out
+            if (loadingScreen != null)
+            {
+                await loadingScreen.StartFadeOut();
+            }
             isTransitioning = false;
-            // ConditionalDebug.Log("<color=cyan>[SCENE] Scene transition completed</color>");
         }
     }
 
@@ -590,21 +623,31 @@ public class SceneManagerBTR : MonoBehaviour
 
     private async Task ChangeScene(bool forceNextScene = false)
     {
+        if (isTransitioning) return;
         isTransitioning = true;
 
-        if (
-            forceNextScene
-            || currentSectionIndex >= currentGroup.scenes[currentSceneIndex].songSections.Length - 1
-        )
+        try 
         {
-            await MoveToNextScene();
-        }
-        else
-        {
-            MoveToNextSection();
-        }
+            Task fadeInTask = loadingScreen?.StartFadeIn();
+            Task sceneChangeTask;
 
-        isTransitioning = false;
+            if (forceNextScene || currentSectionIndex >= currentGroup.scenes[currentSceneIndex].songSections.Length - 1)
+            {
+                sceneChangeTask = MoveToNextScene();
+            }
+            else
+            {
+                MoveToNextSection();
+                sceneChangeTask = Task.CompletedTask;
+            }
+
+            await Task.WhenAll(fadeInTask ?? Task.CompletedTask, sceneChangeTask);
+            await (loadingScreen?.StartFadeOut() ?? Task.CompletedTask);
+        }
+        finally 
+        {
+            isTransitioning = false;
+        }
     }
 
     public string GetCurrentSceneName()

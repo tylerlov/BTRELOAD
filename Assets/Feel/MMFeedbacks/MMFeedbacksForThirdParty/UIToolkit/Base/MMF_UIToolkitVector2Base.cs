@@ -271,8 +271,10 @@ namespace MoreMountains.FeedbacksForThirdParty
 			if (string.IsNullOrEmpty(CurveX.EnumConditionPropertyName))
 			{
 				CurveX.EnumConditionPropertyName = "Mode";
+				CurveX.EnumConditions = new bool[32];
 				CurveX.EnumConditions[(int)Modes.Interpolate] = true;
 				CurveX.EnumConditions[(int)Modes.ToDestination] = true;
+				CurveY.EnumConditions = new bool[32];
 				CurveY.EnumConditionPropertyName = "Mode";
 				CurveY.EnumConditions[(int)Modes.Interpolate] = true;
 				CurveY.EnumConditions[(int)Modes.ToDestination] = true;

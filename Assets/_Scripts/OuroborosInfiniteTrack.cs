@@ -127,8 +127,6 @@ namespace FluffyUnderware.Curvy.Controllers
         [SerializeField]
         private MonoBehaviour playerMovement; // Add this field
 
-        private LoadingScreen loadingScreen;
-
         public void OnSplineReady()
         {
             isSplineReady = true;
@@ -160,10 +158,6 @@ namespace FluffyUnderware.Curvy.Controllers
 
         void Start()
         {
-            // Create loading screen
-            GameObject loadingObj = new GameObject("LoadingScreen");
-            loadingScreen = loadingObj.AddComponent<LoadingScreen>();
-            
             StartCoroutine(InitializeAsync());
         }
 
@@ -177,12 +171,6 @@ namespace FluffyUnderware.Curvy.Controllers
 
             FindAndAssignController();
             yield return StartCoroutine(ProgressiveSetup());
-            
-            // Start fade out after initialization is complete
-            if (loadingScreen != null)
-            {
-                loadingScreen.StartFadeOut();
-            }
             
             OnSplineReady();
         }

@@ -350,14 +350,10 @@ namespace MoreMountains.Feedbacks
 			}
 
 			// set final position
-			if (NormalPlayDirection)
-			{
-				SetPosition(movingObject.transform, pointB);    
-			}
-			else
-			{
-				SetPosition(movingObject.transform, pointA);
-			}
+			float finalTime = NormalPlayDirection ? 1f : 0f;
+			float finalCurveValue = MMTween.Tween(finalTime, 0f, 1f, 0f, 1f, tweenType);
+			SetPosition(movingObject.transform, Vector3.LerpUnclamped(pointA, pointB, finalCurveValue));
+			
 			_coroutine = null;
 			IsPlaying = false;
 			yield break;
@@ -464,6 +460,7 @@ namespace MoreMountains.Feedbacks
 			if (string.IsNullOrEmpty(AnimatePositionTweenX.ConditionPropertyName))
 			{
 				AnimatePositionTween.EnumConditionPropertyName = "Mode";
+				AnimatePositionTween.EnumConditions = new bool[32];
 				AnimatePositionTween.EnumConditions[(int)Modes.AtoB] = true;
 				AnimatePositionTween.EnumConditions[(int)Modes.ToDestination] = true;
 				AnimatePositionTweenX.ConditionPropertyName = "AnimateX";

@@ -198,7 +198,7 @@ namespace MoreMountains.Feedbacks
 		protected override void CustomInitialization(MMF_Player owner)
 		{
 			base.CustomInitialization(owner);
-			if (PlayMethod == PlayMethods.Cached)
+			if ((PlayMethod == PlayMethods.Cached) && (_cachedAudioSource == null))
 			{
 				_cachedAudioSource = CreateAudioSource(owner.gameObject, "CachedFeedbackAudioSource");
 			}

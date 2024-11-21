@@ -162,6 +162,7 @@ namespace MoreMountains.Feedbacks
 			{
 				TimescaleLerpCurve.EnumConditionPropertyName = "TimescaleLerpMode";
 				TimescaleLerpCurveOnReset.EnumConditionPropertyName = "TimescaleLerpMode";
+				TimescaleLerpCurve.EnumConditions = new bool[32];
 			}
 			if (TimescaleLerpCurve.EnumConditions[(int)MMTimeScaleLerpModes.Duration] == false)
 			{

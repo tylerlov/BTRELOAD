@@ -301,8 +301,11 @@ namespace MoreMountains.Tools
 			Component[] components = viewData._TargetGameObject.GetComponents(typeof(Component));
 			for(int i = 0; i < components.Length; i++)
 			{
-				viewData._componentList.Add(components[i]);
-				tempComponentsNameList.Add(i + ". " + components[i].GetType().Name);
+				if (components[i] != null)
+				{
+					viewData._componentList.Add(components[i]);
+					tempComponentsNameList.Add(i + ". " + components[i].GetType().Name);	
+				}
 			}
 			viewData._componentNames = tempComponentsNameList.ToArray();
 		}

@@ -91,6 +91,19 @@ namespace MoreMountains.Tools
 			emitter.Level = returnValue;
 			return returnValue;
 		}
+		
+		/// <summary>
+		/// Gets the level based on the target receiver values
+		/// </summary>
+		/// <param name="receiver"></param>
+		/// <param name="property"></param>
+		/// <returns></returns>
+		public override float GetLevel(MMPropertyReceiver receiver, MMProperty property)
+		{
+			float returnValue = GetValueOptimized(property);
+			returnValue = MMMaths.Remap(returnValue, receiver.IntRemapZero, receiver.IntRemapOne, 0f, 1f);
+			return returnValue;
+		}
 
 		/// <summary>
 		/// Sets the specified level

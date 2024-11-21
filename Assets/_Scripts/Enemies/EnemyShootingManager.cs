@@ -291,6 +291,7 @@ public class EnemyShootingManager : MonoBehaviour
         while (shootingQueue.Count > 0)
         {
             int batchCount = Mathf.Min(SHOOT_BATCH_SIZE, shootingQueue.Count);
+            Vector3[] shooterPositions = new Vector3[batchCount];
             
             for (int i = 0; i < batchCount; i++)
             {
@@ -299,7 +300,11 @@ public class EnemyShootingManager : MonoBehaviour
                 var shooter = shootingQueue.Dequeue();
                 try
                 {
-                    shooter?.Shoot();
+                    if (shooter != null)
+                    {
+                        shooterPositions[i] = shooter.transform.position;
+                        shooter.Shoot();
+                    }
                 }
                 catch (System.Exception e)
                 {
@@ -307,6 +312,7 @@ public class EnemyShootingManager : MonoBehaviour
                 }
             }
 
+            ProjectileAudioManager.Instance?.PlayGroupProjectileSound(shooterPositions);
             yield return new WaitForEndOfFrame();
         }
 

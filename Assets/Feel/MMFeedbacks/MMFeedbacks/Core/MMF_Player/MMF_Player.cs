@@ -798,7 +798,6 @@ namespace MoreMountains.Feedbacks
 				}    
 			}
 			IsPlaying = false;
-			StopAllCoroutines();
 		}
         
 		#endregion 
@@ -880,8 +879,7 @@ namespace MoreMountains.Feedbacks
 		}
 
 		/// <summary>
-		/// Pauses execution of a sequence, which can then be resumed by calling ResumeFeedbacks()
-		/// Note that this doesn't stop feedbacks, by design, but in most cases you'll probably want to call StopFeedbacks() first
+		/// Restores the initial state of this player, resetting its feedbacks target values to their initial values
 		/// </summary>
 		public virtual void RestoreInitialValues()
 		{

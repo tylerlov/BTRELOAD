@@ -392,6 +392,7 @@ namespace MoreMountains.Feedbacks
 				AnimateRotationTweenY.ConditionPropertyName = "AnimateY";
 				AnimateRotationTweenZ.ConditionPropertyName = "AnimateZ";
 				ToDestinationTween.EnumConditionPropertyName = "Mode";
+				ToDestinationTween.EnumConditions = new bool[32];
 				ToDestinationTween.EnumConditions[(int)Modes.ToDestination] = true;
 			}
 		}

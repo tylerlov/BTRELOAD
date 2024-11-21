@@ -87,6 +87,13 @@ namespace MoreMountains.Tools
 			emitter.Level = returnValue;
 			return returnValue;
 		}
+		
+		public override float GetLevel(MMPropertyReceiver receiver, MMProperty property)
+		{
+			bool boolValue = GetValueOptimized(property);
+			float returnValue = (boolValue == true) ? 1f : 0f;
+			return returnValue;
+		}
 
 		/// <summary>
 		/// Set the level (more than the link's Threshold > true, less > false)

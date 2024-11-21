@@ -236,6 +236,7 @@ namespace MoreMountains.Feedbacks
 			if (string.IsNullOrEmpty(Curve.EnumConditionPropertyName))
 			{
 				Curve.EnumConditionPropertyName = "AlphaMode";
+				Curve.EnumConditions = new bool[32];
 				Curve.EnumConditions[(int)AlphaModes.Interpolate] = true;
 				Curve.EnumConditions[(int)AlphaModes.ToDestination] = true;
 			}

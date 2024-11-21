@@ -80,7 +80,10 @@ namespace MoreMountains.Tools
 				if (sourcePropertyValue != null)
 				{
 					SerializedProperty enumProperty = property.FindPropertyRelative("EnumConditions");
-					return enumProperty.GetArrayElementAtIndex(sourcePropertyValue.enumValueIndex).boolValue;
+					if (enumProperty.arraySize > sourcePropertyValue.enumValueIndex)
+					{
+						return enumProperty.GetArrayElementAtIndex(sourcePropertyValue.enumValueIndex).boolValue;	
+					}
 				}
 			}
 

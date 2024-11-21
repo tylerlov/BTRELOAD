@@ -221,6 +221,7 @@ namespace MoreMountains.Feedbacks
 			if (string.IsNullOrEmpty(DilateCurve.EnumConditionPropertyName))
 			{
 				DilateCurve.EnumConditionPropertyName = "Mode";
+				DilateCurve.EnumConditions = new bool[32];
 				DilateCurve.EnumConditions[(int)MMFeedbackBase.Modes.OverTime] = true;
 			}
 		}

@@ -256,12 +256,15 @@
 .mm-feedbacks-list-empty { /* custom empty list label */
     padding: 10px;    
     flex-direction: row;
+    flex-wrap: wrap;
 }
 
 .mm-empty-list-image { /* custom empty list image */
     width: 75px;
+    min-width: 75px;
     height: 75px;
     margin: 0 auto;
+    flex-shrink: 0;
 }
 
 .mm-feedbacks-list-empty Label { /* custom empty list label */
@@ -269,6 +272,7 @@
     padding: 10px;
     flex-grow: 1;
     white-space: normal;
+    flex-shrink: 1;
 }
 
 .mm-feedback-progress-line-container { /* progress line */

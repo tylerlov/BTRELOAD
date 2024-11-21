@@ -1460,6 +1460,7 @@ namespace MoreMountains.Tools
 			public static GUIStyle verticalLabel;
 			public static GUIContent expandButton;
 			public static GUIContent collapseButton;
+			public static Sprite expandIcon;
 
 			static Style() {
 
@@ -1477,7 +1478,7 @@ namespace MoreMountains.Tools
 				boxBackground = new GUIStyle("RL Background");
 				boxBackground.border = new RectOffset(6, 3, 3, 6);
 				preButton = new GUIStyle("RL FooterButton");
-				expandButton = EditorGUIUtility.IconContent("winbtn_win_max");
+				expandButton = EditorGUIUtility.IconContent("Outline Icon");
 				collapseButton = EditorGUIUtility.IconContent("winbtn_win_min");
 			}
 		}

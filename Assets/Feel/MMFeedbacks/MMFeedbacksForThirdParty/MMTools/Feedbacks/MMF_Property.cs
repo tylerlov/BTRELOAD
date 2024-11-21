@@ -111,7 +111,7 @@ namespace MoreMountains.Feedbacks
 		/// </summary>
 		protected virtual void GetInitialIntensity()
 		{
-			_initialIntensity = Target.Level;
+			_initialIntensity = Target.GetLevel();
 		}
 
 		/// <summary>
@@ -164,7 +164,7 @@ namespace MoreMountains.Feedbacks
 		protected virtual IEnumerator ToDestinationSequence(float intensityMultiplier)
 		{
 			float journey = NormalPlayDirection ? 0f : FeedbackDuration;
-			float initialValue = Target.Level;
+			float initialValue = Target.GetLevel();
 			float destinationValue = ToDestinationLevel;
 
 			if (RelativeValues)
@@ -299,6 +299,7 @@ namespace MoreMountains.Feedbacks
 			if (string.IsNullOrEmpty(LevelCurve.EnumConditionPropertyName))
 			{
 				LevelCurve.EnumConditionPropertyName = "Mode";
+				LevelCurve.EnumConditions = new bool[32];
 				LevelCurve.EnumConditions[(int)Modes.OverTime] = true;
 				LevelCurve.EnumConditions[(int)Modes.ToDestination] = true;
 			}

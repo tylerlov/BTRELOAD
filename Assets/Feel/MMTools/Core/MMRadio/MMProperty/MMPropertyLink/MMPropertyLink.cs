@@ -38,6 +38,12 @@ namespace MoreMountains.Tools
 		{
 			return 0f;
 		}
+		
+		
+		public virtual float GetLevel(MMPropertyReceiver receiver, MMProperty property)
+		{
+			return 0f;
+		}
 
 		/// <summary>
 		/// Sets the property's level, float normalized, caching the operation if possible

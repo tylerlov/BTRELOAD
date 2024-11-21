@@ -450,5 +450,41 @@ namespace MoreMountains.Tools
 			}
 			return Color.Lerp(originalColor, resultColor, lerpAmount);
 		}
+		
+		public static Gradient LerpGradients(Gradient a, Gradient b, float t) 
+		{
+			Gradient result = new Gradient();
+			
+			GradientColorKey[] colorKeysA = a.colorKeys;
+			GradientColorKey[] colorKeysB = b.colorKeys;
+			int colorKeyCount = Mathf.Max(colorKeysA.Length, colorKeysB.Length);
+
+			GradientColorKey[] resultColorKeys = new GradientColorKey[colorKeyCount];
+
+			for (int i = 0; i < colorKeyCount; i++)
+			{
+				float time = i / (colorKeyCount - 1f); 
+				Color colorA = a.Evaluate(time);
+				Color colorB = b.Evaluate(time);
+				resultColorKeys[i] = new GradientColorKey(Color.Lerp(colorA, colorB, t), time);
+			}
+
+			GradientAlphaKey[] alphaKeysA = a.alphaKeys;
+			GradientAlphaKey[] alphaKeysB = b.alphaKeys;
+			int alphaKeyCount = Mathf.Max(alphaKeysA.Length, alphaKeysB.Length);
+
+			GradientAlphaKey[] resultAlphaKeys = new GradientAlphaKey[alphaKeyCount];
+
+			for (int i = 0; i < alphaKeyCount; i++)
+			{
+				float time = i / (alphaKeyCount - 1f);
+				float alphaA = a.Evaluate(time).a;
+				float alphaB = b.Evaluate(time).a;
+				resultAlphaKeys[i] = new GradientAlphaKey(Mathf.Lerp(alphaA, alphaB, t), time);
+			}
+
+			result.SetKeys(resultColorKeys, resultAlphaKeys);
+			return result;
+		}
 	}
 }

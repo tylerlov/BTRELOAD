@@ -208,6 +208,7 @@ namespace MoreMountains.Feedbacks
 			if (string.IsNullOrEmpty(SoftnessCurve.EnumConditionPropertyName))
 			{
 				SoftnessCurve.EnumConditionPropertyName = "Mode";
+				SoftnessCurve.EnumConditions = new bool[32];
 				SoftnessCurve.EnumConditions[(int)MMFeedbackBase.Modes.OverTime] = true;
 			}
 		}

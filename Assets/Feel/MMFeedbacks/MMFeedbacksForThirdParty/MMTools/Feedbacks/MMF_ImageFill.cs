@@ -230,6 +230,7 @@ namespace MoreMountains.Feedbacks
 			if (string.IsNullOrEmpty(Curve.EnumConditionPropertyName))
 			{
 				Curve.EnumConditionPropertyName = "Mode";
+				Curve.EnumConditions = new bool[32];
 				Curve.EnumConditions[(int)Modes.OverTime] = true;
 				Curve.EnumConditions[(int)Modes.ToDestination] = true;
 			}

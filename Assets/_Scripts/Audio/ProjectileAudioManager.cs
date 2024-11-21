@@ -12,6 +12,9 @@ public class ProjectileAudioManager : MonoBehaviour
     [SerializeField]
     private EventReference playerImpactSoundEvent;
         
+    [SerializeField]
+    private EventReference groupProjectileSoundEvent;
+    
     private const float MAX_AUDIO_DISTANCE_SQR = 2500f;
     private const float UPDATE_INTERVAL = 0.1f;
     private const float DISTANCE_CULLING_CHECK_INTERVAL = 0.5f;
@@ -56,33 +59,43 @@ public class ProjectileAudioManager : MonoBehaviour
         volumeCache = new float[MAX_CONCURRENT_SOUNDS];
         activeCount = 0;
 
-        if (playerImpactSoundEvent.IsNull)
+        if (groupProjectileSoundEvent.IsNull)
         {
             isSoundEnabled = false;
             return;
         }
 
-        try
-        {
-            if (!oneShotSoundEvents.ContainsKey(playerImpactSoundEvent.Path))
-            {
-                oneShotSoundEvents[playerImpactSoundEvent.Path] = playerImpactSoundEvent;
-            }
-            if (!oneShotSoundEvents.ContainsKey(playerImpactSoundEvent.Path))
-            {
-                oneShotSoundEvents[playerImpactSoundEvent.Path] = playerImpactSoundEvent;
-            }
-        }
-        catch (System.Exception)
-        {
-            isSoundEnabled = false;
-        }
+        eventPool = new ObjectPool<EventInstance>(
+            createFunc: () => RuntimeManager.CreateInstance(groupProjectileSoundEvent),
+            actionOnGet: instance => {
+                instance.start();
+                instance.setVolume(0f);
+            },
+            actionOnRelease: instance => {
+                if (instance.isValid())
+                {
+                    instance.stop(FMOD.Studio.STOP_MODE.IMMEDIATE);
+                    instance.setVolume(0f);
+                }
+            },
+            actionOnDestroy: instance => {
+                if (instance.isValid())
+                {
+                    instance.stop(FMOD.Studio.STOP_MODE.IMMEDIATE);
+                    instance.release();
+                }
+            },
+            defaultCapacity: MAX_CONCURRENT_SOUNDS
+        );
+
+        isSoundEnabled = true;
     }
 
     private void Start()
     {
         playerTransform = Camera.main.transform;
         lastPlayerPosition = playerTransform.position;
+        isSoundEnabled = !playerImpactSoundEvent.IsNull && !groupProjectileSoundEvent.IsNull;
     }
 
     private void Update()
@@ -255,23 +268,34 @@ public class ProjectileAudioManager : MonoBehaviour
 
     public void PlayPlayerImpactSound(Vector3 position)
     {
-        Debug.Log("Playing player impact sound at position: " + position);
-
-        if (playerImpactSoundEvent.IsNull)
-        {
-            Debug.LogError("Player impact sound event is null.");
-            return;
-        }
+        if (!isSoundEnabled) return;
 
         EventInstance instance = RuntimeManager.CreateInstance(playerImpactSoundEvent);
         instance.set3DAttributes(RuntimeUtils.To3DAttributes(position));
         instance.start();
-        instance.release(); // Release the instance immediately after starting
+        instance.release();
     }
 
     public void PlayEnemyImpactSound(Vector3 position)
     {
         PlayOneShotSound(playerImpactSoundEvent.Path, position);
+    }
+
+    public void PlayGroupProjectileSound(Vector3[] shooterPositions)
+    {
+        if (!isSoundEnabled || shooterPositions == null || shooterPositions.Length == 0) return;
+
+        Vector3 averagePosition = Vector3.zero;
+        foreach (var position in shooterPositions)
+        {
+            averagePosition += position;
+        }
+        averagePosition /= shooterPositions.Length;
+
+        EventInstance instance = RuntimeManager.CreateInstance(groupProjectileSoundEvent);
+        instance.set3DAttributes(RuntimeUtils.To3DAttributes(averagePosition));
+        instance.start();
+        instance.release();
     }
 
     private void OnDestroy()

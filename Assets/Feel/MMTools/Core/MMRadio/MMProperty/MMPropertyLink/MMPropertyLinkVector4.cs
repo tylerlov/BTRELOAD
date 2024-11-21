@@ -102,6 +102,35 @@ namespace MoreMountains.Tools
 			emitter.Level = returnValue;
 			return returnValue;
 		}
+		
+		public override float GetLevel(MMPropertyReceiver receiver, MMProperty property)
+		{
+			_vector4 = _getterSetterInitialized ? GetVector4Delegate() : (Vector4)GetPropertyValue(property);
+
+			float newValue = 0f;
+
+			if (receiver.ModifyX)
+			{
+				newValue = _vector4.x;
+			}
+			else if (receiver.ModifyY)
+			{
+				newValue = _vector4.y;
+			}
+			else if (receiver.ModifyZ)
+			{
+				newValue = _vector4.z;
+			}
+			else if (receiver.ModifyW)
+			{
+				newValue = _vector4.w;
+			}
+
+			float returnValue = newValue;
+			returnValue = MMMaths.Remap(returnValue, receiver.FloatRemapZero, receiver.FloatRemapOne, 0f, 1f);
+
+			return returnValue;
+		}
 
 		public override void SetLevel(MMPropertyReceiver receiver, MMProperty property, float level)
 		{

@@ -114,6 +114,10 @@ namespace MoreMountains.Feedbacks
 				{
 					item.TargetPlayer.PlayFeedbacks();
 					yield return WaitFor(item.TargetPlayer.TotalDuration);
+					while (item.TargetPlayer.IsPlaying)
+					{
+						yield return null;
+					}
 				} 
 				else 
 				{
