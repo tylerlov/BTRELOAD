@@ -1,110 +1,132 @@
 using UnityEngine;
-using UnityEngine.UI;
+using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
 using System.Threading.Tasks;
+using JPG.Universal;
+using PrimeTween;
 
 public class LoadingScreen : MonoBehaviour
 {
-    private RawImage transitionScreen;
-    private float transitionTime = 0.25f;
-    private bool initialized = false;
-    private Canvas canvas;
-    private Material transitionMaterial;
+    public static LoadingScreen Instance { get; private set; }
     
-    private static readonly int ShaderProgressParam = Shader.PropertyToID("_T");
-    private static readonly int ColorParam = Shader.PropertyToID("_Color");
-    private static readonly int DistortionParam = Shader.PropertyToID("_Distortion");
-    private static readonly int SpreadParam = Shader.PropertyToID("_Spread");
-    private static readonly int SplitsParam = Shader.PropertyToID("_Splits");
+    private const float TRANSITION_TIME = 1.2f;
+    private const float MAX_INTENSITY = 1f;
+    private const float MIN_INTENSITY = 0f;
     
-    void Awake()
-    {
-        DontDestroyOnLoad(gameObject);
-        InitializeLoadingScreen();
-    }
+    private JPG.Universal.JPG jpgEffect;
+    private Volume volume;
+    private bool initialized;
+    private float currentIntensity = MAX_INTENSITY;
+    private Tween currentTween;
 
-    private void InitializeLoadingScreen()
+    private void Awake()
     {
-        GameObject canvasObj = new GameObject("TransitionCanvas");
-        canvas = canvasObj.AddComponent<Canvas>();
-        canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-        canvas.sortingOrder = 32767;
-        
-        canvasObj.AddComponent<CanvasScaler>().uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-        canvasObj.transform.SetParent(transform);
-
-        transitionScreen = new GameObject("TransitionScreen").AddComponent<RawImage>();
-        transitionScreen.transform.SetParent(canvasObj.transform);
-        
-        if (TryCreateTransitionMaterial())
+        if (Instance == null)
         {
-            ConfigureTransitionScreen();
-            initialized = true;
-            DisableScreen();
+            Instance = this;
+            InitializeEffect();
+        }
+        else
+        {
+            Destroy(gameObject);
         }
     }
 
-    private bool TryCreateTransitionMaterial()
+    private void InitializeEffect()
     {
-        Shader shader = Shader.Find("TransitionsPlus/CrossWipe");
-        if (shader == null) return false;
+        Debug.Log("[LoadingScreen] Initializing effect...");
+        volume = GetComponentInParent<Volume>();
+        Debug.Log($"[LoadingScreen] Found Volume: {volume != null}");
         
-        transitionMaterial = new Material(shader);
-        transitionMaterial.SetFloat(DistortionParam, 0.5f);
-        transitionMaterial.SetFloat(SpreadParam, 32f);
-        transitionMaterial.SetFloat(SplitsParam, 16f);
-        transitionMaterial.SetColor(ColorParam, new Color(0.15f, 0f, 0f, 0.98f));
-        
-        transitionScreen.material = transitionMaterial;
-        return true;
-    }
-
-    private void ConfigureTransitionScreen()
-    {
-        RectTransform rt = transitionScreen.rectTransform;
-        rt.anchorMin = Vector2.zero;
-        rt.anchorMax = Vector2.one;
-        rt.sizeDelta = Vector2.zero;
-        rt.anchoredPosition = Vector2.zero;
-    }
-
-    private void DisableScreen()
-    {
-        transitionScreen.enabled = false;
-        canvas.enabled = false;
-    }
-
-    public async Task StartFadeIn()
-    {
-        if (!initialized) return;
-        transitionScreen.enabled = true;
-        canvas.enabled = true;
-        await TransitionEffect(0, 1);
+        if (volume != null && volume.profile.TryGet(out JPG.Universal.JPG effect))
+        {
+            jpgEffect = effect;
+            jpgEffect.EffectIntensity.Override(MAX_INTENSITY);
+            volume.enabled = true;
+            jpgEffect.active = true;
+            initialized = true;
+            Debug.Log($"[LoadingScreen] Successfully initialized JPG effect. Volume enabled: {volume.enabled}, Effect Active: {jpgEffect.active}, Intensity: {jpgEffect.EffectIntensity.value}");
+        }
+        else
+        {
+            Debug.LogError("[LoadingScreen] Failed to get JPG effect from Volume profile!");
+        }
     }
 
     public async Task StartFadeOut()
     {
-        if (!initialized) return;
-        await TransitionEffect(1, 0);
-        DisableScreen();
-    }
-
-    private async Task TransitionEffect(float startValue, float endValue)
-    {
-        float elapsedTime = 0;
-        transitionMaterial.SetFloat(ShaderProgressParam, startValue);
-        
-        while (elapsedTime < transitionTime)
+        if (!initialized || jpgEffect == null)
         {
-            elapsedTime += Time.unscaledDeltaTime;
-            transitionMaterial.SetFloat(ShaderProgressParam, Mathf.Lerp(startValue, endValue, elapsedTime / transitionTime));
-            await Task.Yield();
+            Debug.LogError($"[LoadingScreen] Cannot FadeOut - Initialized: {initialized}, Effect null: {jpgEffect == null}");
+            return;
         }
         
-        transitionMaterial.SetFloat(ShaderProgressParam, endValue);
+        Debug.Log($"[LoadingScreen] StartFadeOut called. Current: {currentIntensity}, Target: {MIN_INTENSITY}");
+        volume.enabled = true;
+        jpgEffect.active = true;
+        
+        currentTween.Stop();
+        
+        var tcs = new TaskCompletionSource<bool>();
+        
+        currentTween = Tween.Custom(
+            startValue: currentIntensity,
+            endValue: MIN_INTENSITY,
+            duration: TRANSITION_TIME,
+            onValueChange: intensity => {
+                jpgEffect.EffectIntensity.Override(intensity);
+                currentIntensity = intensity;
+            })
+            .OnComplete(() => {
+                currentIntensity = MIN_INTENSITY;
+                volume.enabled = false;
+                jpgEffect.active = false;
+                Debug.Log($"[LoadingScreen] FadeOut complete. Volume enabled: {volume.enabled}, Intensity: {currentIntensity}");
+                tcs.SetResult(true);
+            });
+        
+        await tcs.Task;
+    }
+
+    public async Task StartFadeIn()
+    {
+        if (!initialized || jpgEffect == null)
+        {
+            Debug.LogError($"[LoadingScreen] Cannot FadeIn - Initialized: {initialized}, Effect null: {jpgEffect == null}");
+            return;
+        }
+        
+        Debug.Log($"[LoadingScreen] StartFadeIn called. Current: {currentIntensity}, Target: {MAX_INTENSITY}");
+        volume.enabled = true;
+        jpgEffect.active = true;
+        
+        currentTween.Stop();
+        
+        var tcs = new TaskCompletionSource<bool>();
+        
+        currentTween = Tween.Custom(
+            startValue: currentIntensity,
+            endValue: MAX_INTENSITY,
+            duration: TRANSITION_TIME,
+            onValueChange: intensity => {
+                jpgEffect.EffectIntensity.Override(intensity);
+                currentIntensity = intensity;
+            })
+            .OnComplete(() => {
+                currentIntensity = MAX_INTENSITY;
+                Debug.Log($"[LoadingScreen] FadeIn complete. Volume enabled: {volume.enabled}, Intensity: {currentIntensity}");
+                tcs.SetResult(true);
+            });
+        
+        await tcs.Task;
     }
 
     private void OnDestroy()
     {
-        if (transitionMaterial != null) Destroy(transitionMaterial);
+        if (volume != null)
+        {
+            volume.enabled = false;
+        }
+        currentTween.Stop();
     }
 }

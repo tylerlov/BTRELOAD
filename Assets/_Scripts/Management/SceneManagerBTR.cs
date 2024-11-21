@@ -5,11 +5,14 @@ using PrimeTween;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using static AsyncOperationExtensions;
+using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
+using JPG.Universal;
 
 public class SceneManagerBTR : MonoBehaviour
 {
     public static SceneManagerBTR Instance { get; private set; }
-    private LoadingScreen loadingScreen;
+    [SerializeField] private Volume globalVolume;
 
     private void Awake()
     {
@@ -17,15 +20,6 @@ public class SceneManagerBTR : MonoBehaviour
         {
             Instance = this;
             DontDestroyOnLoad(gameObject);
-            
-            // Create loading screen immediately in Awake
-            if (loadingScreen == null)
-            {
-                Debug.Log("<color=cyan>[SceneManager] Creating loading screen in Awake</color>");
-                GameObject loadingObj = new GameObject("LoadingScreen");
-                loadingScreen = loadingObj.AddComponent<LoadingScreen>();
-                DontDestroyOnLoad(loadingObj);
-            }
         }
         else
         {
@@ -89,15 +83,6 @@ public class SceneManagerBTR : MonoBehaviour
 
     public async Task InitializeScenes()
     {
-        // Ensure loading screen exists before any scene loading
-        if (loadingScreen == null)
-        {
-            Debug.LogError("<color=red>[SceneManager] Loading screen missing during InitializeScenes!</color>");
-            GameObject loadingObj = new GameObject("LoadingScreen");
-            loadingScreen = loadingObj.AddComponent<LoadingScreen>();
-            DontDestroyOnLoad(loadingObj);
-        }
-
         await LoadBaseSceneAsync();
 
         if (!await TryUseOpenOuroborosSceneAsync())
@@ -126,26 +111,17 @@ public class SceneManagerBTR : MonoBehaviour
 
     public async Task LoadAdditiveSceneAsync(string sceneName)
     {
-        Debug.Log("<color=cyan>[SceneManager] Starting scene load</color>");
+        Debug.Log("[SceneManager] Starting additive scene load");
         
-        // Start fade in before unloading/loading
-        if (loadingScreen != null)
-        {
-            Debug.Log("<color=cyan>[SceneManager] Triggering fade in</color>");
-            await loadingScreen.StartFadeIn();
-        }
-        else
-        {
-            Debug.LogError("<color=red>[SceneManager] Loading screen is null!</color>");
-        }
-
         try
         {
             if (currentAdditiveScene.IsValid() && currentAdditiveScene.isLoaded)
             {
+                Debug.Log("[SceneManager] Unloading current additive scene");
                 await UnityEngine.SceneManagement.SceneManager.UnloadSceneAsync(currentAdditiveScene);
             }
 
+            Debug.Log($"[SceneManager] Loading new scene: {sceneName}");
             AsyncOperation asyncLoad = UnityEngine.SceneManagement.SceneManager.LoadSceneAsync(
                 sceneName,
                 LoadSceneMode.Additive
@@ -161,21 +137,14 @@ public class SceneManagerBTR : MonoBehaviour
             UnityEngine.SceneManagement.SceneManager.SetActiveScene(currentAdditiveScene);
             ScoreManager.Instance.CurrentSceneWaveCount = 0;
             OnSceneLoaded(currentAdditiveScene, LoadSceneMode.Additive);
+            
+            Debug.Log("[SceneManager] Scene loaded, starting fade out");
+            await LoadingScreen.Instance.StartFadeOut();
         }
         catch (System.Exception e)
         {
-            ConditionalDebug.LogError($"<color=red>[SCENE] Error loading additive scene {sceneName}: {e.Message}</color>");
             Debug.LogException(e);
             throw;
-        }
-        finally
-        {
-            // Fade out after scene is fully loaded
-            if (loadingScreen != null)
-            {
-                Debug.Log("<color=cyan>[SceneManager] Triggering fade out</color>");
-                await loadingScreen.StartFadeOut();
-            }
         }
     }
 
@@ -283,12 +252,6 @@ public class SceneManagerBTR : MonoBehaviour
 
         isTransitioning = true;
 
-        // Start fade in
-        if (loadingScreen != null)
-        {
-            await loadingScreen.StartFadeIn();
-        }
-
         try
         {
             await CleanupCurrentScene();
@@ -344,11 +307,6 @@ public class SceneManagerBTR : MonoBehaviour
         }
         finally
         {
-            // Start fade out
-            if (loadingScreen != null)
-            {
-                await loadingScreen.StartFadeOut();
-            }
             isTransitioning = false;
         }
     }
@@ -628,21 +586,33 @@ public class SceneManagerBTR : MonoBehaviour
 
         try 
         {
-            Task fadeInTask = loadingScreen?.StartFadeIn();
-            Task sceneChangeTask;
-
+            Debug.Log("[SceneManager] Starting scene transition sequence");
+            
+            // First fade to black
+            Debug.Log("[SceneManager] Starting fade in (to black)");
+            await LoadingScreen.Instance.StartFadeIn();
+            
+            // Then change scene
             if (forceNextScene || currentSectionIndex >= currentGroup.scenes[currentSceneIndex].songSections.Length - 1)
             {
-                sceneChangeTask = MoveToNextScene();
+                Debug.Log("[SceneManager] Moving to next scene");
+                await MoveToNextScene();
             }
             else
             {
+                Debug.Log("[SceneManager] Moving to next section");
                 MoveToNextSection();
-                sceneChangeTask = Task.CompletedTask;
             }
 
-            await Task.WhenAll(fadeInTask ?? Task.CompletedTask, sceneChangeTask);
-            await (loadingScreen?.StartFadeOut() ?? Task.CompletedTask);
+            // Finally fade from black
+            Debug.Log("[SceneManager] Starting fade out (from black)");
+            await LoadingScreen.Instance.StartFadeOut();
+            Debug.Log("[SceneManager] Scene transition sequence complete");
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError($"[SceneManager] Error during scene transition: {e}");
+            throw;
         }
         finally 
         {

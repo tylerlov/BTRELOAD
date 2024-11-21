@@ -229,9 +229,9 @@ public class ProjectileAudioManager : MonoBehaviour
 
     private void InitializeOneShotPool(string soundEvent)
     {
-        string eventPath = oneShotSoundEvents[soundEvent].Path;
+        var eventRef = oneShotSoundEvents[soundEvent];
         oneShotEventPools[soundEvent] = new ObjectPool<EventInstance>(
-            createFunc: () => RuntimeManager.CreateInstance(eventPath),
+            createFunc: () => RuntimeManager.CreateInstance(eventRef),
             actionOnGet: instance => instance.setVolume(1f),
             actionOnRelease: instance => {
                 if (instance.isValid())
@@ -278,7 +278,12 @@ public class ProjectileAudioManager : MonoBehaviour
 
     public void PlayEnemyImpactSound(Vector3 position)
     {
-        PlayOneShotSound(playerImpactSoundEvent.Path, position);
+        if (!isSoundEnabled) return;
+        
+        EventInstance instance = RuntimeManager.CreateInstance(playerImpactSoundEvent);
+        instance.set3DAttributes(RuntimeUtils.To3DAttributes(position));
+        instance.start();
+        instance.release();
     }
 
     public void PlayGroupProjectileSound(Vector3[] shooterPositions)
