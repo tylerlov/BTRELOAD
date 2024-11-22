@@ -497,11 +497,15 @@ public class ProjectileStateBased : MonoBehaviour
         currentState?.FixedUpdate(timeScale);
         _movement.UpdateMovement(timeScale);
 
-        lifetime -= deltaTime;
-        if (lifetime <= 0)
+         if (!isPlayerShot)
         {
-            Death();
+            lifetime -= Time.deltaTime * timeScale;
+            if (lifetime <= 0)
+            {
+                Death(false);
+            }
         }
+
     }
 
     public void SetClock(string clockKey)
