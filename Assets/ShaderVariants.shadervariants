@@ -8,6 +8,11 @@ ShaderVariantCollection:
   m_PrefabAsset: {fileID: 0}
   m_Name: ShaderVariants
   m_Shaders:
+  - first: {fileID: 0}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
   - first: {fileID: 10770, guid: 0000000000000000f000000000000000, type: 0}
     second:
       variants:
@@ -127,11 +132,6 @@ ShaderVariantCollection:
       variants:
       - keywords: 
         passType: 12
-  - first: {fileID: 4800000, guid: 0849e84e3d62649e8882e9d6f056a017, type: 3}
-    second:
-      variants:
-      - keywords: 
-        passType: 0
   - first: {fileID: 4800000, guid: 1121bb4e615ca3c48b214e79e841e823, type: 3}
     second:
       variants:
@@ -147,6 +147,15 @@ ShaderVariantCollection:
       variants:
       - keywords: 
         passType: 0
+  - first: {fileID: 4800000, guid: 03cbdd32a8958fe459d7b5edaae49ff7, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: 
+        passType: 8
+      - keywords: 
+        passType: 13
   - first: {fileID: 4800000, guid: 933532a4fcc9baf4fa0491de14d08ed7, type: 3}
     second:
       variants:
@@ -185,26 +194,31 @@ ShaderVariantCollection:
           _METALLICSPECGLOSSMAP _NORMALMAP _REFLECTION_PROBE_BLENDING _REFLECTION_PROBE_BOX_PROJECTION
           _SHADOWS_SOFT
         passType: 13
-  - first: {fileID: 4800000, guid: b7839dad95683814aa64166edc107ae2, type: 3}
+  - first: {fileID: 4800000, guid: 7b4df804bfdc6ec429d0ce9540fdfdf7, type: 3}
     second:
       variants:
       - keywords: 
+        passType: 8
+      - keywords: _ADDITIONAL_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS
         passType: 13
-      - keywords: _ADDITIONAL_LIGHT_SHADOWS _ALPHAPREMULTIPLY_ON _DISTORTION_ON _EMISSION
-          _FADING_ON _FORWARD_PLUS _MAIN_LIGHT_SHADOWS_CASCADE _RECEIVE_SHADOWS_OFF
-          _REFLECTION_PROBE_BLENDING _REFLECTION_PROBE_BOX_PROJECTION _SHADOWS_SOFT
-          _SOFTPARTICLES_ON _SURFACE_TYPE_TRANSPARENT
+      - keywords: _ADDITIONAL_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _SHADOWS_SOFT
         passType: 13
-  - first: {fileID: 4800000, guid: 68e6db2ebdc24f95958faec2be5558d6, type: 3}
+  - first: {fileID: 4800000, guid: 2a230514c860643f69b6a4d1871d3825, type: 3}
     second:
       variants:
-      - keywords: 
-        passType: 0
-  - first: {fileID: 4800000, guid: 36e335017ad71d54fbb10842863188ae, type: 3}
-    second:
-      variants:
-      - keywords: 
-        passType: 0
+      - keywords: _ALPHATEST_ON
+        passType: 8
+      - keywords: DR_RIM_ON SHADOWS_SHADOWMASK _ADDITIONAL_LIGHT_SHADOWS _ALPHATEST_ON
+          _DETAILMAPBLENDINGMODE_MULTIPLY _FORWARD_PLUS _LIGHT_LAYERS _MAIN_LIGHT_SHADOWS
+          _TEXTUREBLENDINGMODE_MULTIPLY
+        passType: 13
+      - keywords: DR_RIM_ON SHADOWS_SHADOWMASK _ADDITIONAL_LIGHT_SHADOWS _ALPHATEST_ON
+          _DETAILMAPBLENDINGMODE_MULTIPLY _FORWARD_PLUS _LIGHT_LAYERS _MAIN_LIGHT_SHADOWS_CASCADE
+          _SHADOWS_SOFT _TEXTUREBLENDINGMODE_MULTIPLY
+        passType: 13
+      - keywords: DR_RIM_ON _ADDITIONAL_LIGHT_SHADOWS _ALPHATEST_ON _DETAILMAPBLENDINGMODE_MULTIPLY
+          _FORWARD_PLUS _LIGHT_LAYERS _MAIN_LIGHT_SHADOWS_CASCADE _SHADOWS_SOFT _TEXTUREBLENDINGMODE_MULTIPLY
+        passType: 13
   - first: {fileID: 4800000, guid: 26e3fb68c360c334a8fbff798b01ade2, type: 3}
     second:
       variants:
@@ -215,6 +229,80 @@ ShaderVariantCollection:
       - keywords: _RIMENABLED_ON _RIMNOISECAENABLED_ON
         passType: 13
   - first: {fileID: 4800000, guid: dad6b0236f3fc4141b1bc6ae44e0d9a6, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 4800000, guid: 6c78a6dd468954643a87ebf0014bc305, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 4800000, guid: b7839dad95683814aa64166edc107ae2, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 13
+      - keywords: _ADDITIONAL_LIGHT_SHADOWS _ALPHAPREMULTIPLY_ON _DISTORTION_ON _EMISSION
+          _FADING_ON _FORWARD_PLUS _MAIN_LIGHT_SHADOWS_CASCADE _RECEIVE_SHADOWS_OFF
+          _REFLECTION_PROBE_BLENDING _REFLECTION_PROBE_BOX_PROJECTION _SHADOWS_SOFT
+          _SOFTPARTICLES_ON _SURFACE_TYPE_TRANSPARENT
+        passType: 13
+  - first: {fileID: 4800000, guid: 034c31a32e398ea429c30a5c48b261be, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 8
+      - keywords: SHADOWS_SHADOWMASK _ADDITIONAL_LIGHT_SHADOWS _LIGHT_LAYERS _MAIN_LIGHT_SHADOWS
+          _REFLECTION_PROBE_BLENDING _REFLECTION_PROBE_BOX_PROJECTION
+        passType: 13
+      - keywords: SHADOWS_SHADOWMASK _ADDITIONAL_LIGHT_SHADOWS _LIGHT_LAYERS _MAIN_LIGHT_SHADOWS_CASCADE
+          _REFLECTION_PROBE_BLENDING _REFLECTION_PROBE_BOX_PROJECTION _SHADOWS_SOFT
+        passType: 13
+      - keywords: _ADDITIONAL_LIGHT_SHADOWS _LIGHT_LAYERS _MAIN_LIGHT_SHADOWS_CASCADE
+          _REFLECTION_PROBE_BLENDING _REFLECTION_PROBE_BOX_PROJECTION _SHADOWS_SOFT
+        passType: 13
+  - first: {fileID: 4800000, guid: 68e6db2ebdc24f95958faec2be5558d6, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 4800000, guid: 6dad35c0b62e44c26ab244ad80deee1a, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 4800000, guid: 36e335017ad71d54fbb10842863188ae, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 4800000, guid: 8dd49cd8305cbae4f8c358c16965dbba, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 4800000, guid: a0f00a9427f52384abeeac4dfa055318, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 4800000, guid: 00ac8ff41ecbf314fa7c876036980861, type: 3}
+    second:
+      variants:
+      - keywords: _GRAYSCALE_ON _TYPE_BILLOW
+        passType: 0
+  - first: {fileID: 4800000, guid: aaa23196f850a9840b6a7f1eda6a1137, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 4800000, guid: 0849e84e3d62649e8882e9d6f056a017, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 4800000, guid: 20cf64477973022498e44b932e804288, type: 3}
     second:
       variants:
       - keywords: 
@@ -243,54 +331,6 @@ ShaderVariantCollection:
         passType: 13
       - keywords: _RIMENABLED_ON _RIMNOISECAENABLED_ON
         passType: 13
-  - first: {fileID: -6465566751694194690, guid: 3add2469248ff6f40906004fb3647029, type: 3}
-    second:
-      variants:
-      - keywords: 
-        passType: 0
-      - keywords: 
-        passType: 8
-      - keywords: 
-        passType: 13
-  - first: {fileID: 4800000, guid: 034c31a32e398ea429c30a5c48b261be, type: 3}
-    second:
-      variants:
-      - keywords: 
-        passType: 8
-      - keywords: SHADOWS_SHADOWMASK _ADDITIONAL_LIGHT_SHADOWS _LIGHT_LAYERS _MAIN_LIGHT_SHADOWS
-          _REFLECTION_PROBE_BLENDING _REFLECTION_PROBE_BOX_PROJECTION
-        passType: 13
-      - keywords: SHADOWS_SHADOWMASK _ADDITIONAL_LIGHT_SHADOWS _LIGHT_LAYERS _MAIN_LIGHT_SHADOWS_CASCADE
-          _REFLECTION_PROBE_BLENDING _REFLECTION_PROBE_BOX_PROJECTION _SHADOWS_SOFT
-        passType: 13
-      - keywords: _ADDITIONAL_LIGHT_SHADOWS _LIGHT_LAYERS _MAIN_LIGHT_SHADOWS_CASCADE
-          _REFLECTION_PROBE_BLENDING _REFLECTION_PROBE_BOX_PROJECTION _SHADOWS_SOFT
-        passType: 13
-  - first: {fileID: 4800000, guid: 2a230514c860643f69b6a4d1871d3825, type: 3}
-    second:
-      variants:
-      - keywords: _ALPHATEST_ON
-        passType: 8
-      - keywords: DR_RIM_ON SHADOWS_SHADOWMASK _ADDITIONAL_LIGHT_SHADOWS _ALPHATEST_ON
-          _DETAILMAPBLENDINGMODE_MULTIPLY _FORWARD_PLUS _LIGHT_LAYERS _MAIN_LIGHT_SHADOWS
-          _TEXTUREBLENDINGMODE_MULTIPLY
-        passType: 13
-      - keywords: DR_RIM_ON SHADOWS_SHADOWMASK _ADDITIONAL_LIGHT_SHADOWS _ALPHATEST_ON
-          _DETAILMAPBLENDINGMODE_MULTIPLY _FORWARD_PLUS _LIGHT_LAYERS _MAIN_LIGHT_SHADOWS_CASCADE
-          _SHADOWS_SOFT _TEXTUREBLENDINGMODE_MULTIPLY
-        passType: 13
-      - keywords: DR_RIM_ON _ADDITIONAL_LIGHT_SHADOWS _ALPHATEST_ON _DETAILMAPBLENDINGMODE_MULTIPLY
-          _FORWARD_PLUS _LIGHT_LAYERS _MAIN_LIGHT_SHADOWS_CASCADE _SHADOWS_SOFT _TEXTUREBLENDINGMODE_MULTIPLY
-        passType: 13
-  - first: {fileID: 4800000, guid: 03cbdd32a8958fe459d7b5edaae49ff7, type: 3}
-    second:
-      variants:
-      - keywords: 
-        passType: 0
-      - keywords: 
-        passType: 8
-      - keywords: 
-        passType: 13
   - first: {fileID: -6465566751694194690, guid: 0318a698b312a8f47b7558532a001050, type: 3}
     second:
       variants:
@@ -315,14 +355,40 @@ ShaderVariantCollection:
           _MAIN_LIGHT_SHADOWS_CASCADE _REFLECTION_PROBE_BLENDING _REFLECTION_PROBE_BOX_PROJECTION
           _SHADOWS_SOFT
         passType: 13
-  - first: {fileID: 4800000, guid: 7b4df804bfdc6ec429d0ce9540fdfdf7, type: 3}
+  - first: {fileID: -6465566751694194690, guid: e77111046b851ae47b57003f367ef054, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: 
+        passType: 8
+      - keywords: 
+        passType: 13
+  - first: {fileID: -6465566751694194690, guid: 479a3a5ebe2be224c9db1e0fd92977df, type: 3}
     second:
       variants:
       - keywords: 
         passType: 8
-      - keywords: _ADDITIONAL_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS
+      - keywords: 
         passType: 13
-      - keywords: _ADDITIONAL_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _SHADOWS_SOFT
+      - keywords: SHADOWS_SHADOWMASK _ADDITIONAL_LIGHT_SHADOWS _FORWARD_PLUS _LIGHT_LAYERS
+          _MAIN_LIGHT_SHADOWS _REFLECTION_PROBE_BLENDING _REFLECTION_PROBE_BOX_PROJECTION
+        passType: 13
+      - keywords: SHADOWS_SHADOWMASK _ADDITIONAL_LIGHT_SHADOWS _FORWARD_PLUS _LIGHT_LAYERS
+          _MAIN_LIGHT_SHADOWS_CASCADE _REFLECTION_PROBE_BLENDING _REFLECTION_PROBE_BOX_PROJECTION
+          _SHADOWS_SOFT
+        passType: 13
+      - keywords: _ADDITIONAL_LIGHT_SHADOWS _FORWARD_PLUS _LIGHT_LAYERS _MAIN_LIGHT_SHADOWS_CASCADE
+          _REFLECTION_PROBE_BLENDING _REFLECTION_PROBE_BOX_PROJECTION _SHADOWS_SOFT
+        passType: 13
+  - first: {fileID: -6465566751694194690, guid: 3add2469248ff6f40906004fb3647029, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: 
+        passType: 8
+      - keywords: 
         passType: 13
   - first: {fileID: -6465566751694194690, guid: 2ba5451f84cb8d142b2fd5c48e91de82, type: 3}
     second:
@@ -345,63 +411,6 @@ ShaderVariantCollection:
         passType: 13
       - keywords: _FORWARD_PLUS _MAIN_LIGHT_SHADOWS_CASCADE
         passType: 13
-  - first: {fileID: 4800000, guid: 8dd49cd8305cbae4f8c358c16965dbba, type: 3}
-    second:
-      variants:
-      - keywords: 
-        passType: 0
-  - first: {fileID: -6465566751694194690, guid: 479a3a5ebe2be224c9db1e0fd92977df, type: 3}
-    second:
-      variants:
-      - keywords: 
-        passType: 8
-      - keywords: 
-        passType: 13
-      - keywords: SHADOWS_SHADOWMASK _ADDITIONAL_LIGHT_SHADOWS _FORWARD_PLUS _LIGHT_LAYERS
-          _MAIN_LIGHT_SHADOWS _REFLECTION_PROBE_BLENDING _REFLECTION_PROBE_BOX_PROJECTION
-        passType: 13
-      - keywords: SHADOWS_SHADOWMASK _ADDITIONAL_LIGHT_SHADOWS _FORWARD_PLUS _LIGHT_LAYERS
-          _MAIN_LIGHT_SHADOWS_CASCADE _REFLECTION_PROBE_BLENDING _REFLECTION_PROBE_BOX_PROJECTION
-          _SHADOWS_SOFT
-        passType: 13
-      - keywords: _ADDITIONAL_LIGHT_SHADOWS _FORWARD_PLUS _LIGHT_LAYERS _MAIN_LIGHT_SHADOWS_CASCADE
-          _REFLECTION_PROBE_BLENDING _REFLECTION_PROBE_BOX_PROJECTION _SHADOWS_SOFT
-        passType: 13
-  - first: {fileID: 4800000, guid: afbd9f0fb1c22d1409403fdef158479f, type: 3}
-    second:
-      variants:
-      - keywords: 
-        passType: 0
-  - first: {fileID: 4800000, guid: a0f00a9427f52384abeeac4dfa055318, type: 3}
-    second:
-      variants:
-      - keywords: 
-        passType: 0
-  - first: {fileID: 4800000, guid: 00ac8ff41ecbf314fa7c876036980861, type: 3}
-    second:
-      variants:
-      - keywords: _GRAYSCALE_ON _TYPE_BILLOW
-        passType: 0
-  - first: {fileID: 4800000, guid: aaa23196f850a9840b6a7f1eda6a1137, type: 3}
-    second:
-      variants:
-      - keywords: 
-        passType: 0
-  - first: {fileID: 4800000, guid: 6c78a6dd468954643a87ebf0014bc305, type: 3}
-    second:
-      variants:
-      - keywords: 
-        passType: 0
-  - first: {fileID: 4800000, guid: 6dad35c0b62e44c26ab244ad80deee1a, type: 3}
-    second:
-      variants:
-      - keywords: 
-        passType: 0
-  - first: {fileID: 4800000, guid: 20cf64477973022498e44b932e804288, type: 3}
-    second:
-      variants:
-      - keywords: 
-        passType: 0
   - first: {fileID: 4800000, guid: 415d35c805efe4546aa9ca50de327d75, type: 3}
     second:
       variants:
@@ -418,13 +427,4 @@ ShaderVariantCollection:
       - keywords: 
         passType: 13
       - keywords: INSTANCING_ON
-        passType: 13
-  - first: {fileID: -6465566751694194690, guid: e77111046b851ae47b57003f367ef054, type: 3}
-    second:
-      variants:
-      - keywords: 
-        passType: 0
-      - keywords: 
-        passType: 8
-      - keywords: 
         passType: 13

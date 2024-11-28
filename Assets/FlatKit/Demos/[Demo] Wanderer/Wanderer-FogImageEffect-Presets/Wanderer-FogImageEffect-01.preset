@@ -9,8 +9,7 @@ Preset:
   m_Name: Wanderer-FogImageEffect-01
   m_TargetType:
     m_NativeTypeID: 114
-    m_ManagedTypePPtr: {fileID: 11500000, guid: 89e46102d1f1f47da978d0ce8423f4f9,
-      type: 3}
+    m_ManagedTypePPtr: {fileID: 0}
     m_ManagedTypeFallback: 
   m_Properties:
   - target: {fileID: 0}
@@ -481,3 +480,9 @@ Preset:
     propertyPath: material
     value: 
     objectReference: {fileID: 0}
+  m_ExcludedProperties: []
+  m_CoupledType:
+    m_NativeTypeID: 0
+    m_ManagedTypePPtr: {fileID: 0}
+    m_ManagedTypeFallback: 
+  m_CoupledProperties: []

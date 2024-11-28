@@ -8,28 +8,24 @@ ShaderVariantCollection:
   m_PrefabAsset: {fileID: 0}
   m_Name: GPUIShaderVariantCollection
   m_Shaders:
-  - first: {fileID: 4800000, guid: 8a4d727fcfc589e4bb076bd5279e5201, type: 3}
+  - first: {fileID: 4800000, guid: 1a6ceac7f4c639b4096c21f11e4e7a56, type: 3}
+    second:
+      variants: []
+  - first: {fileID: 4800000, guid: 86397d7b7e34f804a9783c3b05a29911, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: _EMISSION _NORMALMAP
+        passType: 0
+      - keywords: _NORMALMAP
+        passType: 0
+  - first: {fileID: 4800000, guid: b1a05ad601a72334d8529afd35a4e2c8, type: 3}
     second:
       variants:
       - keywords: 
         passType: 0
   - first: {fileID: 4800000, guid: a1fe6b00539636f49bae5f911c8ccc55, type: 3}
-    second:
-      variants:
-      - keywords: 
-        passType: 0
-  - first: {fileID: 4800000, guid: 1a6ceac7f4c639b4096c21f11e4e7a56, type: 3}
-    second:
-      variants: []
-  - first: {fileID: 4800000, guid: d52a38c4e70daf4449eaab298ba27ce6, type: 3}
-    second:
-      variants: []
-  - first: {fileID: 4800000, guid: 8c09ceafd07c22648a98a34fdfcbe766, type: 3}
-    second:
-      variants:
-      - keywords: 
-        passType: 0
-  - first: {fileID: 4800000, guid: b1a05ad601a72334d8529afd35a4e2c8, type: 3}
     second:
       variants:
       - keywords: 
@@ -43,17 +39,25 @@ ShaderVariantCollection:
         passType: 0
       - keywords: _NORMALMAP
         passType: 0
+  - first: {fileID: 4800000, guid: d52a38c4e70daf4449eaab298ba27ce6, type: 3}
+    second:
+      variants: []
+  - first: {fileID: 4800000, guid: 8a4d727fcfc589e4bb076bd5279e5201, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: 4800000, guid: 8c09ceafd07c22648a98a34fdfcbe766, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
   - first: {fileID: 4800000, guid: 998acd8de1cbc7540833e565fda1154d, type: 3}
     second:
       variants:
       - keywords: 
         passType: 0
   - first: {fileID: -6465566751694194690, guid: 01c3dafa029cb284398834f43260e8c5, type: 3}
-    second:
-      variants:
-      - keywords: 
-        passType: 0
-  - first: {fileID: 4800000, guid: 86397d7b7e34f804a9783c3b05a29911, type: 3}
     second:
       variants:
       - keywords: 

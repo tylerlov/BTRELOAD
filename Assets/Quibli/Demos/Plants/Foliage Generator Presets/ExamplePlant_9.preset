@@ -9,8 +9,7 @@ Preset:
   m_Name: ExamplePlant_9
   m_TargetType:
     m_NativeTypeID: 114
-    m_ManagedTypePPtr: {fileID: 11500000, guid: c122224900a334bd7b15e0923fe4ae28,
-      type: 3}
+    m_ManagedTypePPtr: {fileID: 0}
     m_ManagedTypeFallback: 
   m_Properties:
   - target: {fileID: 0}
@@ -28,8 +27,7 @@ Preset:
   - target: {fileID: 0}
     propertyPath: carrierMesh
     value: 
-    objectReference: {fileID: -33203620342132003, guid: f2122e17d56f947c89fe80899508821e,
-      type: 3}
+    objectReference: {fileID: -33203620342132003, guid: f2122e17d56f947c89fe80899508821e, type: 3}
   - target: {fileID: 0}
     propertyPath: particleMesh
     value: 
@@ -163,3 +161,8 @@ Preset:
     value: 0
     objectReference: {fileID: 0}
   m_ExcludedProperties: []
+  m_CoupledType:
+    m_NativeTypeID: 0
+    m_ManagedTypePPtr: {fileID: 0}
+    m_ManagedTypeFallback: 
+  m_CoupledProperties: []
