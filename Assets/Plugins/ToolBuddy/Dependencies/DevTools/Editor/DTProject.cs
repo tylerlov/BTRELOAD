@@ -5,7 +5,6 @@
 // http://www.fluffyunderware.com
 // =====================================================================
 
-using UnityEngine;
 using UnityEditor;
 using System.Collections.Generic;
 using System;
@@ -14,17 +13,21 @@ using FluffyUnderware.DevTools;
 
 namespace FluffyUnderware.DevToolsEditor
 {
-    public abstract class DTProject : IComparable
+    public abstract class DTProject : IComparable, IDisposable
     {
         public string Identifier { get; private set; }
         public string Version { get; private set; }
         public DTResource Resource { get; protected set; }
-        [Obsolete("Assumed to be always true")]
+
+        #region Toolbar settings
+
+        [JetBrains.Annotations.UsedImplicitly] [Obsolete("Assumed to be always true")]
         public bool ShowToolbarInAllSceneViews = false;
 
+        private static DTToolbarOrientation mTBOrientation = DTToolbarOrientation.Left;
         public DTToolbarOrientation ToolbarOrientation
         {
-            get { return mTBOrientation; }
+            get => mTBOrientation;
             set
             {
                 if (mTBOrientation != value)
@@ -35,14 +38,16 @@ namespace FluffyUnderware.DevToolsEditor
                         SetEditorPrefs("ToolbarOrientation", ToolbarOrientation);
                     }
                     else
-                        DTLog.LogError("[DevTools] Project " + this.GetType().Name + "missing identifier!");
+                        DTLog.LogError("[DevTools] Project " + GetType().Name + "missing identifier!");
                     DTToolbar.RecalcItemSize = true;
                 }
             }
         }
+
+        private static DTToolbarMode mTBMode = DTToolbarMode.Full;
         public DTToolbarMode ToolbarMode
         {
-            get { return mTBMode; }
+            get => mTBMode;
             set
             {
                 if (mTBMode != value)
@@ -53,17 +58,19 @@ namespace FluffyUnderware.DevToolsEditor
                         SetEditorPrefs("ToolbarMode", ToolbarMode);
                     }
                     else
-                        DTLog.LogError("[DevTools] Project " + this.GetType().Name + "missing identifier!");
+                        DTLog.LogError("[DevTools] Project " + GetType().Name + "missing identifier!");
                     DTToolbar.RecalcItemSize = true;
                 }
             }
         }
 
-        readonly Dictionary<string, EditorKeyBinding> AdditionalKeyBindings = new Dictionary<string, EditorKeyBinding>();
+        public DTToolbarMargins ToolbarMargins { get; protected set; } = new DTToolbarMargins();
+        public bool ShowMargins { get; protected set; }
+
+        #endregion
+
+        private readonly Dictionary<string, EditorKeyBinding> AdditionalKeyBindings = new Dictionary<string, EditorKeyBinding>();
         internal List<DTToolbarItem> ToolbarItems = new List<DTToolbarItem>();
-        
-        static DTToolbarOrientation mTBOrientation = DTToolbarOrientation.Left;
-        static DTToolbarMode mTBMode = DTToolbarMode.Full;
 
         protected DTProject(string identifier, string version)
         {
@@ -96,9 +103,11 @@ namespace FluffyUnderware.DevToolsEditor
                  
                 mTBMode=GetEditorPrefs("ToolbarMode", ToolbarMode);
                 mTBOrientation=GetEditorPrefs("ToolbarOrientation", ToolbarOrientation);
+                ToolbarMargins.LoadFromPreferences();
+                ShowMargins = GetEditorPrefs("ToolbarShowMargins", ShowMargins);
 
             } else
-                DTLog.LogError("[DevTools] Project "+this.GetType().Name+"missing identifier!");
+                DTLog.LogError("[DevTools] Project "+GetType().Name+"missing identifier!");
         }
 
         public virtual void SavePreferences()
@@ -108,8 +117,10 @@ namespace FluffyUnderware.DevToolsEditor
                 SetEditorPrefs("Version",Version);
                 SetEditorPrefs("ToolbarMode", ToolbarMode);
                 SetEditorPrefs("ToolbarOrientation", ToolbarOrientation);
+                SetEditorPrefs("ToolbarShowMargins", ShowMargins);
+                ToolbarMargins.SaveToPreferences();
             } else
-                DTLog.LogError("[DevTools] Project " + this.GetType().Name + "missing identifier!");
+                DTLog.LogError("[DevTools] Project " + GetType().Name + "missing identifier!");
         }
 
         public List<EditorKeyBinding> GetProjectBindings()
@@ -158,7 +169,7 @@ namespace FluffyUnderware.DevToolsEditor
             return true;
         }
 
-        void setKeyBindingFromPrefs(EditorKeyBinding binding, bool removePrefsIfEqual=true)
+        private void setKeyBindingFromPrefs(EditorKeyBinding binding, bool removePrefsIfEqual=true)
         {
             string newBindString = GetEditorPrefs(binding.Name, "");
             if (!string.IsNullOrEmpty(newBindString) ){
@@ -192,19 +203,13 @@ namespace FluffyUnderware.DevToolsEditor
         }
 
         public T GetEditorPrefs<T>(string key, T defaultValue)
-        {
-            return DT.GetEditorPrefs(Identifier + "." + key, defaultValue);
-        }
+            => DT.GetEditorPrefs(Identifier + "." + key, defaultValue);
 
         public string[] GetEditorPrefs(string key)
-        {
-            return DT.GetEditorPrefs(Identifier + "." + key);
-        }
+            => DT.GetEditorPrefs(Identifier + "." + key);
 
         public bool HasEditorPrefs(string key)
-        {
-            return EditorPrefs.HasKey(Identifier + "." + key);
-        }
+            => EditorPrefs.HasKey(Identifier + "." + key);
 
         public void DeleteEditorPrefs(string key)
         {
@@ -236,7 +241,17 @@ namespace FluffyUnderware.DevToolsEditor
             return Identifier.CompareTo(other.Identifier);
         }
 
-       
+        protected virtual void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+            }
+        }
 
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
     }
 }

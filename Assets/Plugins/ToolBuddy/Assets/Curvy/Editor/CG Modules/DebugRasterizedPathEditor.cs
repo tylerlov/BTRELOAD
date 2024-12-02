@@ -1,18 +1,16 @@
 // =====================================================================
-// Copyright 2013-2022 ToolBuddy
+// Copyright © 2013 ToolBuddy
 // All rights reserved
 // 
 // http://www.toolbuddy.net
 // =====================================================================
 
-using UnityEngine;
-using UnityEditor;
-using System.Collections.Generic;
-using System.Linq;
 using FluffyUnderware.Curvy;
 using FluffyUnderware.Curvy.Generator;
 using FluffyUnderware.Curvy.Generator.Modules;
 using FluffyUnderware.DevToolsEditor;
+using UnityEditor;
+using UnityEngine;
 
 namespace FluffyUnderware.CurvyEditor.Generator.Modules
 {
@@ -20,7 +18,6 @@ namespace FluffyUnderware.CurvyEditor.Generator.Modules
     [CustomEditor(typeof(DebugRasterizedPath))]
     public class DebugRasterizedPathEditor : CGModuleEditor<DebugRasterizedPath>
     {
-
         protected override void OnEnable()
         {
             base.OnEnable();
@@ -47,7 +44,10 @@ namespace FluffyUnderware.CurvyEditor.Generator.Modules
                         DTHandles.PushHandlesColor(gizmoOrientationColor);
 
                         for (int i = 0; i < path.Count; i++)
-                            Handles.DrawLine(path.Positions.Array[i], path.Positions.Array[i] + path.Directions.Array[i] * 2);
+                            Handles.DrawLine(
+                                path.Positions.Array[i],
+                                path.Positions.Array[i] + (path.Directions.Array[i] * 2)
+                            );
 
                         DTHandles.PopHandlesColor();
                     }
@@ -57,11 +57,15 @@ namespace FluffyUnderware.CurvyEditor.Generator.Modules
                         DTHandles.PushHandlesColor(gizmoTangentColor);
 
                         for (int i = 0; i < path.Count; i++)
-                            Handles.DrawLine(path.Positions.Array[i], path.Positions.Array[i] + path.Normals.Array[i] * 2);
+                            Handles.DrawLine(
+                                path.Positions.Array[i],
+                                path.Positions.Array[i] + (path.Normals.Array[i] * 2)
+                            );
 
                         DTHandles.PopHandlesColor();
                     }
                 }
+
                 if (isDisposable)
                     path.Dispose();
             }
@@ -71,9 +75,7 @@ namespace FluffyUnderware.CurvyEditor.Generator.Modules
         {
             CGPath path = Target.InPath.GetData<CGPath>(out bool isDisposable);
             if (path)
-            {
-                EditorGUILayout.LabelField("VertexCount: " + path.Count.ToString());
-            }
+                EditorGUILayout.LabelField("VertexCount: " + path.Count);
             if (isDisposable)
                 path.Dispose();
         }

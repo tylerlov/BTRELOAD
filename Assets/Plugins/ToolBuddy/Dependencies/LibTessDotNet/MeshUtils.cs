@@ -42,7 +42,7 @@ namespace FluffyUnderware.Curvy.ThirdParty.LibTessDotNet
 {
     public struct Vec3
     {
-        public readonly static Vec3 Zero = new Vec3();
+        public static readonly Vec3 Zero = new Vec3();
 
         public Real X, Y, Z;
 
@@ -102,9 +102,7 @@ namespace FluffyUnderware.Curvy.ThirdParty.LibTessDotNet
         }
 
         public override string ToString()
-        {
-            return string.Format("{0}, {1}, {2}", X, Y, Z);
-        }
+            => string.Format("{0}, {1}, {2}", X, Y, Z);
     }
 
     internal static class MeshUtils
@@ -215,10 +213,10 @@ namespace FluffyUnderware.Curvy.ThirdParty.LibTessDotNet
 
             public static EdgePair Create()
             {
-                var pair = new MeshUtils.EdgePair();
-                pair._e = MeshUtils.Edge.Create();
+                var pair = new EdgePair();
+                pair._e = Edge.Create();
                 pair._e._pair = pair;
-                pair._eSym = MeshUtils.Edge.Create();
+                pair._eSym = Edge.Create();
                 pair._eSym._pair = pair;
                 return pair;
             }
@@ -238,15 +236,31 @@ namespace FluffyUnderware.Curvy.ThirdParty.LibTessDotNet
             internal Tess.ActiveRegion _activeRegion;
             internal int _winding;
 
-            internal Face _Rface { get { return _Sym._Lface; } set { _Sym._Lface = value; } }
-            internal Vertex _Dst { get { return _Sym._Org; }  set { _Sym._Org = value; } }
+            internal Face _Rface { get => _Sym._Lface;
+                set => _Sym._Lface = value;
+            }
+            internal Vertex _Dst { get => _Sym._Org;
+                set => _Sym._Org = value;
+            }
 
-            internal Edge _Oprev { get { return _Sym._Lnext; } set { _Sym._Lnext = value; } }
-            internal Edge _Lprev { get { return _Onext._Sym; } set { _Onext._Sym = value; } }
-            internal Edge _Dprev { get { return _Lnext._Sym; } set { _Lnext._Sym = value; } }
-            internal Edge _Rprev { get { return _Sym._Onext; } set { _Sym._Onext = value; } }
-            internal Edge _Dnext { get { return _Rprev._Sym; } set { _Rprev._Sym = value; } }
-            internal Edge _Rnext { get { return _Oprev._Sym; } set { _Oprev._Sym = value; } }
+            internal Edge _Oprev { get => _Sym._Lnext;
+                set => _Sym._Lnext = value;
+            }
+            internal Edge _Lprev { get => _Onext._Sym;
+                set => _Onext._Sym = value;
+            }
+            internal Edge _Dprev { get => _Lnext._Sym;
+                set => _Lnext._Sym = value;
+            }
+            internal Edge _Rprev { get => _Sym._Onext;
+                set => _Sym._Onext = value;
+            }
+            internal Edge _Dnext { get => _Rprev._Sym;
+                set => _Rprev._Sym = value;
+            }
+            internal Edge _Rnext { get => _Oprev._Sym;
+                set => _Oprev._Sym = value;
+            }
 
             internal static void EnsureFirst(ref Edge e)
             {
@@ -337,7 +351,7 @@ namespace FluffyUnderware.Curvy.ThirdParty.LibTessDotNet
         /// </summary>
         public static void MakeVertex(Edge eOrig, Vertex vNext)
         {
-            var vNew = MeshUtils.Vertex.Create();
+            var vNew = Vertex.Create();
 
             // insert in circular doubly-linked list before vNext
             var vPrev = vNext._prev;
@@ -366,7 +380,7 @@ namespace FluffyUnderware.Curvy.ThirdParty.LibTessDotNet
         /// </summary>
         public static void MakeFace(Edge eOrig, Face fNext)
         {
-            var fNew = MeshUtils.Face.Create();
+            var fNew = Face.Create();
 
             // insert in circular doubly-linked list before fNext
             var fPrev = fNext._prev;

@@ -9,10 +9,8 @@ namespace FluffyUnderware.Curvy.ThirdParty.LibTessDotNet
 {
     public static class LibTessVector3Extension
     {
-        public static Vec3 Vec3(this Vector3 v)
-        {
-            return new Vec3() { X = v.x, Y = v.y, Z = v.z };
-        }
+        public static Vec3 Vec3(this Vector3 v) =>
+            new Vec3 { X = v.x, Y = v.y, Z = v.z };
 
         public static ContourVertex ContourVertex(this Vector3 v)
         {
@@ -26,10 +24,12 @@ namespace FluffyUnderware.Curvy.ThirdParty.LibTessDotNet
     [Obsolete("No more used in Curvy. Will get removed. Copy it if you still need it")]
     public static class LibTessV3Extension
     {
-        public static Vector3 Vector3(this Vec3 v)
-        {
-            return new Vector3(v.X, v.Y, v.Z);
-        }
+        public static Vector3 Vector3(this Vec3 v) =>
+            new Vector3(
+                v.X,
+                v.Y,
+                v.Z
+            );
     }
 
 
@@ -94,7 +94,7 @@ namespace FluffyUnderware.Curvy.ThirdParty.LibTessDotNet
         [Obsolete("No more used in Curvy. Will get removed. Copy it if you still need it")]
         public static void SetFromContourVertex(ref Vector3[] v3Array, ref ContourVertex[] cvArray)
         {
-            System.Array.Resize(ref v3Array, cvArray.Length);
+            Array.Resize(ref v3Array, cvArray.Length);
             for (int i = 0; i < v3Array.Length; i++)
             {
                 v3Array[i].x = cvArray[i].Position.X;
@@ -106,7 +106,7 @@ namespace FluffyUnderware.Curvy.ThirdParty.LibTessDotNet
         [Obsolete("No more used in Curvy. Will get removed. Copy it if you still need it")]
         public static void SetToContourVertex(ref ContourVertex[] cvArray, ref Vector3[] v3Array)
         {
-            System.Array.Resize(ref cvArray, v3Array.Length);
+            Array.Resize(ref cvArray, v3Array.Length);
             for (int i = 0; i < cvArray.Length; i++)
             {
                 cvArray[i].Position.X = v3Array[i].x;

@@ -17,10 +17,10 @@ namespace FluffyUnderware.DevTools
 
     public class DTObjectDump
     {
-        const int INDENTSPACES = 5;
-        string mIndent;
-        StringBuilder mSB;
-        object mObject;
+        private const int INDENTSPACES = 5;
+        private string mIndent;
+        private StringBuilder mSB;
+        private object mObject;
 
         public DTObjectDump(object o, int indent = 0)
         {
@@ -43,16 +43,14 @@ namespace FluffyUnderware.DevTools
         }
 
         public override string ToString()
-        {
-            return mSB.ToString();
-        }
+            => mSB.ToString();
 
-        void AppendHeader(string name)
+        private void AppendHeader(string name)
         {
             mSB.AppendLine(mIndent + "<b>---===| " + name + " |===---</b>\n");
         }
 
-        void AppendMember(MemberInfo info)
+        private void AppendMember(MemberInfo info)
         {
             Type type;
             string typeName;

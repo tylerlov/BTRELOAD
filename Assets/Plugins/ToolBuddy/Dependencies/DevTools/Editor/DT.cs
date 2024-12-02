@@ -20,7 +20,7 @@ namespace FluffyUnderware.DevToolsEditor
     [InitializeOnLoad]
     public static class DT
     {
-        const char editorPreferencesArraySeparator = ';';
+        private const char editorPreferencesArraySeparator = ';';
 
         public const string VERSION = "1.0.3";
         /// <summary>
@@ -31,13 +31,7 @@ namespace FluffyUnderware.DevToolsEditor
 
         public delegate void Callback();
 
-        public static List<DTProject> Projects
-        {
-            get
-            {
-                return mProjects.Values.ToList();
-            }
-        }
+        public static List<DTProject> Projects => mProjects.Values.ToList();
 
         public static DTProject Project(string identifier)
         {
@@ -52,11 +46,12 @@ namespace FluffyUnderware.DevToolsEditor
             return prj;
         }
 
-        static object mClipboardData;
-        static readonly Dictionary<Type, IDTClipboardHandler> mClipboardHandlers = new Dictionary<Type, IDTClipboardHandler>();
-        static readonly Dictionary<string, DTProject> mProjects = new Dictionary<string, DTProject>();
+        private static object mClipboardData;
+        private static readonly Dictionary<Type, IDTClipboardHandler> mClipboardHandlers =
+            new Dictionary<Type, IDTClipboardHandler>();
+        private static readonly Dictionary<string, DTProject> mProjects = new Dictionary<string, DTProject>();
 
-        static bool _compiling;
+        private static bool _compiling;
 
         static DT()
         {
@@ -68,9 +63,9 @@ namespace FluffyUnderware.DevToolsEditor
 
         public static void Clear()
         {
-            foreach (DTProject prj in DT.Projects)
+            foreach (DTProject prj in Projects)
                 prj.Clear();
-            DT.Projects.Clear();
+            Projects.Clear();
         }
 
         public static void ReInitialize(bool loadProjects = true)
@@ -82,19 +77,20 @@ namespace FluffyUnderware.DevToolsEditor
             HandleProjectsKeyBindings();
         }
 
-        static void delayedInitialize()
+        private static void delayedInitialize()
         {
             EditorApplication.update -= delayedInitialize;
             LoadPreferences();
             DTSelection.Initialize();
-            ReInitialize();
+            bool loadProjects = Projects.Count == 0;//do not reload projects if already loaded
+            ReInitialize(loadProjects);
             // Register Clipboard-Handlers
             RegisterClipboardType(typeof(Vector2), new DTVector2Clipboard());
             RegisterClipboardType(typeof(Vector3), new DTVector3Clipboard());
             RegisterClipboardType(typeof(AnimationCurve), new DTAnimationCurveClipboard());
         }
 
-        static void compileCheck()
+        private static void compileCheck()
         {
             if (!_compiling)
             {
@@ -162,8 +158,9 @@ namespace FluffyUnderware.DevToolsEditor
 
         #region ### Project Management ###
 
-        static void LoadProjects()
+        private static void LoadProjects()
         {
+            mProjects.ForEach(pair=>pair.Value.Dispose());
             mProjects.Clear();
             TypeCache.TypeCollection types = TypeCache.GetTypesDerivedFrom(typeof(DTProject));
             foreach (Type t in types)
@@ -173,7 +170,7 @@ namespace FluffyUnderware.DevToolsEditor
             }
         }
 
-        static void HandleProjectsKeyBindings()
+        private static void HandleProjectsKeyBindings()
         {
             foreach (DTProject prj in Projects)
                 if (!prj.CheckKeyBindingNamesAreUnique())
@@ -186,7 +183,7 @@ namespace FluffyUnderware.DevToolsEditor
 
         #region ### EditorPrefs-Helpers ###
 
-        static void LoadPreferences()
+        private static void LoadPreferences()
         {
             // Upgrade?
             string ver = GetEditorPrefs("FluffyUnderware.DevTools.Version", VERSION);
@@ -197,7 +194,7 @@ namespace FluffyUnderware.DevToolsEditor
             }
         }
 
-        static void SavePreferences()
+        private static void SavePreferences()
         {
             SetEditorPrefs("FluffyUnderware.DevTools.Version", VERSION);
         }
@@ -206,7 +203,7 @@ namespace FluffyUnderware.DevToolsEditor
         /// Add code to handle upgrading (delete old pref-keys etc...) here
         /// </summary>
         /// <param name="oldVersion">the version stored in the EditorPrefs</param>
-        static void UpgradeDevTools(string oldVersion)
+        private static void UpgradeDevTools(string oldVersion)
         {
             DTLog.Log("[DevTools] Upgrading settings from " + oldVersion + " to " + VERSION);
         }
@@ -220,7 +217,7 @@ namespace FluffyUnderware.DevToolsEditor
             }
             else if (tt.IsArray)
             {
-                var list = (IList)value;
+                IList list = (IList)value;
                 string[] array = new string[list.Count];
                 for (int i = 0; i < array.Length; i++)
                 {
@@ -257,7 +254,7 @@ namespace FluffyUnderware.DevToolsEditor
                     }
                     else if (tt.IsArray)
                     {
-                        throw new System.NotImplementedException();
+                        throw new NotImplementedException();
                     }
                     else if (tt == typeof(string))
                         return (T)(object)EditorPrefs.GetString(key, defaultValue.ToString());

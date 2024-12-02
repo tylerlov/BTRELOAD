@@ -1,13 +1,13 @@
 // =====================================================================
-// Copyright 2013-2022 ToolBuddy
+// Copyright © 2013 ToolBuddy
 // All rights reserved
 // 
 // http://www.toolbuddy.net
 // =====================================================================
 
-using UnityEngine;
-using System.Collections;
 using FluffyUnderware.DevTools;
+using JetBrains.Annotations;
+using UnityEngine;
 
 namespace FluffyUnderware.Curvy.Examples
 {
@@ -17,15 +17,17 @@ namespace FluffyUnderware.Curvy.Examples
         public Transform LookAt;
         public Transform MoveTo;
         public Transform RollTo;
-        [Positive]
-        public float ChaseTime=0.5f;
-        
 
-        Vector3 mVelocity;
-        Vector3 mRollVelocity;
+        [Positive]
+        public float ChaseTime = 0.5f;
+
+
+        private Vector3 mVelocity;
+        private Vector3 mRollVelocity;
 
 #if UNITY_EDITOR
-        void Update()
+        [UsedImplicitly]
+        private void Update()
         {
             if (!Application.isPlaying)
             {
@@ -33,8 +35,12 @@ namespace FluffyUnderware.Curvy.Examples
                     transform.position = MoveTo.position;
                 if (LookAt)
                 {
-                    if (!RollTo) transform.LookAt (LookAt);
-                    else transform.LookAt (LookAt, RollTo.up);
+                    if (!RollTo) transform.LookAt(LookAt);
+                    else
+                        transform.LookAt(
+                            LookAt,
+                            RollTo.up
+                        );
                 }
                 // if (RollTo)
                 //     transform.rotation = Quaternion.Euler (new Vector3 (transform.rotation.eulerAngles.x, transform.rotation.eulerAngles.y, RollTo.rotation.eulerAngles.z));
@@ -43,14 +49,29 @@ namespace FluffyUnderware.Curvy.Examples
 #endif
 
         // Update is called once per frame
-        void LateUpdate()
+        [UsedImplicitly]
+        private void LateUpdate()
         {
             if (MoveTo)
-                transform.position=Vector3.SmoothDamp(transform.position, MoveTo.position, ref mVelocity, ChaseTime);
+                transform.position = Vector3.SmoothDamp(
+                    transform.position,
+                    MoveTo.position,
+                    ref mVelocity,
+                    ChaseTime
+                );
             if (LookAt)
             {
-                if (!RollTo) transform.LookAt (LookAt);
-                else transform.LookAt (LookAt, Vector3.SmoothDamp(transform.up, RollTo.up, ref mRollVelocity, ChaseTime));
+                if (!RollTo) transform.LookAt(LookAt);
+                else
+                    transform.LookAt(
+                        LookAt,
+                        Vector3.SmoothDamp(
+                            transform.up,
+                            RollTo.up,
+                            ref mRollVelocity,
+                            ChaseTime
+                        )
+                    );
             }
             // if (RollTo)
             //     transform.rotation = Quaternion.Euler (new Vector3 (transform.rotation.eulerAngles.x, transform.rotation.eulerAngles.y, RollTo.rotation.eulerAngles.z));

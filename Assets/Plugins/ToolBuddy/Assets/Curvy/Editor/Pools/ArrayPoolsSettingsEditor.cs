@@ -1,13 +1,13 @@
 // =====================================================================
-// Copyright 2013-2022 ToolBuddy
+// Copyright © 2013 ToolBuddy
 // All rights reserved
 // 
 // http://www.toolbuddy.net
 // =====================================================================
 
-using System;
 using FluffyUnderware.Curvy.Generator;
 using FluffyUnderware.Curvy.Pools;
+using JetBrains.Annotations;
 using ToolBuddy.Pooling.Pools;
 using UnityEditor;
 using UnityEngine;
@@ -34,7 +34,8 @@ namespace FluffyUnderware.DevToolsEditor
         private SerializedProperty cgSpotCapacity;
         private SerializedProperty logAllocations;
 
-        void OnEnable()
+        [UsedImplicitly]
+        private void OnEnable()
         {
             vector2Capacity = serializedObject.FindProperty("vector2Capacity");
             vector3Capacity = serializedObject.FindProperty("vector3Capacity");
@@ -58,27 +59,45 @@ namespace FluffyUnderware.DevToolsEditor
             //              || CGSpotUsageData != ArrayPools.CGSpot.UsageData;
 
             EditorGUILayout.PropertyField(vector2Capacity);
-            DisplayUsageData(nameof(Vector2), Vector2UsageData = ArrayPools.Vector2.UsageData);
+            DisplayUsageData(
+                nameof(Vector2),
+                Vector2UsageData = ArrayPools.Vector2.UsageData
+            );
             EditorGUILayout.Space();
 
             EditorGUILayout.PropertyField(vector3Capacity);
-            DisplayUsageData(nameof(Vector3), Vector3UsageData = ArrayPools.Vector3.UsageData);
+            DisplayUsageData(
+                nameof(Vector3),
+                Vector3UsageData = ArrayPools.Vector3.UsageData
+            );
             EditorGUILayout.Space();
 
             EditorGUILayout.PropertyField(vector4Capacity);
-            DisplayUsageData(nameof(Vector4), Vector4UsageData = ArrayPools.Vector4.UsageData);
+            DisplayUsageData(
+                nameof(Vector4),
+                Vector4UsageData = ArrayPools.Vector4.UsageData
+            );
             EditorGUILayout.Space();
 
             EditorGUILayout.PropertyField(intCapacity);
-            DisplayUsageData("int", Int32UsageData = ArrayPools.Int32.UsageData);
+            DisplayUsageData(
+                "int",
+                Int32UsageData = ArrayPools.Int32.UsageData
+            );
             EditorGUILayout.Space();
 
             EditorGUILayout.PropertyField(floatCapacity);
-            DisplayUsageData("float", SingleUsageData = ArrayPools.Single.UsageData);
+            DisplayUsageData(
+                "float",
+                SingleUsageData = ArrayPools.Single.UsageData
+            );
             EditorGUILayout.Space();
 
             EditorGUILayout.PropertyField(cgSpotCapacity);
-            DisplayUsageData(nameof(CGSpot), CGSpotUsageData = ArrayPools.CGSpot.UsageData);
+            DisplayUsageData(
+                nameof(CGSpot),
+                CGSpotUsageData = ArrayPools.CGSpot.UsageData
+            );
             EditorGUILayout.Space();
 
             EditorGUILayout.PropertyField(logAllocations);
@@ -95,9 +114,13 @@ namespace FluffyUnderware.DevToolsEditor
             EditorGUILayout.LabelField("Available data:");
 
             EditorGUI.ProgressBar(
-                EditorGUILayout.GetControlRect(false, GUILayout.Height(20)),
+                EditorGUILayout.GetControlRect(
+                    false,
+                    GUILayout.Height(20)
+                ),
                 usageData.ElementsCount / (float)usageData.ElementsCapacity,
-                $"Elements: {usageData.ElementsCount:0,0} / {usageData.ElementsCapacity:0,0}\tArrays: {usageData.ArraysCount}");
+                $"Elements: {usageData.ElementsCount:0,0} / {usageData.ElementsCapacity:0,0}\tArrays: {usageData.ArraysCount}"
+            );
         }
     }
 }

@@ -48,7 +48,7 @@ public class DisablePlayerFeatures : MonoBehaviour
         if (reverseDirectionAction != null)
         {
             reverseDirectionAction.Disable();
-            Debug.Log("Reverse direction control disabled.");
+            ConditionalDebug.Log("Reverse direction control disabled.");
         }
     }
 
@@ -57,7 +57,7 @@ public class DisablePlayerFeatures : MonoBehaviour
         if (reverseDirectionAction != null)
         {
             reverseDirectionAction.Enable();
-            Debug.Log("Reverse direction control enabled.");
+            ConditionalDebug.Log("Reverse direction control enabled.");
         }
     }
 

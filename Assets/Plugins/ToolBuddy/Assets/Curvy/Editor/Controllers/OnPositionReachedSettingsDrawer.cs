@@ -1,5 +1,5 @@
 // =====================================================================
-// Copyright 2013-2022 ToolBuddy
+// Copyright © 2013 ToolBuddy
 // All rights reserved
 // 
 // http://www.toolbuddy.net
@@ -31,16 +31,22 @@ namespace FluffyUnderware.CurvyEditor.Controllers
                 {
                     int startIndex = property.propertyPath.LastIndexOf('[');
                     int endIndex = property.propertyPath.LastIndexOf(']');
-                    int index = Convert.ToInt32(property.propertyPath.Substring(startIndex + 1, endIndex - startIndex - 1));
+                    int index = Convert.ToInt32(
+                        property.propertyPath.Substring(
+                            startIndex + 1,
+                            endIndex - startIndex - 1
+                        )
+                    );
                     onPositionReachedSettings = ((List<OnPositionReachedSettings>)value)[index];
                 }
                 else
-                {
                     onPositionReachedSettings = (OnPositionReachedSettings)value;
-                }
             }
 
-            return GetPropertyHeight(property, onPositionReachedSettings);
+            return GetPropertyHeight(
+                property,
+                onPositionReachedSettings
+            );
         }
 
         public static float GetPropertyHeight(SerializedProperty property, OnPositionReachedSettings onPositionReachedSettings)
@@ -48,7 +54,12 @@ namespace FluffyUnderware.CurvyEditor.Controllers
             if (property.isExpanded == false)
                 return EditorGUIUtility.singleLineHeight;
 
-            return 190 + Math.Max(0, onPositionReachedSettings.Event.GetPersistentEventCount() - 1) * 47;
+            return 190
+            + (Math.Max(
+                   0,
+                   onPositionReachedSettings.Event.GetPersistentEventCount() - 1
+               )
+               * 47);
         }
 
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
@@ -57,15 +68,21 @@ namespace FluffyUnderware.CurvyEditor.Controllers
             SerializedProperty colorProperty = property.FindPropertyRelative(nameof(OnPositionReachedSettings.GizmoColor));
             SerializedProperty eventProperty = property.FindPropertyRelative(nameof(OnPositionReachedSettings.Event));
             SerializedProperty positionProperty = property.FindPropertyRelative(nameof(OnPositionReachedSettings.Position));
-            SerializedProperty positionModeProperty = property.FindPropertyRelative(nameof(OnPositionReachedSettings.PositionMode));
-            SerializedProperty triggeringDirectionsProperty = property.FindPropertyRelative(nameof(OnPositionReachedSettings.TriggeringDirections));
+            SerializedProperty positionModeProperty =
+                property.FindPropertyRelative(nameof(OnPositionReachedSettings.PositionMode));
+            SerializedProperty triggeringDirectionsProperty =
+                property.FindPropertyRelative(nameof(OnPositionReachedSettings.TriggeringDirections));
 
             float fieldHeight = EditorGUIUtility.singleLineHeight;
             float fieldMarginHeight = EditorGUIUtility.standardVerticalSpacing;
 
             // Using BeginProperty / EndProperty on the parent property means that
             // prefab override logic works on the entire property.
-            EditorGUI.BeginProperty(position, label, property);
+            EditorGUI.BeginProperty(
+                position,
+                label,
+                property
+            );
 
             string labelString;
             {
@@ -75,23 +92,32 @@ namespace FluffyUnderware.CurvyEditor.Controllers
                 {
                     string positionModeEnumName;
                     {
-                        bool positionModeParseSucceeded = Enum.TryParse(positionModeProperty.enumNames[positionModeProperty.enumValueIndex], out CurvyPositionMode positionMode);
-                        positionModeEnumName = positionModeParseSucceeded ? CurvyPositionModeDrawer.GetDisplayName(positionMode) : positionModeProperty.enumDisplayNames[positionModeProperty.enumValueIndex];
+                        bool positionModeParseSucceeded = Enum.TryParse(
+                            positionModeProperty.enumNames[positionModeProperty.enumValueIndex],
+                            out CurvyPositionMode positionMode
+                        );
+                        positionModeEnumName = positionModeParseSucceeded
+                            ? CurvyPositionModeDrawer.GetDisplayName(positionMode)
+                            : positionModeProperty.enumDisplayNames[positionModeProperty.enumValueIndex];
                     }
 
-                    labelString = $"{nameProperty.stringValue} (Position: {positionModeEnumName} {positionProperty.floatValue} - Direction: {triggeringDirectionsProperty.enumDisplayNames[triggeringDirectionsProperty.enumValueIndex]})";
+                    labelString =
+                        $"{nameProperty.stringValue} (Position: {positionModeEnumName} {positionProperty.floatValue} - Direction: {triggeringDirectionsProperty.enumDisplayNames[triggeringDirectionsProperty.enumValueIndex]})";
                 }
             }
             int indent = EditorGUI.indentLevel;
             EditorGUI.indentLevel = indent + 1;
 
             property.isExpanded = EditorGUI.Foldout(
-                new Rect(position.x,
+                new Rect(
+                    position.x,
                     position.y,
                     position.width,
-                    EditorGUIUtility.singleLineHeight),
+                    EditorGUIUtility.singleLineHeight
+                ),
                 property.isExpanded,
-                labelString);
+                labelString
+            );
 
             if (property.isExpanded)
             {
@@ -101,46 +127,79 @@ namespace FluffyUnderware.CurvyEditor.Controllers
 
                 yCoordinate += fieldHeight + fieldMarginHeight;
 
-                Rect nameRect = new Rect(position.x,
+                Rect nameRect = new Rect(
+                    position.x,
                     yCoordinate,
                     position.width - 75,
-                    fieldHeight);
-                Rect colorRect = new Rect(position.x + position.width - 70,
+                    fieldHeight
+                );
+                Rect colorRect = new Rect(
+                    (position.x + position.width) - 70,
                     yCoordinate,
                     70,
-                    fieldHeight);
+                    fieldHeight
+                );
 
                 yCoordinate += fieldHeight + fieldMarginHeight;
-                Rect positionRect = new Rect(position.x,
+                Rect positionRect = new Rect(
+                    position.x,
                     yCoordinate,
                     position.width - 115,
-                    fieldHeight);
-                Rect positionModeRect = new Rect(position.x + position.width - 110,
+                    fieldHeight
+                );
+                Rect positionModeRect = new Rect(
+                    (position.x + position.width) - 110,
                     yCoordinate,
                     110,
-                    fieldHeight);
+                    fieldHeight
+                );
 
                 yCoordinate += fieldHeight + fieldMarginHeight;
-                Rect directionRect = new Rect(position.x,
+                Rect directionRect = new Rect(
+                    position.x,
                     yCoordinate,
                     position.width,
-                    fieldHeight);
+                    fieldHeight
+                );
 
                 yCoordinate += fieldHeight + fieldMarginHeight;
-                Rect eventRect = new Rect(position.x,
+                Rect eventRect = new Rect(
+                    position.x,
                     yCoordinate,
                     position.width,
-                    position.height - 70);
+                    position.height - 70
+                );
                 eventRect = EditorGUI.IndentedRect(eventRect);
 
-                EditorGUI.PropertyField(nameRect, nameProperty);
-                EditorGUI.PropertyField(colorRect, colorProperty, GUIContent.none);
-                EditorGUI.PropertyField(eventRect, eventProperty, GUIContent.none);
-                EditorGUI.PropertyField(positionRect, positionProperty);
-                EditorGUI.PropertyField(positionModeRect, positionModeProperty, GUIContent.none);
-                EditorGUI.PropertyField(directionRect, triggeringDirectionsProperty);
-
+                EditorGUI.PropertyField(
+                    nameRect,
+                    nameProperty
+                );
+                EditorGUI.PropertyField(
+                    colorRect,
+                    colorProperty,
+                    GUIContent.none
+                );
+                EditorGUI.PropertyField(
+                    eventRect,
+                    eventProperty,
+                    GUIContent.none
+                );
+                EditorGUI.PropertyField(
+                    positionRect,
+                    positionProperty
+                );
+                EditorGUI.PropertyField(
+                    positionModeRect,
+                    positionModeProperty,
+                    GUIContent.none
+                );
+                EditorGUI.PropertyField(
+                    directionRect,
+                    triggeringDirectionsProperty
+                );
             }
+
             EditorGUI.indentLevel = indent;
 
 

@@ -36,14 +36,14 @@ public class LoadingScreen : MonoBehaviour
 
     private void InitializeEffect()
     {
-        Debug.Log($"[LoadingScreen] Initializing effect...");
+        ConditionalDebug.Log("Initializing effect...");
         volume = GetComponentInParent<Volume>();
         
         if (volume != null && volume.profile.TryGet(out JPG.Universal.JPG effect))
         {
             jpgEffect = effect;
             initialized = true;
-            Debug.Log($"[LoadingScreen] Successfully initialized JPG effect.");
+            ConditionalDebug.Log("Successfully initialized JPG effect.");
         }
         else
         {
@@ -59,7 +59,7 @@ public class LoadingScreen : MonoBehaviour
 
     public void InitializeForExistingScenes()
     {
-        Debug.Log("[LoadingScreen] Initializing for existing scenes (min intensity)");
+        ConditionalDebug.Log("[LoadingScreen] Initializing for existing scenes (min intensity)");
         SetInitialState(MIN_INTENSITY);
     }
 

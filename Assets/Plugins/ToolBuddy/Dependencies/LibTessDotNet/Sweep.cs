@@ -48,14 +48,10 @@ namespace FluffyUnderware.Curvy.ThirdParty.LibTessDotNet
         }
 
         private ActiveRegion RegionBelow(ActiveRegion reg)
-        {
-            return reg._nodeUp._prev._key;
-        }
+            => reg._nodeUp._prev._key;
 
         private ActiveRegion RegionAbove(ActiveRegion reg)
-        {
-            return reg._nodeUp._next._key;
-        }
+            => reg._nodeUp._next._key;
 
         /// <summary>
         /// Both edges must be directed from right to left (this is the canonical

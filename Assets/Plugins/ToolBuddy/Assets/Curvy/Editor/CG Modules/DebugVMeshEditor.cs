@@ -1,16 +1,15 @@
 // =====================================================================
-// Copyright 2013-2022 ToolBuddy
+// Copyright © 2013 ToolBuddy
 // All rights reserved
 // 
 // http://www.toolbuddy.net
 // =====================================================================
 
-using UnityEngine;
-using UnityEditor;
-using FluffyUnderware.Curvy.Generator;
-using FluffyUnderware.DevTools.Extensions;
-using FluffyUnderware.Curvy.Generator.Modules;
 using System.Linq;
+using FluffyUnderware.Curvy.Generator;
+using FluffyUnderware.Curvy.Generator.Modules;
+using UnityEditor;
+using UnityEngine;
 
 namespace FluffyUnderware.CurvyEditor.Generator.Modules
 {
@@ -18,7 +17,6 @@ namespace FluffyUnderware.CurvyEditor.Generator.Modules
     [CustomEditor(typeof(DebugVMesh))]
     public class DebugVMeshEditor : CGModuleEditor<DebugVMesh>
     {
-
         protected override void OnEnable()
         {
             base.OnEnable();
@@ -33,20 +31,52 @@ namespace FluffyUnderware.CurvyEditor.Generator.Modules
             {
                 Handles.matrix = Target.Generator.transform.localToWorldMatrix;
                 if (Target.ShowVertices)
-                    CGEditorUtility.SceneGUIPlot(vmesh.Vertices.Array, vmesh.Vertices.Count, 0.1f, Color.gray);
+                    CGEditorUtility.SceneGUIPlot(
+                        vmesh.Vertices.Array,
+                        vmesh.Vertices.Count,
+                        0.1f,
+                        Color.gray
+                    );
 
                 if (Target.ShowVertexID)
                 {
-                    string[] labels = Enumerable.Range(0, vmesh.Count).Select(i => i.ToString()).ToArray();
-                    CGEditorUtility.SceneGUILabels(vmesh.Vertices.Array, vmesh.Vertices.Count, labels, Color.black, Vector2.zero);
+                    string[] labels = Enumerable.Range(
+                        0,
+                        vmesh.Count
+                    ).Select(i => i.ToString()).ToArray();
+                    CGEditorUtility.SceneGUILabels(
+                        vmesh.Vertices.Array,
+                        vmesh.Vertices.Count,
+                        labels,
+                        Color.black,
+                        Vector2.zero
+                    );
                 }
+
                 if (Target.ShowUV && vmesh.HasUV)
                 {
-                    string[] labels = Enumerable.Range(0, vmesh.UVs.Count - 1).Select(i => string.Format("({0:0.##},{1:0.##})", vmesh.UVs.Array[i].x, vmesh.UVs.Array[i].y)).ToArray();
-                    CGEditorUtility.SceneGUILabels(vmesh.Vertices.Array, vmesh.Vertices.Count, labels, Color.black, Vector2.zero);
+                    string[] labels = Enumerable.Range(
+                        0,
+                        vmesh.UVs.Count - 1
+                    ).Select(
+                        i => string.Format(
+                            "({0:0.##},{1:0.##})",
+                            vmesh.UVs.Array[i].x,
+                            vmesh.UVs.Array[i].y
+                        )
+                    ).ToArray();
+                    CGEditorUtility.SceneGUILabels(
+                        vmesh.Vertices.Array,
+                        vmesh.Vertices.Count,
+                        labels,
+                        Color.black,
+                        Vector2.zero
+                    );
                 }
+
                 Handles.matrix = Matrix4x4.identity;
             }
+
             if (isDisposable)
                 vmesh.Dispose();
         }
@@ -55,9 +85,7 @@ namespace FluffyUnderware.CurvyEditor.Generator.Modules
         {
             CGVMesh vmesh = Target.InData.GetData<CGVMesh>(out bool isDisposable);
             if (vmesh)
-            {
-                EditorGUILayout.LabelField("VertexCount: " + vmesh.Count.ToString());
-            }
+                EditorGUILayout.LabelField("VertexCount: " + vmesh.Count);
             if (isDisposable)
                 vmesh.Dispose();
         }
@@ -75,7 +103,9 @@ namespace FluffyUnderware.CurvyEditor.Generator.Modules
         {
             module.UIMessages.Clear();
             if (module.Generator.ShowDebug == false)
-                module.UIMessages.Add("To display the debug information, activate the Generator's Debug mode either via its toolbar, or its inspector");
+                module.UIMessages.Add(
+                    "To display the debug information, activate the Generator's Debug mode either via its toolbar, or its inspector"
+                );
         }
     }
 }

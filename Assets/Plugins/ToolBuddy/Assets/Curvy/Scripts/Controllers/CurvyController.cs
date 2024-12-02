@@ -1,25 +1,23 @@
 // =====================================================================
-// Copyright 2013-2022 ToolBuddy
+// Copyright © 2013 ToolBuddy
 // All rights reserved
 // 
 // http://www.toolbuddy.net
 // =====================================================================
 
 using System;
-using UnityEngine;
-using System.Collections;
+using System.Globalization;
+using System.Reflection;
 using FluffyUnderware.Curvy.Utils;
 using FluffyUnderware.DevTools;
 using FluffyUnderware.DevTools.Extensions;
-using System.Reflection;
 using JetBrains.Annotations;
+using UnityEngine;
+using UnityEngine.Assertions;
+using UnityEngine.Serialization;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
-
-using UnityEngine.Assertions;
-using UnityEngine.Events;
-using UnityEngine.Serialization;
 
 namespace FluffyUnderware.Curvy.Controllers
 {
@@ -27,182 +25,292 @@ namespace FluffyUnderware.Curvy.Controllers
     /// Controller base class
     /// </summary>
     [ExecuteAlways]
-    public abstract class CurvyController : DTVersionedMonoBehaviour, ISerializationCallbackReceiver
+    public abstract partial class CurvyController : DTVersionedMonoBehaviour, ISerializationCallbackReceiver
     {
-        #region ### Enums ###
-        /// <summary>
-        /// Movement method options
-        /// </summary>
-        public enum MoveModeEnum
-        {
-            /// <summary>
-            /// Move by Percentage or TF (SplineController only)
-            /// </summary>
-            Relative = 0,
-            /// <summary>
-            /// Move by calculated distance
-            /// </summary>
-            AbsolutePrecise = 1,
-        }
-
-        /// <summary>
-        /// The play state of the controller
-        /// </summary>
-        public enum CurvyControllerState
-        {
-            Stopped,
-            Playing,
-            Paused
-        }
-
-        #endregion
-
         #region ### Events ###
 
         /// <summary>
         /// Invoked each time the controller finishes initialization
         /// </summary>
-        public ControllerEvent OnInitialized
-        {
-            get { return onInitialized; }
-        }
+        public ControllerEvent OnInitialized => onInitialized;
 
         #endregion
 
         #region ### Serialized Fields ###
+
         //TODO tooltips
-        [Section("General", Sort = 0, HelpURL = CurvySpline.DOCLINK + "curvycontroller_general")]
+        [Section(
+            "General",
+            Sort = 0,
+            HelpURL = AssetInformation.DocsRedirectionBaseUrl + "curvycontroller_general"
+        )]
         [Label(Tooltip = "Determines when to update")]
         public CurvyUpdateMethod UpdateIn = CurvyUpdateMethod.Update; // when to update?
 
         [SerializeField]
-        [FieldCondition(nameof(IsNeededRigidbodyMissing), true, false, ActionAttribute.ActionEnum.ShowError,
-            "Missing Rigidbody component. Its 'Is Kinematic' setting should be set to true")]
-        [FieldCondition(nameof(IsNeeded2DRigidbodyMissing), true, false, ActionAttribute.ActionEnum.ShowError,
-            "Missing Rigidbody 2D component. Its 'Body Type' setting should be set to 'Kinematic'")]
-        [FieldCondition(nameof(IsNeededRigidbodyNotKinematic), true, false, ActionAttribute.ActionEnum.ShowError,
-            "Rigidbody's 'Is Kinematic' setting should be set to true")]
-        [FieldCondition(nameof(IsNeeded2DRigidbodyNotKinematic), true, false, ActionAttribute.ActionEnum.ShowError,
-            "Rigidbody 2Ds 'Body Type' setting should be set to 'Kinematic'")]
-        [FieldCondition(nameof(targetComponent), TargetComponent.Transform, false, ActionAttribute.ActionEnum.ShowInfo,
-            "The transform's position and rotation are updated at the selected 'Update In' method.")]
-        [FieldCondition(nameof(targetComponent), TargetComponent.Transform, true, ActionAttribute.ActionEnum.ShowInfo,
-            "The rigidbody's position and rotation are updated at the physics simulation, and not at the selected 'Update In' method. Please consider this if getting the position or rotation via script.")]
+        [FieldCondition(
+            nameof(IsNeededRigidbodyMissing),
+            true,
+            false,
+            ActionAttribute.ActionEnum.ShowError,
+            "Missing Rigidbody component. Its 'Is Kinematic' setting should be set to true"
+        )]
+        [FieldCondition(
+            nameof(IsNeeded2DRigidbodyMissing),
+            true,
+            false,
+            ActionAttribute.ActionEnum.ShowError,
+            "Missing Rigidbody 2D component. Its 'Body Type' setting should be set to 'Kinematic'"
+        )]
+        [FieldCondition(
+            nameof(IsNeededRigidbodyNotKinematic),
+            true,
+            false,
+            ActionAttribute.ActionEnum.ShowError,
+            "Rigidbody's 'Is Kinematic' setting should be set to true"
+        )]
+        [FieldCondition(
+            nameof(IsNeeded2DRigidbodyNotKinematic),
+            true,
+            false,
+            ActionAttribute.ActionEnum.ShowError,
+            "Rigidbody 2Ds 'Body Type' setting should be set to 'Kinematic'"
+        )]
+        [FieldCondition(
+            nameof(targetComponent),
+            TargetComponent.Transform,
+            false,
+            ActionAttribute.ActionEnum.ShowInfo,
+            "The transform's position and rotation are updated at the selected 'Update In' method."
+        )]
+        [FieldCondition(
+            nameof(targetComponent),
+            TargetComponent.Transform,
+            true,
+            ActionAttribute.ActionEnum.ShowInfo,
+            "The rigidbody's position and rotation are updated at the physics simulation, and not at the selected 'Update In' method. Please consider this if getting the position or rotation via script."
+        )]
         [Tooltip("The component controlled by the controller")]
         private TargetComponent targetComponent = TargetComponent.Transform;
 
-        [Section("Position", Sort = 100, HelpURL = CurvySpline.DOCLINK + "curvycontroller_position")]
+        [Section(
+            "Position",
+            Sort = 100,
+            HelpURL = AssetInformation.DocsRedirectionBaseUrl + "curvycontroller_position"
+        )]
         [SerializeField]
         private CurvyPositionMode m_PositionMode = CurvyPositionMode.WorldUnits;
 
-        /*! \cond PRIVATE */
+#if DOCUMENTATION___FORCE_IGNORE___CURVY == false
 
-        [RangeEx(0, nameof(maxPosition))]
+        [RangeEx(
+            0,
+            nameof(maxPosition)
+        )]
         [SerializeField]
         [FormerlySerializedAs("m_InitialPosition")]
-        [FieldCondition(nameof(ShouldDisablePositionSlider), true, false, ActionAttribute.ActionEnum.Disable)]
+        [FieldCondition(
+            nameof(ShouldDisablePositionSlider),
+            true,
+            false,
+            ActionAttribute.ActionEnum.Disable
+        )]
         protected float m_Position;
 
-        /*! \endcond */
+#endif
 
-        [Section("Motion", Sort = 200, HelpURL = CurvySpline.DOCLINK + "curvycontroller_move")]
+        [Section(
+            "Motion",
+            Sort = 200,
+            HelpURL = AssetInformation.DocsRedirectionBaseUrl + "curvycontroller_move"
+        )]
         [SerializeField]
         private MoveModeEnum m_MoveMode = MoveModeEnum.AbsolutePrecise;
 
         [Positive]
         [SerializeField]
-        private float m_Speed = 0;
+        private float m_Speed;
 
-        [SerializeField] private MovementDirection m_Direction = MovementDirection.Forward;
+        [SerializeField]
+        private MovementDirection m_Direction = MovementDirection.Forward;
 
-        [SerializeField] private CurvyClamping m_Clamping = CurvyClamping.Loop;
+        [SerializeField]
+        private CurvyClamping m_Clamping = CurvyClamping.Loop;
 
         [Label("Constraints")]
         [Tooltip("Defines what motions are to be frozen")]
-        [FieldCondition(nameof(AreConstraintsConflicting), true, false, ActionAttribute.ActionEnum.ShowWarning,
-            "The controller targets a Rididbody that has constraints on it. This can creates conflicts with the controller's constraints")]
-        [SerializeField] private MotionConstraints motionConstraints = MotionConstraints.None;
+        [FieldCondition(
+            nameof(AreConstraintsConflicting),
+            true,
+            false,
+            ActionAttribute.ActionEnum.ShowWarning,
+            "The controller targets a Rididbody that has constraints on it. This can creates conflicts with the controller's constraints"
+        )]
+        [SerializeField]
+        private MotionConstraints motionConstraints = MotionConstraints.None;
 
         [SerializeField, Tooltip("Start playing automatically when entering play mode")]
         private bool m_PlayAutomatically = true;
 
-        [Section("Orientation", Sort = 300, HelpURL = CurvySpline.DOCLINK + "curvycontroller_orientation")]
-
-        [Label("Source", "Source Vector")]
-        [FieldCondition(nameof(ShowOrientationSection), false, false, Action = ActionAttribute.ActionEnum.Hide)]
+        [Section(
+            "Orientation",
+            Sort = 300,
+            HelpURL = AssetInformation.DocsRedirectionBaseUrl + "curvycontroller_orientation"
+        )]
+        [Label(
+            "Source",
+            "Source Vector"
+        )]
+        [FieldCondition(
+            nameof(ShowOrientationSection),
+            false,
+            Action = ActionAttribute.ActionEnum.Hide
+        )]
         [SerializeField]
         private OrientationModeEnum m_OrientationMode = OrientationModeEnum.Orientation;
 
-        [Label("Lock Rotation", "When set, the controller will enforce the rotation to not change")]
+        [Label(
+            "Lock Rotation",
+            "When set, the controller will enforce the rotation to not change"
+        )]
 #if UNITY_EDITOR //Conditional to avoid WebGL build failure when using Unity 5.5.3
-        [FieldCondition(nameof(m_OrientationMode), OrientationModeEnum.None, true, ConditionalAttribute.OperatorEnum.OR, "ShowOrientationSection", false, false, Action = ActionAttribute.ActionEnum.Hide)]
+        [FieldCondition(
+            nameof(m_OrientationMode),
+            OrientationModeEnum.None,
+            true,
+            ConditionalAttribute.OperatorEnum.OR,
+            "ShowOrientationSection",
+            false,
+            false,
+            Action = ActionAttribute.ActionEnum.Hide
+        )]
 #endif
         [SerializeField]
         private bool m_LockRotation = true;
 
-        [Label("Target", "Target Vector3")]
-        [FieldCondition(nameof(m_OrientationMode), OrientationModeEnum.None, false, ConditionalAttribute.OperatorEnum.OR, "ShowOrientationSection", false, false, Action = ActionAttribute.ActionEnum.Hide)]
+        [Label(
+            "Target",
+            "Target Vector3"
+        )]
+        [FieldCondition(
+            nameof(m_OrientationMode),
+            OrientationModeEnum.None,
+            false,
+            ConditionalAttribute.OperatorEnum.OR,
+            "ShowOrientationSection",
+            false,
+            false,
+            Action = ActionAttribute.ActionEnum.Hide
+        )]
         [SerializeField]
         private OrientationAxisEnum m_OrientationAxis = OrientationAxisEnum.Up;
 
         [Tooltip("Should the orientation ignore the movement direction?")]
-        [FieldCondition(nameof(m_OrientationMode), OrientationModeEnum.None, false, ConditionalAttribute.OperatorEnum.OR, "ShowOrientationSection", false, false, Action = ActionAttribute.ActionEnum.Hide)]
+        [FieldCondition(
+            nameof(m_OrientationMode),
+            OrientationModeEnum.None,
+            false,
+            ConditionalAttribute.OperatorEnum.OR,
+            "ShowOrientationSection",
+            false,
+            false,
+            Action = ActionAttribute.ActionEnum.Hide
+        )]
         [SerializeField]
         private bool m_IgnoreDirection;
 
-        [DevTools.Min(0, "Direction Damping Time", "If non zero, the direction vector will not be updated instantly, but using a damping effect that will last the specified amount of time.")]
-        [FieldCondition(nameof(ShowOrientationSection), false, false, Action = ActionAttribute.ActionEnum.Hide)]
+        [DevTools.Min(
+            0,
+            "Direction Damping Time",
+            "If non zero, the direction vector (forward) of the controlled object will not be updated instantly, but using a damping effect that will last the specified amount of time."
+        )]
+        [FieldCondition(
+            nameof(ShowOrientationSection),
+            false,
+            Action = ActionAttribute.ActionEnum.Hide
+        )]
         [SerializeField]
         private float m_DampingDirection;
 
-        [DevTools.Min(0, "Up Damping Time", "If non zero, the up vector will not be updated instantly, but using a damping effect that will last the specified amount of time.")]
-        [FieldCondition(nameof(ShowOrientationSection), false, false, Action = ActionAttribute.ActionEnum.Hide)]
+        [DevTools.Min(
+            0,
+            "Up Damping Time",
+            "If non zero, the up vector of the controlled object will not be updated instantly, but using a damping effect that will last the specified amount of time."
+        )]
+        [FieldCondition(
+            nameof(ShowOrientationSection),
+            false,
+            Action = ActionAttribute.ActionEnum.Hide
+        )]
         [SerializeField]
         private float m_DampingUp;
 
-        [Section("Offset", Sort = 400, HelpURL = CurvySpline.DOCLINK + "curvycontroller_orientation")]
-        [FieldCondition(nameof(ShowOffsetSection), false, false, Action = ActionAttribute.ActionEnum.Hide)]
-        [RangeEx(-180f, 180f)]
+        [Section(
+            "Offset",
+            Sort = 400,
+            HelpURL = AssetInformation.DocsRedirectionBaseUrl + "curvycontroller_orientation"
+        )]
+        [FieldCondition(
+            nameof(ShowOffsetSection),
+            false,
+            Action = ActionAttribute.ActionEnum.Hide
+        )]
+        [RangeEx(
+            -180f,
+            180f
+        )]
         [SerializeField]
         private float m_OffsetAngle;
 
-        [FieldCondition(nameof(ShowOffsetSection), false, false, Action = ActionAttribute.ActionEnum.Hide)]
+        [FieldCondition(
+            nameof(ShowOffsetSection),
+            false,
+            Action = ActionAttribute.ActionEnum.Hide
+        )]
         [SerializeField]
         private float m_OffsetRadius;
 
-        [FieldCondition(nameof(ShowOffsetSection), false, false, Action = ActionAttribute.ActionEnum.Hide)]
-        [Label("Compensate Offset")]
+        [FieldCondition(
+            nameof(ShowOffsetSection),
+            false,
+            Action = ActionAttribute.ActionEnum.Hide
+        )]
+        [Label("Compensate Offset", "Adjusts speed to match the change of travel distance due to offset")]
         [SerializeField]
         private bool m_OffsetCompensation = true;
 
-        [Section("Events", Sort = 500)]
+        [Section(
+            "Events",
+            Sort = 500
+        )]
         [SerializeField]
 #pragma warning disable 649
         protected ControllerEvent onInitialized = new ControllerEvent();
 #pragma warning restore 649
 
 #if UNITY_EDITOR
-        [Section("Advanced Settings", Sort = 2000, HelpURL = CurvySpline.DOCLINK + "curvycontroller_general", Expanded = false)]
+        [Section(
+            "Advanced Settings",
+            Sort = 2000,
+            HelpURL = AssetInformation.DocsRedirectionBaseUrl + "curvycontroller_general",
+            Expanded = false
+        )]
         [Label(Tooltip = "Force this script to update in Edit mode as often as in Play mode. Most users don't need that.")]
         [SerializeField]
         private bool m_ForceFrequentUpdates;
 #endif
+
         #endregion
 
         #region ### Public Properties ###
-
 
         /// <summary>
         /// The component controlled by the controller
         /// </summary>
         public TargetComponent TargetComponent
         {
-            get { return targetComponent; }
-            set
-            {
-                if (targetComponent != value)
-                    targetComponent = value;
-            }
+            get => targetComponent;
+            set => targetComponent = value;
         }
 
         /// <summary>
@@ -210,11 +318,8 @@ namespace FluffyUnderware.Curvy.Controllers
         /// </summary>
         public CurvyPositionMode PositionMode
         {
-            get { return m_PositionMode; }
-            set
-            {
-                m_PositionMode = value;
-            }
+            get => m_PositionMode;
+            set => m_PositionMode = value;
         }
 
         /// <summary>
@@ -222,12 +327,8 @@ namespace FluffyUnderware.Curvy.Controllers
         /// </summary>
         public MoveModeEnum MoveMode
         {
-            get { return m_MoveMode; }
-            set
-            {
-                if (m_MoveMode != value)
-                    m_MoveMode = value;
-            }
+            get => m_MoveMode;
+            set => m_MoveMode = value;
         }
 
         /// <summary>
@@ -235,12 +336,8 @@ namespace FluffyUnderware.Curvy.Controllers
         /// </summary>
         public bool PlayAutomatically
         {
-            get { return m_PlayAutomatically; }
-            set
-            {
-                if (m_PlayAutomatically != value)
-                    m_PlayAutomatically = value;
-            }
+            get => m_PlayAutomatically;
+            set => m_PlayAutomatically = value;
         }
 
         /// <summary>
@@ -248,12 +345,8 @@ namespace FluffyUnderware.Curvy.Controllers
         /// </summary>
         public CurvyClamping Clamping
         {
-            get { return m_Clamping; }
-            set
-            {
-                if (m_Clamping != value)
-                    m_Clamping = value;
-            }
+            get => m_Clamping;
+            set => m_Clamping = value;
         }
 
         /// <summary>
@@ -261,12 +354,8 @@ namespace FluffyUnderware.Curvy.Controllers
         /// </summary>
         public MotionConstraints MotionConstraints
         {
-            get { return motionConstraints; }
-            set
-            {
-                if (motionConstraints != value)
-                    motionConstraints = value;
-            }
+            get => motionConstraints;
+            set => motionConstraints = value;
         }
 
         /// <summary>
@@ -274,12 +363,8 @@ namespace FluffyUnderware.Curvy.Controllers
         /// </summary>
         public OrientationModeEnum OrientationMode
         {
-            get { return m_OrientationMode; }
-            set
-            {
-                if (m_OrientationMode != value)
-                    m_OrientationMode = value;
-            }
+            get => m_OrientationMode;
+            set => m_OrientationMode = value;
         }
 
         /// <summary>
@@ -288,15 +373,17 @@ namespace FluffyUnderware.Curvy.Controllers
         /// </summary>
         public bool LockRotation
         {
-            get { return m_LockRotation; }
+            get => m_LockRotation;
             set
             {
-                if (m_LockRotation != value)
-                    m_LockRotation = value;
+                m_LockRotation = value;
 
                 if (m_LockRotation)
                 {
-                    GetPositionAndRotation(out _, out Quaternion rotation);
+                    GetPositionAndRotation(
+                        out _,
+                        out Quaternion rotation
+                    );
                     LockedRotation = rotation;
                 }
             }
@@ -307,43 +394,41 @@ namespace FluffyUnderware.Curvy.Controllers
         /// </summary>
         public OrientationAxisEnum OrientationAxis
         {
-            get { return m_OrientationAxis; }
-            set
-            {
-                if (m_OrientationAxis != value)
-                    m_OrientationAxis = value;
-
-            }
+            get => m_OrientationAxis;
+            set => m_OrientationAxis = value;
         }
 
         /// <summary>
-        /// If non zero, the direction vector will not be updated instantly, but using a damping effect that will last the specified amount of time.
+        /// If non zero, the direction vector (forward) of the controlled object will not be updated instantly, but using a damping effect that will last the specified amount of time.
         /// </summary>
         public float DirectionDampingTime
         {
-            get { return m_DampingDirection; }
+            get => m_DampingDirection;
             set
             {
-                float v = Mathf.Max(0, value);
-                if (m_DampingDirection != v)
-                    m_DampingDirection = v;
+                float v = Mathf.Max(
+                    0,
+                    value
+                );
+                m_DampingDirection = v;
             }
         }
 
         /// <summary>
-        /// If non zero, the up vector will not be updated instantly, but using a damping effect that will last the specified amount of time.
+        /// If non zero, the up vector of the controlled object will not be updated instantly, but using a damping effect that will last the specified amount of time.
         /// </summary>
         public float UpDampingTime
         {
-            get { return m_DampingUp; }
+            get => m_DampingUp;
             set
             {
-                float v = Mathf.Max(0, value);
-                if (m_DampingUp != v)
-                    m_DampingUp = v;
+                float v = Mathf.Max(
+                    0,
+                    value
+                );
+                m_DampingUp = v;
             }
         }
-
 
 
         /// <summary>
@@ -351,12 +436,8 @@ namespace FluffyUnderware.Curvy.Controllers
         /// </summary>
         public bool IgnoreDirection
         {
-            get { return m_IgnoreDirection; }
-            set
-            {
-                if (m_IgnoreDirection != value)
-                    m_IgnoreDirection = value;
-            }
+            get => m_IgnoreDirection;
+            set => m_IgnoreDirection = value;
         }
 
         /// <summary>
@@ -364,33 +445,26 @@ namespace FluffyUnderware.Curvy.Controllers
         /// </summary>
         public float OffsetAngle
         {
-            get { return m_OffsetAngle; }
-            set
-            {
-                if (m_OffsetAngle != value)
-                    m_OffsetAngle = value;
-            }
+            get => m_OffsetAngle;
+            set => m_OffsetAngle = value;
         }
+
         /// <summary>
         /// Gets or sets the offset radius
         /// </summary>
         public float OffsetRadius
         {
-            get { return m_OffsetRadius; }
-            set
-            {
-                if (m_OffsetRadius != value)
-                    m_OffsetRadius = value;
-            }
+            get => m_OffsetRadius;
+            set => m_OffsetRadius = value;
         }
 
         /// <summary>
-        /// Gets or sets whether to compensate offset distances in curvy paths
+        /// Adjusts speed to match the change of travel distance due to offset
         /// </summary>
         public bool OffsetCompensation
         {
-            get { return m_OffsetCompensation; }
-            set { m_OffsetCompensation = value; }
+            get => m_OffsetCompensation;
+            set => m_OffsetCompensation = value;
         }
 
         /// <summary>
@@ -405,10 +479,16 @@ namespace FluffyUnderware.Curvy.Controllers
                 {
 #if CURVY_SANITY_CHECKS
 
-                    DTLog.LogWarning("[Curvy] Trying to assign a negative value of " + value.ToString() + " to Speed. Speed should always be positive. To set direction, use the Direction property", this);
+                    DTLog.LogWarning(
+                        "[Curvy] Trying to assign a negative value of "
+                        + value
+                        + " to Speed. Speed should always be positive. To set direction, use the Direction property",
+                        this
+                    );
 #endif
                     value = -value;
                 }
+
                 m_Speed = value;
             }
         }
@@ -424,10 +504,22 @@ namespace FluffyUnderware.Curvy.Controllers
                 switch (PositionMode)
                 {
                     case CurvyPositionMode.Relative:
-                        relativePosition = GetClampedPosition(m_Position, CurvyPositionMode.Relative, Clamping, Length);
+                        relativePosition = GetClampedPosition(
+                            m_Position,
+                            CurvyPositionMode.Relative,
+                            Clamping,
+                            Length
+                        );
                         break;
                     case CurvyPositionMode.WorldUnits:
-                        relativePosition = AbsoluteToRelative(GetClampedPosition(m_Position, CurvyPositionMode.WorldUnits, Clamping, Length));
+                        relativePosition = AbsoluteToRelative(
+                            GetClampedPosition(
+                                m_Position,
+                                CurvyPositionMode.WorldUnits,
+                                Clamping,
+                                Length
+                            )
+                        );
                         break;
                     default:
                         throw new NotSupportedException();
@@ -437,7 +529,12 @@ namespace FluffyUnderware.Curvy.Controllers
             }
             set
             {
-                float clampedRelativePosition = GetClampedPosition(value, CurvyPositionMode.Relative, Clamping, Length);
+                float clampedRelativePosition = GetClampedPosition(
+                    value,
+                    CurvyPositionMode.Relative,
+                    Clamping,
+                    Length
+                );
                 switch (PositionMode)
                 {
                     case CurvyPositionMode.Relative:
@@ -463,10 +560,22 @@ namespace FluffyUnderware.Curvy.Controllers
                 switch (PositionMode)
                 {
                     case CurvyPositionMode.Relative:
-                        absolutePosition = RelativeToAbsolute(GetClampedPosition(m_Position, CurvyPositionMode.Relative, Clamping, Length));
+                        absolutePosition = RelativeToAbsolute(
+                            GetClampedPosition(
+                                m_Position,
+                                CurvyPositionMode.Relative,
+                                Clamping,
+                                Length
+                            )
+                        );
                         break;
                     case CurvyPositionMode.WorldUnits:
-                        absolutePosition = GetClampedPosition(m_Position, CurvyPositionMode.WorldUnits, Clamping, Length);
+                        absolutePosition = GetClampedPosition(
+                            m_Position,
+                            CurvyPositionMode.WorldUnits,
+                            Clamping,
+                            Length
+                        );
                         break;
                     default:
                         throw new NotSupportedException();
@@ -476,7 +585,12 @@ namespace FluffyUnderware.Curvy.Controllers
             }
             set
             {
-                float clampedAbsolutePosition = GetClampedPosition(value, CurvyPositionMode.WorldUnits, Clamping, Length);
+                float clampedAbsolutePosition = GetClampedPosition(
+                    value,
+                    CurvyPositionMode.WorldUnits,
+                    Clamping,
+                    Length
+                );
                 switch (PositionMode)
                 {
                     case CurvyPositionMode.Relative:
@@ -510,6 +624,7 @@ namespace FluffyUnderware.Curvy.Controllers
                     default:
                         throw new NotSupportedException();
                 }
+
                 return result;
             }
             set
@@ -533,21 +648,21 @@ namespace FluffyUnderware.Curvy.Controllers
         /// </summary>
         public MovementDirection MovementDirection
         {
-            get { return m_Direction; }
-            set { m_Direction = value; }
+            get => m_Direction;
+            set => m_Direction = value;
         }
 
 
         /// <summary>
         /// The state (Playing, paused or stopped) of the controller
         /// </summary>
-        public CurvyControllerState PlayState { get { return State; } }
+        public CurvyControllerState PlayState => State;
 
         /// <summary>
         /// Returns true if the controller has all it dependencies ready.
         /// </summary>
         /// <remarks>A controller that is not initialized and has IsReady true, will be initialized at the next update call (automatically each frame or manually through <see cref="Refresh"/>.</remarks>
-        abstract public bool IsReady { get; }
+        public abstract bool IsReady { get; }
 
 #if UNITY_EDITOR
         /// <summary>
@@ -555,8 +670,8 @@ namespace FluffyUnderware.Curvy.Controllers
         /// </summary>
         public bool ForceFrequentUpdates
         {
-            get { return m_ForceFrequentUpdates; }
-            set { m_ForceFrequentUpdates = value; }
+            get => m_ForceFrequentUpdates;
+            set => m_ForceFrequentUpdates = value;
         }
 #endif
 
@@ -574,25 +689,13 @@ namespace FluffyUnderware.Curvy.Controllers
         /// </summary>
         protected const string ControllerNotReadyMessage = "The controller is not yet ready";
 
+        [NotNull] protected OrientationDamper Damper { get; }
+
         /// <summary>
         /// The state (Playing, paused or stopped) of the controller
         /// <seealso cref="CurvyControllerState"/>
         /// </summary>
         protected CurvyControllerState State = CurvyControllerState.Stopped;
-
-        /// <summary>
-        /// The damping velocity used in the Direction damping
-        /// <seealso cref="DirectionDampingTime"/>
-        /// <seealso cref="Vector3.SmoothDamp(Vector3, Vector3, ref Vector3, float, float, float)"/>
-        /// </summary>
-        protected Vector3 DirectionDampingVelocity;//TODO should this value be reinitialized when DirectionDampingTime is set to non strictly positive value or any other moment?
-
-        /// <summary>
-        /// The damping velocity used in the Up damping
-        /// <seealso cref="UpDampingTime"/>
-        /// <seealso cref="Vector3.SmoothDamp(Vector3, Vector3, ref Vector3, float, float, float)"/>
-        /// </summary>
-        protected Vector3 UpDampingVelocity;//TODO should this value be reinitialized when UpDampingTime is set to non strictly positive value or any other moment?
 
         /// <summary>
         /// The position of the controller when started playing
@@ -620,9 +723,12 @@ namespace FluffyUnderware.Curvy.Controllers
         #endregion
 
         #region ### Unity Callbacks ###
-        /*! \cond UNITY */
-        protected virtual void OnEnable()
+
+#if DOCUMENTATION___FORCE_IGNORE___UNITY == false
+        protected override void OnEnable()
         {
+            base.OnEnable();
+
             if (isInitialized == false && IsReady)
             {
                 Initialize();
@@ -634,6 +740,7 @@ namespace FluffyUnderware.Curvy.Controllers
 #endif
         }
 
+        [UsedImplicitly]
         protected virtual void Start()
         {
             if (isInitialized == false && IsReady)
@@ -641,13 +748,12 @@ namespace FluffyUnderware.Curvy.Controllers
                 Initialize();
                 InitializedApplyDeltaTime(0);
             }
-
-            if (PlayAutomatically && Application.isPlaying)
-                Play();
         }
 
-        protected virtual void OnDisable()
+        protected override void OnDisable()
         {
+            base.OnDisable();
+
 #if UNITY_EDITOR
             EditorApplication.update -= editorUpdate;
 #endif
@@ -655,50 +761,41 @@ namespace FluffyUnderware.Curvy.Controllers
                 Deinitialize();
         }
 
+        [UsedImplicitly]
         protected virtual void Update()
         {
             if (UpdateIn == CurvyUpdateMethod.Update)
                 ApplyDeltaTime(TimeSinceLastUpdate);
         }
 
+        [UsedImplicitly]
         protected virtual void LateUpdate()
         {
-            if (UpdateIn == CurvyUpdateMethod.LateUpdate ||
-                (Application.isPlaying == false && UpdateIn == CurvyUpdateMethod.FixedUpdate)) // In edit mode, fixed updates are not called, so we update the controller here instead
+            if (UpdateIn == CurvyUpdateMethod.LateUpdate
+                || (Application.isPlaying == false
+                    && UpdateIn
+                    == CurvyUpdateMethod
+                        .FixedUpdate)) // In edit mode, fixed updates are not called, so we update the controller here instead
                 ApplyDeltaTime(TimeSinceLastUpdate);
         }
 
+        [UsedImplicitly]
         protected virtual void FixedUpdate()
         {
             if (UpdateIn == CurvyUpdateMethod.FixedUpdate)
                 ApplyDeltaTime(TimeSinceLastUpdate);
         }
 
-#if UNITY_EDITOR
-        protected virtual void OnValidate()
+        protected override void OnValidate()
         {
+            base.OnValidate();
+
             Speed = m_Speed;
             LockRotation = m_LockRotation;
         }
+
 #endif
 
-        protected virtual void Reset()
-        {
-            UpdateIn = CurvyUpdateMethod.Update;
-            TargetComponent = TargetComponent.Transform;
-            PositionMode = CurvyPositionMode.WorldUnits;
-            m_Position = 0;
-            PlayAutomatically = true;
-            MoveMode = MoveModeEnum.AbsolutePrecise;
-            Speed = 0;
-            LockRotation = true;
-            MotionConstraints = MotionConstraints.None;
-            Clamping = CurvyClamping.Loop;
-            OrientationMode = OrientationModeEnum.Orientation;
-            OrientationAxis = OrientationAxisEnum.Up;
-            IgnoreDirection = false;
-        }
-        /*! \endcond */
         #endregion
 
         #region ### Virtual Properties & Methods  ###
@@ -707,13 +804,7 @@ namespace FluffyUnderware.Curvy.Controllers
         /// Gets the transform being controlled by this controller.
         /// </summary>
         /// <seealso cref="TargetComponent"/>
-        public virtual Transform Transform
-        {
-            get
-            {
-                return transform;
-            }
-        }
+        public virtual Transform Transform => transform;
 
         /// <summary>
         /// Gets the rigidbody being controlled by this controller.
@@ -722,10 +813,7 @@ namespace FluffyUnderware.Curvy.Controllers
         public virtual Rigidbody Rigidbody
         {
             [CanBeNull]
-            get
-            {
-                return transform.GetComponent<Rigidbody>();
-            }
+            get => transform.GetComponent<Rigidbody>();
         }
 
         /// <summary>
@@ -735,10 +823,7 @@ namespace FluffyUnderware.Curvy.Controllers
         public virtual Rigidbody2D Rigidbody2D
         {
             [CanBeNull]
-            get
-            {
-                return transform.GetComponent<Rigidbody2D>();
-            }
+            get => transform.GetComponent<Rigidbody2D>();
         }
 
         /// <summary>
@@ -756,41 +841,39 @@ namespace FluffyUnderware.Curvy.Controllers
                     : Speed;
 
                 if (speed * deltaTime != 0)
-                    Advance(speed, deltaTime);
+                    Advance(
+                        speed,
+                        deltaTime
+                    );
             }
 
             Vector3 preRefreshPosition;
             Quaternion preRefreshOrientation;
-            GetPositionAndRotation(out preRefreshPosition, out preRefreshOrientation);
+            GetPositionAndRotation(
+                out preRefreshPosition,
+                out preRefreshOrientation
+            );
 
             Vector3 newPosition;
             Vector3 newForward;
             Vector3 newUp;
-            ComputeTargetPositionAndRotation(out newPosition, out newUp, out newForward);
+            ComputeTargetPositionAndRotation(
+                out newPosition,
+                out newUp,
+                out newForward
+            );
 
-            Vector3 postDampingForward;
-            if (DirectionDampingTime > 0 && State == CurvyControllerState.Playing)
-            {
-                postDampingForward = deltaTime > 0
-                    ? Vector3.SmoothDamp(preRefreshOrientation * Vector3.forward, newForward, ref DirectionDampingVelocity, DirectionDampingTime, float.PositiveInfinity, deltaTime)
-                    : preRefreshOrientation * Vector3.forward;
-            }
-            else
-                postDampingForward = newForward;
+            Quaternion newRotation = Damper.Damp(
+                preRefreshOrientation,
+                newForward,
+                newUp,
+                deltaTime
+            );
 
-            Vector3 postDampingUp;
-            if (UpDampingTime > 0 && State == CurvyControllerState.Playing)
-            {
-                postDampingUp = deltaTime > 0
-                    ? Vector3.SmoothDamp(preRefreshOrientation * Vector3.up, newUp, ref UpDampingVelocity, UpDampingTime, float.PositiveInfinity, deltaTime)
-                    : preRefreshOrientation * Vector3.up;
-            }
-            else
-                postDampingUp = newUp;
-
-            Quaternion newRotation = Quaternion.LookRotation(postDampingForward, postDampingUp);
-
-            SetPositionAndRotation(newPosition, newRotation);
+            SetPositionAndRotation(
+                newPosition,
+                newRotation
+            );
 
             if (preRefreshPosition.NotApproximately(newPosition) || preRefreshOrientation.DifferentOrientation(newRotation))
                 UserAfterUpdate();
@@ -802,25 +885,38 @@ namespace FluffyUnderware.Curvy.Controllers
         /// <param name="targetPosition"></param>
         /// <param name="targetUp"></param>
         /// <param name="targetForward"></param>
-        protected virtual void ComputeTargetPositionAndRotation(out Vector3 targetPosition, out Vector3 targetUp, out Vector3 targetForward)
+        protected virtual void ComputeTargetPositionAndRotation(out Vector3 targetPosition, out Vector3 targetUp,
+            out Vector3 targetForward)
         {
             Vector3 pos;
             Vector3 tangent;
             Vector3 orientation;
-            GetInterpolatedSourcePosition(RelativePosition, out pos, out tangent, out orientation);
+            GetInterpolatedSourcePosition(
+                RelativePosition,
+                out pos,
+                out tangent,
+                out orientation
+            );
 
             if (tangent == Vector3.zero || orientation == Vector3.zero)
-                GetOrientationNoneUpAndForward(out targetUp, out targetForward);
+                GetOrientationNoneUpAndForward(
+                    out targetUp,
+                    out targetForward
+                );
             else
-            {
                 switch (OrientationMode)
                 {
                     case OrientationModeEnum.None:
-                        GetOrientationNoneUpAndForward(out targetUp, out targetForward);
+                        GetOrientationNoneUpAndForward(
+                            out targetUp,
+                            out targetForward
+                        );
                         break;
                     case OrientationModeEnum.Orientation:
                         {
-                            Vector3 signedTangent = (m_Direction == MovementDirection.Backward && IgnoreDirection == false) ? -tangent : tangent;
+                            Vector3 signedTangent = m_Direction == MovementDirection.Backward && IgnoreDirection == false
+                                ? -tangent
+                                : tangent;
                             switch (OrientationAxis)
                             {
                                 case OrientationAxisEnum.Up:
@@ -840,11 +936,17 @@ namespace FluffyUnderware.Curvy.Controllers
                                     targetForward = -orientation;
                                     break;
                                 case OrientationAxisEnum.Left:
-                                    targetUp = Vector3.Cross(orientation, signedTangent);
+                                    targetUp = Vector3.Cross(
+                                        orientation,
+                                        signedTangent
+                                    );
                                     targetForward = signedTangent;
                                     break;
                                 case OrientationAxisEnum.Right:
-                                    targetUp = Vector3.Cross(signedTangent, orientation);
+                                    targetUp = Vector3.Cross(
+                                        signedTangent,
+                                        orientation
+                                    );
                                     targetForward = signedTangent;
                                     break;
                                 default:
@@ -854,8 +956,9 @@ namespace FluffyUnderware.Curvy.Controllers
                         break;
                     case OrientationModeEnum.Tangent:
                         {
-
-                            Vector3 signedTangent = (m_Direction == MovementDirection.Backward && IgnoreDirection == false) ? -tangent : tangent;
+                            Vector3 signedTangent = m_Direction == MovementDirection.Backward && IgnoreDirection == false
+                                ? -tangent
+                                : tangent;
                             switch (OrientationAxis)
                             {
                                 case OrientationAxisEnum.Up:
@@ -876,11 +979,17 @@ namespace FluffyUnderware.Curvy.Controllers
                                     break;
                                 case OrientationAxisEnum.Left:
                                     targetUp = orientation;
-                                    targetForward = Vector3.Cross(orientation, signedTangent);
+                                    targetForward = Vector3.Cross(
+                                        orientation,
+                                        signedTangent
+                                    );
                                     break;
                                 case OrientationAxisEnum.Right:
                                     targetUp = orientation;
-                                    targetForward = Vector3.Cross(signedTangent, orientation);
+                                    targetForward = Vector3.Cross(
+                                        signedTangent,
+                                        orientation
+                                    );
                                     break;
                                 default:
                                     throw new NotSupportedException();
@@ -890,27 +999,44 @@ namespace FluffyUnderware.Curvy.Controllers
                     default:
                         throw new ArgumentOutOfRangeException();
                 }
-            }
 
-            targetPosition = (UseOffset && OffsetRadius != 0f)
-                ? ApplyOffset(pos, tangent, orientation, OffsetAngle, OffsetRadius)
+            targetPosition = UseOffset && OffsetRadius != 0f
+                ? ApplyOffset(
+                    pos,
+                    tangent,
+                    orientation,
+                    OffsetAngle,
+                    OffsetRadius
+                )
                 : pos;
         }
 
 
-        virtual protected void Initialize()
+        protected virtual void Initialize()
         {
             isInitialized = true;
-            GetPositionAndRotation(out _, out Quaternion rotation);
+            GetPositionAndRotation(
+                out _,
+                out Quaternion rotation
+            );
             LockedRotation = rotation;
-            DirectionDampingVelocity = UpDampingVelocity = Vector3.zero;
+            Damper.Reset();
 
+            State = CurvyControllerState.Stopped;
+            ResetPrePlayState();
+
+            if (PlayAutomatically && Application.isPlaying)
+                Play();
+
+#if UNITY_EDITOR
+            EditModeLastUpdate = Time.realtimeSinceStartup;
+#endif
             BindEvents();
             UserAfterInit();
             onInitialized.Invoke(this);
         }
 
-        virtual protected void Deinitialize()
+        protected virtual void Deinitialize()
         {
             UnbindEvents();
             isInitialized = false;
@@ -925,6 +1051,7 @@ namespace FluffyUnderware.Curvy.Controllers
             Assert.IsTrue(isInitialized);
 #endif
         }
+
         /// <summary>
         /// Unbinds any external events
         /// </summary>
@@ -934,6 +1061,8 @@ namespace FluffyUnderware.Curvy.Controllers
             Assert.IsTrue(isInitialized);
 #endif
         }
+
+        #region PrePlay state
 
         protected virtual void SavePrePlayState()
         {
@@ -946,6 +1075,14 @@ namespace FluffyUnderware.Curvy.Controllers
             m_Position = PrePlayPosition;
             m_Direction = PrePlayDirection;
         }
+
+        protected virtual void ResetPrePlayState()
+        {
+            PrePlayPosition = default;
+            PrePlayDirection = default;
+        }
+
+        #endregion
 
         /// <summary>
         /// Gets the current position and rotation of the target component
@@ -990,7 +1127,15 @@ namespace FluffyUnderware.Curvy.Controllers
                         else
                         {
                             position = cachedRigidBody.position;
-                            rotation = Quaternion.AngleAxis(Rigidbody2D.rotation, cachedRigidBody.transform.rotation * new Vector3(0, 0, 1));
+                            rotation = Quaternion.AngleAxis(
+                                Rigidbody2D.rotation,
+                                cachedRigidBody.transform.rotation
+                                * new Vector3(
+                                    0,
+                                    0,
+                                    1
+                                )
+                            );
                         }
                     }
                     break;
@@ -1014,7 +1159,10 @@ namespace FluffyUnderware.Curvy.Controllers
             }
             else
             {
-                GetPositionAndRotation(out var oldPosition, out var oldRotation);
+                GetPositionAndRotation(
+                    out Vector3 oldPosition,
+                    out Quaternion oldRotation
+                );
 
                 //position
                 {
@@ -1036,7 +1184,6 @@ namespace FluffyUnderware.Curvy.Controllers
 
                 //rotation
                 {
-
                     Vector3 constrainedRotationEuler;
                     {
                         Vector3 rotationEuler = rotation.eulerAngles;
@@ -1066,20 +1213,28 @@ namespace FluffyUnderware.Curvy.Controllers
             {
                 case TargetComponent.Transform:
                     {
-                        Transform.SetPositionAndRotation(constrainedPosition, constrainedRotation);
+                        Transform.SetPositionAndRotation(
+                            constrainedPosition,
+                            constrainedRotation
+                        );
                     }
                     break;
                 case TargetComponent.KinematicRigidbody:
                     {
                         Rigidbody cachedRigidBody = Rigidbody;
                         if (cachedRigidBody == null || Application.isPlaying == false)
-                        {
-                            Transform.SetPositionAndRotation(constrainedPosition, constrainedRotation);
-                        }
+                            Transform.SetPositionAndRotation(
+                                constrainedPosition,
+                                constrainedRotation
+                            );
                         else
                         {
-                            cachedRigidBody.MovePosition(constrainedPosition); //cachedRigidbody.position is not yet updated. Will be done after physics simulation.
-                            cachedRigidBody.MoveRotation(constrainedRotation); //cachedRigidbody.roation is not yet updated. Will be done after physics simulation.
+                            cachedRigidBody.MovePosition(
+                                constrainedPosition
+                            ); //cachedRigidbody.position is not yet updated. Will be done after physics simulation.
+                            cachedRigidBody.MoveRotation(
+                                constrainedRotation
+                            ); //cachedRigidbody.rotation is not yet updated. Will be done after physics simulation.
                         }
                     }
                     break;
@@ -1087,13 +1242,18 @@ namespace FluffyUnderware.Curvy.Controllers
                     {
                         Rigidbody2D cachedRigidBody = Rigidbody2D;
                         if (cachedRigidBody == null || Application.isPlaying == false)
-                        {
-                            Transform.SetPositionAndRotation(constrainedPosition, constrainedRotation);
-                        }
+                            Transform.SetPositionAndRotation(
+                                constrainedPosition,
+                                constrainedRotation
+                            );
                         else
                         {
-                            cachedRigidBody.MovePosition(constrainedPosition); //cachedRigidbody.position is not yet updated. Will be done after physics simulation.
-                            cachedRigidBody.MoveRotation(constrainedRotation); //cachedRigidbody.roation is not yet updated. Will be done after physics simulation.
+                            cachedRigidBody.MovePosition(
+                                constrainedPosition
+                            ); //cachedRigidbody.position is not yet updated. Will be done after physics simulation.
+                            cachedRigidBody.MoveRotation(
+                                constrainedRotation
+                            ); //cachedRigidbody.rotation is not yet updated. Will be done after physics simulation.
                         }
                     }
                     break;
@@ -1108,6 +1268,7 @@ namespace FluffyUnderware.Curvy.Controllers
         /// Called after the controller is initialized
         /// </summary>
         protected virtual void UserAfterInit() { }
+
         /// <summary>
         /// Called after the controller has updated it's position or rotation
         /// </summary>
@@ -1120,17 +1281,12 @@ namespace FluffyUnderware.Curvy.Controllers
         /// <summary>
         /// Whether the controller should display the CurvyController properties under the Orientation section or not.
         /// </summary>
-        protected virtual bool ShowOrientationSection
-        {
-            get { return true; }
-        }
+        protected virtual bool ShowOrientationSection => true;
+
         /// <summary>
         /// Whether the controller should display the CurvyController properties under the Offset section or not.
         /// </summary>
-        protected virtual bool ShowOffsetSection
-        {
-            get { return OrientationMode != OrientationModeEnum.None; }
-        }
+        protected virtual bool ShowOffsetSection => OrientationMode != OrientationModeEnum.None;
 
         #endregion
 
@@ -1144,61 +1300,64 @@ namespace FluffyUnderware.Curvy.Controllers
         public abstract float Length { get; }
 
         /// <summary>
-        /// Advance the controller and return the new position. This method will do side effect operations if needed, like updating some internal state, or trigerring events.
+        /// Advance the controller and return the new position. This method will do side effect operations if needed, like updating some internal state, or triggering events.
         /// </summary>
-        /// <param name="speed">controller's speed. Should be strictely positive</param>
-        /// <param name="deltaTime">the time that the controller should advance with. Should be strictely positive</param>
-        abstract protected void Advance(float speed, float deltaTime);
+        /// <param name="speed">controller's speed. Should be strictly positive</param>
+        /// <param name="deltaTime">the time that the controller should advance with. Should be strictly positive</param>
+        protected abstract void Advance(float speed, float deltaTime);
 
         /// <summary>
-        /// Advance the controller and return the new position. Contrary to <see cref="Advance"/>, this method will not do any side effect operations, like updating some internal state, or trigerring events
+        /// Advance the controller and return the new position. Contrary to <see cref="Advance"/>, this method will not do any side effect operations, like updating some internal state, or triggering events
         /// 
         /// </summary>
         /// <param name="tf">the current virtual position (either TF or World Units) </param>
-        /// <param name="curyDirection">the current direction</param>
-        /// <param name="speed">controller's speed. Should be strictely positive</param>
-        /// <param name="deltaTime">the time that the controller should advance with. Should be strictely positive</param>
-        abstract protected void SimulateAdvance(ref float tf, ref MovementDirection curyDirection, float speed, float deltaTime);
+        /// <param name="direction">the current direction</param>
+        /// <param name="speed">controller's speed. Should be strictly positive</param>
+        /// <param name="deltaTime">the time that the controller should advance with. Should be strictly positive</param>
+        protected abstract void SimulateAdvance(ref float tf, ref MovementDirection direction, float speed, float deltaTime);
 
         /// <summary>
         /// Converts distance on source from absolute to relative position.
         /// </summary>
         /// <param name="worldUnitDistance">distance in world units from the source start. Should be already clamped</param>
         /// <returns>relative distance in the range 0..1</returns>
-        abstract protected float AbsoluteToRelative(float worldUnitDistance);
+        protected abstract float AbsoluteToRelative(float worldUnitDistance);
 
         /// <summary>
         /// Converts distance on source from relative to absolute position.
         /// </summary>
         /// <param name="relativeDistance">relative distance from the source start. Should be already clamped</param>
         /// <returns>distance in world units from the source start</returns>
-        abstract protected float RelativeToAbsolute(float relativeDistance);
+        protected abstract float RelativeToAbsolute(float relativeDistance);
 
         /// <summary>
         /// Retrieve the source global position for a given relative position (TF)
         /// </summary>
-        abstract protected Vector3 GetInterpolatedSourcePosition(float tf);
+        protected abstract Vector3 GetInterpolatedSourcePosition(float tf);
 
         /// <summary>
         /// Retrieve the source global position, tangent and orientation for a given relative position (TF)
         /// </summary>
-        abstract protected void GetInterpolatedSourcePosition(float tf, out Vector3 interpolatedPosition, out Vector3 tangent, out Vector3 up);
+        protected abstract void GetInterpolatedSourcePosition(float tf, out Vector3 interpolatedPosition, out Vector3 tangent,
+            out Vector3 up);
 
         /// <summary>
         /// Retrieve the source global Orientation/Up-Vector for a given relative position
         /// </summary>
-        abstract protected Vector3 GetOrientation(float tf);
+        protected abstract Vector3 GetOrientation(float tf);
 
         /// <summary>
         /// Gets global tangent for a given relative position
         /// </summary>
-        abstract protected Vector3 GetTangent(float tf);
-
+        protected abstract Vector3 GetTangent(float tf);
 
         #endregion
 
 
-        #region Non virtual public methods 
+        #region Non virtual public methods
+
+        public CurvyController() =>
+            Damper = new OrientationDamper(this);
 
         /// <summary>
         /// Plays the controller. Calling this method while the controller is playing will have no effect.
@@ -1233,10 +1392,8 @@ namespace FluffyUnderware.Curvy.Controllers
         /// Forces the controller to update its state, without waiting for the automatic per frame update.
         /// Can initialize or deinitialize the controller if the right conditions are met.
         /// </summary>
-        public void Refresh()
-        {
+        public void Refresh() =>
             ApplyDeltaTime(0);
-        }
 
         /// <summary>
         /// Advances the controller state by deltaTime seconds, without waiting for the automatic per frame update.
@@ -1263,7 +1420,10 @@ namespace FluffyUnderware.Curvy.Controllers
             MovementDirection direction = Position < newPosition
                 ? MovementDirection.Forward
                 : MovementDirection.Backward;
-            TeleportBy(distance, direction);
+            TeleportBy(
+                distance,
+                direction
+            );
         }
 
         /// <summary>
@@ -1278,7 +1438,10 @@ namespace FluffyUnderware.Curvy.Controllers
             Assert.IsTrue(distance >= 0);
 #endif
             if (PlayState != CurvyControllerState.Playing)
-                DTLog.LogError("[Curvy] Calling TeleportBy on a controller that is stopped. Please make the controller play first", this);
+                DTLog.LogError(
+                    "[Curvy] Calling TeleportBy on a controller that is stopped. Please make the controller play first",
+                    this
+                );
 
             float preWrapSpeed = Speed;
             MovementDirection preWrapDirection = MovementDirection;
@@ -1294,9 +1457,8 @@ namespace FluffyUnderware.Curvy.Controllers
         }
 
 
-
         /// <summary>
-        /// Event-friedly helper that sets a field or property value
+        /// Event-friendly helper that sets a field or property value
         /// </summary>
         /// <param name="fieldAndValue">e.g. "MyValue=42"</param>
         public void SetFromString(string fieldAndValue)
@@ -1305,42 +1467,72 @@ namespace FluffyUnderware.Curvy.Controllers
             if (f.Length != 2)
                 return;
 
-            FieldInfo fi = this.GetType().FieldByName(f[0], true, false);
+            FieldInfo fi = GetType().FieldByName(
+                f[0],
+                true
+            );
             if (fi != null)
-            {
                 try
                 {
                     if (fi.FieldType.IsEnum)
-                        fi.SetValue(this, System.Enum.Parse(fi.FieldType, f[1]));
+                        fi.SetValue(
+                            this,
+                            Enum.Parse(
+                                fi.FieldType,
+                                f[1]
+                            )
+                        );
                     else
-                        fi.SetValue(this, System.Convert.ChangeType(f[1], fi.FieldType, System.Globalization.CultureInfo.InvariantCulture));
+                        fi.SetValue(
+                            this,
+                            Convert.ChangeType(
+                                f[1],
+                                fi.FieldType,
+                                CultureInfo.InvariantCulture
+                            )
+                        );
                 }
-                catch (System.Exception e)
+                catch (Exception e)
                 {
-                    Debug.LogWarning(this.name + ".SetFromString(): " + e.ToString());
+                    Debug.LogWarning(name + ".SetFromString(): " + e);
                 }
-            }
             else
             {
-                PropertyInfo pi = this.GetType().PropertyByName(f[0], true, false);
+                PropertyInfo pi = GetType().PropertyByName(
+                    f[0],
+                    true
+                );
                 if (pi != null)
-                {
                     try
                     {
                         if (pi.PropertyType.IsEnum)
-                            pi.SetValue(this, System.Enum.Parse(pi.PropertyType, f[1]), null);
+                            pi.SetValue(
+                                this,
+                                Enum.Parse(
+                                    pi.PropertyType,
+                                    f[1]
+                                ),
+                                null
+                            );
                         else
-                            pi.SetValue(this, System.Convert.ChangeType(f[1], pi.PropertyType, System.Globalization.CultureInfo.InvariantCulture), null);
+                            pi.SetValue(
+                                this,
+                                Convert.ChangeType(
+                                    f[1],
+                                    pi.PropertyType,
+                                    CultureInfo.InvariantCulture
+                                ),
+                                null
+                            );
                     }
-                    catch (System.Exception e)
+                    catch (Exception e)
                     {
-                        Debug.LogWarning(this.name + ".SetFromString(): " + e.ToString());
+                        Debug.LogWarning(name + ".SetFromString(): " + e);
                     }
-                }
             }
         }
-        #endregion
 
+        #endregion
 
 
         #region ### Privates & Protected Methods & Properties ###
@@ -1359,11 +1551,11 @@ namespace FluffyUnderware.Curvy.Controllers
             get
             {
 #if UNITY_EDITOR
-                return (Application.isPlaying) ?
-                    Time.deltaTime :
-                    Time.realtimeSinceStartup - EditModeLastUpdate;
+                return Application.isPlaying
+                    ? Time.deltaTime
+                    : Time.realtimeSinceStartup - EditModeLastUpdate;
 #else
-                    return  Time.deltaTime;
+                return Time.deltaTime;
 #endif
             }
         }
@@ -1371,10 +1563,7 @@ namespace FluffyUnderware.Curvy.Controllers
         /// <summary>
         /// Whether this controller uses Offsetting or not
         /// </summary>
-        protected bool UseOffset
-        {
-            get { return ShowOffsetSection; }
-        }
+        protected bool UseOffset => ShowOffsetSection;
 
 #if UNITY_EDITOR
         private void editorUpdate()
@@ -1399,14 +1588,18 @@ namespace FluffyUnderware.Curvy.Controllers
         /// <param name="offsetRadius"><see cref="OffsetRadius"/></param>
         protected static Vector3 ApplyOffset(Vector3 position, Vector3 tangent, Vector3 up, float offsetAngle, float offsetRadius)
         {
-            Quaternion offsetRotation = Quaternion.AngleAxis(offsetAngle, tangent);
+            Quaternion offsetRotation = Quaternion.AngleAxis(
+                offsetAngle,
+                tangent
+            );
             return position.Addition((offsetRotation * up).Multiply(offsetRadius));
         }
 
         /// <summary>
         /// Return the clamped position
         /// </summary>
-        protected static float GetClampedPosition(float position, CurvyPositionMode positionMode, CurvyClamping clampingMode, float length)
+        protected static float GetClampedPosition(float position, CurvyPositionMode positionMode, CurvyClamping clampingMode,
+            float length)
         {
             float clampedPosition;
             {
@@ -1416,13 +1609,20 @@ namespace FluffyUnderware.Curvy.Controllers
                         if (position == 1)
                             clampedPosition = 1;
                         else
-                            clampedPosition = CurvyUtility.ClampTF(position, clampingMode);
+                            clampedPosition = CurvyUtility.ClampTF(
+                                position,
+                                clampingMode
+                            );
                         break;
                     case CurvyPositionMode.WorldUnits:
                         if (position == length)
                             clampedPosition = length;
                         else
-                            clampedPosition = CurvyUtility.ClampDistance(position, clampingMode, length);
+                            clampedPosition = CurvyUtility.ClampDistance(
+                                position,
+                                clampingMode,
+                                length
+                            );
                         break;
                     default:
                         throw new NotSupportedException();
@@ -1431,13 +1631,7 @@ namespace FluffyUnderware.Curvy.Controllers
             return clampedPosition;
         }
 
-        private float maxPosition
-        {
-            get
-            {
-                return GetMaxPosition(PositionMode);
-            }
-        }
+        private float maxPosition => GetMaxPosition(PositionMode);
 
         /// <summary>
         /// Returns the maximal valid position value using the given <see cref="CurvyPositionMode"/>
@@ -1483,9 +1677,20 @@ namespace FluffyUnderware.Curvy.Controllers
             {
                 Vector3 previousTangent;
                 Vector3 previousUp;
-                GetInterpolatedSourcePosition(RelativePosition, out previousOffsetlesPosition, out previousTangent, out previousUp);
+                GetInterpolatedSourcePosition(
+                    RelativePosition,
+                    out previousOffsetlesPosition,
+                    out previousTangent,
+                    out previousUp
+                );
 
-                previousOffsetPosition = ApplyOffset(previousOffsetlesPosition, previousTangent, previousUp, OffsetAngle, OffsetRadius);
+                previousOffsetPosition = ApplyOffset(
+                    previousOffsetlesPosition,
+                    previousTangent,
+                    previousUp,
+                    OffsetAngle,
+                    OffsetRadius
+                );
             }
 
             Vector3 offsetlesPosition;
@@ -1495,20 +1700,39 @@ namespace FluffyUnderware.Curvy.Controllers
                 {
                     offsetlesRelativePosition = RelativePosition;
                     MovementDirection curvyDirection = m_Direction;
-                    SimulateAdvance(ref offsetlesRelativePosition, ref curvyDirection, Speed, deltaTime);
+                    SimulateAdvance(
+                        ref offsetlesRelativePosition,
+                        ref curvyDirection,
+                        Speed,
+                        deltaTime
+                    );
                 }
 
                 Vector3 offsetlesTangent;
                 Vector3 offsetlesUp;
-                GetInterpolatedSourcePosition(offsetlesRelativePosition, out offsetlesPosition, out offsetlesTangent, out offsetlesUp);
+                GetInterpolatedSourcePosition(
+                    offsetlesRelativePosition,
+                    out offsetlesPosition,
+                    out offsetlesTangent,
+                    out offsetlesUp
+                );
 
-                offsetPosition = ApplyOffset(offsetlesPosition, offsetlesTangent, offsetlesUp, OffsetAngle, OffsetRadius);
+                offsetPosition = ApplyOffset(
+                    offsetlesPosition,
+                    offsetlesTangent,
+                    offsetlesUp,
+                    OffsetAngle,
+                    OffsetRadius
+                );
             }
 
             float deltaPosition = (offsetlesPosition - previousOffsetlesPosition).magnitude;
             float deltaOffsetPosition = (previousOffsetPosition - offsetPosition).magnitude;
-            float ratio = (deltaPosition / deltaOffsetPosition);
-            return Speed * (float.IsNaN(ratio) ? 1 : ratio);
+            float ratio = deltaPosition / deltaOffsetPosition;
+            return Speed
+                   * (float.IsNaN(ratio)
+                       ? 1
+                       : ratio);
         }
 
         //TODO This should be a local method when all supported unity versions will handle C#7
@@ -1524,35 +1748,30 @@ namespace FluffyUnderware.Curvy.Controllers
             }
             else
             {
-                GetPositionAndRotation(out _, out Quaternion rotation);
+                GetPositionAndRotation(
+                    out _,
+                    out Quaternion rotation
+                );
 
                 targetUp = rotation * Vector3.up;
                 targetForward = rotation * Vector3.forward;
             }
         }
-        #region Rigibody target handling
-        private bool IsNeededRigidbodyMissing
-        {
-            get
-            {
-                return targetComponent == TargetComponent.KinematicRigidbody && Rigidbody == null;
-            }
-        }
 
-        private bool IsNeeded2DRigidbodyMissing
-        {
-            get
-            {
-                return targetComponent == TargetComponent.KinematicRigidbody2D && Rigidbody2D == null;
-            }
-        }
+        #region Rigibody target handling
+
+        private bool IsNeededRigidbodyMissing => targetComponent == TargetComponent.KinematicRigidbody && Rigidbody == null;
+
+        private bool IsNeeded2DRigidbodyMissing => targetComponent == TargetComponent.KinematicRigidbody2D && Rigidbody2D == null;
 
         private bool IsNeededRigidbodyNotKinematic
         {
             get
             {
                 Rigidbody localRigidBody = Rigidbody;
-                return targetComponent == TargetComponent.KinematicRigidbody && localRigidBody != null && localRigidBody.isKinematic == false;
+                return targetComponent == TargetComponent.KinematicRigidbody
+                       && localRigidBody != null
+                       && localRigidBody.isKinematic == false;
             }
         }
 
@@ -1561,7 +1780,14 @@ namespace FluffyUnderware.Curvy.Controllers
             get
             {
                 Rigidbody2D localRigidBody = Rigidbody2D;
-                return targetComponent == TargetComponent.KinematicRigidbody2D && localRigidBody != null && localRigidBody.isKinematic == false;
+                return targetComponent == TargetComponent.KinematicRigidbody2D
+                       && localRigidBody != null
+                       &&
+#if UNITY_6000_0_OR_NEWER
+                       localRigidBody.bodyType != RigidbodyType2D.Kinematic;
+#else
+                       localRigidBody.isKinematic == false;
+#endif
             }
         }
 
@@ -1589,19 +1815,17 @@ namespace FluffyUnderware.Curvy.Controllers
             }
         }
 
-        #endregion
+#endregion
 
-        #endregion
+#endregion
 
         #region ISerializationCallbackReceiver
-        /*! \cond PRIVATE */
+
         /// <summary>
         /// Implementation of UnityEngine.ISerializationCallbackReceiver
         /// Called automatically by Unity, is not meant to be called by Curvy's users
         /// </summary>
-        public void OnBeforeSerialize()
-        {
-        }
+        public void OnBeforeSerialize() { }
 
         /// <summary>
         /// Implementation of UnityEngine.ISerializationCallbackReceiver
@@ -1619,7 +1843,7 @@ namespace FluffyUnderware.Curvy.Controllers
             if ((short)MoveMode == 2)
                 MoveMode = MoveModeEnum.AbsolutePrecise;
         }
-        /*! \endcond */
+
         #endregion
     }
 }

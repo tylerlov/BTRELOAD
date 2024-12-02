@@ -1,16 +1,16 @@
 // =====================================================================
-// Copyright 2013-2022 ToolBuddy
+// Copyright © 2013 ToolBuddy
 // All rights reserved
 // 
 // http://www.toolbuddy.net
 // =====================================================================
 
-using UnityEngine;
-using UnityEditor;
 using FluffyUnderware.Curvy.Generator;
-using FluffyUnderware.DevTools.Extensions;
 using FluffyUnderware.Curvy.Generator.Modules;
 using FluffyUnderware.DevToolsEditor;
+using JetBrains.Annotations;
+using UnityEditor;
+using UnityEngine;
 
 namespace FluffyUnderware.CurvyEditor.Generator.Modules
 {
@@ -18,31 +18,39 @@ namespace FluffyUnderware.CurvyEditor.Generator.Modules
     [CustomEditor(typeof(BuildShapeExtrusion))]
     public class BuildShapeExtrusionEditor : CGModuleEditor<BuildShapeExtrusion>
     {
-        bool mEditCross;
-        bool mShowEditButton;
+        private bool mEditCross;
+        private bool mShowEditButton;
 
         public override void OnModuleDebugGUI()
         {
-            EditorGUILayout.LabelField("Samples Path/Cross: " + Target.PathSamples.ToString() + "/" + Target.CrossSamples.ToString());
-            EditorGUILayout.LabelField("Cross Sample Groups: " + Target.CrossGroups.ToString());
+            BuildShapeExtrusion.Statistics statistics = Target.ExtrusionStatistics;
+            EditorGUILayout.LabelField("Samples Path/Cross: " + statistics.PathSampleCount + "/" + statistics.CrossSampleCount);
+            EditorGUILayout.LabelField("Cross Sample Groups: " + statistics.MaterialGroupsCount);
         }
 
-        void CBEditCrossButton()
+        [UsedImplicitly]
+        private void CBEditCrossButton()
         {
-
             if (DTGUI.IsLayout)
-                mShowEditButton = (Target.IsConfigured && Target.InCross.SourceSlot().ExternalInput != null && Target.InCross.SourceSlot().ExternalInput.SupportsIPE);
+                mShowEditButton = Target.IsConfigured
+                                  && Target.InCross.SourceSlot().ExternalInput != null
+                                  && Target.InCross.SourceSlot().ExternalInput.SupportsIPE;
 
             if (mShowEditButton)
             {
                 EditorGUI.BeginChangeCheck();
-                mEditCross = GUILayout.Toggle(mEditCross, "Edit Cross", EditorStyles.miniButton);
+                mEditCross = GUILayout.Toggle(
+                    mEditCross,
+                    "Edit Cross",
+                    EditorStyles.miniButton
+                );
                 if (EditorGUI.EndChangeCheck())
                 {
                     if (mEditCross)
-                    {
-                        CGGraph.SetIPE(Target.Cross, this);
-                    }
+                        CGGraph.SetIPE(
+                            Target.Cross,
+                            this
+                        );
                     else
                         CGGraph.SetIPE();
                 }
@@ -54,10 +62,36 @@ namespace FluffyUnderware.CurvyEditor.Generator.Modules
         /// </summary>
         internal override void OnIPEGetTRS(out Vector3 position, out Quaternion rotation, out Vector3 scale)
         {
-            position = Target.CrossPosition;
-            rotation = Target.CrossRotation;
+            if (Target.OutVolume.Data.Length == 0)
+            {
+                position = default;
+                rotation = default;
+            }
+            else
+            {
+                CGVolume volume = (CGVolume)Target.OutVolume.Data[0];
+
+                if (volume.Positions.Array.Length == 0)
+                {
+                    position = default;
+                    rotation = default;
+                }
+                else
+                {
+                    position = volume.Positions.Array[0];
+                    rotation = Quaternion.LookRotation(
+                        volume.Directions.Array[0],
+                        volume.Normals.Array[0]
+                    );
+                }
+            }
+
             Vector2 scaleVector = (Target as ScalingModule).GetScale(0);
-            scale = new Vector3(scaleVector.x, scaleVector.y, 1);
+            scale = new Vector3(
+                scaleVector.x,
+                scaleVector.y,
+                1
+            );
         }
     }
 }

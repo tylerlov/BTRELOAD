@@ -1,21 +1,21 @@
 // =====================================================================
-// Copyright 2013-2022 ToolBuddy
+// Copyright © 2013 ToolBuddy
 // All rights reserved
 // 
 // http://www.toolbuddy.net
 // =====================================================================
 
-using System;
-using UnityEngine;
-using UnityEditor;
-using FluffyUnderware.Curvy;
-using FluffyUnderware.Curvy.Utils;
 using System.Collections.Generic;
 using System.Linq;
+using FluffyUnderware.Curvy;
 using FluffyUnderware.Curvy.Pools;
-using FluffyUnderware.DevToolsEditor;
-using FluffyUnderware.DevTools;
 using FluffyUnderware.Curvy.ThirdParty.LibTessDotNet;
+using FluffyUnderware.Curvy.Utils;
+using FluffyUnderware.DevTools;
+using FluffyUnderware.DevToolsEditor;
+using JetBrains.Annotations;
+using UnityEditor;
+using UnityEngine;
 
 namespace FluffyUnderware.CurvyEditor
 {
@@ -24,16 +24,16 @@ namespace FluffyUnderware.CurvyEditor
     /// </summary>
     public class CurvySplineExportWizard : EditorWindow
     {
-        const int CLOSEDSHAPE = 0;
-        const int VERTEXLINE = 1;
-        const string Title = "Spline to Mesh";
+        private const int CLOSEDSHAPE = 0;
+        private const int VERTEXLINE = 1;
+        private const string Title = "Spline to Mesh";
 
         // SOURCES
         public List<SplinePolyLine> Curves = new List<SplinePolyLine>();
         public WindingRule Winding = WindingRule.EvenOdd;
         public string TriangulationMessage = string.Empty;
 
-        bool refreshNow = true;
+        private bool refreshNow = true;
         public int Mode;
         public Material Mat;
         public Vector2 UVOffset = Vector2.zero;
@@ -49,38 +49,39 @@ namespace FluffyUnderware.CurvyEditor
         public MeshRenderer previewMeshRenderer;
 
         public Vector2 scroll;
-        readonly HashSet<CurvySpline> splines = new HashSet<CurvySpline>();
+        private readonly HashSet<CurvySpline> splines = new HashSet<CurvySpline>();
 
-        Mesh previewMesh
+        private Mesh previewMesh
         {
-            get
-            {
-                return previewMeshFilter.sharedMesh;
-            }
-            set
-            {
-                previewMeshFilter.sharedMesh = value;
-            }
+            get => previewMeshFilter.sharedMesh;
+            set => previewMeshFilter.sharedMesh = value;
         }
 
-        static public void Create()
+        public static void Create()
         {
-            CurvySplineExportWizard win = GetWindow<CurvySplineExportWizard>(true, Title, true);
+            CurvySplineExportWizard win = GetWindow<CurvySplineExportWizard>(
+                true,
+                Title,
+                true
+            );
             win.Init(Selection.activeGameObject.GetComponent<CurvySpline>());
-            win.minSize = new Vector2(500, 390);
+            win.minSize = new Vector2(
+                500,
+                390
+            );
             SceneView.duringSceneGui -= win.Preview;
             SceneView.duringSceneGui += win.Preview;
         }
 
-        void OnEnable()
+        [UsedImplicitly]
+        private void OnEnable()
         {
-            nSplines = new DTGroupNode("Splines") { HelpURL = CurvySpline.DOCLINK + "exportwizard" };
+            nSplines = new DTGroupNode("Splines") { HelpURL = AssetInformation.DocsRedirectionBaseUrl + "exportwizard" };
             nTexture = new DTGroupNode("Texture");
             nExport = new DTGroupNode("Export");
 
             GizmoState = CurvyGlobalManager.Gizmos;
             CurvyGlobalManager.Gizmos = CurvySplineGizmos.Curve;
-
 
 
             if (!previewGO)
@@ -90,57 +91,56 @@ namespace FluffyUnderware.CurvyEditor
                 previewMeshRenderer = previewGO.AddComponent<MeshRenderer>();
                 previewMeshFilter = previewGO.AddComponent<MeshFilter>();
                 if (!Mat)
-                {
                     Mat = CurvyUtility.GetDefaultMaterial();
-                }
                 previewMeshRenderer.material = Mat;
             }
         }
 
-        void OnDisable()
-        {
+        [UsedImplicitly]
+        private void OnDisable() =>
             CurvyGlobalManager.Gizmos = GizmoState;
-        }
 
-        void OnDestroy()
+        [UsedImplicitly]
+        private void OnDestroy()
         {
             SceneView.duringSceneGui -= Preview;
             foreach (SplinePolyLine crv in Curves)
                 UnhookSpline(crv.Spline);
             Curves.Clear();
             SceneView.RepaintAll();
-            GameObject.DestroyImmediate(previewGO);
+            DestroyImmediate(previewGO);
         }
 
-        void OnFocus()
+        [UsedImplicitly]
+        private void OnFocus()
         {
             SceneView.duringSceneGui -= Preview;
             SceneView.duringSceneGui += Preview;
         }
 
-        void Init(CurvySpline spline)
+        private void Init(CurvySpline spline)
         {
             Curves.Add(new SplinePolyLine(spline));
             HookSpline(spline);
         }
 
 
-        Mesh clonePreviewMesh()
+        private Mesh clonePreviewMesh()
         {
             Mesh msh = new Mesh();
-            
+
             Vector3[] previewMeshVertices = previewMesh.vertices;
             msh.vertices = previewMeshVertices;
-            
+
             int[] previewMeshTriangles = previewMesh.triangles;
             msh.triangles = previewMeshTriangles;
-            
+
             Vector2[] previewMeshUV = previewMesh.uv;
             msh.uv = previewMeshUV;
-            
+
             Vector2[] previewMeshUV2 = previewMesh.uv2;
             msh.uv2 = previewMeshUV2;
-            
+
             msh.RecalculateNormals();
             msh.RecalculateBounds();
 
@@ -151,49 +151,59 @@ namespace FluffyUnderware.CurvyEditor
             return msh;
         }
 
-        void OnSourceRefresh(CurvySplineEventArgs e)
-        {
+        private void OnSourceRefresh(CurvySplineEventArgs e) =>
             refreshNow = true;
-        }
 
-        void HookSpline(CurvySpline spline)
+        private void HookSpline(CurvySpline spline)
         {
             if (!spline) return;
             spline.OnRefresh.AddListenerOnce(OnSourceRefresh);
             splines.Add(spline);
         }
 
-        void UnhookSpline(CurvySpline spline)
+        private void UnhookSpline(CurvySpline spline)
         {
             if (!spline) return;
             spline.OnRefresh.RemoveListener(OnSourceRefresh);
             splines.Remove(spline);
         }
 
-        readonly IDTInspectorNodeRenderer GUIRenderer = new DTInspectorNodeDefaultRenderer();
+        private readonly IDTInspectorNodeRenderer GUIRenderer = new DTInspectorNodeDefaultRenderer();
         private DTGroupNode nSplines;
         private DTGroupNode nTexture;
         private DTGroupNode nExport;
-        bool mNeedRepaint;
+        private bool mNeedRepaint;
 
-        void OnGUI()
+        [UsedImplicitly]
+        private void OnGUI()
         {
-
             DTInspectorNode.IsInsideInspector = false;
             if (Curves.Count == 0)
                 return;
 
 
-            Mode = GUILayout.SelectionGrid(Mode, new GUIContent[]
-                    {
-                        new GUIContent("Closed Shape","Export a closed shape with triangles"),
-                        new GUIContent("Vertex Line","Export a vertex line")
-                    }, 2);
-
+            Mode = GUILayout.SelectionGrid(
+                Mode,
+                new[]
+                {
+                    new GUIContent(
+                        "Closed Shape",
+                        "Export a closed shape with triangles"
+                    ),
+                    new GUIContent(
+                        "Vertex Line",
+                        "Export a vertex line"
+                    )
+                },
+                2
+            );
 
 
             if (!string.IsNullOrEmpty(TriangulationMessage) && !TriangulationMessage.Contains("Angle must be >0"))
-                EditorGUILayout.HelpBox(TriangulationMessage, MessageType.Error);
+                EditorGUILayout.HelpBox(
+                    TriangulationMessage,
+                    MessageType.Error
+                );
 
             scroll = EditorGUILayout.BeginScrollView(scroll);
 
@@ -201,21 +211,38 @@ namespace FluffyUnderware.CurvyEditor
             GUIRenderer.RenderSectionHeader(nSplines);
             if (nSplines.ContentVisible)
             {
-                Winding = (WindingRule)EditorGUILayout.EnumPopup("Winding", Winding, GUILayout.Width(285));
+                Winding = (WindingRule)EditorGUILayout.EnumPopup(
+                    "Winding",
+                    Winding,
+                    GUILayout.Width(285)
+                );
                 GUILayout.BeginHorizontal();
-                GUILayout.Label(new GUIContent("Spline", "Note: Curves from a SplineGroup needs to be connected!"), EditorStyles.boldLabel, GUILayout.Width(140));
-                GUILayout.Label("Vertex Generation", EditorStyles.boldLabel, GUILayout.Width(160));
-                GUILayout.Label("Orientation", EditorStyles.boldLabel);
+                GUILayout.Label(
+                    new GUIContent(
+                        "Spline"
+                    ),
+                    EditorStyles.boldLabel,
+                    GUILayout.Width(140)
+                );
+                GUILayout.Label(
+                    "Vertex Generation",
+                    EditorStyles.boldLabel,
+                    GUILayout.Width(160)
+                );
+                GUILayout.Label(
+                    "Orientation",
+                    EditorStyles.boldLabel
+                );
                 GUILayout.EndHorizontal();
                 CurveGUI(Curves[0]);
                 if (Mode == CLOSEDSHAPE)
                 {
-
                     for (int i = 1; i < Curves.Count; i++)
-                    {
                         CurveGUI(Curves[i]);
-                    }
-                    if (GUILayout.Button(CurvyStyles.AddSmallTexture, GUILayout.ExpandWidth(false)))
+                    if (GUILayout.Button(
+                            CurvyStyles.AddSmallTexture,
+                            GUILayout.ExpandWidth(false)
+                        ))
                         Curves.Add(new SplinePolyLine(null));
                 }
             }
@@ -227,25 +254,51 @@ namespace FluffyUnderware.CurvyEditor
             GUIRenderer.RenderSectionHeader(nTexture);
             if (nTexture.ContentVisible)
             {
-                Mat = (Material)EditorGUILayout.ObjectField("Material", Mat, typeof(Material), true, GUILayout.Width(285));
-                UVTiling = EditorGUILayout.Vector2Field("Tiling", UVTiling, GUILayout.Width(285));
-                UVOffset = EditorGUILayout.Vector2Field("Offset", UVOffset, GUILayout.Width(285));
-
+                Mat = (Material)EditorGUILayout.ObjectField(
+                    "Material",
+                    Mat,
+                    typeof(Material),
+                    true,
+                    GUILayout.Width(285)
+                );
+                UVTiling = EditorGUILayout.Vector2Field(
+                    "Tiling",
+                    UVTiling,
+                    GUILayout.Width(285)
+                );
+                UVOffset = EditorGUILayout.Vector2Field(
+                    "Offset",
+                    UVOffset,
+                    GUILayout.Width(285)
+                );
             }
+
             GUIRenderer.RenderSectionFooter(nTexture);
             mNeedRepaint = mNeedRepaint || nTexture.NeedRepaint;
             // EXPORT
             GUIRenderer.RenderSectionHeader(nExport);
             if (nExport.ContentVisible)
             {
-                MeshName = EditorGUILayout.TextField("Mesh Name", MeshName, GUILayout.Width(285));
-                UV2 = EditorGUILayout.Toggle("Add UV2", UV2);
+                MeshName = EditorGUILayout.TextField(
+                    "Mesh Name",
+                    MeshName,
+                    GUILayout.Width(285)
+                );
+                UV2 = EditorGUILayout.Toggle(
+                    "Add UV2",
+                    UV2
+                );
 
                 GUILayout.BeginHorizontal();
 
                 if (GUILayout.Button("Save as Asset"))
                 {
-                    string path = EditorUtility.SaveFilePanelInProject("Save Mesh", MeshName + ".asset", "asset", "Choose a file location");
+                    string path = EditorUtility.SaveFilePanelInProject(
+                        "Save Mesh",
+                        MeshName + ".asset",
+                        "asset",
+                        "Choose a file location"
+                    );
                     if (!string.IsNullOrEmpty(path))
                     {
                         Mesh msh = clonePreviewMesh();
@@ -253,7 +306,10 @@ namespace FluffyUnderware.CurvyEditor
                         {
                             msh.name = MeshName;
                             AssetDatabase.DeleteAsset(path);
-                            AssetDatabase.CreateAsset(msh, path);
+                            AssetDatabase.CreateAsset(
+                                msh,
+                                path
+                            );
                             AssetDatabase.SaveAssets();
                             AssetDatabase.Refresh();
                             DTLog.Log("[Curvy] Export: Mesh Asset saved!");
@@ -267,7 +323,12 @@ namespace FluffyUnderware.CurvyEditor
                     if (msh)
                     {
                         msh.name = MeshName;
-                        GameObject go = new GameObject(MeshName, typeof(MeshRenderer), typeof(MeshFilter));
+                        //todo use UndoableCreateGameObject?
+                        GameObject go = new GameObject(
+                            MeshName,
+                            typeof(MeshRenderer),
+                            typeof(MeshFilter)
+                        );
                         go.GetComponent<MeshFilter>().sharedMesh = msh;
                         go.GetComponent<MeshRenderer>().sharedMaterial = Mat;
                         Selection.activeGameObject = go;
@@ -275,11 +336,11 @@ namespace FluffyUnderware.CurvyEditor
                     }
                     else
                         DTLog.LogWarning("[Curvy] Export: Unable to triangulate spline!");
-
                 }
-                GUILayout.EndHorizontal();
 
+                GUILayout.EndHorizontal();
             }
+
             GUIRenderer.RenderSectionFooter(nExport);
             mNeedRepaint = mNeedRepaint || nExport.NeedRepaint;
             EditorGUILayout.EndScrollView();
@@ -291,22 +352,34 @@ namespace FluffyUnderware.CurvyEditor
             }
         }
 
-        void CurveGUI(SplinePolyLine curve)
+        private void CurveGUI(SplinePolyLine curve)
         {
             GUILayout.BeginHorizontal();
             CurvySpline o = curve.Spline;
-            curve.Spline = (CurvySpline)EditorGUILayout.ObjectField(curve.Spline, typeof(CurvySpline), true, GUILayout.Width(140));
+            curve.Spline = (CurvySpline)EditorGUILayout.ObjectField(
+                curve.Spline,
+                typeof(CurvySpline),
+                true,
+                GUILayout.Width(140)
+            );
 
             if (o != curve.Spline)
-            {
                 UnhookSpline(o);
-            }
             HookSpline(curve.Spline);
 
-            curve.VertexMode = (SplinePolyLine.VertexCalculation)EditorGUILayout.EnumPopup(curve.VertexMode, GUILayout.Width(140));
+            curve.VertexMode = (SplinePolyLine.VertexCalculation)EditorGUILayout.EnumPopup(
+                curve.VertexMode,
+                GUILayout.Width(140)
+            );
             GUILayout.Space(20);
             curve.Orientation = (ContourOrientation)EditorGUILayout.EnumPopup(curve.Orientation);
-            if (GUILayout.Button(new GUIContent(CurvyStyles.DeleteSmallTexture, "Remove"), GUILayout.ExpandWidth(false)))
+            if (GUILayout.Button(
+                    new GUIContent(
+                        CurvyStyles.DeleteSmallTexture,
+                        "Remove"
+                    ),
+                    GUILayout.ExpandWidth(false)
+                ))
             {
                 if (curve.Spline)
                     UnhookSpline(curve.Spline);
@@ -314,6 +387,7 @@ namespace FluffyUnderware.CurvyEditor
                 refreshNow = true;
                 GUIUtility.ExitGUI();
             }
+
             switch (curve.VertexMode)
             {
                 case SplinePolyLine.VertexCalculation.ByAngle:
@@ -322,27 +396,41 @@ namespace FluffyUnderware.CurvyEditor
                     GUILayout.Space(150);
                     float lw = EditorGUIUtility.labelWidth;
                     EditorGUIUtility.labelWidth = 40;
-                    curve.Angle = Mathf.Max(0, EditorGUILayout.FloatField("Angle", curve.Angle, GUILayout.Width(140)));
+                    curve.Angle = Mathf.Max(
+                        0,
+                        EditorGUILayout.FloatField(
+                            "Angle",
+                            curve.Angle,
+                            GUILayout.Width(140)
+                        )
+                    );
                     EditorGUIUtility.labelWidth = 60;
                     GUILayout.Space(20);
-                    curve.Distance = EditorGUILayout.FloatField("Min. Dist.", curve.Distance, GUILayout.Width(150));
+                    curve.Distance = EditorGUILayout.FloatField(
+                        "Min. Dist.",
+                        curve.Distance,
+                        GUILayout.Width(150)
+                    );
                     EditorGUIUtility.labelWidth = lw;
                     if (curve.Angle == 0)
                     {
                         GUILayout.EndHorizontal();
                         GUILayout.BeginHorizontal();
                         GUILayout.Space(140);
-                        EditorGUILayout.HelpBox("Angle must be >0", MessageType.Error);
+                        EditorGUILayout.HelpBox(
+                            "Angle must be >0",
+                            MessageType.Error
+                        );
                     }
+
                     break;
             }
+
             GUILayout.EndHorizontal();
-
-
-
         }
 
-        void Update()
+        [UsedImplicitly]
+        private void Update()
         {
             if (Curves.Count == 0)
             {
@@ -362,7 +450,7 @@ namespace FluffyUnderware.CurvyEditor
                         s2m.Lines.Add(c);
 
                 s2m.Winding = Winding;
-                s2m.VertexLineOnly = (Mode == VERTEXLINE);
+                s2m.VertexLineOnly = Mode == VERTEXLINE;
 
                 s2m.UVOffset = UVOffset;
                 s2m.UVTiling = UVTiling;
@@ -377,25 +465,29 @@ namespace FluffyUnderware.CurvyEditor
                 if (previewMesh)
                 {
                     if (previewMesh.triangles.Length > 0)
-                        sTitle = string.Format("{2} ({0} Vertices, {1} Triangles)", previewMeshFilter.sharedMesh.vertexCount, previewMeshFilter.sharedMesh.triangles.Length / 3, Title);
+                        sTitle = string.Format(
+                            "{2} ({0} Vertices, {1} Triangles)",
+                            previewMeshFilter.sharedMesh.vertexCount,
+                            previewMeshFilter.sharedMesh.triangles.Length / 3,
+                            Title
+                        );
                     else
-                        sTitle = string.Format("{1} ({0} Vertices)", previewMeshFilter.sharedMesh.vertexCount, Title);
+                        sTitle = string.Format(
+                            "{1} ({0} Vertices)",
+                            previewMeshFilter.sharedMesh.vertexCount,
+                            Title
+                        );
                 }
                 else
                     sTitle = Title;
 
-#if UNITY_5_0 || UNITY_4_6
-                title=sTitle;
-#else
                 titleContent = new GUIContent(sTitle);
-#endif
                 SceneView.RepaintAll();
             }
         }
 
-        void Preview(SceneView sceneView)
+        private void Preview(SceneView sceneView)
         {
-
             if (!previewMesh)
                 return;
 
@@ -404,19 +496,32 @@ namespace FluffyUnderware.CurvyEditor
             if (Mode != VERTEXLINE)
                 tris = previewMesh.triangles;
             Handles.color = Color.green;
-            Handles.matrix = Matrix4x4.TRS(new Vector3(0, 0, 0), Quaternion.identity, Vector3.one);
+            Handles.matrix = Matrix4x4.TRS(
+                new Vector3(
+                    0,
+                    0,
+                    0
+                ),
+                Quaternion.identity,
+                Vector3.one
+            );
             for (int i = 0; i < tris.Length; i += 3)
-                Handles.DrawPolyLine(vts[tris[i]], vts[tris[i + 1]], vts[tris[i + 2]], vts[tris[i]]);
+                Handles.DrawPolyLine(
+                    vts[tris[i]],
+                    vts[tris[i + 1]],
+                    vts[tris[i + 2]],
+                    vts[tris[i]]
+                );
 
             Handles.color = Color.gray;
             for (int i = 0; i < vts.Length; i++)
-            {
-#if UNITY_5_6_OR_NEWER
-                Handles.CubeHandleCap(0, vts[i], Quaternion.identity, HandleUtility.GetHandleSize(vts[i]) * 0.07f, EventType.Repaint);
-#else
-                Handles.CubeCap(0, vts[i], Quaternion.identity, HandleUtility.GetHandleSize(vts[i]) * 0.07f);
-#endif
-            }
+                Handles.CubeHandleCap(
+                    0,
+                    vts[i],
+                    Quaternion.identity,
+                    HandleUtility.GetHandleSize(vts[i]) * 0.07f,
+                    EventType.Repaint
+                );
             ArrayPools.Vector3.Free(vts);
         }
     }

@@ -1,5 +1,5 @@
 // =====================================================================
-// Copyright 2013-2022 ToolBuddy
+// Copyright © 2020 ToolBuddy
 // All rights reserved
 // 
 // http://www.toolbuddy.net
@@ -17,10 +17,12 @@ namespace ToolBuddy.Pooling.Pools
         /// </summary>
         /// <remarks>This is not the maximal number of arrays, but the maximal sum of the arrays' lengths</remarks>
         public long ElementsCount { get; }
+
         /// <summary>
         /// The number of arrays stored in the pool
         /// </summary>
         public int ArraysCount { get; }
+
         /// <summary>
         /// The maximal number of elements that the pool will keep, after they have been freed, to be available for future usage.
         /// Once this limit is reached, every freed array will simply get ignored, allowing the garbage collector to collect it
@@ -37,14 +39,12 @@ namespace ToolBuddy.Pooling.Pools
         }
 
         public bool Equals(ArrayPoolUsageData other)
-        {
-            return ElementsCount == other.ElementsCount && ArraysCount == other.ArraysCount && ElementsCapacity == other.ElementsCapacity;
-        }
+            => ElementsCount == other.ElementsCount
+               && ArraysCount == other.ArraysCount
+               && ElementsCapacity == other.ElementsCapacity;
 
         public override bool Equals(object obj)
-        {
-            return obj is ArrayPoolUsageData other && Equals(other);
-        }
+            => obj is ArrayPoolUsageData other && Equals(other);
 
         public override int GetHashCode()
         {
@@ -58,18 +58,13 @@ namespace ToolBuddy.Pooling.Pools
         }
 
         public static bool operator ==(ArrayPoolUsageData a, ArrayPoolUsageData b)
-        {
-            return a.Equals(b);
-        }
+            => a.Equals(b);
 
         public static bool operator !=(ArrayPoolUsageData a, ArrayPoolUsageData b)
-        {
-            return !(a == b);
-        }
+            => !(a == b);
 
         public override string ToString()
-        {
-            return $"{nameof(ElementsCount)}: {ElementsCount}, {nameof(ArraysCount)}: {ArraysCount}, {nameof(ElementsCapacity)}: {ElementsCapacity}";
-        }
+            =>
+                $"{nameof(ElementsCount)}: {ElementsCount}, {nameof(ArraysCount)}: {ArraysCount}, {nameof(ElementsCapacity)}: {ElementsCapacity}";
     }
 }

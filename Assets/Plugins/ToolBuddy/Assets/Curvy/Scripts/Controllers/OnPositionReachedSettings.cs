@@ -1,5 +1,5 @@
 // =====================================================================
-// Copyright 2013-2022 ToolBuddy
+// Copyright © 2013 ToolBuddy
 // All rights reserved
 // 
 // http://www.toolbuddy.net
@@ -13,7 +13,7 @@ namespace FluffyUnderware.Curvy.Controllers
     /// <summary>
     /// Settings for events to be triggered when the controller reaches a specific position
     /// </summary>
-    [System.Serializable]
+    [Serializable]
     public class OnPositionReachedSettings : ISerializationCallbackReceiver
     {
         public string Name;
@@ -25,10 +25,8 @@ namespace FluffyUnderware.Curvy.Controllers
 
         #region handling default values
 
-        public OnPositionReachedSettings()
-        {
+        public OnPositionReachedSettings() =>
             InitializeFieldsWithDefaultValue();
-        }
 
         [SerializeField, HideInInspector]
         private bool initialized;
@@ -41,7 +39,11 @@ namespace FluffyUnderware.Curvy.Controllers
             Name = "My Event";
             PositionMode = CurvyPositionMode.WorldUnits;
             TriggeringDirections = TriggeringDirections.All;
-            GizmoColor = new Color(0.652f, 0.652f, 0.652f);
+            GizmoColor = new Color(
+                0.652f,
+                0.652f,
+                0.652f
+            );
             initialized = true;
         }
 
@@ -53,30 +55,10 @@ namespace FluffyUnderware.Curvy.Controllers
             if (initialized == false)
                 InitializeFieldsWithDefaultValue();
         }
+
         #endregion
 
         public OnPositionReachedSettings Clone()
-        {
-            return (OnPositionReachedSettings)MemberwiseClone();
-        }
-    }
-
-    /// <summary>
-    /// Defines what travel directions should trigger an event
-    /// </summary>
-    public enum TriggeringDirections
-    {
-        /// <summary>
-        /// All directions
-        /// </summary>
-        All,
-        /// <summary>
-        /// Same direction as spline's tangent
-        /// </summary>
-        Forward,
-        /// <summary>
-        /// Opposite direction as spline's tangent
-        /// </summary>
-        Backward
+            => (OnPositionReachedSettings)MemberwiseClone();
     }
 }

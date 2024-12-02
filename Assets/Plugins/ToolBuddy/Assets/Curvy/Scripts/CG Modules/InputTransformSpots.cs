@@ -1,16 +1,16 @@
 // =====================================================================
-// Copyright 2013-2022 ToolBuddy
+// Copyright © 2013 ToolBuddy
 // All rights reserved
 // 
 // http://www.toolbuddy.net
 // =====================================================================
 
 using System;
-using UnityEngine;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using FluffyUnderware.DevTools;
+using JetBrains.Annotations;
+using UnityEngine;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -18,8 +18,12 @@ using UnityEditor;
 
 namespace FluffyUnderware.Curvy.Generator.Modules
 {
-    [ModuleInfo("Input/Transform Spots", ModuleName = "Input Transform Spots", Description = "Defines an array of placement spots taken from existing Transforms")]
-    [HelpURL(CurvySpline.DOCLINK + "cginputtransformspots")]
+    [ModuleInfo(
+        "Input/Transform Spots",
+        ModuleName = "Input Transform Spots",
+        Description = "Defines an array of placement spots taken from existing Transforms"
+    )]
+    [HelpURL(AssetInformation.DocsRedirectionBaseUrl + "cginputtransformspots")]
     public class InputTransformSpots : CGModule
     {
         [HideInInspector]
@@ -41,19 +45,22 @@ namespace FluffyUnderware.Curvy.Generator.Modules
         /// </summary>
         public List<TransformSpot> TransformSpots
         {
-            get { return transformSpots; }
+            get => transformSpots;
             set
             {
                 if (transformSpots != value)
+                {
                     transformSpots = value;
-                Dirty = true;
+                    Dirty = true;
+                }
             }
         }
 
         #endregion
 
         #region ### Unity Callbacks ###
-        /*! \cond UNITY */
+
+#if DOCUMENTATION___FORCE_IGNORE___UNITY == false
 
         protected override void OnEnable()
         {
@@ -76,14 +83,13 @@ namespace FluffyUnderware.Curvy.Generator.Modules
         {
             base.Reset();
             TransformSpots.Clear();
-            Dirty = true;
         }
 
+        [UsedImplicitly]
         private void Update()
         {
-            if (Dirty == false && OutSpots.Data != null && OutSpots.Data.Length != 0)
-            {
-                foreach (var keyValuePair in outputToInputDictionary)
+            if (Dirty == false && OutSpots.Data.Length != 0)
+                foreach (KeyValuePair<CGSpot, TransformSpot> keyValuePair in outputToInputDictionary)
                 {
                     CGSpot cgSpot = keyValuePair.Key;
                     TransformSpot transformSpot = keyValuePair.Value;
@@ -93,10 +99,10 @@ namespace FluffyUnderware.Curvy.Generator.Modules
                         return;
                     }
                 }
-            }
         }
 
-        /*! \endcond */
+#endif
+
         #endregion
 
         #region ### Public Methods ###
@@ -109,14 +115,21 @@ namespace FluffyUnderware.Curvy.Generator.Modules
             {
                 outputToInputDictionary.Clear();
 
-                List<CGSpot> spots = TransformSpots.Where(s => s.Transform != null).Select(s =>
-                {
-                    CGSpot cgSpot = new CGSpot(s.Index, s.Transform.position, s.Transform.rotation, s.Transform.lossyScale);
-                    outputToInputDictionary[cgSpot] = s;
-                    return cgSpot;
-                }).ToList();
+                List<CGSpot> spots = TransformSpots.Where(s => s.Transform != null).Select(
+                    s =>
+                    {
+                        CGSpot cgSpot = new CGSpot(
+                            s.Index,
+                            s.Transform.position,
+                            s.Transform.rotation,
+                            s.Transform.lossyScale
+                        );
+                        outputToInputDictionary[cgSpot] = s;
+                        return cgSpot;
+                    }
+                ).ToList();
 
-                OutSpots.SetData(new CGSpots(spots));
+                OutSpots.SetDataToElement(new CGSpots(spots));
             }
 
 #if UNITY_EDITOR
@@ -128,7 +141,6 @@ namespace FluffyUnderware.Curvy.Generator.Modules
         #endregion
 
         #region ### Privates ###
-        /*! \cond PRIVATE */
 
         private readonly Dictionary<CGSpot, TransformSpot> outputToInputDictionary = new Dictionary<CGSpot, TransformSpot>();
 
@@ -140,13 +152,21 @@ namespace FluffyUnderware.Curvy.Generator.Modules
         }
 
 #endif
-        /*! \endcond */
+
         #endregion
+
+#if DOCUMENTATION___FORCE_IGNORE___CURVY == false
+        protected override void ResetOnEnable()
+        {
+            base.ResetOnEnable();
+            outputToInputDictionary.Clear();
+        }
+#endif
 
         /// <summary>
         /// Similar to <see cref="CGSpot"/>, but instead of having a constant position/rotation/scale, it is taken from a Transform
         /// </summary>
-        [System.Serializable]
+        [Serializable]
         public struct TransformSpot : IEquatable<TransformSpot>
         {
             [SerializeField]
@@ -170,32 +190,31 @@ namespace FluffyUnderware.Curvy.Generator.Modules
             public Transform Transform => transform;
 
             public bool Equals(TransformSpot other)
-            {
-                return index == other.index && Equals(transform, other.transform);
-            }
+                => index == other.index
+                && Equals(
+                    transform,
+                    other.transform
+                );
 
             public override bool Equals(object obj)
-            {
-                return obj is TransformSpot other && Equals(other);
-            }
+                => obj is TransformSpot other && Equals(other);
 
             public override int GetHashCode()
             {
                 unchecked
                 {
-                    return (index * 397) ^ (transform != null ? transform.GetHashCode() : 0);
+                    return (index * 397)
+                           ^ (transform != null
+                               ? transform.GetHashCode()
+                               : 0);
                 }
             }
 
             public static bool operator ==(TransformSpot left, TransformSpot right)
-            {
-                return left.Equals(right);
-            }
+                => left.Equals(right);
 
             public static bool operator !=(TransformSpot left, TransformSpot right)
-            {
-                return !left.Equals(right);
-            }
+                => !left.Equals(right);
         }
     }
 }

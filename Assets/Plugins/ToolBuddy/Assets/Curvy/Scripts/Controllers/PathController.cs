@@ -1,18 +1,16 @@
 // =====================================================================
-// Copyright 2013-2022 ToolBuddy
+// Copyright © 2013 ToolBuddy
 // All rights reserved
 // 
 // http://www.toolbuddy.net
 // =====================================================================
 
 using System;
-using UnityEngine;
-using System.Collections;
 using FluffyUnderware.Curvy.Generator;
 using FluffyUnderware.Curvy.Utils;
 using FluffyUnderware.DevTools;
+using UnityEngine;
 using UnityEngine.Assertions;
-
 
 namespace FluffyUnderware.Curvy.Controllers
 {
@@ -20,15 +18,20 @@ namespace FluffyUnderware.Curvy.Controllers
     /// Controller working on Curvy Generator Paths
     /// </summary>
     [AddComponentMenu("Curvy/Controllers/CG Path Controller")]
-    [HelpURL(CurvySpline.DOCLINK + "pathcontroller")]
+    [HelpURL(AssetInformation.DocsRedirectionBaseUrl + "pathcontroller")]
     public class PathController : CurvyController
     {
-
         #region ### Serialized Fields ###
 
-        [Section("General", Sort = 0)]
+        [Section(
+            "General",
+            Sort = 0
+        )]
         [SerializeField]
-        [CGDataReferenceSelector(typeof(CGPath), Label = "Path/Slot")]
+        [CGDataReferenceSelector(
+            typeof(CGPath),
+            Label = "Path/Slot"
+        )]
         private CGDataReference m_Path = new CGDataReference();
 
         #endregion
@@ -40,20 +43,16 @@ namespace FluffyUnderware.Curvy.Controllers
         /// </summary>
         public CGDataReference Path
         {
-            get { return m_Path; }
-            set { m_Path = value; }
+            get => m_Path;
+            set => m_Path = value;
         }
 
         /// <summary>
         /// Gets the actual CGPath data
         /// </summary>
-        public CGPath PathData
-        {
-            get
-            {
-                return (Path.HasValue) ? Path.GetData<CGPath>() : null;
-            }
-        }
+        public CGPath PathData => Path.HasValue
+            ? Path.GetData<CGPath>()
+            : null;
 
         /// <summary>
         /// Gets the source's length
@@ -63,39 +62,30 @@ namespace FluffyUnderware.Curvy.Controllers
             get
             {
 #if CURVY_SANITY_CHECKS
-                Assert.IsTrue(IsReady, ControllerNotReadyMessage);
+                Assert.IsTrue(
+                    IsReady,
+                    ControllerNotReadyMessage
+                );
 #endif
-                return (PathData != null) ? PathData.Length : 0;
+                return PathData != null
+                    ? PathData.Length
+                    : 0;
             }
         }
 
         #endregion
 
-        #region ### Private fields ###
-
-
-        #endregion
-
         #region ### Unity Callbacks ###
-        /*! \cond UNITY */
 
-        /*! \endcond */
-        #endregion
+#if DOCUMENTATION___FORCE_IGNORE___UNITY == false
 
-        #region ### Public Methods ###
+#endif
 
         #endregion
 
         #region ### Protected Methods ###
 
-
-        override public bool IsReady
-        {
-            get
-            {
-                return Path != null && !Path.IsEmpty && Path.HasValue;
-            }
-        }
+        public override bool IsReady => Path != null && !Path.IsEmpty && Path.HasValue;
 
 
         /// <summary>
@@ -106,11 +96,26 @@ namespace FluffyUnderware.Curvy.Controllers
         protected override float RelativeToAbsolute(float relativeDistance)
         {
 #if CURVY_SANITY_CHECKS
-            Assert.IsTrue(IsReady, ControllerNotReadyMessage);
-            Assert.IsTrue(CurvyUtility.Approximately(relativeDistance, GetClampedPosition(relativeDistance, CurvyPositionMode.Relative, Clamping, Length)));
+            Assert.IsTrue(
+                IsReady,
+                ControllerNotReadyMessage
+            );
+            Assert.IsTrue(
+                CurvyUtility.Approximately(
+                    relativeDistance,
+                    GetClampedPosition(
+                        relativeDistance,
+                        CurvyPositionMode.Relative,
+                        Clamping,
+                        Length
+                    )
+                )
+            );
 #endif
 
-            return (PathData != null) ? PathData.FToDistance(relativeDistance) : 0;
+            return PathData != null
+                ? PathData.FToDistance(relativeDistance)
+                : 0;
         }
 
         /// <summary>
@@ -121,26 +126,53 @@ namespace FluffyUnderware.Curvy.Controllers
         protected override float AbsoluteToRelative(float worldUnitDistance)
         {
 #if CURVY_SANITY_CHECKS
-            Assert.IsTrue(IsReady, ControllerNotReadyMessage);
-            Assert.IsTrue(CurvyUtility.Approximately(worldUnitDistance, GetClampedPosition(worldUnitDistance, CurvyPositionMode.WorldUnits, Clamping, Length)));
+            Assert.IsTrue(
+                IsReady,
+                ControllerNotReadyMessage
+            );
+            Assert.IsTrue(
+                CurvyUtility.Approximately(
+                    worldUnitDistance,
+                    GetClampedPosition(
+                        worldUnitDistance,
+                        CurvyPositionMode.WorldUnits,
+                        Clamping,
+                        Length
+                    )
+                )
+            );
 #endif
-            return (PathData != null) ? PathData.DistanceToF(worldUnitDistance) : 0;
+            return PathData != null
+                ? PathData.DistanceToF(worldUnitDistance)
+                : 0;
         }
 
         protected override Vector3 GetInterpolatedSourcePosition(float tf)
         {
 #if CURVY_SANITY_CHECKS
-            Assert.IsTrue(IsReady, ControllerNotReadyMessage);
+            Assert.IsTrue(
+                IsReady,
+                ControllerNotReadyMessage
+            );
 #endif
             return Path.Module.Generator.transform.TransformPoint(PathData.InterpolatePosition(tf));
         }
 
-        protected override void GetInterpolatedSourcePosition(float tf, out Vector3 interpolatedPosition, out Vector3 tangent, out Vector3 up)
+        protected override void GetInterpolatedSourcePosition(float tf, out Vector3 interpolatedPosition, out Vector3 tangent,
+            out Vector3 up)
         {
 #if CURVY_SANITY_CHECKS
-            Assert.IsTrue(IsReady, ControllerNotReadyMessage);
+            Assert.IsTrue(
+                IsReady,
+                ControllerNotReadyMessage
+            );
 #endif
-            PathData.Interpolate(tf, out interpolatedPosition, out tangent, out up);
+            PathData.Interpolate(
+                tf,
+                out interpolatedPosition,
+                out tangent,
+                out up
+            );
             Transform generatorTransform = Path.Module.Generator.transform;
             interpolatedPosition = generatorTransform.TransformPoint(interpolatedPosition);
             tangent = generatorTransform.TransformDirection(tangent);
@@ -150,7 +182,10 @@ namespace FluffyUnderware.Curvy.Controllers
         protected override Vector3 GetTangent(float tf)
         {
 #if CURVY_SANITY_CHECKS
-            Assert.IsTrue(IsReady, ControllerNotReadyMessage);
+            Assert.IsTrue(
+                IsReady,
+                ControllerNotReadyMessage
+            );
 #endif
             return Path.Module.Generator.transform.TransformDirection(PathData.InterpolateDirection(tf));
         }
@@ -158,7 +193,10 @@ namespace FluffyUnderware.Curvy.Controllers
         protected override Vector3 GetOrientation(float tf)
         {
 #if CURVY_SANITY_CHECKS
-            Assert.IsTrue(IsReady, ControllerNotReadyMessage);
+            Assert.IsTrue(
+                IsReady,
+                ControllerNotReadyMessage
+            );
 #endif
             return Path.Module.Generator.transform.TransformDirection(PathData.InterpolateUp(tf));
         }
@@ -168,30 +206,49 @@ namespace FluffyUnderware.Curvy.Controllers
             float tf = RelativePosition;
             MovementDirection direction = MovementDirection;
 
-            SimulateAdvance(ref tf, ref direction, speed, deltaTime);
+            SimulateAdvance(
+                ref tf,
+                ref direction,
+                speed,
+                deltaTime
+            );
 
             MovementDirection = direction;
             RelativePosition = tf;
         }
 
-        override protected void SimulateAdvance(ref float tf, ref MovementDirection curyDirection, float speed, float deltaTime)
+        protected override void SimulateAdvance(ref float tf, ref MovementDirection direction, float speed, float deltaTime)
         {
 #if CURVY_SANITY_CHECKS
-            Assert.IsTrue(IsReady, ControllerNotReadyMessage);
+            Assert.IsTrue(
+                IsReady,
+                ControllerNotReadyMessage
+            );
 #endif
-            int directionInt = curyDirection.ToInt();
+            int directionInt = direction.ToInt();
             switch (MoveMode)
             {
                 case MoveModeEnum.Relative:
-                    PathData.Move(ref tf, ref directionInt, speed * deltaTime, Clamping);
+                    PathData.Move(
+                        ref tf,
+                        ref directionInt,
+                        speed * deltaTime,
+                        Clamping
+                    );
                     break;
                 case MoveModeEnum.AbsolutePrecise:
-                    PathData.MoveBy(ref tf, ref directionInt, speed * deltaTime, Clamping);
+                    PathData.MoveBy(
+                        ref tf,
+                        ref directionInt,
+                        speed * deltaTime,
+                        Clamping
+                    );
                     break;
                 default:
                     throw new NotSupportedException();
             }
-            curyDirection = MovementDirectionMethods.FromInt(directionInt);
+
+            direction = MovementDirectionMethods.FromInt(directionInt);
         }
 
         #endregion

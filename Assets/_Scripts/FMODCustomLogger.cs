@@ -7,7 +7,7 @@ public class FMODCustomLogger : MonoBehaviour
 {
     private void Awake()
     {
-        UnityEngine.Debug.Log("Initializing FMOD logging settings...");
+        ConditionalDebug.Log("Initializing FMOD logging settings...");
         
         FMOD.Debug.Initialize(
             FMOD.DEBUG_FLAGS.NONE,

@@ -1,21 +1,23 @@
 // =====================================================================
-// Copyright 2013-2022 ToolBuddy
+// Copyright © 2013 ToolBuddy
 // All rights reserved
 // 
 // http://www.toolbuddy.net
 // =====================================================================
 
-using UnityEngine;
-using System.Collections;
-using System.Collections.Generic;
+using System;
 using FluffyUnderware.Curvy.Shapes;
 using FluffyUnderware.DevTools;
+using UnityEngine;
 
 namespace FluffyUnderware.Curvy.Generator.Modules
 {
-
-    [ModuleInfo("Input/Spline Shape", ModuleName = "Input Spline Shape", Description = "Spline Shape")]
-    [HelpURL(CurvySpline.DOCLINK + "cginputsplineshape")]
+    [ModuleInfo(
+        "Input/Spline Shape",
+        ModuleName = "Input Spline Shape",
+        Description = "Spline Shape"
+    )]
+    [HelpURL(AssetInformation.DocsRedirectionBaseUrl + "cginputsplineshape")]
 #pragma warning disable 618
     public class InputSplineShape : SplineInputModuleBase, IExternalInput, IOnRequestProcessing, IPathProvider
 #pragma warning restore 618
@@ -26,9 +28,18 @@ namespace FluffyUnderware.Curvy.Generator.Modules
 
         #region ### Serialized Fields ###
 
-        [Tab("General", Sort = 0)]
+        [Tab(
+            "General",
+            Sort = 0
+        )]
         [SerializeField, CGResourceManager("Shape")]
-        [FieldCondition(nameof(m_Shape), null, false, ActionAttribute.ActionEnum.ShowWarning, "Missing Shape input")]
+        [FieldCondition(
+            nameof(m_Shape),
+            null,
+            false,
+            ActionAttribute.ActionEnum.ShowWarning,
+            "Missing Shape input"
+        )]
         private CurvySpline m_Shape;
 
         #endregion
@@ -37,26 +48,24 @@ namespace FluffyUnderware.Curvy.Generator.Modules
 
         public CurvySpline Shape
         {
-            get { return m_Shape; }
+            get => m_Shape;
             set
             {
                 if (m_Shape != value)
                 {
                     m_Shape = value;
-                    OnSplineAssigned();
+                    if (IsActiveAndEnabled) OnSplineAssigned();
                     ValidateStartAndEndCps();
+                    Dirty = true;
                 }
-                Dirty = true;
             }
         }
 
-        public bool SupportsIPE { get { return FreeForm; } }
+        public bool SupportsIPE => FreeForm;
+
         public bool FreeForm
         {
-            get
-            {
-                return (Shape != null && Shape.GetComponent<CurvyShape>() == null);
-            }
+            get => Shape != null && Shape.GetComponent<CurvyShape>() == null;
             set
             {
                 if (Shape != null)
@@ -67,7 +76,6 @@ namespace FluffyUnderware.Curvy.Generator.Modules
                     else if (!value && sh == null)
                         Shape.gameObject.AddComponent<CSCircle>();
                 }
-
             }
         }
 
@@ -75,17 +83,24 @@ namespace FluffyUnderware.Curvy.Generator.Modules
 
 
         #region ### IOnRequestPath ###
-        public CGData[] OnSlotDataRequest(CGModuleInputSlot requestedBy, CGModuleOutputSlot requestedSlot, params CGDataRequestParameter[] requests)
+
+        public CGData[] OnSlotDataRequest(CGModuleInputSlot requestedBy, CGModuleOutputSlot requestedSlot,
+            params CGDataRequestParameter[] requests)
         {
             CGDataRequestRasterization raster = GetRequestParameter<CGDataRequestRasterization>(ref requests);
             CGDataRequestMetaCGOptions options = GetRequestParameter<CGDataRequestMetaCGOptions>(ref requests);
 
             if (!raster || raster.RasterizedRelativeLength == 0)
-                return null;
-            CGData data = GetSplineData(Shape, false, raster, options);
-
-            return new CGData[1] { data };
-
+                return Array.Empty<CGData>();
+            CGData data = GetSplineData(
+                Shape,
+                false,
+                raster,
+                options
+            );
+            return data == null
+                ? Array.Empty<CGData>()
+                : new[] { data };
         }
 
         #endregion
@@ -107,7 +122,10 @@ namespace FluffyUnderware.Curvy.Generator.Modules
         public void RemoveManagedShape()
         {
             if (Shape)
-                DeleteManagedResource("Shape", Shape);
+                DeleteManagedResource(
+                    "Shape",
+                    Shape
+                );
         }
 
         #endregion
@@ -116,8 +134,8 @@ namespace FluffyUnderware.Curvy.Generator.Modules
 
         protected override CurvySpline InputSpline
         {
-            get { return Shape; }
-            set { Shape = value; }
+            get => Shape;
+            set => Shape = value;
         }
 
         protected override void OnSplineAssigned()

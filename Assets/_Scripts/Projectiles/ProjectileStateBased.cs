@@ -2,7 +2,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using Chronos;
-using DG.Tweening;
 using HohStudios.Tools.ObjectParticleSpawner;
 using SensorToolkit.Example;
 using SickscoreGames;
@@ -11,6 +10,7 @@ using Unity.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.VFX;
+using PrimeTween;
 
 public enum ProjectilePoolType
 {
@@ -20,7 +20,8 @@ public enum ProjectilePoolType
     Explosive,
 }
 
-// Define ProjectileVector3 if it's not defined elsewherewhy a[System.Serializable]
+// Define ProjectileVector3 if it's not defined elsewhere
+[System.Serializable]
 public struct ProjectileVector3
 {
     public float x;
@@ -214,7 +215,7 @@ public class ProjectileStateBased : MonoBehaviour
             {
                 TLine.enabled = false;
                 TLine.rewindable = true;
-                
+
                 // Activate without triggering full hierarchy
                 var cachedActive = gameObject.activeSelf;
                 transform.gameObject.SetActive(true);
@@ -256,16 +257,16 @@ public class ProjectileStateBased : MonoBehaviour
     private void InternalInitializeComponents()
     {
         if (_componentsInitialized) return;
-        
+
         modelRenderer = GetComponent<Renderer>();
         rb = GetComponent<Rigidbody>();
         tRn = GetComponent<TrailRenderer>();
-        
+
         if (!timelineInitialized && gameObject.activeInHierarchy)
         {
             StartCoroutine(InitializeTimelineComponent());
         }
-        
+
         _componentsInitialized = true;
     }
 
@@ -277,11 +278,11 @@ public class ProjectileStateBased : MonoBehaviour
         tRn = GetComponent<TrailRenderer>();
         TLine = GetComponent<Timeline>();
         _currentTag = gameObject.tag;
-        
+
         // Remove these lines
         // myMaterial = modelRenderer.material;
         // originalProjectileColor = myMaterial.color;
-        
+
         initialSpeed = bulletSpeed;
         initialLifetime = lifetime;
 
@@ -304,9 +305,9 @@ public class ProjectileStateBased : MonoBehaviour
         {
             InternalInitializeComponents();
         }
-        
+
         ResetForPool();
-        
+
         // Register with audio manager if this is a homing projectile
         if (homing)
         {
@@ -327,7 +328,7 @@ public class ProjectileStateBased : MonoBehaviour
     public void EnableHoming(bool enable)
     {
         if (homing == enable) return;
-        
+
         homing = enable;
         if (enable)
         {
@@ -345,7 +346,7 @@ public class ProjectileStateBased : MonoBehaviour
         {
             ProjectileAudioManager.Instance?.UnregisterHomingProjectile(GetInstanceID());
         }
-        
+
         // Rest of existing Death implementation...
         ConditionalDebug.Log($"[ProjectileStateBased] Projectile {GetInstanceID()} is dying. Hit something: {hitSomething}");
         ProjectileManager.Instance.UnregisterProjectile(this);
@@ -358,7 +359,7 @@ public class ProjectileStateBased : MonoBehaviour
         }
 
         ProjectilePool.Instance.ReturnProjectileToPool(this);
-        transform.DOKill();
+        Tween.StopAll(transform); // Replace DOKill with PrimeTween's StopAll
         _visualEffects.PlayDeathEffect(hitSomething);
     }
 
@@ -497,7 +498,7 @@ public class ProjectileStateBased : MonoBehaviour
         currentState?.FixedUpdate(timeScale);
         _movement.UpdateMovement(timeScale);
 
-         if (!isPlayerShot)
+        if (!isPlayerShot)
         {
             lifetime -= Time.deltaTime * timeScale;
             if (lifetime <= 0)
@@ -643,7 +644,7 @@ public class ProjectileStateBased : MonoBehaviour
     public void ApplyDamage(IDamageable target)
     {
         float finalDamage = damageAmount * damageMultiplier;
-        Debug.Log($"Applying damage: {finalDamage} to target {target.GetType().Name}");
+        ConditionalDebug.Log($"Applying damage: {finalDamage} to target {target.GetType().Name}");
         target.Damage(finalDamage);
     }
 
@@ -678,7 +679,7 @@ public class ProjectileStateBased : MonoBehaviour
         if (currentTarget == null) return;
 
         float distanceToTarget = Vector3.Distance(transform.position, currentTarget.position);
-        
+
         // Only update targeting if within range
         if (distanceToTarget <= maxTargetingRange && distanceToTarget >= minTargetingRange)
         {
@@ -737,18 +738,18 @@ public class ProjectileStateBased : MonoBehaviour
         );
     }
 
-     public void Initialize()
+    public void Initialize()
     {
         creationTime = Time.time;
         ResetForPool();
-        
+
         // Ensure components are properly set up
         if (rb == null) rb = GetComponent<Rigidbody>();
         if (TLine == null) TLine = GetComponent<Timeline>();
-        
+
         // Initialize state
         ChangeState(new EnemyShotState(this));
-        
+
         ConditionalDebug.Log($"Initialized projectile {GetInstanceID()}");
     }
 
@@ -777,7 +778,7 @@ public class ProjectileStateBased : MonoBehaviour
         this.homing = homing;
         this.currentTarget = target;
         this.isFromStaticEnemy = isStatic;
-        
+
         transform.localScale = Vector3.one * scale;
 
         // Ensure the Rigidbody is non-kinematic

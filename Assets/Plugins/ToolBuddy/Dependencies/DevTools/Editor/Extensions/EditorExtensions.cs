@@ -26,36 +26,24 @@ namespace FluffyUnderware.DevToolsEditor.Extensions
         {
             if (EditorGUIUtility.isProSkin)
                 return c;
-            else
-            {
+            if (subtle)
+                return Color.Lerp(c, Color.white,
+                    0.9f);
 
+            if (c == Color.white)
+                return Color.black;
+            if (c == Color.black)
+                return Color.white;
 
+            float brightness = c.Brightness();
+            if (brightness > 0.9)
+                return Color.Lerp(c, Color.black, 0.7f);
 
-                if (subtle)
-                    return Color.Lerp(c, Color.white,
-                        0.9f);
-                else
-                {
-                    if (c == Color.white)
-                        return Color.black;
-                    else if (c == Color.black)
-                        return Color.white;
-                    else
-                    {
-                        float br = c.Brightness();
-                        if (br > 0.9)
-                            return Color.Lerp(c, Color.black, 0.7f);
-                        else
-                            return Color.Lerp(c, Color.black, 0.2f);
-                    }
-                }
-            }
+            return Color.Lerp(c, Color.black, 0.2f);
         }
 
         public static float Brightness(this Color c)
-        {
-            return 0.299f * c.r + 0.587f * c.g + 0.114f * c.b;
-        }
+            => 0.299f * c.r + 0.587f * c.g + 0.114f * c.b;
 
         public static Color Fade(this Color c, double startTime, double stayTime, float fadeSpeed)
         {
@@ -77,9 +65,9 @@ namespace FluffyUnderware.DevToolsEditor.Extensions
             return new GUIContent(label, tooltip);
         }
 
-        public static List<System.Attribute> GetAttributes(this SerializedProperty property, params System.Type[] ofType)
+        public static List<Attribute> GetAttributes(this SerializedProperty property, params Type[] ofType)
         {
-            List<System.Attribute> res = new List<System.Attribute>();
+            List<Attribute> res = new List<Attribute>();
             Type objType = property.GetObjectType();
             if (objType != null)
             {
@@ -88,7 +76,7 @@ namespace FluffyUnderware.DevToolsEditor.Extensions
                 if (fi != null)
                 {
                     object[] attribs = fi.GetCustomAttributes(true);
-                    foreach (System.Attribute a in attribs)
+                    foreach (Attribute a in attribs)
                     {
 
                         if (ofType.Length == 0)
@@ -154,9 +142,7 @@ namespace FluffyUnderware.DevToolsEditor.Extensions
         }
 
         public static string[] Path(this SerializedProperty property)
-        {
-            return property.propertyPath.Split('.');
-        }
+            => property.propertyPath.Split('.');
 
         public static SerializedProperty Parent(this SerializedProperty property)
         {
@@ -189,7 +175,7 @@ namespace FluffyUnderware.DevToolsEditor.Extensions
             return obj;
         }
 
-        static object getValue(object source, string name)
+        private static object getValue(object source, string name)
         {
             if (source == null)
                 return null;
@@ -205,7 +191,7 @@ namespace FluffyUnderware.DevToolsEditor.Extensions
             return f.GetValue(source);
         }
 
-        static object getValue(object source, string name, int index)
+        private static object getValue(object source, string name, int index)
         {
             IEnumerable enumerable = getValue(source, name) as IEnumerable;
             IEnumerator enm = enumerable.GetEnumerator();
@@ -235,9 +221,7 @@ namespace FluffyUnderware.DevToolsEditor.Extensions
         }
 
         public static Rect WithoutLabel(this Rect r)
-        {
-            return r.ShiftXBy(EditorGUIUtility.labelWidth);
-        }
+            => r.ShiftXBy(EditorGUIUtility.labelWidth);
     }
 
 

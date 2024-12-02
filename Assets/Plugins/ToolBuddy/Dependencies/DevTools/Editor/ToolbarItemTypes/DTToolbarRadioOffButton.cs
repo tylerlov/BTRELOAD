@@ -16,10 +16,7 @@ namespace FluffyUnderware.DevToolsEditor
 
         public override bool On
         {
-            get
-            {
-                return base.On;
-            }
+            get => base.On;
             set
             {
                 if (mOn != value)
@@ -36,14 +33,7 @@ namespace FluffyUnderware.DevToolsEditor
             }
         }
 
-        public override bool ShowClientArea
-        {
-            get
-            {
-                return On;
-            }
-
-        }
+        public override bool ShowClientArea => On;
 
         public DTToolbarRadioOffButton(string radioGroupName, bool defaultOn=false)
             : base(radioGroupName,defaultOn)

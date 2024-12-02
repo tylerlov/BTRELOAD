@@ -1,15 +1,13 @@
 // =====================================================================
-// Copyright 2013-2022 ToolBuddy
+// Copyright © 2013 ToolBuddy
 // All rights reserved
 // 
 // http://www.toolbuddy.net
 // =====================================================================
 
-using UnityEngine;
-using System.Collections;
-using FluffyUnderware.Curvy;
-using FluffyUnderware.DevTools.Extensions;
 using FluffyUnderware.Curvy.Controllers;
+using JetBrains.Annotations;
+using UnityEngine;
 using UnityEngine.UI;
 
 /* 
@@ -24,17 +22,17 @@ namespace FluffyUnderware.Curvy.Examples
         public SplineController Controller;
         public Text InfoText;
 
-        CurvySpline mSpline;
-        Vector2 mLastControlPointPos;
-        bool mResetSpline = true;
+        private CurvySpline mSpline;
+        private Vector2 mLastControlPointPos;
+        private bool mResetSpline = true;
 
-        void Awake()
-        {
+        [UsedImplicitly]
+        private void Awake() =>
             // for this example we assume the component is attached to a GameObject holding a spline
             mSpline = GetComponent<CurvySpline>();
-        }
 
-        void OnGUI()
+        [UsedImplicitly]
+        private void OnGUI()
         {
             // before using the spline, ensure it's initialized and the Controller is available
             if (mSpline == null || !mSpline.IsInitialized || !Controller)
@@ -76,14 +74,17 @@ namespace FluffyUnderware.Curvy.Examples
         }
 
         // Add a Control Point and set it's position
-        CurvySplineSegment addCP(Vector3 mousePos)
+        private CurvySplineSegment addCP(Vector3 mousePos)
         {
             Vector3 p = Camera.main.ScreenToWorldPoint(mousePos);
             p.y *= -1; // flip Y to get the correct world position
             p.z += 100; //To move further than camera's plane. The value 100 comes from the Canvas' plane distance
-            CurvySplineSegment cp = mSpline.InsertAfter(null, p, false);
+            CurvySplineSegment cp = mSpline.InsertAfter(
+                null,
+                p
+            );
 
-            InfoText.text = "Control Points: " + mSpline.ControlPointCount.ToString(); // set info text
+            InfoText.text = "Control Points: " + mSpline.ControlPointCount; // set info text
 
             return cp;
         }

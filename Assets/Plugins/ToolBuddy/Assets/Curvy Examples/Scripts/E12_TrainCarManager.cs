@@ -1,14 +1,13 @@
 // =====================================================================
-// Copyright 2013-2022 ToolBuddy
+// Copyright © 2013 ToolBuddy
 // All rights reserved
 // 
 // http://www.toolbuddy.net
 // =====================================================================
 
-using UnityEngine;
-using System.Collections;
 using FluffyUnderware.Curvy.Controllers;
-using FluffyUnderware.Curvy.Components;
+using JetBrains.Annotations;
+using UnityEngine;
 
 namespace FluffyUnderware.Curvy.Examples
 {
@@ -21,30 +20,27 @@ namespace FluffyUnderware.Curvy.Examples
 
         public float Position
         {
-            get
-            {
-                return Waggon.AbsolutePosition;
-            }
+            get => Waggon.AbsolutePosition;
             set
             {
                 if (Waggon.AbsolutePosition != value)
                 {
                     Waggon.AbsolutePosition = value;
-                    FrontAxis.AbsolutePosition = value + mTrain.AxisDistance / 2;
-                    BackAxis.AbsolutePosition = value - mTrain.AxisDistance / 2;
+                    FrontAxis.AbsolutePosition = value + (mTrain.AxisDistance / 2);
+                    BackAxis.AbsolutePosition = value - (mTrain.AxisDistance / 2);
                 }
             }
         }
 
-        E12_TrainManager mTrain;
+        private E12_TrainManager mTrain;
 
-        void LateUpdate()
+        [UsedImplicitly]
+        private void LateUpdate()
         {
             if (!mTrain)
                 return;
 
-            if (BackAxis.Spline == FrontAxis.Spline &&
-                FrontAxis.RelativePosition > BackAxis.RelativePosition)
+            if (BackAxis.Spline == FrontAxis.Spline && FrontAxis.RelativePosition > BackAxis.RelativePosition)
             {
                 float carPosition = Waggon.AbsolutePosition;
                 float frontAxisPosition = FrontAxis.AbsolutePosition;
@@ -52,12 +48,11 @@ namespace FluffyUnderware.Curvy.Examples
 
                 if (Mathf.Abs(Mathf.Abs(frontAxisPosition - backAxisPosition) - mTrain.AxisDistance) >= mTrain.Limit)
                 {
-                    FrontAxis.AbsolutePosition = carPosition + mTrain.AxisDistance / 2;
-                    BackAxis.AbsolutePosition = carPosition - mTrain.AxisDistance / 2;
+                    FrontAxis.AbsolutePosition = carPosition + (mTrain.AxisDistance / 2);
+                    BackAxis.AbsolutePosition = carPosition - (mTrain.AxisDistance / 2);
                 }
             }
         }
-
 
 
         public void setup()
@@ -65,13 +60,25 @@ namespace FluffyUnderware.Curvy.Examples
             mTrain = GetComponentInParent<E12_TrainManager>();
             if (mTrain.Spline)
             {
-                setController(Waggon, mTrain.Spline, mTrain.Speed);
-                setController(FrontAxis, mTrain.Spline, mTrain.Speed);
-                setController(BackAxis, mTrain.Spline, mTrain.Speed);
+                setController(
+                    Waggon,
+                    mTrain.Spline,
+                    mTrain.Speed
+                );
+                setController(
+                    FrontAxis,
+                    mTrain.Spline,
+                    mTrain.Speed
+                );
+                setController(
+                    BackAxis,
+                    mTrain.Spline,
+                    mTrain.Speed
+                );
             }
         }
 
-        void setController(SplineController c, CurvySpline spline, float speed)
+        private void setController(SplineController c, CurvySpline spline, float speed)
         {
             c.Spline = spline;
             c.Speed = speed;
@@ -82,10 +89,9 @@ namespace FluffyUnderware.Curvy.Examples
         {
             E12_MDJunctionControl jc = e.ControlPoint.GetMetadata<E12_MDJunctionControl>();
             SplineController splineController = e.Sender;
-            splineController.ConnectionBehavior = (jc && jc.UseJunction == false)
-                    ? SplineControllerConnectionBehavior.CurrentSpline
-                    : SplineControllerConnectionBehavior.RandomSpline;
+            splineController.ConnectionBehavior = jc && jc.UseJunction == false
+                ? SplineControllerConnectionBehavior.CurrentSpline
+                : SplineControllerConnectionBehavior.RandomSpline;
         }
-
     }
 }

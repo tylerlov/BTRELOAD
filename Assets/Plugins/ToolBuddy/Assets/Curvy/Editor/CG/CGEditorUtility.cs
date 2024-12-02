@@ -1,159 +1,236 @@
 // =====================================================================
-// Copyright 2013-2022 ToolBuddy
+// Copyright © 2013 ToolBuddy
 // All rights reserved
 // 
 // http://www.toolbuddy.net
 // =====================================================================
 
 using System;
-using UnityEngine;
-using UnityEditor;
 using System.Collections.Generic;
-using FluffyUnderware.Curvy.Generator;
-using FluffyUnderware.Curvy.Utils;
-using System.Reflection;
-using FluffyUnderware.DevToolsEditor;
-using FluffyUnderware.DevToolsEditor.Extensions;
-using FluffyUnderware.DevTools.Extensions;
-using FluffyUnderware.DevTools;
-using FluffyUnderware.Curvy;
 using System.IO;
+using System.Linq;
+using FluffyUnderware.Curvy.Generator;
+using FluffyUnderware.DevTools;
+using FluffyUnderware.DevTools.Extensions;
+using FluffyUnderware.DevToolsEditor;
+using JetBrains.Annotations;
+using UnityEditor;
+using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace FluffyUnderware.CurvyEditor.Generator
 {
     public static class CGEditorUtility
     {
-
-        static List<CGModuleOutputSlot> findOutputSlots(CurvyGenerator generator, bool includeOnRequestProcessing, System.Type filterSlotDataType = null)
-        {
-            List<CGModule> modules = generator.GetModules(includeOnRequestProcessing);
-            List<CGModuleOutputSlot> res = new List<CGModuleOutputSlot>();
-            foreach (CGModule mod in modules)
-                res.AddRange(mod.GetOutputSlots(filterSlotDataType));
-            return res;
-        }
-
-        public static void ShowOutputSlotsMenu(GenericMenu.MenuFunction2 func, System.Type filterSlotDataType = null)
+        public static void ShowOutputSlotsMenu(GenericMenu.MenuFunction2 func, Type filterSlotDataType = null)
         {
             GenericMenu mnu = new GenericMenu();
-            CurvyGenerator[] generators = Component.FindObjectsOfType<CurvyGenerator>();
+            CurvyGenerator[] generators = ObjectExt.FindSortedObjectsOfType<CurvyGenerator>();
 
-            mnu.AddItem(new GUIContent("none"), false, func, null);
+            mnu.AddItem(
+                new GUIContent("none"),
+                false,
+                func,
+                null
+            );
 
             foreach (CurvyGenerator gen in generators)
             {
-                List<CGModuleOutputSlot> slots = findOutputSlots(gen, false, filterSlotDataType);
+                IEnumerable<CGModule> nonOnRequestModules = gen.Modules.Where(m => m is IOnRequestProcessing == false);
+
+                IEnumerable<CGModuleOutputSlot> slots;
+                if (filterSlotDataType == null)
+                    slots = nonOnRequestModules.SelectMany(
+                        m
+                            => m.Output
+                    );
+                else
+                    slots = nonOnRequestModules.SelectMany(
+                        m
+                            => m.Output.Where(
+                                o
+                                    => o.Info.DataType == filterSlotDataType
+                                       || o.Info.DataType.IsSubclassOf(filterSlotDataType)
+                            )
+                    );
+
                 foreach (CGModuleOutputSlot slot in slots)
-                    mnu.AddItem(new GUIContent(gen.name + "/" + slot.Module.ModuleName + "/" + slot.Info.DisplayName), false, func, slot);
+                    mnu.AddItem(
+                        new GUIContent($"{gen.name}/{slot.Module.ModuleName}/{slot.Info.DisplayName}"),
+                        false,
+                        func,
+                        slot
+                    );
             }
 
             mnu.ShowAsContext();
         }
 
-        public static List<CGModule> CopyModules(IList<CGModule> sourceModules, CurvyGenerator target, Vector2 canvasPosition)
+        #region CopyModules
+
+        /// <summary>
+        /// Copies a list of CGModule instances to a target CurvyGenerator and updates their canvas positions.
+        /// </summary>
+        /// <param name="sourceModules">A list of CGModule instances to copy.</param>
+        /// <param name="target">The target CurvyGenerator to copy the modules to.</param>
+        /// <param name="positionOffset"> A Vector2 offset to apply to the copied modules' canvas positions.</param>
+        /// <returns>A list of copied CGModule instances.</returns>
+        [NotNull]
+        public static List<CGModule> CopyModules([NotNull] [ItemNotNull] IList<CGModule> sourceModules,
+            [NotNull] CurvyGenerator target, Vector2 positionOffset)
         {
-            List<CGModule> res = new List<CGModule>();
+            if (sourceModules == null)
+                throw new ArgumentNullException(nameof(sourceModules));
+            if (target == null)
+                throw new ArgumentNullException(nameof(target));
 
-            Dictionary<int, int> IDMapping = new Dictionary<int, int>();
+            DuplicateAndAddModulesToGenerator(
+                sourceModules,
+                target,
+                positionOffset,
+                out List<CGModule> copiedModules,
+                out Dictionary<int, int> IDMapping
+            );
 
+            UpdateModuleLinks(
+                copiedModules,
+                IDMapping
+            );
 
-            // I. Copy Module, store mapping from old to new ID
-            foreach (CGModule mod in sourceModules)
-            {
-                int oldID = mod.UniqueID;
-                // Duplicate module GameObject and parent it to the target Generator, also ensure a unique module name and module id
-                CGModule newMod = mod.CopyTo(target);
-                res.Add(newMod);
-                IDMapping.Add(oldID, newMod.UniqueID);
-                newMod.Properties.Dimensions.position += canvasPosition;
-
-                // ! Handle managed Resources !
-                /*
-                var resourceFields = DTUtility.GetFieldsWithAttribute(mod.GetType(), typeof(CGResourceManagerAttribute), BindingFlags.Instance | BindingFlags.NonPublic);
-                foreach (var fi in resourceFields)
-                {
-                    var v = fi.GetValue(mod) as Component;
-                    // Managed?
-                    if (v != null && v.transform.parent == mod.transform)
-                    {
-                        var newV = v.DuplicateGameObject(newMod.transform);
-                        if (newV != null)
-                            fi.SetValue(newMod, newV);
-                    }
-                }*/
-                //newMod.renameManagedResourcesINTERNAL();
-
-            }
-            // II. Update Links to use the new IDs
-            for (int m = 0; m < res.Count; m++)
-            {
-                CGModule mod = res[m];
-                int newID = mod.UniqueID;
-
-                for (int i = mod.InputLinks.Count - 1; i >= 0; i--)
-                {
-                    // if target module was copied as well, change both IDs
-                    int newTargetID;
-                    if (IDMapping.TryGetValue(mod.InputLinks[i].TargetModuleID, out newTargetID))
-                    {
-                        mod.InputLinks[i].SetModuleIDIINTERNAL(newID, newTargetID);
-                    }
-                    else // otherwise delete link
-                        mod.InputLinks.RemoveAt(i);
-                }
-                for (int i = mod.OutputLinks.Count - 1; i >= 0; i--)
-                {
-                    // if target module was copied as well, change both IDs
-                    int newTargetID;
-                    if (IDMapping.TryGetValue(mod.OutputLinks[i].TargetModuleID, out newTargetID))
-                    {
-                        mod.OutputLinks[i].SetModuleIDIINTERNAL(newID, newTargetID);
-                    }
-                    else // otherwise delete link
-                        mod.OutputLinks.RemoveAt(i);
-                }
-                mod.ReInitializeLinkedSlots();
-            }
-
-
-            /// III. Reinitialize target generator
             target.Initialize(true);
 
-            return res;
+            return copiedModules;
         }
+
+        private static void DuplicateAndAddModulesToGenerator(IList<CGModule> modules,
+            CurvyGenerator curvyGenerator,
+            Vector2 positionOffset,
+            out List<CGModule> copiedModules,
+            out Dictionary<int, int> IDMapping)
+        {
+            IDMapping = new Dictionary<int, int>();
+            copiedModules = new List<CGModule>();
+
+            foreach (CGModule module in modules)
+            {
+                if (module == null)
+                {
+                    DTLog.LogWarning("[Curvy] Trying to copy a null module. Module will be ignored");
+                    continue;
+                }
+
+                CGModule duplicatedModule = DuplicateModule(
+                    module,
+                    positionOffset,
+                    curvyGenerator.transform
+                );
+
+                curvyGenerator.AddModule(duplicatedModule);
+
+                copiedModules.Add(duplicatedModule);
+                IDMapping.Add(
+                    module.UniqueID,
+                    duplicatedModule.UniqueID
+                );
+            }
+        }
+
+        private static CGModule DuplicateModule([NotNull] CGModule sourceModule, Vector2 positionOffset,
+            [NotNull] Transform targetTransform)
+        {
+            CGModule duplicatedModule = sourceModule.DuplicateGameObject<CGModule>(targetTransform);
+            duplicatedModule.name = sourceModule.name;
+            duplicatedModule.Properties.Dimensions.position += positionOffset;
+            return duplicatedModule;
+        }
+
+        private static void UpdateModuleLinks(List<CGModule> modules, Dictionary<int, int> IDMapping)
+        {
+            for (int moduleIndex = 0; moduleIndex < modules.Count; moduleIndex++)
+            {
+                CGModule module = modules[moduleIndex];
+                int newID = module.UniqueID;
+
+                for (int i = module.InputLinks.Count - 1; i >= 0; i--)
+                {
+                    // if target module was copied as well, change both IDs
+                    int newTargetID;
+                    if (IDMapping.TryGetValue(
+                            module.InputLinks[i].TargetModuleID,
+                            out newTargetID
+                        ))
+                        module.InputLinks[i].SetModuleIDIINTERNAL(
+                            newID,
+                            newTargetID
+                        );
+                    else // otherwise delete link
+                        module.InputLinks.RemoveAt(i);
+                }
+
+                for (int i = module.OutputLinks.Count - 1; i >= 0; i--)
+                {
+                    // if target module was copied as well, change both IDs
+                    int newTargetID;
+                    if (IDMapping.TryGetValue(
+                            module.OutputLinks[i].TargetModuleID,
+                            out newTargetID
+                        ))
+                        module.OutputLinks[i].SetModuleIDIINTERNAL(
+                            newID,
+                            newTargetID
+                        );
+                    else // otherwise delete link
+                        module.OutputLinks.RemoveAt(i);
+                }
+            }
+        }
+
+        #endregion
 
         public static bool CreateTemplate(IList<CGModule> modules, string absFilePath)
         {
             if (!Directory.Exists(Path.GetDirectoryName(absFilePath)))
-            {
                 Directory.CreateDirectory(Path.GetDirectoryName(absFilePath));
-
-            }
             // Convert absolute to relative path
-            absFilePath = absFilePath.Replace(Application.dataPath, "Assets");
+            absFilePath = absFilePath.Replace(
+                Application.dataPath,
+                "Assets"
+            );
             if (modules.Count == 0 || string.IsNullOrEmpty(absFilePath))
                 return false;
 
             CurvyGenerator assetGenerator = CurvyGenerator.Create();
             assetGenerator.name = Path.GetFileNameWithoutExtension(absFilePath);
-            CopyModules(modules, assetGenerator, Vector2.zero);
+            CopyModules(
+                modules,
+                assetGenerator,
+                Vector2.zero
+            );
             foreach (CGModule mod in assetGenerator.Modules)
                 mod.OnTemplateCreated();
             assetGenerator.ArrangeModules();
-            PrefabUtility.SaveAsPrefabAsset(assetGenerator.gameObject, absFilePath);
-            GameObject.DestroyImmediate(assetGenerator.gameObject);
+            PrefabUtility.SaveAsPrefabAsset(
+                assetGenerator.gameObject,
+                absFilePath
+            );
+            Object.DestroyImmediate(assetGenerator.gameObject);
             AssetDatabase.Refresh();
             return true;
-
         }
 
-        public static List<CGModule> LoadTemplate(CurvyGenerator generator, string path, Vector2 canvasPosition)
+        public static List<CGModule> LoadTemplate(CurvyGenerator generator, string path, Vector2 positionOffset)
         {
-            CurvyGenerator srcGen = AssetDatabase.LoadAssetAtPath(path, typeof(CurvyGenerator)) as CurvyGenerator;
+            CurvyGenerator srcGen = AssetDatabase.LoadAssetAtPath(
+                path,
+                typeof(CurvyGenerator)
+            ) as CurvyGenerator;
             if (srcGen)
-                return CGEditorUtility.CopyModules(srcGen.Modules, generator, canvasPosition);
-            else
-                return null;
+                return CopyModules(
+                    srcGen.Modules,
+                    generator,
+                    positionOffset
+                );
+            return null;
         }
 
         public static void SetModulesExpandedState(bool expanded, params CGModule[] modules)
@@ -168,12 +245,19 @@ namespace FluffyUnderware.CurvyEditor.Generator
             for (int index = 0; index < verticesCount; index++)
             {
                 Vector3 v = vertices[index];
-                Handles.CubeHandleCap(0, v, Quaternion.identity, size * HandleUtility.GetHandleSize(v), EventType.Repaint);
+                Handles.CubeHandleCap(
+                    0,
+                    v,
+                    Quaternion.identity,
+                    size * HandleUtility.GetHandleSize(v),
+                    EventType.Repaint
+                );
             }
 
             DTHandles.PopHandlesColor();
         }
-        
+
+        [UsedImplicitly]
         [Obsolete("Use the other overload or make a copy of this method")]
         public static void SceneGUIPlot(IList<Vector3> vertices, float size, Color col)
         {
@@ -181,7 +265,13 @@ namespace FluffyUnderware.CurvyEditor.Generator
             for (int index = 0; index < vertices.Count; index++)
             {
                 Vector3 v = vertices[index];
-                Handles.CubeHandleCap(0, v, Quaternion.identity, size * HandleUtility.GetHandleSize(v), EventType.Repaint);
+                Handles.CubeHandleCap(
+                    0,
+                    v,
+                    Quaternion.identity,
+                    size * HandleUtility.GetHandleSize(v),
+                    EventType.Repaint
+                );
             }
 
             DTHandles.PopHandlesColor();
@@ -190,44 +280,75 @@ namespace FluffyUnderware.CurvyEditor.Generator
         public static void SceneGUILabels(Vector3[] vertices, int verticesCount, IList<string> labels, Color col, Vector2 offset)
         {
             Dictionary<Vector3, string> labelsByPos = new Dictionary<Vector3, string>();
-            int ub = Mathf.Min(verticesCount, labels.Count);
+            int ub = Mathf.Min(
+                verticesCount,
+                labels.Count
+            );
 
             for (int i = 0; i < ub; i++)
             {
                 string val;
-                if (labelsByPos.TryGetValue(vertices[i], out val))
+                if (labelsByPos.TryGetValue(
+                        vertices[i],
+                        out val
+                    ))
                     labelsByPos[vertices[i]] = val + "," + labels[i];
                 else
-                    labelsByPos.Add(vertices[i], labels[i]);
+                    labelsByPos.Add(
+                        vertices[i],
+                        labels[i]
+                    );
             }
 
             GUIStyle style = new GUIStyle(EditorStyles.boldLabel);
             style.normal.textColor = col;
             foreach (KeyValuePair<Vector3, string> kv in labelsByPos)
-                Handles.Label(DTHandles.TranslateByPixel(kv.Key, offset), kv.Value, style);
-
+                Handles.Label(
+                    DTHandles.TranslateByPixel(
+                        kv.Key,
+                        offset
+                    ),
+                    kv.Value,
+                    style
+                );
         }
-        
+
+        [UsedImplicitly]
         [Obsolete("Use the other overload or make a copy of this method")]
         public static void SceneGUILabels(IList<Vector3> vertices, IList<string> labels, Color col, Vector2 offset)
         {
             Dictionary<Vector3, string> labelsByPos = new Dictionary<Vector3, string>();
-            int ub = Mathf.Min(vertices.Count, labels.Count);
+            int ub = Mathf.Min(
+                vertices.Count,
+                labels.Count
+            );
 
             for (int i = 0; i < ub; i++)
             {
                 string val;
-                if (labelsByPos.TryGetValue(vertices[i], out val))
+                if (labelsByPos.TryGetValue(
+                        vertices[i],
+                        out val
+                    ))
                     labelsByPos[vertices[i]] = val + "," + labels[i];
                 else
-                    labelsByPos.Add(vertices[i], labels[i]);
+                    labelsByPos.Add(
+                        vertices[i],
+                        labels[i]
+                    );
             }
 
             GUIStyle style = new GUIStyle(EditorStyles.boldLabel);
             style.normal.textColor = col;
             foreach (KeyValuePair<Vector3, string> kv in labelsByPos)
-                Handles.Label(DTHandles.TranslateByPixel(kv.Key, offset), kv.Value, style);
-
+                Handles.Label(
+                    DTHandles.TranslateByPixel(
+                        kv.Key,
+                        offset
+                    ),
+                    kv.Value,
+                    style
+                );
         }
 
         public static void SceneGUIPoly(IEnumerable<Vector3> vertices, Color col)
@@ -237,9 +358,5 @@ namespace FluffyUnderware.CurvyEditor.Generator
             Handles.DrawPolyLine(vertices as Vector3[]);
             DTHandles.PopHandlesColor();
         }
-
-
     }
-
-
 }

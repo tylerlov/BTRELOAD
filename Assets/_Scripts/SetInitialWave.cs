@@ -17,12 +17,12 @@ public class InitializeWave : MonoBehaviour
 
         if (waveSpawnController != null)
         {
-            Debug.Log("Starting at wave index: " + (startWave));
+            ConditionalDebug.Log("Starting at wave index: " + (startWave));
             waveSpawnController.StartWave(startWave); // Ensure this is the correct index
         }
         else
         {
-            Debug.LogError("WaveSpawnController is not assigned or not found on the GameObject!");
+            ConditionalDebug.LogError("WaveSpawnController is not assigned or not found on the GameObject!");
         }
     }
 }

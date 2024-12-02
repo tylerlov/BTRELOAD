@@ -1,5 +1,5 @@
 // =====================================================================
-// Copyright 2013-2022 ToolBuddy
+// Copyright © 2013 ToolBuddy
 // All rights reserved
 // 
 // http://www.toolbuddy.net
@@ -7,8 +7,8 @@
 
 using System;
 using FluffyUnderware.Curvy;
-using UnityEngine;
 using UnityEditor;
+using UnityEngine;
 
 namespace FluffyUnderware.CurvyEditor.Controllers
 {
@@ -18,19 +18,34 @@ namespace FluffyUnderware.CurvyEditor.Controllers
         private const string Relative = "Relative";
         private const string Absolute = "Absolute";
 
-        readonly GUIContent[] options = new[]
+        private readonly GUIContent[] options =
         {
-            new GUIContent(Relative,
-                "Position is expressed as a fraction of a spline: 0 meaning the spline start, 1 meaning the spline end."),
-            new GUIContent(Absolute,
-                "Position is expressed as world units")
+            new GUIContent(
+                Relative,
+                "Position is expressed as a fraction of a spline: 0 meaning the spline start, 1 meaning the spline end."
+            ),
+            new GUIContent(
+                Absolute,
+                "Position is expressed as world units"
+            )
         };
-        readonly GUIStyle guiStyle = EditorStyles.popup;
 
-        override public void OnGUI(Rect position, SerializedProperty property, GUIContent label)
+        private readonly GUIStyle guiStyle = EditorStyles.popup;
+
+        public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
-            EditorGUI.BeginProperty(position, label, property);
-            property.intValue = EditorGUI.Popup(position, label, property.intValue, options, guiStyle);
+            EditorGUI.BeginProperty(
+                position,
+                label,
+                property
+            );
+            property.intValue = EditorGUI.Popup(
+                position,
+                label,
+                property.intValue,
+                options,
+                guiStyle
+            );
             EditorGUI.EndProperty();
         }
 
@@ -40,7 +55,7 @@ namespace FluffyUnderware.CurvyEditor.Controllers
         public static string GetDisplayName(CurvyPositionMode positionMode)
         {
             string displayName;
-            
+
             switch (positionMode)
             {
                 case CurvyPositionMode.Relative:
@@ -50,11 +65,14 @@ namespace FluffyUnderware.CurvyEditor.Controllers
                     displayName = Absolute;
                     break;
                 default:
-                    throw new ArgumentOutOfRangeException(nameof(positionMode), positionMode, null);
+                    throw new ArgumentOutOfRangeException(
+                        nameof(positionMode),
+                        positionMode,
+                        null
+                    );
             }
 
             return displayName;
-
         }
     }
 }

@@ -22,8 +22,7 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
         public static BezierPathSegment[] BezierSegmentToPath(BezierSegment segment)
         {
             return new BezierPathSegment[] {
-                new BezierPathSegment() { P0 = segment.P0, P1 = segment.P1, P2 = segment.P2 },
-                new BezierPathSegment() { P0 = segment.P3 }
+                new BezierPathSegment { P0 = segment.P0, P1 = segment.P1, P2 = segment.P2 }, new BezierPathSegment { P0 = segment.P3 }
             };
         }
 
@@ -41,12 +40,12 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
             for (int i = 0; i < segmentCount; ++i)
             {
                 var seg = segments[i];
-                path.Add(new BezierPathSegment() { P0 = seg.P0, P1 = seg.P1, P2 = seg.P2 });
+                path.Add(new BezierPathSegment { P0 = seg.P0, P1 = seg.P1, P2 = seg.P2 });
 
                 if (i == (segmentCount-1))
                 {
                     // Last segment, close the path
-                    path.Add(new BezierPathSegment() { P0 = seg.P3 });
+                    path.Add(new BezierPathSegment { P0 = seg.P3 });
                 }
                 else
                 {
@@ -54,8 +53,8 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
                     var nextSeg = segments[i+1];
                     if (seg.P3 != nextSeg.P0)
                     {
-                        var line = VectorUtils.MakeLine(seg.P3, nextSeg.P0);
-                        path.Add(new BezierPathSegment() { P0 = line.P0, P1 = line.P1, P2 = line.P2 });
+                        var line = MakeLine(seg.P3, nextSeg.P0);
+                        path.Add(new BezierPathSegment { P0 = line.P0, P1 = line.P1, P2 = line.P2 });
                     }
                 }
             }
@@ -74,7 +73,7 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
             if (index < 0 || index >= (path.Count-1))
                 throw new IndexOutOfRangeException("Invalid index passed to PathSegmentAtIndex");
 
-            return new BezierSegment() { P0 = path[index].P0, P1 = path[index].P1, P2 = path[index].P2, P3 = path[index + 1].P0 };
+            return new BezierSegment { P0 = path[index].P0, P1 = path[index].P1, P2 = path[index].P2, P3 = path[index + 1].P0 };
         }
 
         /// <summary>
@@ -145,7 +144,7 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
         {
             var min = new Vector2(float.MaxValue, float.MaxValue);
             var max = new Vector2(-float.MaxValue, -float.MaxValue);
-            foreach (var s in VectorUtils.SegmentsInPath(path))
+            foreach (var s in SegmentsInPath(path))
             {
                 Vector2 segMin, segMax;
                 Bounds(s, out segMin, out segMax);
@@ -177,7 +176,7 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
         /// <remarks>The control points are spaced out equally to maintain a constant speed on t</remarks>
         public static BezierSegment MakeLine(Vector2 from, Vector2 to)
         {
-            return new BezierSegment()
+            return new BezierSegment
             {
                 P0 = from,
                 P1 = (to - from) / 3.0f + from,
@@ -195,7 +194,8 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
         {
             var p = p1;
             var t = 2.0f / 3.0f;
-            return new BezierSegment() {
+            return new BezierSegment
+            {
                 P0 = p0,
                 P1 = p0 + t * (p - p0),
                 P2 = p2 + t * (p - p2),
@@ -211,8 +211,7 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
         public static BezierPathSegment[] MakePathLine(Vector2 from, Vector2 to)
         {
             return new BezierPathSegment[] {
-                new BezierPathSegment() { P0 = from, P1 = (to - from) / 3.0f + from, P2 = (to - from) * 2.0f / 3.0f + from },
-                new BezierPathSegment() { P0 = to }
+                new BezierPathSegment { P0 = from, P1 = (to - from) / 3.0f + from, P2 = (to - from) * 2.0f / 3.0f + from }, new BezierPathSegment { P0 = to }
             };
         }
 
@@ -225,7 +224,7 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
             m.m02 = center.x;
             m.m12 = center.y;
             float f = 0.551915024494f;
-            return new BezierSegment()
+            return new BezierSegment
             {
                 P0 = m * new Vector2(1, 0),
                 P1 = m * new Vector2(1, f),
@@ -268,7 +267,7 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
                 var intersects = FindBezierLineIntersections(seg, p0, p1);
                 if (quadrant != 3 && intersects.Length > 0)
                 {
-                    VectorUtils.SplitSegment(seg, intersects[0], out subSeg1, out subSeg2);
+                    SplitSegment(seg, intersects[0], out subSeg1, out subSeg2);
                     seg = subSeg2;
                 }
 
@@ -276,11 +275,11 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
                 intersects = FindBezierLineIntersections(seg, p0, p1);
                 if (intersects.Length > 0)
                 {
-                    VectorUtils.SplitSegment(seg, intersects[0], out subSeg1, out subSeg2);
+                    SplitSegment(seg, intersects[0], out subSeg1, out subSeg2);
                     seg = subSeg1;
                 }
 
-                if (!VectorUtils.IsEmptySegment(seg))
+                if (!IsEmptySegment(seg))
                     segments.Add(seg);
             }
 
@@ -293,19 +292,19 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
                 for (int i = 0; i < segments.Count / 2; ++i)
                 {
                     int j = segments.Count - i - 1;
-                    var seg0 = VectorUtils.FlipSegment(segments[i]);
-                    var seg1 = VectorUtils.FlipSegment(segments[j]);
+                    var seg0 = FlipSegment(segments[i]);
+                    var seg1 = FlipSegment(segments[j]);
                     segments[i] = seg1;
                     segments[j] = seg0;
                 }
                 if ((segments.Count % 2) == 1)
                 {
                     int i = segments.Count / 2;
-                    segments[i] = VectorUtils.FlipSegment(segments[i]);
+                    segments[i] = FlipSegment(segments[i]);
                 }
             }
 
-            return VectorUtils.BezierSegmentsToPath(segments.ToArray());
+            return BezierSegmentsToPath(segments.ToArray());
         }
 
         internal static int QuadrantAtAngle(float angle)
@@ -327,10 +326,10 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
         {
             switch (quadrant)
             {
-                case 0: return VectorUtils.MakeArcQuarter(Vector2.zero, 0.0f, Mathf.PI / 2.0f);
-                case 1: return VectorUtils.MakeArcQuarter(Vector2.zero, -Mathf.PI / 2.0f, Mathf.PI / 2.0f);
-                case 2: return VectorUtils.MakeArcQuarter(Vector2.zero, -Mathf.PI, Mathf.PI / 2.0f);
-                case 3: return VectorUtils.MakeArcQuarter(Vector2.zero, -Mathf.PI / 2.0f * 3.0f, Mathf.PI / 2.0f);
+                case 0: return MakeArcQuarter(Vector2.zero, 0.0f, Mathf.PI / 2.0f);
+                case 1: return MakeArcQuarter(Vector2.zero, -Mathf.PI / 2.0f, Mathf.PI / 2.0f);
+                case 2: return MakeArcQuarter(Vector2.zero, -Mathf.PI, Mathf.PI / 2.0f);
+                case 3: return MakeArcQuarter(Vector2.zero, -Mathf.PI / 2.0f * 3.0f, Mathf.PI / 2.0f);
                 default: return new BezierSegment();
             }
         }
@@ -515,7 +514,7 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
         {
             // This adaptive algorithm doesn't behave well at the limit of float precision,
             // so we revert to a dummy iterative approach in this case
-            if (VectorUtils.HasLargeCoordinates(segment))
+            if (HasLargeCoordinates(segment))
             {
                 int steps = Math.Min(100, (int)(1.0f/precision));
                 return SegmentLengthIterative(segment, steps);
@@ -547,7 +546,7 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
             for (int i = 1; i <= steps; ++i)
             {
                 float t = (float)i/steps;
-                var q = VectorUtils.Eval(segment, t);
+                var q = Eval(segment, t);
                 length += (q-p).magnitude;
                 p = q;
             }
@@ -564,13 +563,13 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
                 segment.P3.x > kMaxCoord || segment.P3.y > kMaxCoord;
         }
 
-        static float AdaptiveQuadraticApproxSplitPoint(BezierSegment segment, float precision)
+        private static float AdaptiveQuadraticApproxSplitPoint(BezierSegment segment, float precision)
         {
             float quadraticApproxDist = (segment.P3 - 3.0f * segment.P2 + 3.0f * segment.P1 - segment.P0).magnitude * 0.5f;
             return Mathf.Pow((18.0f / Mathf.Sqrt(3.0f)) * precision / quadraticApproxDist, 1.0f / 3.0f);
         }
 
-        static float MidPointQuadraticApproxLength(BezierSegment segment)
+        private static float MidPointQuadraticApproxLength(BezierSegment segment)
         {
             var A = segment.P0;
             var B = (3.0f * segment.P2 - segment.P3 + 3.0f * segment.P1 - segment.P0) / 4.0f;
@@ -596,7 +595,7 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
                 double sumCBA = c + b + a;
 
                 var l0 = (0.25f / c) * (twoCpB * Math.Sqrt(sumCBA) - b * Math.Sqrt(a));
-                if (Math.Abs(q) <= VectorUtils.Epsilon)
+                if (Math.Abs(q) <= Epsilon)
                     return (float)l0;
 
                 var l1 = (q / (8.0f * Math.Pow(c, 1.5f))) * (Math.Log(2.0f * Math.Sqrt(c * sumCBA) + twoCpB) - Math.Log(2.0f * Math.Sqrt(c * a) + b));
@@ -619,8 +618,8 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
             var n = Vector2.LerpUnclamped(b, c, t);
             var p = Eval(segment, t);
 
-            b1 = new BezierSegment() { P0 = segment.P0, P1 = a, P2 = m, P3 = p };
-            b2 = new BezierSegment() { P0 = p, P1 = n, P2 = c, P3 = segment.P3 };
+            b1 = new BezierSegment { P0 = segment.P0, P1 = a, P2 = m, P3 = p };
+            b2 = new BezierSegment { P0 = p, P1 = n, P2 = c, P3 = segment.P3 };
         }
 
         /// <summary>Transforms a curve segment by a translation, rotation and scaling.</summary>
@@ -669,7 +668,7 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
             for (int i = 0; i < newPath.Length; ++i)
             {
                 var seg = path[i];
-                newPath[i] = new BezierPathSegment()
+                newPath[i] = new BezierPathSegment
                 {
                     P0 = m * Vector2.Scale(seg.P0, scaling) + translation,
                     P1 = m * Vector2.Scale(seg.P1, scaling) + translation,
@@ -689,7 +688,8 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
             for (int i = 0; i < newPath.Length; ++i)
             {
                 var seg = path[i];
-                newPath[i] = new BezierPathSegment() {
+                newPath[i] = new BezierPathSegment
+                {
                     P0 = matrix * seg.P0,
                     P1 = matrix * seg.P1,
                     P2 = matrix * seg.P2
@@ -731,7 +731,7 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
             public float WorldOpacity;
         }
 
-        static IEnumerable<SceneNodeWorldTransform> WorldTransformedSceneNodes(SceneNode child, Dictionary<SceneNode, float> nodeOpacities, SceneNodeWorldTransform parent)
+        private static IEnumerable<SceneNodeWorldTransform> WorldTransformedSceneNodes(SceneNode child, Dictionary<SceneNode, float> nodeOpacities, SceneNodeWorldTransform parent)
         {
             var childOpacity = 1.0f;
             if (nodeOpacities == null || !nodeOpacities.TryGetValue(child, out childOpacity))
@@ -836,7 +836,7 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
                 yield return new BezierSegment { P0 = s1.P0, P1 = s1.P1, P2 = s1.P2, P3 = segments.First().P0 };
         }
 
-        static void SolveQuadratic(float a, float b, float c, out float s1, out float s2)
+        private static void SolveQuadratic(float a, float b, float c, out float s1, out float s2)
         {
             float det = b * b - 4.0f * a * c;
             if (det < 0.0f)
@@ -900,7 +900,7 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
             return new Vector2(float.PositiveInfinity, float.PositiveInfinity);
         }
 
-        static bool PointOnTheLeftOfLine(Vector2 lineFrom, Vector2 lineTo, Vector2 point)
+        private static bool PointOnTheLeftOfLine(Vector2 lineFrom, Vector2 lineTo, Vector2 point)
         {
             return ((lineFrom.x - lineTo.x) * (point.y - lineTo.y) - (lineFrom.y - lineTo.y) * (point.x - lineTo.x)) > 0;
         }
@@ -933,7 +933,7 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
                 var p = coeffs[0] * t3 + coeffs[1] * t2 + coeffs[2] * t + coeffs[3];
 
                 var s = 0.0f;
-                if (Mathf.Abs(p1.x - p0.x) > VectorUtils.Epsilon)
+                if (Mathf.Abs(p1.x - p0.x) > Epsilon)
                     s = (p.x - p0.x) / (p1.x - p0.x);
                 else
                     s = (p.y - p0.y) / (p1.y - p0.y);
@@ -968,7 +968,7 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
                 t[2] = t[1];
                 Im = Math.Abs(Math.Sqrt(3.0) * (S - T) / 2);
 
-                if (Math.Abs(Im) > VectorUtils.Epsilon)
+                if (Math.Abs(Im) > Epsilon)
                 {
                     t[1] = -1;
                     t[2] = -1;
@@ -1084,13 +1084,13 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
 
     internal class PathDistanceForwardIterator
     {
-        class BezierLoop : IList<BezierPathSegment>
+        private class BezierLoop : IList<BezierPathSegment>
         {
-            IList<BezierPathSegment> OpenPath;
+            private IList<BezierPathSegment> OpenPath;
 
             public BezierLoop(IList<BezierPathSegment> openPath)
             {
-                this.OpenPath = openPath;
+                OpenPath = openPath;
             }
 
             public BezierPathSegment this[int index]
@@ -1126,16 +1126,16 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
 
             Segments = closed && !VectorUtils.PathEndsPerfectlyMatch(pathSegments) ? new BezierLoop(pathSegments) : pathSegments;
             this.closed = closed;
-            this.needTangentsDuringEval = maxTanAngleDevCosine < 1.0f;
+            needTangentsDuringEval = maxTanAngleDevCosine < 1.0f;
             this.maxCordDeviationSq = maxCordDeviationSq;
             this.maxTanAngleDevCosine = maxTanAngleDevCosine;
             this.stepSizeT = stepSizeT;
-            currentBezSeg = new BezierSegment() { P0 = pathSegments[0].P0, P1 = pathSegments[0].P1, P2 = pathSegments[0].P2, P3 = pathSegments[1].P0 };
+            currentBezSeg = new BezierSegment { P0 = pathSegments[0].P0, P1 = pathSegments[0].P1, P2 = pathSegments[0].P2, P3 = pathSegments[1].P0 };
             lastPointEval = pathSegments[0].P0;
             currentTTangent = needTangentsDuringEval ? VectorUtils.EvalTangent(currentBezSeg, 0.0f) : Vector2.zero;
         }
 
-        float PointToLineDistanceSq(Vector2 point, Vector2 lineStart, Vector2 lineEnd)
+        private float PointToLineDistanceSq(Vector2 point, Vector2 lineStart, Vector2 lineEnd)
         {
             float lineMagSq = (lineEnd - lineStart).sqrMagnitude;
             if (lineMagSq < VectorUtils.Epsilon)
@@ -1162,7 +1162,7 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
                 if (needTangentsDuringEval)
                 {
                     float tangentDiffCosAngle = Vector2.Dot(tangent, currentTTangent);
-                    generateStepHere = tangentDiffCosAngle < this.maxTanAngleDevCosine;
+                    generateStepHere = tangentDiffCosAngle < maxTanAngleDevCosine;
                 }
 
                 if (!generateStepHere && (maxCordDeviationSq != float.MaxValue))
@@ -1210,7 +1210,7 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
                 }
 
                 currentSegment++;
-                currentBezSeg = new BezierSegment()
+                currentBezSeg = new BezierSegment
                 {
                     P0 = Segments[currentSegment].P0,
                     P1 = Segments[currentSegment].P1,
@@ -1236,16 +1236,16 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
         public Vector2 EvalCurrent() { return VectorUtils.Eval(currentBezSeg, currentT); }
 
         // Path data and settings
-        readonly bool closed, needTangentsDuringEval;
-        readonly float maxCordDeviationSq, maxTanAngleDevCosine, stepSizeT; // Quality control variables
+        private readonly bool closed, needTangentsDuringEval;
+        private readonly float maxCordDeviationSq, maxTanAngleDevCosine, stepSizeT; // Quality control variables
 
         // State
-        int currentSegment;
-        float currentT;
-        float segmentLengthSoFar; // For user's tracking purposes, not really used in our calculations
-        float lengthSoFar; // For user's tracking purposes, not really used in our calculations
-        Vector2 lastPointEval, currentTTangent;
-        BezierSegment currentBezSeg;
+        private int currentSegment;
+        private float currentT;
+        private float segmentLengthSoFar; // For user's tracking purposes, not really used in our calculations
+        private float lengthSoFar; // For user's tracking purposes, not really used in our calculations
+        private Vector2 lastPointEval, currentTTangent;
+        private BezierSegment currentBezSeg;
     }
 
     internal class PathPatternIterator
@@ -1268,7 +1268,7 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
             this.patternOffset = patternOffset;
             if (patternOffset == 0.0f)
                 segmentLength = pattern[0];
-            else this.solid = IsSolidAt(0.0f, out currentSegment, out segmentLength);
+            else solid = IsSolidAt(0.0f, out currentSegment, out segmentLength);
         }
 
         public void Advance()
@@ -1326,12 +1326,12 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
         public float SegmentLength { get { return segmentLength; } }
         public bool IsSolid { get { return solid; } }
 
-        float[] pattern;
+        private float[] pattern;
 
-        int currentSegment;
-        bool solid = true;
-        float segmentLength;
-        float patternLength;
-        float patternOffset;
+        private int currentSegment;
+        private bool solid = true;
+        private float segmentLength;
+        private float patternLength;
+        private float patternOffset;
     }
 }

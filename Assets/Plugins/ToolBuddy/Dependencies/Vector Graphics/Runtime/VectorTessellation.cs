@@ -42,7 +42,7 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
                 get { return m_MaxTanAngleDev; }
                 set
                 {
-                    m_MaxTanAngleDev = Mathf.Clamp(value, VectorUtils.Epsilon, Mathf.PI * 0.5f);
+                    m_MaxTanAngleDev = Mathf.Clamp(value, Epsilon, Mathf.PI * 0.5f);
                     m_MaxTanAngleDevCosine = Mathf.Cos(m_MaxTanAngleDev);
                 }
             }
@@ -92,7 +92,7 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
 
             UnityEngine.Profiling.Profiler.BeginSample("TessellatePath");
 
-            float[] segmentLengths = VectorUtils.SegmentsLengths(contour.Segments, contour.Closed);
+            float[] segmentLengths = SegmentsLengths(contour.Segments, contour.Closed);
 
             // Approximate the number of vertices/indices we need to store the results so we reduce memory reallocations during work
             float approxTotalLength = 0.0f;
@@ -104,7 +104,7 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
                 approxStepCount += pathProps.Stroke.Pattern.Length * 2;
 
             List<Vector2> verts = new List<Vector2>(approxStepCount * 2 + 32); // A little bit possibly for the endings
-            List<UInt16> inds = new List<UInt16>((int)(verts.Capacity * 1.5f)); // Usually every 4 verts represent a quad that uses 6 indices
+            List<UInt16> inds = new List<ushort>((int)(verts.Capacity * 1.5f)); // Usually every 4 verts represent a quad that uses 6 indices
 
             var patternIt = new PathPatternIterator(pathProps.Stroke.Pattern, pathProps.Stroke.PatternOffset);
             var pathIt = new PathDistanceForwardIterator(contour.Segments, contour.Closed, tessellateOptions.MaxCordDeviationSquared, tessellateOptions.MaxTanAngleDeviationCosine, tessellateOptions.SamplingStepSize);
@@ -128,7 +128,7 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
             UnityEngine.Profiling.Profiler.EndSample();
         }
 
-        static Vector2[] TraceShape(BezierContour contour, Stroke stroke, TessellationOptions tessellateOptions)
+        private static Vector2[] TraceShape(BezierContour contour, Stroke stroke, TessellationOptions tessellateOptions)
         {
             if (tessellateOptions.StepDistance < Epsilon)
                 throw new Exception("stepDistance too small");
@@ -136,7 +136,7 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
             if (contour.Segments.Length < 2)
                 return new Vector2[0];
 
-            float[] segmentLengths = VectorUtils.SegmentsLengths(contour.Segments, contour.Closed);
+            float[] segmentLengths = SegmentsLengths(contour.Segments, contour.Closed);
 
             // Approximate the number of vertices/indices we need to store the results so we reduce memory reallocations during work
             float approxTotalLength = 0.0f;
@@ -194,7 +194,7 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
             return verts.ToArray(); // Why not return verts itself?
         }
 
-        static bool TryGetMoreRemainingUnits(ref float unitsRemaining, PathDistanceForwardIterator pathIt, float startingLength, float distance, float stepDistance)
+        private static bool TryGetMoreRemainingUnits(ref float unitsRemaining, PathDistanceForwardIterator pathIt, float startingLength, float distance, float stepDistance)
         {
             float distanceCrossedSoFar = pathIt.LengthSoFar - startingLength;
             float epsilon = Math.Max(Epsilon, distance * Epsilon * 100.0f);
@@ -206,7 +206,7 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
             return true;
         }
 
-        static void HandleNewSegmentJoining(PathDistanceForwardIterator pathIt, PathPatternIterator patternIt, JoiningInfo[] joiningInfo, float halfThickness, float[] segmentLengths)
+        private static void HandleNewSegmentJoining(PathDistanceForwardIterator pathIt, PathPatternIterator patternIt, JoiningInfo[] joiningInfo, float halfThickness, float[] segmentLengths)
         {
             joiningInfo[0] = joiningInfo[1];
             joiningInfo[1] = null;
@@ -223,8 +223,8 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
                 if ((pathIt.CurrentSegment == 0) || (pathIt.CurrentSegment == pathIt.Segments.Count - 2))
                 {
                     closing = ForeseeJoining(
-                            VectorUtils.PathSegmentAtIndex(pathIt.Segments, pathIt.Segments.Count - 2),
-                            VectorUtils.PathSegmentAtIndex(pathIt.Segments, 0),
+                            PathSegmentAtIndex(pathIt.Segments, pathIt.Segments.Count - 2),
+                            PathSegmentAtIndex(pathIt.Segments, 0),
                             halfThickness, segmentLengths[pathIt.Segments.Count - 2]);
 
                     if (pathIt.CurrentSegment == 0)
@@ -242,12 +242,12 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
                 return;
 
             joiningInfo[1] = ForeseeJoining(
-                    VectorUtils.PathSegmentAtIndex(pathIt.Segments, pathIt.CurrentSegment),
-                    VectorUtils.PathSegmentAtIndex(pathIt.Segments, pathIt.CurrentSegment + 1),
+                    PathSegmentAtIndex(pathIt.Segments, pathIt.CurrentSegment),
+                    PathSegmentAtIndex(pathIt.Segments, pathIt.CurrentSegment + 1),
                     halfThickness, segmentLengths[pathIt.CurrentSegment]);
         }
 
-        static void SkipRange(
+        private static void SkipRange(
             float distance, PathDistanceForwardIterator pathIt, PathPatternIterator patternIt,
             PathProperties pathProps, JoiningInfo[] joiningInfo, float[] segmentLengths)
         {
@@ -270,7 +270,7 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
             }
         }
 
-        static void TessellateRange(
+        private static void TessellateRange(
             float distance, PathDistanceForwardIterator pathIt, PathPatternIterator patternIt, PathProperties pathProps,
             TessellationOptions tessellateOptions, JoiningInfo[] joiningInfo, float[] segmentLengths, float totalLength, int rangeIndex, List<Vector2> verts, List<UInt16> inds)
         {
@@ -287,7 +287,7 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
                 if (pathIt.Closed && rangeIndex == 0 && patternIt.IsSolidAt(pathIt.CurrentT) && patternIt.IsSolidAt(totalLength))
                     pathEnding = PathEnding.Chop;
 
-                GenerateTip(VectorUtils.PathSegmentAtIndex(pathIt.Segments, pathIt.CurrentSegment), true, pathIt.CurrentT, pathEnding, pathProps.Stroke.HalfThickness, tessellateOptions, verts, inds);
+                GenerateTip(PathSegmentAtIndex(pathIt.Segments, pathIt.CurrentSegment), true, pathIt.CurrentT, pathEnding, pathProps.Stroke.HalfThickness, tessellateOptions, verts, inds);
             }
 
             float startingLength = pathIt.LengthSoFar;
@@ -305,7 +305,7 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
                 {
                     if (joiningInfo[1] != null)
                         GenerateJoining(joiningInfo[1], pathProps.Corners, pathProps.Stroke.HalfThickness, pathProps.Stroke.TippedCornerLimit, tessellateOptions, verts, inds);
-                    else AddSegment(VectorUtils.PathSegmentAtIndex(pathIt.Segments, pathIt.CurrentSegment), pathIt.CurrentT, pathProps.Stroke.HalfThickness, null, pathIt.SegmentLengthSoFar, verts, inds);
+                    else AddSegment(PathSegmentAtIndex(pathIt.Segments, pathIt.CurrentSegment), pathIt.CurrentT, pathProps.Stroke.HalfThickness, null, pathIt.SegmentLengthSoFar, verts, inds);
                     HandleNewSegmentJoining(pathIt, patternIt, joiningInfo, pathProps.Stroke.HalfThickness, segmentLengths);
                 }
 
@@ -316,7 +316,7 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
                 }
 
                 if (result == PathDistanceForwardIterator.Result.Stepped)
-                    AddSegment(VectorUtils.PathSegmentAtIndex(pathIt.Segments, pathIt.CurrentSegment), pathIt.CurrentT, pathProps.Stroke.HalfThickness, joiningInfo, pathIt.SegmentLengthSoFar, verts, inds);
+                    AddSegment(PathSegmentAtIndex(pathIt.Segments, pathIt.CurrentSegment), pathIt.CurrentT, pathProps.Stroke.HalfThickness, joiningInfo, pathIt.SegmentLengthSoFar, verts, inds);
             }
 
             // Ending
@@ -332,15 +332,15 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
             }
             else
             {
-                AddSegment(VectorUtils.PathSegmentAtIndex(pathIt.Segments, pathIt.CurrentSegment), pathIt.CurrentT, pathProps.Stroke.HalfThickness, joiningInfo, pathIt.SegmentLengthSoFar, verts, inds);
-                GenerateTip(VectorUtils.PathSegmentAtIndex(pathIt.Segments, pathIt.CurrentSegment), false, pathIt.CurrentT, pathProps.Tail, pathProps.Stroke.HalfThickness, tessellateOptions, verts, inds);
+                AddSegment(PathSegmentAtIndex(pathIt.Segments, pathIt.CurrentSegment), pathIt.CurrentT, pathProps.Stroke.HalfThickness, joiningInfo, pathIt.SegmentLengthSoFar, verts, inds);
+                GenerateTip(PathSegmentAtIndex(pathIt.Segments, pathIt.CurrentSegment), false, pathIt.CurrentT, pathProps.Tail, pathProps.Stroke.HalfThickness, tessellateOptions, verts, inds);
             }
         }
 
-        static void AddSegment(BezierSegment segment, float toT, float halfThickness, JoiningInfo[] joinInfo, float segmentLengthSoFar, List<Vector2> verts, List<UInt16> inds)
+        private static void AddSegment(BezierSegment segment, float toT, float halfThickness, JoiningInfo[] joinInfo, float segmentLengthSoFar, List<Vector2> verts, List<UInt16> inds)
         {
             Vector2 tanTo, normTo;
-            Vector2 posTo = VectorUtils.EvalFull(segment, toT, out tanTo, out normTo);
+            Vector2 posTo = EvalFull(segment, toT, out tanTo, out normTo);
 
             Vector2 posThickness = posTo + normTo * halfThickness;
             Vector2 negThickness = posTo + normTo * -halfThickness;
@@ -374,7 +374,7 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
             inds.Add((UInt16)(indexStart + 3));
         }
 
-        class JoiningInfo
+        private class JoiningInfo
         {
             public Vector2 JoinPos;
             public Vector2 TanAtEnd, TanAtStart;
@@ -388,15 +388,15 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
             public float InnerCornerDistToEnd, InnerCornerDistFromStart;
         }
 
-        static JoiningInfo ForeseeJoining(BezierSegment end, BezierSegment start, float halfThickness, float endSegmentLength)
+        private static JoiningInfo ForeseeJoining(BezierSegment end, BezierSegment start, float halfThickness, float endSegmentLength)
         {
             JoiningInfo joinInfo = new JoiningInfo();
 
             // The joining generates the vertices at both ends as well as the joining itself
             joinInfo.JoinPos = end.P3;
-            joinInfo.TanAtEnd = VectorUtils.EvalTangent(end, 1.0f);
+            joinInfo.TanAtEnd = EvalTangent(end, 1.0f);
             joinInfo.NormAtEnd = Vector2.Perpendicular(joinInfo.TanAtEnd);
-            joinInfo.TanAtStart = VectorUtils.EvalTangent(start, 0.0f);
+            joinInfo.TanAtStart = EvalTangent(start, 0.0f);
             joinInfo.NormAtStart = Vector2.Perpendicular(joinInfo.TanAtStart);
 
             // If the tangents are continuous at the join location, we don't have
@@ -419,8 +419,8 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
             }
             else
             {
-                joinInfo.PosThicknessClosingPoint = VectorUtils.IntersectLines(joinInfo.PosThicknessEnd, joinInfo.PosThicknessEnd + joinInfo.TanAtEnd, joinInfo.PosThicknessStart, joinInfo.PosThicknessStart + joinInfo.TanAtStart);
-                joinInfo.NegThicknessClosingPoint = VectorUtils.IntersectLines(joinInfo.NegThicknessEnd, joinInfo.NegThicknessEnd + joinInfo.TanAtEnd, joinInfo.NegThicknessStart, joinInfo.NegThicknessStart + joinInfo.TanAtStart);
+                joinInfo.PosThicknessClosingPoint = IntersectLines(joinInfo.PosThicknessEnd, joinInfo.PosThicknessEnd + joinInfo.TanAtEnd, joinInfo.PosThicknessStart, joinInfo.PosThicknessStart + joinInfo.TanAtStart);
+                joinInfo.NegThicknessClosingPoint = IntersectLines(joinInfo.NegThicknessEnd, joinInfo.NegThicknessEnd + joinInfo.TanAtEnd, joinInfo.NegThicknessStart, joinInfo.NegThicknessStart + joinInfo.TanAtStart);
 
                 if (float.IsInfinity(joinInfo.PosThicknessClosingPoint.x) || float.IsInfinity(joinInfo.PosThicknessClosingPoint.y))
                     joinInfo.PosThicknessClosingPoint = joinInfo.JoinPos;
@@ -436,7 +436,7 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
             Vector2 intersectionOnStart = Vector2.zero, intersectionOnEnd = Vector2.zero;
             if (!joinInfo.SimpleJoin)
             {
-                BezierSegment endFlipped = VectorUtils.FlipSegment(end);
+                BezierSegment endFlipped = FlipSegment(end);
                 Vector2 thicknessClosingPoint = joinInfo.RoundPosThickness ? joinInfo.PosThicknessClosingPoint : joinInfo.NegThicknessClosingPoint;
                 Vector2 meetingPoint = end.P3;
                 Vector2 thicknessDiagonalEnd = meetingPoint + (thicknessClosingPoint - meetingPoint) * 10.0f;
@@ -451,7 +451,7 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
             bool intersectionFound = false;
             if ((startTrail != null) && (endTrail != null))
             {
-                var intersect = VectorUtils.IntersectLines(startTrail[0], startTrail[1], endTrail[0], endTrail[1]);
+                var intersect = IntersectLines(startTrail[0], startTrail[1], endTrail[0], endTrail[1]);
                 var isOnStartTrail = PointOnLineIsWithinSegment(startTrail[0], startTrail[1], intersect);
                 var isOnEndTrail = PointOnLineIsWithinSegment(endTrail[0], endTrail[1], intersect);
                 if (!float.IsInfinity(intersect.x) && isOnStartTrail && isOnEndTrail)
@@ -475,9 +475,9 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
             return joinInfo;
         }
 
-        static Vector2[] LineBezierThicknessIntersect(BezierSegment seg, float thickness, Vector2 lineFrom, Vector2 lineTo, out float distanceToIntersection, out Vector2 intersection)
+        private static Vector2[] LineBezierThicknessIntersect(BezierSegment seg, float thickness, Vector2 lineFrom, Vector2 lineTo, out float distanceToIntersection, out Vector2 intersection)
         {
-            Vector2 tan = VectorUtils.EvalTangent(seg, 0.0f);
+            Vector2 tan = EvalTangent(seg, 0.0f);
             Vector2 nrm = Vector2.Perpendicular(tan);
             Vector2 lastPoint = seg.P0 + nrm * thickness;
             distanceToIntersection = 0.0f;
@@ -487,8 +487,8 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
             while (t < 1.0f)
             {
                 t += stepT;
-                var point = VectorUtils.EvalFull(seg, t, out tan, out nrm) + nrm * thickness;
-                intersection = VectorUtils.IntersectLines(lineFrom, lineTo, lastPoint, point);
+                var point = EvalFull(seg, t, out tan, out nrm) + nrm * thickness;
+                intersection = IntersectLines(lineFrom, lineTo, lastPoint, point);
                 if (PointOnLineIsWithinSegment(lastPoint, point, intersection))
                 {
                     distanceToIntersection += (lastPoint - intersection).magnitude;
@@ -500,7 +500,7 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
             return null;
         }
 
-        static bool PointOnLineIsWithinSegment(Vector2 lineFrom, Vector2 lineTo, Vector2 point)
+        private static bool PointOnLineIsWithinSegment(Vector2 lineFrom, Vector2 lineTo, Vector2 point)
         {
             // Point is assumed to be already on the line, but we would like to know if it is within the segment specified
             var v = (lineTo - lineFrom).normalized;
@@ -511,7 +511,7 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
             return true;
         }
 
-        static void GenerateJoining(JoiningInfo joinInfo, PathCorner corner, float halfThickness, float tippedCornerLimit, TessellationOptions tessellateOptions, List<Vector2> verts, List<UInt16> inds)
+        private static void GenerateJoining(JoiningInfo joinInfo, PathCorner corner, float halfThickness, float tippedCornerLimit, TessellationOptions tessellateOptions, List<Vector2> verts, List<UInt16> inds)
         {
             // The joining generates the vertices at both ends as well as the joining itself
             if (verts.Count == 0)
@@ -660,11 +660,11 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
             }
         }
 
-        static void GenerateTip(BezierSegment segment, bool atStart, float t, PathEnding ending, float halfThickness, TessellationOptions tessellateOptions, List<Vector2> verts, List<UInt16> inds)
+        private static void GenerateTip(BezierSegment segment, bool atStart, float t, PathEnding ending, float halfThickness, TessellationOptions tessellateOptions, List<Vector2> verts, List<UInt16> inds)
         {
             // The tip includes the vertices at the end itself
             Vector2 tan, nrm;
-            var pos = VectorUtils.EvalFull(segment, t, out tan, out nrm);
+            var pos = EvalFull(segment, t, out tan, out nrm);
             int indexStart = verts.Count;
 
             switch (ending)
@@ -755,7 +755,7 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
             }
         }
 
-        static int CalculateArcSteps(float radius, float fromAngle, float toAngle, TessellationOptions tessellateOptions)
+        private static int CalculateArcSteps(float radius, float fromAngle, float toAngle, TessellationOptions tessellateOptions)
         {
             float stepDivisor = float.MaxValue;
 
@@ -767,7 +767,7 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
                 float y = radius - tessellateOptions.MaxCordDeviation;
                 float cordHalfLength = Mathf.Sqrt(radius * radius - y * y);
                 float div = Mathf.Min(stepDivisor, Mathf.Asin(cordHalfLength / radius));
-                if (div > VectorUtils.Epsilon)
+                if (div > Epsilon)
                     stepDivisor = div;
             }
 
@@ -786,10 +786,22 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
         public static void TessellateRect(Rect rect, out Vector2[] vertices, out UInt16[] indices)
         {
             vertices = new Vector2[] {
-                new Vector2(rect.xMin, rect.yMin),
-                new Vector2(rect.xMax, rect.yMin),
-                new Vector2(rect.xMax, rect.yMax),
-                new Vector2(rect.xMin, rect.yMax)
+                new Vector2(
+                    rect.xMin,
+                    rect.yMin
+                ),
+                new Vector2(
+                    rect.xMax,
+                    rect.yMin
+                ),
+                new Vector2(
+                    rect.xMax,
+                    rect.yMax
+                ),
+                new Vector2(
+                    rect.xMin,
+                    rect.yMax
+                )
             };
             indices = new UInt16[] {
                 1, 0, 2, 2, 0, 3

@@ -1,4 +1,5 @@
 using UnityEngine;
+using PrimeTween;
 
 public class TailSegment : MonoBehaviour
 {
@@ -8,6 +9,8 @@ public class TailSegment : MonoBehaviour
 
     private Vector3 initialLocalPosition;
     private Vector3 velocity;
+    private Tween positionTween;
+    private Tween rotationTween;
 
     private void Start()
     {
@@ -19,25 +22,35 @@ public class TailSegment : MonoBehaviour
         // Calculate the target position (initial position relative to parent)
         Vector3 targetPosition = transform.parent.TransformPoint(initialLocalPosition);
 
-        // Calculate the force towards the target position
-        Vector3 force = (targetPosition - transform.position) * springForce;
+        // Stop any existing tweens
+        positionTween.Stop();
+        
+        // Create new position tween
+        positionTween = Tween.Position(
+            transform,
+            targetPosition,
+            Time.deltaTime * 5f, // Increased duration for smoother movement
+            Ease.OutExpo
+        );
 
         // Apply damping to the velocity
         velocity = Vector3.Lerp(velocity, Vector3.zero, damping * Time.deltaTime);
 
-        // Add the force to the velocity
-        velocity += force * Time.deltaTime;
-
-        // Move the segment
-        transform.position += velocity * Time.deltaTime;
-
-        // Optional: Make the segment look in the direction of movement
-        if (velocity.magnitude > 0.01f)
+        // Calculate movement direction
+        Vector3 movement = (targetPosition - transform.position);
+        if (movement.magnitude > 0.01f)
         {
-            transform.rotation = Quaternion.Lerp(
-                transform.rotation,
-                Quaternion.LookRotation(velocity),
-                followSpeed * Time.deltaTime
+            velocity = movement * springForce * Time.deltaTime;
+
+            // Stop any existing rotation tween
+            rotationTween.Stop();
+            
+            // Create new rotation tween
+            rotationTween = Tween.Rotation(
+                transform,
+                Quaternion.LookRotation(movement.normalized),
+                1f / followSpeed, // Convert followSpeed to duration
+                Ease.OutSine
             );
         }
     }

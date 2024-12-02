@@ -35,58 +35,58 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
             var segments = new List<BezierPathSegment>(8);
             BezierPathSegment seg;
 
-            if (leftSegmentSize > VectorUtils.Epsilon)
+            if (leftSegmentSize > Epsilon)
             {
                 seg = MakePathLine(new Vector2(0.0f, radiusTL.y + leftSegmentSize), new Vector2(0.0f, radiusTL.y))[0];
                 segments.Add(seg);
             }
 
-            if (radiusTL.magnitude > VectorUtils.Epsilon)
+            if (radiusTL.magnitude > Epsilon)
             {
-                var circleArc = VectorUtils.MakeArc(Vector2.zero, -Mathf.PI, Mathf.PI / 2.0f, 1.0f);
-                circleArc = VectorUtils.TransformBezierPath(circleArc, radiusTL, 0.0f, radiusTL);
+                var circleArc = MakeArc(Vector2.zero, -Mathf.PI, Mathf.PI / 2.0f, 1.0f);
+                circleArc = TransformBezierPath(circleArc, radiusTL, 0.0f, radiusTL);
                 segments.Add(circleArc[0]);
             }
 
-            if (topSegmentSize > VectorUtils.Epsilon)
+            if (topSegmentSize > Epsilon)
             {
                 seg = MakePathLine(new Vector2(radiusTL.x, 0.0f), new Vector2(radiusTL.x + topSegmentSize, 0.0f))[0];
                 segments.Add(seg);
             }
 
-            if (radiusTR.magnitude > VectorUtils.Epsilon)
+            if (radiusTR.magnitude > Epsilon)
             {
                 var topRight = new Vector2(width - radiusTR.x, radiusTR.y);
-                var circleArc = VectorUtils.MakeArc(Vector2.zero, -Mathf.PI / 2.0f, Mathf.PI / 2.0f, 1.0f);
-                circleArc = VectorUtils.TransformBezierPath(circleArc, topRight, 0.0f, radiusTR);
+                var circleArc = MakeArc(Vector2.zero, -Mathf.PI / 2.0f, Mathf.PI / 2.0f, 1.0f);
+                circleArc = TransformBezierPath(circleArc, topRight, 0.0f, radiusTR);
                 segments.Add(circleArc[0]);
             }
 
-            if (rightSegmentSize > VectorUtils.Epsilon)
+            if (rightSegmentSize > Epsilon)
             {
                 seg = MakePathLine(new Vector2(width, radiusTR.y), new Vector2(width, radiusTR.y + rightSegmentSize))[0];
                 segments.Add(seg);
             }
 
-            if (radiusBR.magnitude > VectorUtils.Epsilon)
+            if (radiusBR.magnitude > Epsilon)
             {
                 var bottomRight = new Vector2(width - radiusBR.x, height - radiusBR.y);
-                var circleArc = VectorUtils.MakeArc(Vector2.zero, 0.0f, Mathf.PI / 2.0f, 1.0f);
-                circleArc = VectorUtils.TransformBezierPath(circleArc, bottomRight, 0.0f, radiusBR);
+                var circleArc = MakeArc(Vector2.zero, 0.0f, Mathf.PI / 2.0f, 1.0f);
+                circleArc = TransformBezierPath(circleArc, bottomRight, 0.0f, radiusBR);
                 segments.Add(circleArc[0]);
             }
 
-            if (bottomSegmentSize > VectorUtils.Epsilon)
+            if (bottomSegmentSize > Epsilon)
             {
                 seg = MakePathLine(new Vector2(width - radiusBR.x, height), new Vector2(width - (radiusBR.x + bottomSegmentSize), height))[0];
                 segments.Add(seg);
             }
 
-            if (radiusBL.magnitude > VectorUtils.Epsilon)
+            if (radiusBL.magnitude > Epsilon)
             {
                 var bottomLeft = new Vector2(radiusBL.x, height - radiusBL.y);
-                var circleArc = VectorUtils.MakeArc(Vector2.zero, Mathf.PI / 2.0f, Mathf.PI / 2.0f, 1.0f);
-                circleArc = VectorUtils.TransformBezierPath(circleArc, bottomLeft, 0.0f, radiusBL);
+                var circleArc = MakeArc(Vector2.zero, Mathf.PI / 2.0f, Mathf.PI / 2.0f, 1.0f);
+                circleArc = TransformBezierPath(circleArc, bottomLeft, 0.0f, radiusBL);
                 segments.Add(circleArc[0]);
             }
 
@@ -100,7 +100,7 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
                 segments[i] = s;
             }
 
-            return new BezierContour() { Segments = segments.ToArray(), Closed = true };
+            return new BezierContour { Segments = segments.ToArray(), Closed = true };
         }
     }
 }

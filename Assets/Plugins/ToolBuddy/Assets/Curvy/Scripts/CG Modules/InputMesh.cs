@@ -1,71 +1,69 @@
 // =====================================================================
-// Copyright 2013-2022 ToolBuddy
+// Copyright © 2013 ToolBuddy
 // All rights reserved
 // 
 // http://www.toolbuddy.net
 // =====================================================================
 
-using UnityEngine;
-using System.Collections;
-using FluffyUnderware.DevTools;
 using System.Collections.Generic;
+using System.Linq;
+using FluffyUnderware.DevTools;
+using FluffyUnderware.DevTools.Extensions;
+using UnityEngine;
 
 namespace FluffyUnderware.Curvy.Generator.Modules
 {
-    [ModuleInfo("Input/Meshes", ModuleName = "Input Meshes", Description = "Create VMeshes")]
-    [HelpURL(CurvySpline.DOCLINK + "cginputmesh")]
+    [ModuleInfo(
+        "Input/Meshes",
+        ModuleName = "Input Meshes",
+        Description = "Create VMeshes"
+    )]
+    [HelpURL(AssetInformation.DocsRedirectionBaseUrl + "cginputmesh")]
     public class InputMesh : CGModule, IExternalInput
     {
-
         [HideInInspector]
-        [OutputSlotInfo(typeof(CGVMesh), Array = true)]
+        [OutputSlotInfo(
+            typeof(CGVMesh),
+            Array = true
+        )]
         public CGModuleOutputSlot OutVMesh = new CGModuleOutputSlot();
 
         #region ### Serialized Fields ###
 
         [SerializeField]
         [ArrayEx]
-        private List<CGMeshProperties> m_Meshes = new List<CGMeshProperties>(new CGMeshProperties[] { new CGMeshProperties() });
+        private List<CGMeshProperties> m_Meshes = new List<CGMeshProperties>(new[] { new CGMeshProperties() });
 
         #endregion
 
         #region ### Public Properties ###
 
-        public List<CGMeshProperties> Meshes
-        {
-            get { return m_Meshes; }
-        }
+        public List<CGMeshProperties> Meshes => m_Meshes;
 
-        public bool SupportsIPE
-        {
-            get { return false; }
-        }
+        public bool SupportsIPE => false;
 
-        #endregion
-
-        #region ### Private Fields & Properties ###
         #endregion
 
         #region ### Unity Callbacks ###
-        /*! \cond UNITY */
 
-#if UNITY_EDITOR
+#if DOCUMENTATION___FORCE_IGNORE___UNITY == false
+
         protected override void OnValidate()
         {
             base.OnValidate();
+
             foreach (CGMeshProperties m in Meshes)
                 m.OnValidate();
-            Dirty = true;
         }
-#endif
+
         public override void Reset()
         {
             base.Reset();
             Meshes.Clear();
-            Dirty = true;
         }
 
-        /*! \endcond */
+#endif
+
         #endregion
 
         #region ### Public Methods ###
@@ -73,33 +71,17 @@ namespace FluffyUnderware.Curvy.Generator.Modules
         public override void Refresh()
         {
             base.Refresh();
-            //OutVMesh
+
+            WarnAboutInvalidInputs();
+
             if (OutVMesh.IsLinked)
-            {
-                CGVMesh[] data = new CGVMesh[Meshes.Count];
-                int total = 0;
-                for (int i = 0; i < Meshes.Count; i++)
-                {
-                    Mesh mesh = Meshes[i].Mesh;
-                    if (mesh)
-                    {
-                        if (mesh.isReadable == false)
-                        {
-                            UIMessages.Add($"Input mesh '{mesh.name}' is not readable. Please set the 'Read/Write Enabled' parameter to true in the mesh model import settings");
-                        }
-                        data[total++] = new CGVMesh(Meshes[i]);
-                    }
-                }
-                System.Array.Resize(ref data, total);
-                OutVMesh.SetData(data);
-            }
-
-#if UNITY_EDITOR
-            if (Meshes.Exists(m => m.Mesh == null))
-                UIMessages.Add("Missing Mesh input");
-#endif
+                OutVMesh.SetDataToCollection(
+                    Meshes
+                        .Where(p => p.Mesh != null)
+                        .Select(p => new CGVMesh(p))
+                        .ToArray()
+                );
         }
-
 
 
         public override void OnTemplateCreated()
@@ -111,13 +93,27 @@ namespace FluffyUnderware.Curvy.Generator.Modules
         #endregion
 
         #region ### Privates ###
-        /*! \cond PRIVATE */
 
+#if DOCUMENTATION___FORCE_IGNORE___CURVY == false
 
-        /*! \endcond */
+        [System.Diagnostics.Conditional(CompilationSymbols.UnityEditor)]
+        private void WarnAboutInvalidInputs()
+        {
+            if (Meshes.Exists(m => m.Mesh == null))
+                UIMessages.Add("Missing Mesh input");
+
+            Meshes
+                .Select(p => p.Mesh)
+                .Where(m => m != null && m.isReadable == false)
+                .ForEach(
+                    m => UIMessages.Add(
+                        $"Input mesh '{m.name}' is not readable. Please set the 'Read/Write Enabled' parameter to true in the mesh model import settings"
+                    )
+                );
+        }
+
+#endif
+
         #endregion
-
-
     }
-
 }

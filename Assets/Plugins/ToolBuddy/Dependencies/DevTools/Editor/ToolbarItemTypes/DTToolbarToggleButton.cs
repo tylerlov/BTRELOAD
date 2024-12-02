@@ -16,7 +16,7 @@ namespace FluffyUnderware.DevToolsEditor
 
         public virtual bool On
         {
-            get { return mOn; }
+            get => mOn;
             set
             {
                 if (mOn != value)
@@ -30,14 +30,7 @@ namespace FluffyUnderware.DevToolsEditor
 
         internal bool mOn;
 
-        public override bool ShowClientArea
-        {
-            get
-            {
-                return On;
-            }
-            
-        }
+        public override bool ShowClientArea => On;
 
         public override void OnOtherItemClicked(DTToolbarItem other)
         {

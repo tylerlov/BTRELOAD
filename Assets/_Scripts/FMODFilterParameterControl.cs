@@ -16,7 +16,7 @@ public class FMODFilterParameterControl : MonoBehaviour
 
         if (result != FMOD.RESULT.OK)
         {
-            Debug.LogError(
+            ConditionalDebug.LogError(
                 string.Format(
                     ("[FMOD] FilterParameterControl failed to set parameter {0} : result = {1}"),
                     pauseParameterName,

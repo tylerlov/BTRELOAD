@@ -1,12 +1,12 @@
 // =====================================================================
-// Copyright 2013-2022 ToolBuddy
+// Copyright © 2013 ToolBuddy
 // All rights reserved
 // 
 // http://www.toolbuddy.net
 // =====================================================================
 
-using UnityEditor;
 using FluffyUnderware.Curvy.Generator.Modules;
+using UnityEditor;
 
 namespace FluffyUnderware.CurvyEditor.Generator.Modules
 {
@@ -14,7 +14,6 @@ namespace FluffyUnderware.CurvyEditor.Generator.Modules
     [CustomEditor(typeof(ModifierPathRelativeTranslation))]
     public class ModifierPathRelativeTranslationEditor : CGModuleEditor<ModifierPathRelativeTranslation>
     {
-
         // Scene View GUI - Called only if the module is initialized and configured
         //public override void OnModuleSceneGUI() {}
 
@@ -23,7 +22,5 @@ namespace FluffyUnderware.CurvyEditor.Generator.Modules
 
         // Inspector Debug GUI - Called only when Show Debug Values is activated
         //public override void OnModuleDebugGUI() {}
-
     }
-
 }

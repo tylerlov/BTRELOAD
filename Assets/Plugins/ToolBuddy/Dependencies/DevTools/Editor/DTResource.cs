@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using UnityEngine;
 using System.Reflection;
@@ -56,54 +57,51 @@ namespace FluffyUnderware.DevToolsEditor
         /// <param name="width">width of the image (can be omitted when loading from texture file)</param>
         /// <param name="height">height of the image (can be omitted when loading from texture file)</param>
         /// <returns>a Texture</returns>
-        public virtual Texture2D Load(string resourceName, int width=0, int height=0,Assembly assembly=null, string resourcePath="")
+        public virtual Texture2D Load(
+            string resourceName,
+            int width = 0,
+            int height = 0,
+            Assembly assembly = null,
+            string resourcePath = "")
         {
             if (assembly == null)
                 assembly = ResourceDLL;
             if (string.IsNullOrEmpty(resourcePath))
                 resourcePath = ResourceNamespace;
 
-            Texture2D texture = null;
-            if (string.IsNullOrEmpty(System.IO.Path.GetExtension(resourceName)))
-                resourceName += ".png";
-            
+            if (string.IsNullOrEmpty(Path.GetExtension(resourceName)))
+                resourceName = $"{resourceName}.png";
+
             //if (!resourcePath.EndsWith("."))
             //    resourcePath += ".";
 
+            Texture2D texture = null;
             if (assembly != null)
-            {
-                using (System.IO.Stream myStream = assembly.GetManifestResourceStream(resourcePath + resourceName))
+                using (Stream myStream = assembly.GetManifestResourceStream($"{resourcePath}{resourceName}"))
                 {
                     if (myStream != null)
                     {
-                        texture = new Texture2D(width, height, TextureFormat.ARGB32, false);
+                        texture = new Texture2D(
+                            width,
+                            height,
+                            TextureFormat.ARGB32,
+                            false
+                        );
                         texture.LoadImage(ReadToEnd(myStream));
-                        if (texture != null)
-                        {
-                            //texture.hideFlags = HideFlags.DontSave;
-                            return texture;
-                        }
                     }
                 }
-            }
-
-            // Try from file sys:
-            texture = (Texture2D)Resources.Load($"Editor/{System.IO.Path.GetFileNameWithoutExtension(resourceName)}");
 
             if (texture == null)
-            {
+                // Try from file sys:
+                texture = (Texture2D)Resources.Load($"Editor/{Path.GetFileNameWithoutExtension(resourceName)}");
+
+            if (texture == null)
                 DTLog.LogWarning("Missing resource: " + resourcePath + resourceName);
-            }
-            //else
-            //    texture.hideFlags = HideFlags.DontSave;
-                
-            
-            
+            else
+                texture.hideFlags = HideFlags.DontSave;
 
 
             return texture;
-
-            
         }
 
         protected static byte[] ReadToEnd(System.IO.Stream stream)
@@ -128,8 +126,8 @@ namespace FluffyUnderware.DevToolsEditor
                         if (nextByte != -1)
                         {
                             byte[] temp = new byte[readBuffer.Length * 2];
-                            System.Buffer.BlockCopy(readBuffer, 0, temp, 0, readBuffer.Length);
-                            System.Buffer.SetByte(temp, totalBytesRead, (byte)nextByte);
+                            Buffer.BlockCopy(readBuffer, 0, temp, 0, readBuffer.Length);
+                            Buffer.SetByte(temp, totalBytesRead, (byte)nextByte);
                             readBuffer = temp;
                             totalBytesRead++;
                         }
@@ -140,7 +138,7 @@ namespace FluffyUnderware.DevToolsEditor
                 if (readBuffer.Length != totalBytesRead)
                 {
                     buffer = new byte[totalBytesRead];
-                    System.Buffer.BlockCopy(readBuffer, 0, buffer, 0, totalBytesRead);
+                    Buffer.BlockCopy(readBuffer, 0, buffer, 0, totalBytesRead);
                 }
                 return buffer;
             }

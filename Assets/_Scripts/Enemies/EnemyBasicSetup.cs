@@ -199,7 +199,7 @@ public class EnemyBasicSetup : BaseBehaviour, IDamageable, IAttackAgent
         enemyModel.SetActive(true);
         SetLockOnStatus(false);
         FMODUnity.RuntimeManager.PlayOneShotAttached($"event:/Enemy/{enemyType}/Birth", gameObject);
-        Debug.Log($"[EnemyBasicSetup] Activating enemy {gameObject.name} and getting birth particles from pool");
+        ConditionalDebug.Log($"[EnemyBasicSetup] Activating enemy {gameObject.name} and getting birth particles from pool");
         PlayBirthParticles();
         EnableTrail(true);
     }
@@ -266,7 +266,7 @@ public class EnemyBasicSetup : BaseBehaviour, IDamageable, IAttackAgent
     {
         if (!gameObject.activeInHierarchy)
         {
-            Debug.LogWarning($"Attempted to damage inactive enemy: {gameObject.name}");
+            ConditionalDebug.LogWarning($"Attempted to damage inactive enemy: {gameObject.name}");
             return;
         }
 
@@ -355,7 +355,7 @@ public class EnemyBasicSetup : BaseBehaviour, IDamageable, IAttackAgent
     {
         if (!gameObject.activeInHierarchy)
         {
-            Debug.LogWarning($"Attempted to handle damage on inactive enemy: {gameObject.name}");
+            ConditionalDebug.LogWarning($"Attempted to handle damage on inactive enemy: {gameObject.name}");
             return;
         }
 

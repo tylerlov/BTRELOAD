@@ -9,11 +9,12 @@ using UnityEngine;
 using UnityEditor;
 using System.Collections.Generic;
 using System;
+using FluffyUnderware.DevToolsEditor.Extensions;
 
 
 namespace FluffyUnderware.DevToolsEditor
 {
-    [System.Serializable]
+    [Serializable]
     public class EditorKeyBinding : IComparable
     {
         public static bool BindingsEnabled = true;
@@ -58,12 +59,12 @@ namespace FluffyUnderware.DevToolsEditor
             string[] s = bindingString.Split(',');
             if (s.Length < 6) return;
             Name = s[0];
-            Key = (KeyCode)System.Enum.Parse(typeof(KeyCode), s[1]);
+            Key = (KeyCode)Enum.Parse(typeof(KeyCode), s[1]);
             Shift = bool.Parse(s[2]);
             Control = bool.Parse(s[3]);
             Alt = bool.Parse(s[4]);
             Command = bool.Parse(s[5]);
-            MouseButton = (MouseButtonEnum)System.Enum.Parse(typeof(MouseButtonEnum), s[6]);
+            MouseButton = (MouseButtonEnum)Enum.Parse(typeof(MouseButtonEnum), s[6]);
         }
 
         public void Set(string name, string description, KeyCode defKey = KeyCode.None, bool defShift = false, bool defControl = false, bool defAlt = false, bool defCommand = false, MouseButtonEnum defMouseButton = MouseButtonEnum.None)
@@ -101,17 +102,26 @@ namespace FluffyUnderware.DevToolsEditor
         {
             EditorGUI.BeginChangeCheck();
             Key = (KeyCode)EditorGUILayout.EnumPopup(new GUIContent(Name), Key);
-            EditorGUILayout.BeginHorizontal();
-            GUILayout.FlexibleSpace();
-            Shift = GUILayout.Toggle(Shift, "Shift");
-            Control = GUILayout.Toggle(Control, "Ctrl");
-            Alt = GUILayout.Toggle(Alt, "Alt");
-            Command = GUILayout.Toggle(Command, "Cmd");
-            EditorGUILayout.EndHorizontal();
-            EditorGUILayout.BeginHorizontal();
-            GUILayout.FlexibleSpace();
-            MouseButton = (MouseButtonEnum)EditorGUILayout.EnumPopup(MouseButton);
-            EditorGUILayout.EndHorizontal();
+            
+            EditorGUILayoutExtension.Horizontal(
+                () =>
+                {
+                    GUILayout.FlexibleSpace();
+                    Shift = GUILayout.Toggle(Shift, "Shift");
+                    Control = GUILayout.Toggle(Control, "Ctrl");
+                    Alt = GUILayout.Toggle(Alt, "Alt");
+                    Command = GUILayout.Toggle(Command, "Cmd");
+                }
+            );
+
+            EditorGUILayoutExtension.Horizontal(
+                () =>
+                {
+                    GUILayout.FlexibleSpace();
+                    MouseButton = (MouseButtonEnum)EditorGUILayout.EnumPopup(MouseButton);
+                }
+            );
+
             return EditorGUI.EndChangeCheck();
         }
 
@@ -141,14 +151,10 @@ namespace FluffyUnderware.DevToolsEditor
         }
 
         public string ToPrefsString()
-        {
-            return Name + "," + ((int)Key).ToString() + "," + Shift.ToString() + "," + Control.ToString() + "," + Alt.ToString() + "," + Command.ToString() + "," + ((int)MouseButton).ToString();
-        }
+            => Name + "," + ((int)Key).ToString() + "," + Shift.ToString() + "," + Control.ToString() + "," + Alt.ToString() + "," + Command.ToString() + "," + ((int)MouseButton).ToString();
 
         public int CompareTo(object obj)
-        {
-            return Name.CompareTo(((EditorKeyBinding)obj).Name);
-        }
+            => Name.CompareTo(((EditorKeyBinding)obj).Name);
 
         public override bool Equals(object obj)
         {
@@ -162,9 +168,6 @@ namespace FluffyUnderware.DevToolsEditor
                     MouseButton == o.MouseButton);
         }
         public override int GetHashCode()
-        {
-            return Name.GetHashCode() ^ Key.GetHashCode() ^ Shift.GetHashCode() ^ Control.GetHashCode() ^ Alt.GetHashCode() ^ Command.GetHashCode() ^ MouseButton.GetHashCode();
-        }
-        
+            => Name.GetHashCode() ^ Key.GetHashCode() ^ Shift.GetHashCode() ^ Control.GetHashCode() ^ Alt.GetHashCode() ^ Command.GetHashCode() ^ MouseButton.GetHashCode();
     }
 }

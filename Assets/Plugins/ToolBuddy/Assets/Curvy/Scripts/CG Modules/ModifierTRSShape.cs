@@ -1,5 +1,5 @@
 // =====================================================================
-// Copyright 2013-2022 ToolBuddy
+// Copyright © 2013 ToolBuddy
 // All rights reserved
 // 
 // http://www.toolbuddy.net
@@ -7,20 +7,26 @@
 
 using System;
 using UnityEngine;
-using System.Collections;
-using FluffyUnderware.DevTools;
 using UnityEngine.Assertions;
 
 namespace FluffyUnderware.Curvy.Generator.Modules
 {
-    [ModuleInfo("Modifier/TRS Shape", ModuleName = "TRS Shape", Description = "Transform,Rotate,Scale a Shape")]
-    [HelpURL(CurvySpline.DOCLINK + "cgtrsshape")]
+    [ModuleInfo(
+        "Modifier/TRS Shape",
+        ModuleName = "TRS Shape",
+        Description = "Transform,Rotate,Scale a Shape"
+    )]
+    [HelpURL(AssetInformation.DocsRedirectionBaseUrl + "cgtrsshape")]
 #pragma warning disable 618
     public class ModifierTRSShape : TRSModuleBase, IOnRequestProcessing, IPathProvider
 #pragma warning restore 618
     {
         [HideInInspector]
-        [InputSlotInfo(typeof(CGShape), Name = "Shape A", ModifiesData = true)]
+        [InputSlotInfo(
+            typeof(CGShape),
+            Name = "Shape A",
+            ModifiesData = true
+        )]
         public CGModuleInputSlot InShape = new CGModuleInputSlot();
 
         [HideInInspector]
@@ -29,43 +35,34 @@ namespace FluffyUnderware.Curvy.Generator.Modules
 
         #region ### Public Properties ###
 
-        public bool PathIsClosed
-        {
-            get
-            {
-                return (IsConfigured) && InShape.SourceSlot().PathProvider.PathIsClosed;
-            }
-        }
+        public bool PathIsClosed => IsConfigured && InShape.SourceSlot().PathProvider.PathIsClosed;
 
         #endregion
 
         #region ### IOnRequestProcessing ###
 
-        public CGData[] OnSlotDataRequest(CGModuleInputSlot requestedBy, CGModuleOutputSlot requestedSlot, params CGDataRequestParameter[] requests)
+        public CGData[] OnSlotDataRequest(CGModuleInputSlot requestedBy, CGModuleOutputSlot requestedSlot,
+            params CGDataRequestParameter[] requests)
         {
-            CGData[] result;
-            if (requestedSlot == OutShape)
-            {
-                CGShape data = InShape.GetData<CGShape>(out bool isDisposable, requests);
-#if CURVY_SANITY_CHECKS
-                // I forgot why I added this assertion, but I trust my past self
-                Assert.IsTrue(data == null || isDisposable);
-#endif
-                if (data)
-                    ApplyTrsOnShape(data);
-                result = new CGData[1] { data };
-            }
-            else
-                result = null;
+            if (requestedSlot != OutShape)
+                return Array.Empty<CGData>();
 
-            return result;
+            CGShape data = InShape.GetData<CGShape>(
+                out bool isDisposable,
+                requests
+            );
+#if CURVY_SANITY_CHECKS
+            // I forgot why I added this assertion, but I trust my past self
+            Assert.IsTrue(data == null || isDisposable);
+#endif
+            if (data == null)
+                return Array.Empty<CGData>();
+
+            ApplyTrsOnShape(data);
+
+            return new CGData[1] { data };
         }
 
         #endregion
-
-
-
-
-
     }
 }

@@ -6,7 +6,6 @@
 // =====================================================================
 
 using UnityEngine;
-using System.Collections;
 using System.Collections.Generic;
 using System;
 using FluffyUnderware.DevTools.Extensions;
@@ -15,8 +14,10 @@ using JetBrains.Annotations;
 namespace FluffyUnderware.DevTools
 {
     /// <summary>
-    /// Manages the object's pools components
+    /// Manages pools of Unity objects
     /// </summary>
+    /// <seealso cref="PrefabPool"/>
+    /// <seealso cref="ComponentPool"/>
     [HelpURL(DTUtility.HelpUrlBase + "dtpoolmanager")]
     [ExecuteAlways]
     [DisallowMultipleComponent]
@@ -24,15 +25,19 @@ namespace FluffyUnderware.DevTools
     {
         [Section("General")]
         [SerializeField]
-        bool m_AutoCreatePools = true;
+        [Tooltip("Whether pools should be automatically created when requested but not found")]
+        private bool m_AutoCreatePools = true;
 
         [AsGroup(Expanded = false)]
         [SerializeField]
-        PoolSettings m_DefaultSettings = new PoolSettings();
+        private PoolSettings m_DefaultSettings = new PoolSettings();
 
+        /// <summary>
+        /// Whether pools should be automatically created when requested but not found
+        /// </summary>
         public bool AutoCreatePools
         {
-            get { return m_AutoCreatePools; }
+            get => m_AutoCreatePools;
             set
             {
                 if (m_AutoCreatePools != value)
@@ -42,42 +47,52 @@ namespace FluffyUnderware.DevTools
 
         public PoolSettings DefaultSettings
         {
-            get { return m_DefaultSettings; }
+            get => m_DefaultSettings;
             set
             {
                 if (m_DefaultSettings != value)
                     m_DefaultSettings = value;
                 if (m_DefaultSettings != null)
-                    m_DefaultSettings.OnValidate();
+                    m_DefaultSettings.Validate();
             }
         }
 
         public bool IsInitialized { get; private set; }
-        public int Count { get { return Pools.Count + TypePools.Count; } }
+#pragma warning disable CS0618
+        public int Count => Pools.Count + TypePools.Count;
+#pragma warning restore CS0618
 
         public Dictionary<string, IPool> Pools = new Dictionary<string, IPool>();
 
+        [UsedImplicitly] [Obsolete("TypePools are no more part of Curvy Splines")]
         public Dictionary<Type, IPool> TypePools = new Dictionary<Type, IPool>();
 
-        IPool[] mPools = new IPool[0];
+        [UsedImplicitly] [Obsolete] private IPool[] mPools = new IPool[0];
 
-#if UNITY_EDITOR
-        void OnValidate()
+        protected override void OnValidate()
         {
+            base.OnValidate();
+
             DefaultSettings = m_DefaultSettings;
         }
-#endif
 
-        void OnDisable()
+        protected override void ResetOnEnable()
         {
+            base.ResetOnEnable();
             IsInitialized = false;
         }
 
-        void Update()
+        protected override void OnDisable()
+        {
+            base.OnDisable();
+            IsInitialized = false;
+        }
+
+        [UsedImplicitly] private void Update()
         {
             bool initialize;
 #if UNITY_EDITOR
-            //this forces the pool manager to initialize every frame. Not a good idea.
+            //todo this forces the pool manager to initialize every frame. Not a good idea.
             //I assume it was done to force the checks done in the Initialize method to be executed every frame, to handle pools duplication for example.
             //A better way to do this would be to separate initialization with checks, and execute the checks only when needed
             initialize = !Application.isPlaying;
@@ -87,16 +102,22 @@ namespace FluffyUnderware.DevTools
             if (initialize)
                 Initialize();
 
+#pragma warning disable CS0618
+#pragma warning disable CS0612
             if (mPools.Length != TypePools.Count)
             {
-                System.Array.Resize(ref mPools, TypePools.Count);
+                Array.Resize(ref mPools, TypePools.Count);
                 TypePools.Values.CopyTo(mPools, 0);
             }
+
+            //todo remove this once mPools contains only UnityObjectPools
             for (int i = 0; i < mPools.Length; i++)
-                mPools[i].Update();
+                mPools[i].Update(); //no need 
+#pragma warning restore CS0612
+#pragma warning restore CS0618
         }
 
-        void Initialize()
+        private void Initialize()
         {
             Pools.Clear();
             IPool[] goPools = GetComponents<IPool>();
@@ -132,7 +153,7 @@ namespace FluffyUnderware.DevTools
             return id;
         }
 
-
+        [UsedImplicitly] [Obsolete("TypePools are no more part of Curvy Splines")]
         public Pool<T> GetTypePool<T>()
         {
             IPool res;
@@ -174,6 +195,7 @@ namespace FluffyUnderware.DevTools
             return (PrefabPool)pool;
         }
 
+        [UsedImplicitly] [Obsolete("TypePools are no more part of Curvy Splines")]
         public Pool<T> CreateTypePool<T>(PoolSettings settings = null)
         {
             PoolSettings s = settings ?? new PoolSettings(DefaultSettings);
@@ -244,6 +266,7 @@ namespace FluffyUnderware.DevTools
             }
         }
 
+        [UsedImplicitly] [Obsolete("TypePools are no more part of Curvy Splines")]
         public void DeletePool<T>()
         {
             TypePools.Remove(typeof(T));

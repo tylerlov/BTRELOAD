@@ -126,17 +126,17 @@ public class SceneManagerBTR : MonoBehaviour
 
     public async Task LoadAdditiveSceneAsync(string sceneName)
     {
-        Debug.Log("[SceneManager] Starting additive scene load");
+        ConditionalDebug.Log("[SceneManager] Starting additive scene load");
         
         try
         {
             if (currentAdditiveScene.IsValid() && currentAdditiveScene.isLoaded)
             {
-                Debug.Log("[SceneManager] Unloading current additive scene");
+                ConditionalDebug.Log("[SceneManager] Unloading current additive scene");
                 await UnityEngine.SceneManagement.SceneManager.UnloadSceneAsync(currentAdditiveScene);
             }
 
-            Debug.Log($"[SceneManager] Loading new scene: {sceneName}");
+            ConditionalDebug.Log($"[SceneManager] Loading new scene: {sceneName}");
             AsyncOperation asyncLoad = UnityEngine.SceneManagement.SceneManager.LoadSceneAsync(
                 sceneName,
                 LoadSceneMode.Additive
@@ -153,12 +153,12 @@ public class SceneManagerBTR : MonoBehaviour
             ScoreManager.Instance.CurrentSceneWaveCount = 0;
             OnSceneLoaded(currentAdditiveScene, LoadSceneMode.Additive);
             
-            Debug.Log("[SceneManager] Scene loaded, starting fade out");
+            ConditionalDebug.Log("[SceneManager] Scene loaded, starting fade out");
             await LoadingScreen.Instance.StartFadeOut();
         }
         catch (System.Exception e)
         {
-            Debug.LogException(e);
+            ConditionalDebug.LogError($"[SceneManager] Error loading scene: {e.Message}");
             throw;
         }
     }
@@ -316,9 +316,8 @@ public class SceneManagerBTR : MonoBehaviour
         catch (System.Exception e)
         {
             ConditionalDebug.LogError(
-                $"<color=red>[SCENE] Error during scene transition: {e.Message}</color>"
+                $"<color=red>[SCENE] Error during scene transition: {e.Message}\nStack Trace: {e.StackTrace}</color>"
             );
-            Debug.LogException(e);
         }
         finally
         {
@@ -374,9 +373,9 @@ public class SceneManagerBTR : MonoBehaviour
         _isLoadingScene = false;
 
         UpdateSceneAttributes();
-        if (MusicManager.Instance != null)
+        if (AudioManager.Instance != null)
         {
-            MusicManager.Instance.ApplyMusicChanges(
+            AudioManager.Instance.ApplyMusicChanges(
                 currentGroup,
                 currentSceneIndex,
                 currentGroup.scenes[currentSceneIndex].songSections[currentSectionIndex].section
@@ -481,13 +480,13 @@ public class SceneManagerBTR : MonoBehaviour
             Scene openScene = SceneManager.GetSceneAt(i);
             if (openScene.isLoaded && IsSceneInOuroborosGroup(openScene.name))
             {
-                Debug.Log($"[SceneManager] Found existing Ouroboros scene: {openScene.name}");
+                ConditionalDebug.Log($"[SceneManager] Found existing Ouroboros scene: {openScene.name}");
                 currentAdditiveScene = openScene;
                 bool setActiveSuccess = SceneManager.SetActiveScene(currentAdditiveScene);
 
                 if (!setActiveSuccess)
                 {
-                    Debug.LogWarning($"[SceneManager] Failed to set {currentAdditiveScene.name} as active scene.");
+                    ConditionalDebug.LogWarning($"[SceneManager] Failed to set {currentAdditiveScene.name} as active scene.");
                     continue;
                 }
 
@@ -503,9 +502,9 @@ public class SceneManagerBTR : MonoBehaviour
                 }
 
                 UpdateSceneAttributes();
-                if (MusicManager.Instance != null)
+                if (AudioManager.Instance != null)
                 {
-                    MusicManager.Instance.ApplyMusicChanges(
+                    AudioManager.Instance.ApplyMusicChanges(
                         currentGroup,
                         currentSceneIndex,
                         currentGroup.scenes[currentSceneIndex].songSections[currentSectionIndex].section
@@ -539,14 +538,12 @@ public class SceneManagerBTR : MonoBehaviour
     private void UpdateMusicSection()
     {
         var currentScene = currentGroup.scenes[currentSceneIndex];
-        if (currentScene.songSections.Length > 0 && MusicManager.Instance != null)
+        if (currentScene.songSections.Length > 0 && AudioManager.Instance != null)
         {
             float sectionValue = currentScene.songSections[currentSectionIndex].section;
             string sectionName = currentScene.songSections[currentSectionIndex].name;
-            ConditionalDebug.Log(
-                $"<color=cyan>[SCENE] Updating music section: Scene {currentSceneIndex}, Section {currentSectionIndex} ({sectionName}), Value {sectionValue}</color>"
-            );
-            MusicManager.Instance.ChangeSongSection(currentGroup, currentSceneIndex, sectionValue);
+            ConditionalDebug.Log($"Song section changed to: {sectionName} (Section value: {sectionValue})");
+            AudioManager.Instance.ChangeSongSection(currentGroup, currentSceneIndex, sectionValue);
         }
     }
 
@@ -593,32 +590,32 @@ public class SceneManagerBTR : MonoBehaviour
 
         try 
         {
-            Debug.Log("[SceneManager] Starting scene transition sequence");
+            ConditionalDebug.Log("[SceneManager] Starting scene transition sequence");
             
             // First fade to black
-            Debug.Log("[SceneManager] Starting fade in (to black)");
+            ConditionalDebug.Log("[SceneManager] Starting fade in (to black)");
             await LoadingScreen.Instance.StartFadeIn();
             
             // Then change scene
             if (forceNextScene || currentSectionIndex >= currentGroup.scenes[currentSceneIndex].songSections.Length - 1)
             {
-                Debug.Log("[SceneManager] Moving to next scene");
+                ConditionalDebug.Log("[SceneManager] Moving to next scene");
                 await MoveToNextScene();
             }
             else
             {
-                Debug.Log("[SceneManager] Moving to next section");
+                ConditionalDebug.Log("[SceneManager] Moving to next section");
                 MoveToNextSection();
             }
 
             // Finally fade from black
-            Debug.Log("[SceneManager] Starting fade out (from black)");
+            ConditionalDebug.Log("[SceneManager] Starting fade out (from black)");
             await LoadingScreen.Instance.StartFadeOut();
-            Debug.Log("[SceneManager] Scene transition sequence complete");
+            ConditionalDebug.Log("[SceneManager] Scene transition sequence complete");
         }
         catch (System.Exception e)
         {
-            Debug.LogError($"[SceneManager] Error during scene transition: {e}");
+            ConditionalDebug.LogError($"[SceneManager] Error during scene transition: {e.Message}\nStack Trace: {e.StackTrace}</color>");
             throw;
         }
         finally 
@@ -675,8 +672,8 @@ public class SceneManagerBTR : MonoBehaviour
         }
         catch (System.Exception e)
         {
-            ConditionalDebug.LogError($"<color=red>[SCENE] Error during debug scene transition: {e.Message}</color>");
-            Debug.LogException(e);
+            ConditionalDebug.LogError($"<color=red>[SCENE] Error during debug scene transition: {e.Message}\nStack Trace: {e.StackTrace}</color>");
+            throw;
         }
         finally
         {
@@ -694,5 +691,4 @@ public class SceneManagerBTR : MonoBehaviour
         if (currentGroup == null) return false;
         return currentGroup.scenes.Any(scene => scene.sceneName == sceneName);
     }
-
 }

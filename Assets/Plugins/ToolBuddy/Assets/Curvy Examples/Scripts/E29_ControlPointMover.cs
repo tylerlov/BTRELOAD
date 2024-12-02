@@ -1,10 +1,11 @@
 // =====================================================================
-// Copyright 2013-2022 ToolBuddy
+// Copyright © 2013 ToolBuddy
 // All rights reserved
 // 
 // http://www.toolbuddy.net
 // =====================================================================
 
+using JetBrains.Annotations;
 using UnityEngine;
 
 namespace FluffyUnderware.Curvy.Examples
@@ -19,16 +20,16 @@ namespace FluffyUnderware.Curvy.Examples
         public float Magnitude = 3;
         public float Period = 3;
 
-        void Start()
-        {
+        [UsedImplicitly]
+        private void Start() =>
             originalPosition = transform.position;
-        }
 
-        void Update()
+        [UsedImplicitly]
+        private void Update()
         {
             Vector3 position = originalPosition;
-            position.x += Magnitude * Mathf.Sin(Variation + Time.time * Period);
-            position.z += Magnitude * Mathf.Cos(Variation + Time.time * Period);
+            position.x += Magnitude * Mathf.Sin(Variation + (Time.time * Period));
+            position.z += Magnitude * Mathf.Cos(Variation + (Time.time * Period));
             transform.position = position;
         }
     }

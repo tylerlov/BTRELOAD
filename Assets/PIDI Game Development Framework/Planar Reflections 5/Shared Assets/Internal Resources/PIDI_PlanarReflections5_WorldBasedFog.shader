@@ -20,8 +20,12 @@
             #pragma vertex vert
             #pragma fragment frag
             #pragma multi_compile_fog
+            #pragma target 4.5
+            #pragma multi_compile_instancing
+            #pragma multi_compile _ DOTS_INSTANCING_ON
 
             #include "UnityCG.cginc"
+
 
             struct appdata
             {
@@ -44,6 +48,9 @@
 
             v2f vert (appdata v)
             {
+                UNITY_SETUP_INSTANCE_ID(input);
+                UNITY_TRANSFER_INSTANCE_ID(input, output);
+
                 v2f o;
                 o.vertex = UnityObjectToClipPos(v.vertex);
 

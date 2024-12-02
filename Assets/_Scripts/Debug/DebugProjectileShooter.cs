@@ -13,7 +13,7 @@ public class DebugProjectileShooter : MonoBehaviour
     private void Start()
     {
         FindRequiredComponents();
-        Debug.Log($"PlayerLocking: {playerLocking != null}, PlayerShooting: {playerShooting != null}, CrosshairCore: {crosshairCore != null}");
+        ConditionalDebug.Log($"PlayerLocking: {playerLocking != null}, PlayerShooting: {playerShooting != null}, CrosshairCore: {crosshairCore != null}");
     }
 
     private void FindRequiredComponents()
@@ -24,12 +24,12 @@ public class DebugProjectileShooter : MonoBehaviour
 
         if (playerLocking == null || playerShooting == null || crosshairCore == null)
         {
-            Debug.LogError("DebugProjectileShooter: One or more required components not found in the scene!");
+            ConditionalDebug.LogError("DebugProjectileShooter: One or more required components not found in the scene!");
             enabled = false;
         }
         else
         {
-            Debug.Log("DebugProjectileShooter: All required components found successfully.");
+            ConditionalDebug.Log("DebugProjectileShooter: All required components found successfully.");
         }
     }
 
@@ -37,14 +37,14 @@ public class DebugProjectileShooter : MonoBehaviour
     {
         if (Input.GetKeyDown(KeyCode.M))
         {
-            Debug.Log("M key pressed");
+            ConditionalDebug.Log("M key pressed");
             ShootDebugProjectile();
         }
     }
 
     private void ShootDebugProjectile()
     {
-        Debug.Log("ShootDebugProjectile called");
+        ConditionalDebug.Log("ShootDebugProjectile called");
 
         // Get a projectile from the pool
         ProjectileStateBased newProjectile = ProjectilePool.Instance.GetProjectile();
@@ -56,11 +56,11 @@ public class DebugProjectileShooter : MonoBehaviour
             // Simulate shooting the projectile
             playerShooting.HandleShootingEffects();
 
-            Debug.Log("Debug projectile shot!");
+            ConditionalDebug.Log("Debug projectile shot!");
         }
         else
         {
-            Debug.LogWarning("Failed to get projectile from pool for debug shooting.");
+            ConditionalDebug.LogWarning("Failed to get projectile from pool for debug shooting.");
         }
     }
 
@@ -89,7 +89,7 @@ public class DebugProjectileShooter : MonoBehaviour
             }
             else
             {
-                Debug.LogWarning("Projectile does not have a Collider component.");
+                ConditionalDebug.LogWarning("Projectile does not have a Collider component.");
             }
 
             // Set the velocity directly and ensure the Rigidbody is not kinematic
@@ -102,13 +102,13 @@ public class DebugProjectileShooter : MonoBehaviour
 
             // Add debug ray
             Debug.DrawRay(projectile.transform.position, projectile.transform.forward * 100f, Color.red, 5f);
-            Debug.Log($"Debug projectile fired from {projectile.transform.position} in direction {projectile.transform.forward}");
+            ConditionalDebug.Log($"Debug projectile fired from {projectile.transform.position} in direction {projectile.transform.forward}");
 
-            Debug.Log($"Debug projectile set up at position {projectile.transform.position} with velocity {projectile.rb.linearVelocity}, isKinematic: {projectile.rb.isKinematic}");
+            ConditionalDebug.Log($"Debug projectile set up at position {projectile.transform.position} with velocity {projectile.rb.linearVelocity}, isKinematic: {projectile.rb.isKinematic}");
         }
         else
         {
-            Debug.LogError("Shooting object is not assigned.");
+            ConditionalDebug.LogError("Shooting object is not assigned.");
         }
     }
 }

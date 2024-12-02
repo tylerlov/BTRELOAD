@@ -47,7 +47,7 @@ namespace FluffyUnderware.Curvy.ThirdParty.LibTessDotNet
         private int _size, _max;
         private bool _initialized;
 
-        public bool Empty { get { return _size == 0 && _heap.Empty; } }
+        public bool Empty => _size == 0 && _heap.Empty;
 
         public PriorityQueue(int initialSize, PriorityHeap<TValue>.LessOrEqual leq)
         {
@@ -61,12 +61,12 @@ namespace FluffyUnderware.Curvy.ThirdParty.LibTessDotNet
             _initialized = false;
         }
 
-        class StackItem
+        private class StackItem
         {
             internal int p, r;
         };
 
-        static void Swap(ref int a, ref int b)
+        private static void Swap(ref int a, ref int b)
         {
             (b, a) = (a, b);
         }

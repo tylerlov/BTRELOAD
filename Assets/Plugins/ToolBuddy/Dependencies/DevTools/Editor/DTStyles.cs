@@ -23,7 +23,10 @@ namespace FluffyUnderware.DevToolsEditor
                 {
                     mBackdropHtmlLabel = new GUIStyle();//GUI.skin.GetStyle("HelpBox"));
                     mBackdropHtmlLabel.alignment = TextAnchor.MiddleCenter;
-                    Texture2D bgTex = new Texture2D(1, 1);
+                    Texture2D bgTex = new Texture2D(
+                        1,
+                        1
+                    );
                     bgTex.SetPixel(0, 0, new Color(1, 1, 1, 0.3f));
                     bgTex.Apply();
                     bgTex.hideFlags = HideFlags.DontSave;
@@ -34,9 +37,10 @@ namespace FluffyUnderware.DevToolsEditor
                 return mBackdropHtmlLabel;
             }
         }
-        static GUIStyle mBackdropHtmlLabel;
 
-        static GUIStyle mTBButton;
+        private static GUIStyle mBackdropHtmlLabel;
+
+        private static GUIStyle mTBButton;
         public static GUIStyle TBButton
         {
             get
@@ -53,7 +57,7 @@ namespace FluffyUnderware.DevToolsEditor
             }
         }
 
-        static GUIStyle mTBBackground;
+        private static GUIStyle mTBBackground;
         public static GUIStyle TBBackground
         {
             get
@@ -66,7 +70,7 @@ namespace FluffyUnderware.DevToolsEditor
             }
         }
 
-        static GUIStyle mHtmlHelpBox;
+        private static GUIStyle mHtmlHelpBox;
         public static GUIStyle HtmlHelpBox
         {
             get
@@ -81,7 +85,7 @@ namespace FluffyUnderware.DevToolsEditor
             }
         }
 
-        static GUIStyle mHtmlLabel;
+        private static GUIStyle mHtmlLabel;
         public static GUIStyle HtmlLabel
         {
             get
@@ -96,7 +100,25 @@ namespace FluffyUnderware.DevToolsEditor
             }
         }
 
-        static GUIStyle mHtmlLinkLabel;
+        private static GUIStyle mHtmlLabelAlignTop;
+
+        public static GUIStyle HtmlLabelAlignTop
+        {
+            get
+            {
+                if (mHtmlLabelAlignTop == null)
+                {
+                    mHtmlLabelAlignTop = new GUIStyle(GUI.skin.label);
+                    mHtmlLabelAlignTop.richText = true;
+                    mHtmlLabelAlignTop.alignment = TextAnchor.UpperLeft;
+                    mHtmlLabelAlignTop.wordWrap = true;
+                    return mHtmlLabelAlignTop;
+                }
+                return mHtmlLabelAlignTop;
+            }
+        }
+
+        private static GUIStyle mHtmlLinkLabel;
         public static GUIStyle HtmlLinkLabel
         {
             get
@@ -107,7 +129,11 @@ namespace FluffyUnderware.DevToolsEditor
                     mHtmlLinkLabel.richText = true;
                     int h = (int)mHtmlLinkLabel.lineHeight;
                     mHtmlLinkLabel.normal.background = new Texture2D(1, h);
-                    Color lineCol = new Color(.44f, .57f, .79f);
+                    Color lineCol = new Color(
+                        .44f,
+                        .57f,
+                        .79f
+                    );
                     for (int i = 0; i < h; i++)
                         mHtmlLinkLabel.normal.background.SetPixel(0, i, (i==3) ? lineCol : new Color(0,0,0,0));
                     

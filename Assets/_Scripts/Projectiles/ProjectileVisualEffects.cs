@@ -1,4 +1,4 @@
-using DG.Tweening;
+using PrimeTween;
 using UnityEngine;
 
 public class ProjectileVisualEffects
@@ -7,6 +7,8 @@ public class ProjectileVisualEffects
     private Material material;
     private Color originalColor;
     private float originalIllumination;
+    private Tween colorTween;
+    private Tween illuminationTween;
 
     public ProjectileVisualEffects(ProjectileStateBased projectile)
     {
@@ -27,18 +29,21 @@ public class ProjectileVisualEffects
     {
         if (material != null)
         {
-            DOTween.To(
-                () => material.GetFloat("_SelfIllumination"),
-                x => material.SetFloat("_SelfIllumination", x),
+            illuminationTween.Stop();
+            illuminationTween = Tween.Custom(
+                material.GetFloat("_SelfIllumination"),
                 originalIllumination * 2f,
-                0.1f
+                0.1f,
+                (value) => material.SetFloat("_SelfIllumination", value),
+                Ease.OutQuad
             ).OnComplete(() =>
             {
-                DOTween.To(
-                    () => material.GetFloat("_SelfIllumination"),
-                    x => material.SetFloat("_SelfIllumination", x),
+                illuminationTween = Tween.Custom(
+                    material.GetFloat("_SelfIllumination"),
                     0f,
-                    0.1f
+                    0.2f,
+                    (value) => material.SetFloat("_SelfIllumination", value),
+                    Ease.InQuad
                 );
             });
         }
@@ -48,18 +53,21 @@ public class ProjectileVisualEffects
     {
         if (material != null)
         {
-            DOTween.To(
-                () => material.GetFloat("_SelfIllumination"),
-                x => material.SetFloat("_SelfIllumination", x),
+            illuminationTween.Stop();
+            illuminationTween = Tween.Custom(
+                material.GetFloat("_SelfIllumination"),
                 originalIllumination * 1.5f,
-                0.05f
+                0.2f,
+                (value) => material.SetFloat("_SelfIllumination", value),
+                Ease.OutQuad
             ).OnComplete(() =>
             {
-                DOTween.To(
-                    () => material.GetFloat("_SelfIllumination"),
-                    x => material.SetFloat("_SelfIllumination", x),
+                illuminationTween = Tween.Custom(
+                    material.GetFloat("_SelfIllumination"),
                     originalIllumination,
-                    0.05f
+                    0.1f,
+                    (value) => material.SetFloat("_SelfIllumination", value),
+                    Ease.InQuad
                 );
             });
         }
@@ -69,9 +77,16 @@ public class ProjectileVisualEffects
     {
         if (material != null)
         {
-            DOTween.Kill(material);
+            colorTween.Stop();
+            illuminationTween.Stop();
             material.color = originalColor;
             material.SetFloat("_SelfIllumination", originalIllumination);
         }
+    }
+
+    private void OnDestroy()
+    {
+        colorTween.Stop();
+        illuminationTween.Stop();
     }
 }

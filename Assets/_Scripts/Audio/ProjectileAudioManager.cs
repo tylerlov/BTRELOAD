@@ -13,32 +13,25 @@ public class ProjectileAudioManager : MonoBehaviour
     private EventReference playerImpactSoundEvent;
         
     [SerializeField]
+    private EventReference enemyImpactSoundEvent;
+        
+    [SerializeField]
     private EventReference groupProjectileSoundEvent;
     
-    private const float MAX_AUDIO_DISTANCE_SQR = 2500f;
     private const float UPDATE_INTERVAL = 0.1f;
-    private const float DISTANCE_CULLING_CHECK_INTERVAL = 0.5f;
     private const int MAX_CONCURRENT_SOUNDS = 20;
-    private const float MIN_VOLUME_THRESHOLD = 0.01f;
 
-    private ObjectPool<EventInstance> eventPool;
-    private EventInstance[] activeInstances;
     private Transform[] activeTransforms;
+    private EventInstance[] activeInstances;
     private int[] activeIds;
     private int activeCount;
-    private float[] volumeCache;
     
-    private Vector3 lastPlayerPosition;
     private float nextUpdateTime;
-    private float nextCullTime;
     private bool isSoundEnabled;
     private Transform playerTransform;
 
     [SerializeField]
     private Dictionary<string, EventReference> oneShotSoundEvents = new Dictionary<string, EventReference>();
-    
-    private Dictionary<string, ObjectPool<EventInstance>> oneShotEventPools = 
-        new Dictionary<string, ObjectPool<EventInstance>>();
 
     private void Awake()
     {
@@ -53,150 +46,106 @@ public class ProjectileAudioManager : MonoBehaviour
 
     private void InitializeAudioSystem()
     {
-        activeInstances = new EventInstance[MAX_CONCURRENT_SOUNDS];
-        activeTransforms = new Transform[MAX_CONCURRENT_SOUNDS];
-        activeIds = new int[MAX_CONCURRENT_SOUNDS];
-        volumeCache = new float[MAX_CONCURRENT_SOUNDS];
-        activeCount = 0;
-
-        if (groupProjectileSoundEvent.IsNull)
+        if (AudioManager.Instance == null)
         {
-            isSoundEnabled = false;
+            Debug.LogError("AudioManager instance not found!");
+            enabled = false;
             return;
         }
 
-        eventPool = new ObjectPool<EventInstance>(
-            createFunc: () => RuntimeManager.CreateInstance(groupProjectileSoundEvent),
-            actionOnGet: instance => {
-                instance.start();
-                instance.setVolume(0f);
-            },
-            actionOnRelease: instance => {
-                if (instance.isValid())
-                {
-                    instance.stop(FMOD.Studio.STOP_MODE.IMMEDIATE);
-                    instance.setVolume(0f);
-                }
-            },
-            actionOnDestroy: instance => {
-                if (instance.isValid())
-                {
-                    instance.stop(FMOD.Studio.STOP_MODE.IMMEDIATE);
-                    instance.release();
-                }
-            },
-            defaultCapacity: MAX_CONCURRENT_SOUNDS
-        );
+        activeInstances = new EventInstance[MAX_CONCURRENT_SOUNDS];
+        activeTransforms = new Transform[MAX_CONCURRENT_SOUNDS];
+        activeIds = new int[MAX_CONCURRENT_SOUNDS];
+        activeCount = 0;
 
-        isSoundEnabled = true;
-    }
-
-    private void Start()
-    {
-        playerTransform = Camera.main.transform;
-        lastPlayerPosition = playerTransform.position;
-        isSoundEnabled = !playerImpactSoundEvent.IsNull && !groupProjectileSoundEvent.IsNull;
-    }
-
-    private void Update()
-    {
-        if (!isSoundEnabled || activeCount == 0) return;
-
-        float currentTime = Time.unscaledTime;
+        isSoundEnabled = !groupProjectileSoundEvent.IsNull;
         
-        if (currentTime >= nextUpdateTime)
-        {
-            BatchUpdateProjectileAudio();
-            BatchCullDistantSounds();
-            nextUpdateTime = currentTime + Mathf.Max(UPDATE_INTERVAL, Time.deltaTime);
-        }
+        ValidateAudioEvents();
     }
 
-    private void BatchUpdateProjectileAudio()
+    private void ValidateAudioEvents()
     {
-        Vector3 playerPos = playerTransform.position;
-        bool significantPlayerMovement = (playerPos - lastPlayerPosition).sqrMagnitude > 1f;
-        
-        if (!significantPlayerMovement && Time.frameCount % 2 != 0) return;
-
-        for (int i = 0; i < activeCount; i++)
+        if (groupProjectileSoundEvent.IsNull)
         {
-            if (activeTransforms[i] == null) continue;
-
-            var transform = activeTransforms[i];
-            float distanceSqr = (transform.position - playerPos).sqrMagnitude;
-            
-            if (distanceSqr > MAX_AUDIO_DISTANCE_SQR)
-            {
-                UnregisterHomingProjectile(activeIds[i]);
-                continue;
-            }
-
-            float volume = 1f - (distanceSqr / MAX_AUDIO_DISTANCE_SQR);
-            
-            if (Mathf.Abs(volume - volumeCache[i]) > MIN_VOLUME_THRESHOLD || significantPlayerMovement)
-            {
-                activeInstances[i].set3DAttributes(RuntimeUtils.To3DAttributes(transform));
-                activeInstances[i].setVolume(volume);
-                volumeCache[i] = volume;
-            }
+            Debug.LogWarning("Group projectile sound event not set!");
         }
 
-        if (significantPlayerMovement)
+        if (playerImpactSoundEvent.IsNull)
         {
-            lastPlayerPosition = playerPos;
+            Debug.LogWarning("Player impact sound event not set!");
         }
-    }
 
-    private void BatchCullDistantSounds()
-    {
-        Vector3 playerPos = playerTransform.position;
-        
-        for (int i = MAX_CONCURRENT_SOUNDS - 1; i >= 0; i--)
+        if (enemyImpactSoundEvent.IsNull)
         {
-            if (activeTransforms[i] == null) continue;
+            Debug.LogWarning("Enemy impact sound event not set!");
+        }
 
-            if ((activeTransforms[i].position - playerPos).sqrMagnitude > MAX_AUDIO_DISTANCE_SQR)
+        foreach (var kvp in oneShotSoundEvents)
+        {
+            if (kvp.Value.IsNull)
             {
-                UnregisterHomingProjectile(activeIds[i]);
+                Debug.LogWarning($"One-shot sound event '{kvp.Key}' not set!");
             }
         }
     }
 
     public void RegisterHomingProjectile(int projectileId, Transform projectileTransform)
     {
-        if (!isSoundEnabled || activeCount >= MAX_CONCURRENT_SOUNDS) return;
+        if (!isSoundEnabled || activeCount >= MAX_CONCURRENT_SOUNDS || projectileTransform == null) return;
 
         for (int i = 0; i < MAX_CONCURRENT_SOUNDS; i++)
         {
             if (activeTransforms[i] == null)
             {
-                activeIds[i] = projectileId;
-                activeTransforms[i] = projectileTransform;
-                activeInstances[i] = eventPool.Get();
-                volumeCache[i] = 0f;
-                activeCount++;
-                return;
+                try
+                {
+                    var instance = AudioManager.Instance.GetOrCreateInstance(groupProjectileSoundEvent.Path);
+                    if (!instance.isValid())
+                    {
+                        Debug.LogError($"Failed to create valid instance for projectile {projectileId}");
+                        return;
+                    }
+
+                    activeIds[i] = projectileId;
+                    activeTransforms[i] = projectileTransform;
+                    activeInstances[i] = instance;
+                    instance.start();
+                    activeCount++;
+                    return;
+                }
+                catch (System.Exception e)
+                {
+                    Debug.LogError($"Failed to register projectile {projectileId}: {e.Message}");
+                    return;
+                }
             }
         }
     }
 
     public void UnregisterHomingProjectile(int projectileId)
     {
-        if (!isSoundEnabled || activeInstances == null) return;
+        if (!isSoundEnabled || activeInstances == null || AudioManager.Instance == null) return;
 
         for (int i = 0; i < MAX_CONCURRENT_SOUNDS; i++)
         {
             if (activeIds[i] == projectileId && activeTransforms[i] != null)
             {
-                if (eventPool != null && activeInstances[i].isValid())
+                if (activeInstances[i].isValid())
                 {
-                    eventPool.Release(activeInstances[i]);
+                    try
+                    {
+                        AudioManager.Instance.ReleaseInstance(groupProjectileSoundEvent.Path, activeInstances[i]);
+                    }
+                    catch (System.Exception)
+                    {
+                        // If release fails, just stop and release the instance directly
+                        activeInstances[i].stop(FMOD.Studio.STOP_MODE.IMMEDIATE);
+                        activeInstances[i].release();
+                    }
                 }
                 activeInstances[i] = default;
                 activeTransforms[i] = null;
                 activeIds[i] = 0;
-                volumeCache[i] = 0f;
                 activeCount--;
                 return;
             }
@@ -209,17 +158,11 @@ public class ProjectileAudioManager : MonoBehaviour
 
         try
         {
-            if (!oneShotEventPools.ContainsKey(soundEvent))
-            {
-                InitializeOneShotPool(soundEvent);
-            }
-
-            var instance = oneShotEventPools[soundEvent].Get();
+            var instance = AudioManager.Instance.GetOrCreateInstance(oneShotSoundEvents[soundEvent].Path);
             instance.set3DAttributes(RuntimeUtils.To3DAttributes(position));
             instance.start();
             
-            // Auto-release after playing
-            StartCoroutine(ReleaseAfterPlay(soundEvent, instance));
+            StartCoroutine(ReleaseAfterPlay(oneShotSoundEvents[soundEvent].Path, instance));
         }
         catch (System.Exception e)
         {
@@ -227,31 +170,7 @@ public class ProjectileAudioManager : MonoBehaviour
         }
     }
 
-    private void InitializeOneShotPool(string soundEvent)
-    {
-        var eventRef = oneShotSoundEvents[soundEvent];
-        oneShotEventPools[soundEvent] = new ObjectPool<EventInstance>(
-            createFunc: () => RuntimeManager.CreateInstance(eventRef),
-            actionOnGet: instance => instance.setVolume(1f),
-            actionOnRelease: instance => {
-                if (instance.isValid())
-                {
-                    instance.stop(FMOD.Studio.STOP_MODE.IMMEDIATE);
-                    instance.setVolume(0);
-                }
-            },
-            actionOnDestroy: instance => {
-                if (instance.isValid())
-                {
-                    instance.stop(FMOD.Studio.STOP_MODE.IMMEDIATE);
-                    instance.release();
-                }
-            },
-            defaultCapacity: 5
-        );
-    }
-
-    private IEnumerator ReleaseAfterPlay(string soundEvent, EventInstance instance)
+    private IEnumerator ReleaseAfterPlay(string eventPath, EventInstance instance)
     {
         PLAYBACK_STATE state;
         do
@@ -260,75 +179,119 @@ public class ProjectileAudioManager : MonoBehaviour
             yield return new WaitForSeconds(0.1f);
         } while (state != PLAYBACK_STATE.STOPPED);
 
-        if (oneShotEventPools.ContainsKey(soundEvent))
+        AudioManager.Instance.ReleaseInstance(eventPath, instance);
+    }
+
+    private void Update()
+    {
+        if (!isSoundEnabled || activeCount == 0) return;
+
+        float currentTime = Time.unscaledTime;
+        if (currentTime >= nextUpdateTime)
         {
-            oneShotEventPools[soundEvent].Release(instance);
+            UpdateProjectilePositions();
+            nextUpdateTime = currentTime + UPDATE_INTERVAL;
         }
     }
 
-    public void PlayPlayerImpactSound(Vector3 position)
+    private void UpdateProjectilePositions()
     {
-        if (!isSoundEnabled) return;
-
-        EventInstance instance = RuntimeManager.CreateInstance(playerImpactSoundEvent);
-        instance.set3DAttributes(RuntimeUtils.To3DAttributes(position));
-        instance.start();
-        instance.release();
-    }
-
-    public void PlayEnemyImpactSound(Vector3 position)
-    {
-        if (!isSoundEnabled) return;
-        
-        EventInstance instance = RuntimeManager.CreateInstance(playerImpactSoundEvent);
-        instance.set3DAttributes(RuntimeUtils.To3DAttributes(position));
-        instance.start();
-        instance.release();
-    }
-
-    public void PlayGroupProjectileSound(Vector3[] shooterPositions)
-    {
-        if (!isSoundEnabled || shooterPositions == null || shooterPositions.Length == 0) return;
-
-        Vector3 averagePosition = Vector3.zero;
-        foreach (var position in shooterPositions)
+        for (int i = 0; i < MAX_CONCURRENT_SOUNDS; i++)
         {
-            averagePosition += position;
-        }
-        averagePosition /= shooterPositions.Length;
+            if (activeTransforms[i] == null || !activeInstances[i].isValid()) continue;
 
-        EventInstance instance = RuntimeManager.CreateInstance(groupProjectileSoundEvent);
-        instance.set3DAttributes(RuntimeUtils.To3DAttributes(averagePosition));
-        instance.start();
-        instance.release();
+            try
+            {
+                activeInstances[i].set3DAttributes(RuntimeUtils.To3DAttributes(activeTransforms[i].position));
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"Failed to update position for projectile {activeIds[i]}: {e.Message}");
+                UnregisterHomingProjectile(activeIds[i]);
+            }
+        }
     }
 
     private void OnDestroy()
     {
-        foreach (var pool in oneShotEventPools.Values)
-        {
-            pool.Clear();
-        }
-        oneShotEventPools.Clear();
+        if (!isSoundEnabled || activeInstances == null) return;
 
-        if (eventPool != null)
+        for (int i = 0; i < MAX_CONCURRENT_SOUNDS; i++)
         {
-            eventPool.Clear();
-        }
-
-        // Clean up native arrays
-        if (activeInstances != null)
-        {
-            for (int i = 0; i < activeInstances.Length; i++)
+            if (activeInstances[i].isValid())
             {
-                if (activeInstances[i].isValid())
-                {
-                    activeInstances[i].stop(FMOD.Studio.STOP_MODE.IMMEDIATE);
-                    activeInstances[i].release();
-                }
+                AudioManager.Instance.ReleaseInstance(groupProjectileSoundEvent.Path, activeInstances[i]);
+                activeInstances[i] = default;
             }
         }
-
-        Instance = null;
     }
+
+    public void PlayGroupProjectileSound(Vector3[] positions)
+    {
+        if (!isSoundEnabled || groupProjectileSoundEvent.IsNull || positions == null || positions.Length == 0) return;
+
+        try
+        {
+            // Calculate centroid of all positions
+            Vector3 averagePosition = Vector3.zero;
+            for (int i = 0; i < positions.Length; i++)
+            {
+                averagePosition += positions[i];
+            }
+            averagePosition /= positions.Length;
+
+            var instance = AudioManager.Instance.GetOrCreateInstance(groupProjectileSoundEvent.Path);
+            instance.set3DAttributes(RuntimeUtils.To3DAttributes(averagePosition));
+            instance.start();
+            
+            StartCoroutine(ReleaseAfterPlay(groupProjectileSoundEvent.Path, instance));
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError($"Failed to play group projectile sound: {e.Message}");
+        }
+    }
+
+    public void PlayGroupProjectileSound(Vector3 position)
+    {
+        PlayGroupProjectileSound(new Vector3[] { position });
+    }
+
+    public void PlayPlayerImpactSound(Vector3 position)
+    {
+        if (!isSoundEnabled || playerImpactSoundEvent.IsNull) return;
+
+        try
+        {
+            var instance = AudioManager.Instance.GetOrCreateInstance(playerImpactSoundEvent.Path);
+            instance.set3DAttributes(RuntimeUtils.To3DAttributes(position));
+            instance.start();
+            
+            StartCoroutine(ReleaseAfterPlay(playerImpactSoundEvent.Path, instance));
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError($"Failed to play player impact sound: {e.Message}");
+        }
+    }
+
+    public void PlayEnemyImpactSound(Vector3 position)
+    {
+        if (!isSoundEnabled || enemyImpactSoundEvent.IsNull) return;
+
+        try
+        {
+            var instance = AudioManager.Instance.GetOrCreateInstance(enemyImpactSoundEvent.Path);
+            instance.set3DAttributes(RuntimeUtils.To3DAttributes(position));
+            instance.start();
+            
+            StartCoroutine(ReleaseAfterPlay(enemyImpactSoundEvent.Path, instance));
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError($"Failed to play enemy impact sound: {e.Message}");
+        }
+    }
+
+    // ... rest of the methods using AudioManager.Instance for instance management ...
 }

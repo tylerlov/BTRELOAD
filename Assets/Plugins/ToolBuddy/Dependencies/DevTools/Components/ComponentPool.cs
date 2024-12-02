@@ -7,8 +7,6 @@
 
 using System;
 using UnityEngine;
-using System.Collections;
-using System.Collections.Generic;
 using System.Linq;
 using FluffyUnderware.DevTools.Extensions;
 #if CURVY_SANITY_CHECKS_PRIVATE
@@ -19,46 +17,19 @@ using UnityEngine.SceneManagement;
 namespace FluffyUnderware.DevTools
 {
     /// <summary>
-    /// A pool of instances of the UnityEngine.Component class
+    /// A pool for UnityEngine.ComponentPool instances
     /// </summary>
     [HelpURL(DTUtility.HelpUrlBase + "dtcomponentpool")]
-    public class ComponentPool : DTVersionedMonoBehaviour, IPool, ISerializationCallbackReceiver
+    public class ComponentPool : UnityObjectPool<Component>, ISerializationCallbackReceiver
     {
         [SerializeField, HideInInspector]
         private string m_Identifier;
 
-        [Inline]
-        [SerializeField]
-        private PoolSettings m_Settings;
-
-        public PoolSettings Settings
-        {
-            get { return m_Settings; }
-            set
-            {
-                if (m_Settings != value)
-                    m_Settings = value;
-                if (m_Settings != null)
-                    m_Settings.OnValidate();
-            }
-        }
-
-        private PoolManager mManager;
-
-        public PoolManager Manager
-        {
-            get
-            {
-                if (mManager == null)
-                    mManager = GetComponent<PoolManager>();
-                return mManager;
-            }
-        }
-
         /// <summary>
         /// Due to bad design decisions, Identifier is used to store the type of the pooled objects. And the setter does nothing
         /// </summary>
-        public string Identifier
+        //todo dissociate Identifier with type, and then potentially move Identifier in base class
+        public override string Identifier
         {
             get
             {
@@ -92,242 +63,46 @@ namespace FluffyUnderware.DevTools
         }
 
 
-        public int Count
-        {
-            get { return mObjects.Count; }
-        }
-
-        private readonly List<Component> mObjects = new List<Component>();
-
-        private double mLastTime;
-        private double mDeltaTime;
-
         public void Initialize(Type type, PoolSettings settings)
         {
-            m_Identifier = type.AssemblyQualifiedName;
-#if CURVY_SANITY_CHECKS_PRIVATE
-            Assert.IsNotNull(m_Identifier);
-#endif
-            m_Settings = settings;
-            mLastTime = DTTime.TimeSinceStartup + UnityEngine.Random.Range(0, Settings.Speed);
-            if (Settings.Prewarm)
-                Reset();
+            string typeAssemblyQualifiedName = type.AssemblyQualifiedName;
+            if (typeAssemblyQualifiedName == null)
+                throw new InvalidOperationException();
+
+            m_Identifier = typeAssemblyQualifiedName;
+            //todo design: once you fix the problematic Identifier setter, you could include the Identifier and the above line in UnityObjectPool
+            Initialize(settings);
         }
 
-        private void Start()
+        protected override Component CreateObject()
         {
-            if (Settings.Prewarm)
-                Reset();
+            Type componentType = Type;
+            if (componentType == null)
+                throw new InvalidOperationException($"[DevTools] ComponentPool {m_Identifier} could not create component because the associated type is null");
+
+            GameObject go = new GameObject();
+            ConfigureCreatedGameObject(go, Identifier);
+            return go.AddComponent(componentType);
         }
 
-#if UNITY_EDITOR
-        private void OnValidate()
-        {
-            Settings = m_Settings;
-        }
-#endif
+        protected override GameObject GetItemGameObject(Component item)
+            => item.gameObject;
 
-        private void OnEnable()
-        {
-            SceneManager.sceneLoaded += OnSceneLoaded;
-        }
+        #region Obsolete
 
-        public void Update()
-        {
-            if (Application.isPlaying)
-            {
-                mDeltaTime += DTTime.TimeSinceStartup - mLastTime;
-                mLastTime = DTTime.TimeSinceStartup;
-
-                if (Settings.Speed > 0)
-                {
-                    int c = (int)(mDeltaTime / Settings.Speed);
-                    mDeltaTime -= c;
-
-                    if (Count > Settings.Threshold)
-                    {
-                        c = Mathf.Min(c, Count - Settings.Threshold);
-                        while (c-- > 0)
-                        {
-                            if (Settings.Debug)
-                                log("Threshold exceeded: Deleting item");
-                            destroy(mObjects[0]);
-                            mObjects.RemoveAt(0);
-                        }
-                    }
-                    else if (Count < Settings.MinItems)
-                    {
-                        c = Mathf.Min(c, Settings.MinItems - Count);
-                        while (c-- > 0)
-                        {
-                            if (Settings.Debug)
-                                log("Below MinItems: Adding item");
-                            mObjects.Add(create());
-                        }
-                    }
-                }
-                else
-                    mDeltaTime = 0;
-            }
-        }
-
-        public void Reset()
-        {
-            if (Application.isPlaying)
-            {
-                while (Count < Settings.MinItems)
-                {
-                    mObjects.Add(create());
-                }
-                while (Count > Settings.Threshold)
-                {
-                    destroy(mObjects[0]);
-                    mObjects.RemoveAt(0);
-                }
-                if (Settings.Debug)
-                    log("Prewarm/Reset");
-            }
-        }
-
+        [JetBrains.Annotations.UsedImplicitly] [Obsolete]
         public void OnSceneLoaded(Scene scn, LoadSceneMode mode)
         {
-            for (int i = mObjects.Count - 1; i >= 0; i--)
-                if (mObjects[i] == null)
-                    mObjects.RemoveAt(i);
+
         }
 
-        public void Clear()
-        {
-            if (Settings.Debug)
-                log("Clear");
-            for (int i = 0; i < Count; i++)
-                destroy(mObjects[i]);
-            mObjects.Clear();
-        }
-
-        public void Push(Component item)
-        {
-            sendBeforePush(item);
-#if UNITY_EDITOR
-            if (!Application.isPlaying)
-            {
-                item.gameObject.Destroy(false, true);
-            }
-            else
-#endif
-                if (item != null)
-            {
-                mObjects.Add(item);
-                item.transform.parent = Manager.transform;
-                item.gameObject.hideFlags = (Settings.Debug)
-                    ? HideFlags.DontSave
-                    : HideFlags.HideAndDontSave;
-                if (Settings.AutoEnableDisable)
-                    item.gameObject.SetActive(false);
-            }
-        }
-
-        public Component Pop(Transform parent = null)
-        {
-            Component item = null;
-            if (Count > 0)
-            {
-                item = mObjects[0];
-                mObjects.RemoveAt(0);
-            }
-            else
-            {
-                if (Settings.AutoCreate || !Application.isPlaying)
-                {
-                    if (Settings.Debug)
-                        log("Auto create item");
-                    item = create();
-                }
-            }
-            if (item)
-            {
-                item.gameObject.hideFlags = HideFlags.None;
-                item.transform.parent = parent;
-                if (Settings.AutoEnableDisable)
-                    item.gameObject.SetActive(true);
-                sendAfterPop(item);
-                if (Settings.Debug)
-                    log("Pop " + item);
-            }
-
-            return item;
-        }
-
+        [JetBrains.Annotations.UsedImplicitly] [Obsolete("Use other Pop method instead")]
         public T Pop<T>(Transform parent) where T : Component
-        {
-            return Pop(parent) as T;
-        }
+            => Pop(parent) as T;
 
-        private Component create()
-        {
-            GameObject go = new GameObject();
-            go.name = Identifier;
-            go.transform.parent = Manager.transform;
-            if (Settings.AutoEnableDisable)
-                go.SetActive(false);
-            Type componentType = Type;
-            Component component = null;
-            if (componentType != null)
-                component = go.AddComponent(componentType);
-            else
-                DTLog.LogError(String.Format("[DevTools] ComponentPool {0} could not create component because the associated type is null", m_Identifier), this);
-            return component;
-        }
-
-        private void destroy(Component item)
-        {
-            if (item != null)
-                item.gameObject.Destroy(false, true);
-        }
-
-        private void setParent(Component item, Transform parent)
-        {
-            if (item != null)
-                item.transform.parent = parent;
-        }
-
-        private void sendAfterPop(Component item)
-        {
-            GameObject itemGameObject = item.gameObject;
-            if (itemGameObject.activeSelf && itemGameObject.activeInHierarchy)
-                //Send message works only for active game objects. Source: https://docs.unity3d.com/ScriptReference/GameObject.SendMessage.html
-                itemGameObject.SendMessage(nameof(IPoolable.OnAfterPop), SendMessageOptions.DontRequireReceiver);
-            else
-            {
-                if (item is IPoolable)
-                    ((IPoolable)item).OnAfterPop();
-                else
-                    DTLog.LogWarning("[Curvy] sendAfterPop could not send message because the receiver " + item.name + " is not active", this);
-            }
-        }
-
-        private void sendBeforePush(Component item)
-        {
-            GameObject itemGameObject = item.gameObject;
-            if (itemGameObject.activeSelf && itemGameObject.activeInHierarchy)
-                //Send message works only for active game objects. Source: https://docs.unity3d.com/ScriptReference/GameObject.SendMessage.html
-                itemGameObject.SendMessage(nameof(IPoolable.OnBeforePush), SendMessageOptions.DontRequireReceiver);
-            else
-            {
-                if (item is IPoolable)
-                    ((IPoolable)item).OnBeforePush();
-                else
-                    DTLog.LogWarning("[Curvy] sendBeforePush could not send message because the receiver " + item.name + " is not active", this);
-            }
-        }
-
-        private void log(string msg)
-        {
-            Debug.Log(string.Format("[{0}] ({1} items) {2}", Identifier, Count, msg));
-        }
+        #endregion
 
         #region ISerializationCallbackReceiver
-        /*! \cond PRIVATE */
         /// <summary>
         /// Implementation of UnityEngine.ISerializationCallbackReceiver
         /// Called automatically by Unity, is not meant to be called by Curvy's users
@@ -358,7 +133,7 @@ namespace FluffyUnderware.DevTools
                     //the 4 last elements do not contain the type name. Keep in mind that a type name can include a ',' like  Dictionary<int, List<double>>
 
 #if UNITY_EDITOR
-                    var knownTypes = UnityEditor.TypeCache.GetTypesDerivedFrom(typeof(System.Object));
+                    UnityEditor.TypeCache.TypeCollection knownTypes = UnityEditor.TypeCache.GetTypesDerivedFrom(typeof(System.Object));
 #else
 
                     Type[] knownTypes = TypeExt.GetLoadedTypes();
@@ -375,7 +150,6 @@ namespace FluffyUnderware.DevTools
                 }
             }
         }
-        /*! \endcond */
         #endregion
     }
 }

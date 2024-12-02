@@ -537,7 +537,7 @@ public class PlayerLocking : MonoBehaviour
 
         if (enemyTargetList.Count == 0)
         {
-            Debug.LogWarning("No locked enemies found. Cannot launch projectiles.");
+            ConditionalDebug.LogWarning("No locked enemies found. Cannot launch projectiles.");
             return projectilesToLaunch;
         }
 

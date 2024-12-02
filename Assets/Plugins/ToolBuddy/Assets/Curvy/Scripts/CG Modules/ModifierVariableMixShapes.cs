@@ -1,90 +1,115 @@
 // =====================================================================
-// Copyright 2013-2022 ToolBuddy
+// Copyright © 2013 ToolBuddy
 // All rights reserved
 // 
 // http://www.toolbuddy.net
 // =====================================================================
 
 using System;
-using UnityEngine;
 using FluffyUnderware.DevTools;
+using UnityEngine;
 
 namespace FluffyUnderware.Curvy.Generator.Modules
 {
-    [ModuleInfo("Modifier/Variable Mix Shapes", ModuleName = "Variable Mix Shapes", Description = "Interpolates between two shapes in a way that varies along the shape extrusion")]
-    [HelpURL(CurvySpline.DOCLINK + "cgvariablemixshapes")]
+    [ModuleInfo(
+        "Modifier/Variable Mix Shapes",
+        ModuleName = "Variable Mix Shapes",
+        Description = "Interpolates between two shapes in a way that varies along the shape extrusion"
+    )]
+    [HelpURL(AssetInformation.DocsRedirectionBaseUrl + "cgvariablemixshapes")]
 #pragma warning disable 618
     public class ModifierVariableMixShapes : CGModule, IOnRequestProcessing, IPathProvider
 #pragma warning restore 618
     {
         [HideInInspector]
-        [InputSlotInfo(typeof(CGShape), Name = "Shape A")]
+        [InputSlotInfo(
+            typeof(CGShape),
+            Name = "Shape A"
+        )]
         public CGModuleInputSlot InShapeA = new CGModuleInputSlot();
 
         [HideInInspector]
-        [InputSlotInfo(typeof(CGShape), Name = "Shape B")]
+        [InputSlotInfo(
+            typeof(CGShape),
+            Name = "Shape B"
+        )]
         public CGModuleInputSlot InShapeB = new CGModuleInputSlot();
 
         [HideInInspector]
-        [ShapeOutputSlotInfo(OutputsVariableShape = true, Array = true, ArrayType = SlotInfo.SlotArrayType.Hidden)]
+        [ShapeOutputSlotInfo(
+            OutputsVariableShape = true,
+            Array = true,
+            ArrayType = SlotInfo.SlotArrayType.Hidden
+        )]
         public CGModuleOutputSlot OutShape = new CGModuleOutputSlot();
 
         #region ### Serialized Fields ###
-        [Label("Mix Curve", "Mix between the shapes. Values (Y axis) between -1 for Shape A and 1 for Shape B. Times (X axis) between 0 for extrusion start and 1 for extrusion end")]
+
+        [Label(
+            "Mix Curve",
+            "Mix between the shapes. Values (Y axis) between -1 for Shape A and 1 for Shape B. Times (X axis) between 0 for extrusion start and 1 for extrusion end"
+        )]
         [SerializeField]
-        private AnimationCurve m_MixCurve = AnimationCurve.Linear(0, -1, 1, 1);
+        private AnimationCurve m_MixCurve = AnimationCurve.Linear(
+            0,
+            -1,
+            1,
+            1
+        );
+
         #endregion
+
         #region ### Public Properties ###
 
-        public bool PathIsClosed
-        {
-            get
-            {
-                return (IsConfigured) && InShapeA.SourceSlot().PathProvider.PathIsClosed &&
-                                        InShapeB.SourceSlot().PathProvider.PathIsClosed;
-            }
-        }
+        public bool PathIsClosed => IsConfigured
+                                    && InShapeA.SourceSlot().PathProvider.PathIsClosed
+                                    && InShapeB.SourceSlot().PathProvider.PathIsClosed;
 
         /// <summary>
         /// Defines how the result is interpolated. Values (Y axis) between -1 for Shape A and 1 for Shape B. Times (X axis) between 0 for extrusion start and 1 for extrusion end
         /// </summary>
         public AnimationCurve MixCurve
         {
-            get { return m_MixCurve; }
+            get => m_MixCurve;
             set
             {
-                m_MixCurve = value;
-                Dirty = true;
+                if (m_MixCurve != value)
+                {
+                    m_MixCurve = value;
+                    Dirty = true;
+                }
             }
         }
+
         #endregion
 
         #region ### Unity Callbacks ###
-        /*! \cond UNITY */
 
-#if UNITY_EDITOR
-        protected override void OnValidate()
-        {
-            base.OnValidate();
-            Dirty = true;
-        }
-#endif
+#if DOCUMENTATION___FORCE_IGNORE___UNITY == false
 
         public override void Reset()
         {
             base.Reset();
-            m_MixCurve = AnimationCurve.Linear(0, -1, 1, 1);
+            m_MixCurve = AnimationCurve.Linear(
+                0,
+                -1,
+                1,
+                1
+            );
         }
 
-        /*! \endcond */
+#endif
+
         #endregion
 
         #region ### IOnRequestProcessing ###
-        public CGData[] OnSlotDataRequest(CGModuleInputSlot requestedBy, CGModuleOutputSlot requestedSlot, params CGDataRequestParameter[] requests)
+
+        public CGData[] OnSlotDataRequest(CGModuleInputSlot requestedBy, CGModuleOutputSlot requestedSlot,
+            params CGDataRequestParameter[] requests)
         {
             CGDataRequestShapeRasterization raster = GetRequestParameter<CGDataRequestShapeRasterization>(ref requests);
             if (!raster)
-                return null;
+                return Array.Empty<CGData>();
 
             int pathFLength = raster.RelativeDistances.Count;
 
@@ -95,8 +120,14 @@ namespace FluffyUnderware.Curvy.Generator.Modules
 #if UNITY_EDITOR
                 bool warnedAboutInterpolation = false;
 #endif
-                CGShape shapeA = InShapeA.GetData<CGShape>(out bool isADisposable, requests);
-                CGShape shapeB = InShapeB.GetData<CGShape>(out bool isBDisposable, requests);
+                CGShape shapeA = InShapeA.GetData<CGShape>(
+                    out bool isADisposable,
+                    requests
+                );
+                CGShape shapeB = InShapeB.GetData<CGShape>(
+                    out bool isBDisposable,
+                    requests
+                );
 
                 for (int crossIndex = 0; crossIndex < pathFLength; crossIndex++)
                 {
@@ -105,13 +136,27 @@ namespace FluffyUnderware.Curvy.Generator.Modules
                     if ((mix < -1 || mix > 1) && warnedAboutInterpolation == false)
                     {
                         warnedAboutInterpolation = true;
-                        UIMessages.Add(String.Format("Mix Curve should have values between -1 and 1. Found a value of {0} at time {1}. The value was corrected", mix, raster.RelativeDistances.Array[crossIndex]));
-                        mix = Mathf.Clamp(mix, -1, 1);
+                        UIMessages.Add(
+                            String.Format(
+                                "Mix Curve should have values between -1 and 1. Found a value of {0} at time {1}. The value was corrected",
+                                mix,
+                                raster.RelativeDistances.Array[crossIndex]
+                            )
+                        );
+                        mix = Mathf.Clamp(
+                            mix,
+                            -1,
+                            1
+                        );
                     }
 #endif
                     result[crossIndex] = ModifierMixShapes.MixShapes(
-                        shapeA, shapeB, mix,
-                        UIMessages, crossIndex != 0);
+                        shapeA,
+                        shapeB,
+                        mix,
+                        UIMessages,
+                        crossIndex != 0
+                    );
                 }
 
                 if (isADisposable)
@@ -120,10 +165,10 @@ namespace FluffyUnderware.Curvy.Generator.Modules
                 if (isBDisposable)
                     shapeB.Dispose();
             }
+
             return result;
         }
 
         #endregion
-
     }
 }

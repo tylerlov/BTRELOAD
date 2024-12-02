@@ -37,7 +37,7 @@ public class GameManager : MonoBehaviour
     public int playerProjectileHits = 0;
 
     public ScoreManager ScoreManager { get; private set; }
-    public MusicManager MusicManager { get; private set; }
+    public AudioManager AudioManager { get; private set; }
     public TimeManager TimeManager { get; private set; }
     public SceneManagerBTR SceneManagerBTR { get; private set; }
 
@@ -46,6 +46,9 @@ public class GameManager : MonoBehaviour
     public static readonly string TransCamOffEvent = "TransCamOff";
 
     private PlayerUI playerUI;
+
+    [Header("Dependencies")]
+    [SerializeField] private AudioManager audioManager;
 
     private void Awake()
     {
@@ -84,18 +87,18 @@ public class GameManager : MonoBehaviour
     private void InitializeManagers()
     {
         ScoreManager = GetComponent<ScoreManager>();
-        MusicManager = GetComponent<MusicManager>();
         TimeManager = GetComponent<TimeManager>();
         SceneManagerBTR = GetComponent<SceneManagerBTR>();
+        AudioManager = FindObjectOfType<AudioManager>();
 
-        if (
-            ScoreManager == null
-            || MusicManager == null
-            || TimeManager == null
-            || SceneManagerBTR == null
-        )
+        // Check for required components after assignment
+        if (AudioManager == null)
         {
-            Debug.LogError("One or more manager components are missing on the GameManager object.");
+            Debug.LogError("AudioManager not found in scene! Ensure it's attached to the FMOD music object.");
+        }
+        if (ScoreManager == null || TimeManager == null || SceneManagerBTR == null)
+        {
+            Debug.LogError("One or more required manager components are missing on GameManager object!");
         }
     }
 

@@ -9,22 +9,20 @@ using UnityEngine;
 using UnityEditor;
 using System.Collections.Generic;
 using FluffyUnderware.DevTools.Extensions;
+using JetBrains.Annotations;
 
 namespace FluffyUnderware.DevToolsEditor
 {
     public static class DTSelection
     {
-        static GameObject mCurrentGameObject;
-        static int mCurrentGameObjectsCount;
+        private static GameObject mCurrentGameObject;
+        private static int mCurrentGameObjectsCount;
 
         public static event DT.Callback OnSelectionChange;
 
         internal static bool MuteEvents { get; set; }
 
-        public static int Count
-        {
-            get { return mCurrentGameObjectsCount; }
-        }
+        public static int Count => mCurrentGameObjectsCount;
 
         internal static void Initialize()
         {
@@ -43,32 +41,26 @@ namespace FluffyUnderware.DevToolsEditor
         }
 
         public static bool HasComponent<T, T1>(bool allowMultiSelection = false) where T : Component where T1 : Component
-        {
-            return HasComponent<T>(allowMultiSelection) ||
-                   HasComponent<T1>(allowMultiSelection);
-        }
+            => HasComponent<T>(allowMultiSelection) ||
+               HasComponent<T1>(allowMultiSelection);
 
         public static bool HasComponent<T, T1, T2>(bool allowMultiSelection = false)
             where T : Component
             where T1 : Component
             where T2 : Component
-        {
-            return HasComponent<T>(allowMultiSelection) ||
-                   HasComponent<T1>(allowMultiSelection) ||
-                   HasComponent<T2>(allowMultiSelection);
-        }
+            => HasComponent<T>(allowMultiSelection) ||
+               HasComponent<T1>(allowMultiSelection) ||
+               HasComponent<T2>(allowMultiSelection);
 
         public static bool HasComponent<T, T1, T2, T3>(bool allowMultiSelection = false)
             where T : Component
             where T1 : Component
             where T2 : Component
             where T3 : Component
-        {
-            return HasComponent<T>(allowMultiSelection) ||
-                   HasComponent<T1>(allowMultiSelection) ||
-                   HasComponent<T2>(allowMultiSelection) ||
-                   HasComponent<T3>(allowMultiSelection);
-        }
+            => HasComponent<T>(allowMultiSelection) ||
+               HasComponent<T1>(allowMultiSelection) ||
+               HasComponent<T2>(allowMultiSelection) ||
+               HasComponent<T3>(allowMultiSelection);
 
         public static bool HasComponent<T, T1, T2, T3, T4>(bool allowMultiSelection = false)
             where T : Component
@@ -76,14 +68,13 @@ namespace FluffyUnderware.DevToolsEditor
             where T2 : Component
             where T3 : Component
             where T4 : Component
-        {
-            return HasComponent<T>(allowMultiSelection) ||
-                   HasComponent<T1>(allowMultiSelection) ||
-                   HasComponent<T2>(allowMultiSelection) ||
-                   HasComponent<T3>(allowMultiSelection) ||
-                   HasComponent<T4>(allowMultiSelection);
-        }
+            => HasComponent<T>(allowMultiSelection) ||
+               HasComponent<T1>(allowMultiSelection) ||
+               HasComponent<T2>(allowMultiSelection) ||
+               HasComponent<T3>(allowMultiSelection) ||
+               HasComponent<T4>(allowMultiSelection);
 
+        [CanBeNull]
         public static T GetAs<T>(bool allowMultiSelection = false) where T : Component
         {
             List<T> ar = getSelection<T>();
@@ -93,11 +84,11 @@ namespace FluffyUnderware.DevToolsEditor
                 return null;
         }
 
+        [NotNull]
         public static List<T> GetAllAs<T>() where T : Component
-        {
-            return getSelection<T>();
-        }
+            => getSelection<T>();
 
+        [CanBeNull]
         public static GameObject GetGameObject(bool allowMultiSelection = false)
         {
             GameObject[] selectedGameObjects = Selection.gameObjects;
@@ -110,7 +101,7 @@ namespace FluffyUnderware.DevToolsEditor
         public static Vector3 GetPosition()
         {
             Vector3 p = Vector3.zero;
-            List<Transform> tt = DTSelection.GetAllAs<Transform>();
+            List<Transform> tt = GetAllAs<Transform>();
             if (tt.Count > 0)
             {
                 for (int i = 0; i < tt.Count; i++)
@@ -121,7 +112,8 @@ namespace FluffyUnderware.DevToolsEditor
             return p;
         }
 
-        static List<T> getSelection<T>() where T : Component
+        [NotNull]
+        private static List<T> getSelection<T>() where T : Component
         {
             Object[] S = Selection.GetFiltered(typeof(T), SelectionMode.TopLevel | SelectionMode.ExcludePrefab | SelectionMode.Editable);
             List<T> L = new List<T>();
@@ -187,7 +179,7 @@ namespace FluffyUnderware.DevToolsEditor
                 Clear();
         }
 
-        static void checkSelection()
+        private static void checkSelection()
         {
             GameObject[] selectedGameObjects = Selection.gameObjects;
             if (!MuteEvents && Selection.activeGameObject != mCurrentGameObject || mCurrentGameObjectsCount != selectedGameObjects.Length)
@@ -198,7 +190,7 @@ namespace FluffyUnderware.DevToolsEditor
             }
         }
 
-        static void raiseOnSelectionChange()
+        private static void raiseOnSelectionChange()
         {
             if (OnSelectionChange != null)
                 OnSelectionChange();

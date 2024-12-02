@@ -1,28 +1,36 @@
 // =====================================================================
-// Copyright 2013-2022 ToolBuddy
+// Copyright © 2013 ToolBuddy
 // All rights reserved
 // 
 // http://www.toolbuddy.net
 // =====================================================================
 
 using System;
-using UnityEngine;
-using System.Collections;
-using System.Collections.Generic;
 using FluffyUnderware.DevTools;
+using JetBrains.Annotations;
+using UnityEngine;
 using UnityEngine.Assertions;
 
 namespace FluffyUnderware.Curvy.Generator.Modules
 {
-    [ModuleInfo("Modifier/Conform Path", ModuleName = "Conform Path", Description = "Projects a path")]
-    [HelpURL(CurvySpline.DOCLINK + "cgconformpath")]
+    [ModuleInfo(
+        "Modifier/Conform Path",
+        ModuleName = "Conform Path",
+        Description = "Projects a path"
+    )]
+    [HelpURL(AssetInformation.DocsRedirectionBaseUrl + "cgconformpath")]
 #pragma warning disable 618
     public class ConformPath : CGModule, IOnRequestProcessing, IPathProvider
 #pragma warning restore 618
     {
+        private const int DefaultMaxDistance = 100;
 
         [HideInInspector]
-        [InputSlotInfo(typeof(CGPath), Name = "Path", ModifiesData = true)]
+        [InputSlotInfo(
+            typeof(CGPath),
+            Name = "Path",
+            ModifiesData = true
+        )]
         public CGModuleInputSlot InPath = new CGModuleInputSlot();
 
         [HideInInspector]
@@ -34,16 +42,26 @@ namespace FluffyUnderware.Curvy.Generator.Modules
         [SerializeField]
         [VectorEx]
         [Tooltip("The direction to raycast in ")]
-        private Vector3 m_Direction = new Vector3(0, -1, 0);
+        private Vector3 m_Direction = new Vector3(
+            0,
+            -1,
+            0
+        );
+
         [SerializeField]
         [Tooltip("The maximum raycast distance")]
-        private float m_MaxDistance = 100;
+        private float m_MaxDistance = DefaultMaxDistance;
+
         [SerializeField]
         [Tooltip("Defines an offset shift along the raycast direction")]
         private float m_Offset;
+
         [SerializeField]
-        [Tooltip("If enabled, the entire path is moved to the nearest possible distance. If disabled, each path point is moved individually")]
+        [Tooltip(
+            "If enabled, the entire path is moved to the nearest possible distance. If disabled, each path point is moved individually"
+        )]
         private bool m_Warp;
+
         [SerializeField]
         [Tooltip("The layers to raycast against")]
         private LayerMask m_LayerMask;
@@ -57,15 +75,14 @@ namespace FluffyUnderware.Curvy.Generator.Modules
         /// </summary>
         public Vector3 Direction
         {
-            get
-            {
-                return m_Direction;
-            }
+            get => m_Direction;
             set
             {
                 if (m_Direction != value)
+                {
                     m_Direction = value;
-                Dirty = true;
+                    Dirty = true;
+                }
             }
         }
 
@@ -74,12 +91,14 @@ namespace FluffyUnderware.Curvy.Generator.Modules
         /// </summary>
         public float MaxDistance
         {
-            get { return m_MaxDistance; }
+            get => m_MaxDistance;
             set
             {
                 if (m_MaxDistance != value)
+                {
                     m_MaxDistance = value;
-                Dirty = true;
+                    Dirty = true;
+                }
             }
         }
 
@@ -88,12 +107,14 @@ namespace FluffyUnderware.Curvy.Generator.Modules
         /// </summary>
         public float Offset
         {
-            get { return m_Offset; }
+            get => m_Offset;
             set
             {
                 if (m_Offset != value)
+                {
                     m_Offset = value;
-                Dirty = true;
+                    Dirty = true;
+                }
             }
         }
 
@@ -102,12 +123,14 @@ namespace FluffyUnderware.Curvy.Generator.Modules
         /// </summary>
         public bool Warp
         {
-            get { return m_Warp; }
+            get => m_Warp;
             set
             {
                 if (m_Warp != value)
+                {
                     m_Warp = value;
-                Dirty = true;
+                    Dirty = true;
+                }
             }
         }
 
@@ -116,22 +139,22 @@ namespace FluffyUnderware.Curvy.Generator.Modules
         /// </summary>
         public LayerMask LayerMask
         {
-            get { return m_LayerMask; }
+            get => m_LayerMask;
             set
             {
                 if (m_LayerMask != value)
+                {
                     m_LayerMask = value;
-                Dirty = true;
+                    Dirty = true;
+                }
             }
         }
 
         #endregion
 
-        #region ### Private Fields & Properties ###
-        #endregion
-
         #region ### Unity Callbacks ###
-        /*! \cond UNITY */
+
+#if DOCUMENTATION___FORCE_IGNORE___UNITY == false
 
         protected override void OnEnable()
         {
@@ -140,58 +163,60 @@ namespace FluffyUnderware.Curvy.Generator.Modules
             Properties.LabelWidth = 80;
         }
 
-#if UNITY_EDITOR
-        protected override void OnValidate()
-        {
-            base.OnValidate();
-            Direction = m_Direction;
-            MaxDistance = m_MaxDistance;
-            Offset = m_Offset;
-            LayerMask = m_LayerMask;
-        }
-#endif
-
         public override void Reset()
         {
             base.Reset();
-            Direction = new Vector3(0, -1, 0);
-            MaxDistance = 100;
+            Direction = new Vector3(
+                0,
+                -1,
+                0
+            );
+            MaxDistance = DefaultMaxDistance;
             Offset = 0;
             Warp = false;
             LayerMask = 0;
         }
 
 
-        /*! \endcond */
+#endif
+
         #endregion
 
         #region ### IOnRequestProcessing ###
 
-        public bool PathIsClosed
-        {
-            get
-            {
-                return (IsConfigured) && InPath.SourceSlot().PathProvider.PathIsClosed;
-            }
-        }
+        public bool PathIsClosed => IsConfigured && InPath.SourceSlot().PathProvider.PathIsClosed;
 
-        public CGData[] OnSlotDataRequest(CGModuleInputSlot requestedBy, CGModuleOutputSlot requestedSlot, params CGDataRequestParameter[] requests)
+        public CGData[] OnSlotDataRequest(CGModuleInputSlot requestedBy, CGModuleOutputSlot requestedSlot,
+            params CGDataRequestParameter[] requests)
         {
             CGDataRequestRasterization raster = GetRequestParameter<CGDataRequestRasterization>(ref requests);
             if (!raster)
-                return null;
+                return Array.Empty<CGData>();
 
-            if (LayerMask == 0)//0 is Nothing
+            if (LayerMask == 0) //0 is Nothing
                 UIMessages.Add("Please set a Layer Mask different than Nothing.");
 
-            CGPath path = InPath.GetData<CGPath>(out bool isDisposable, requests);
+            CGPath path = InPath.GetData<CGPath>(
+                out bool isDisposable,
+                requests
+            );
 #if CURVY_SANITY_CHECKS
             // I forgot why I added this assertion, but I trust my past self
             Assert.IsTrue(path == null || isDisposable);
 #endif
-            Conform(path, Generator.transform, LayerMask, Direction, Offset, MaxDistance, Warp);
+            if (path == null)
+                return Array.Empty<CGData>();
 
-            return new CGData[1] { path };
+            Conform(
+                path,
+                Generator.transform,
+                LayerMask,
+                Direction,
+                Offset,
+                MaxDistance,
+                Warp
+            );
+            return new CGData[] { path };
         }
 
         /// <summary>
@@ -204,10 +229,19 @@ namespace FluffyUnderware.Curvy.Generator.Modules
         /// <param name="offset"></param>
         /// <param name="rayLength"></param>
         /// <param name="warp">If true, the projected path will keep its shape</param>
-        public static void Conform(CGPath path, Transform pathTransform, LayerMask layers, Vector3 projectionDirection, float offset, float rayLength, bool warp)
+        public static void Conform(CGPath path, Transform pathTransform, LayerMask layers, Vector3 projectionDirection,
+            float offset, float rayLength, bool warp)
         {
 #pragma warning disable 618
-            Conform(pathTransform, path, layers, projectionDirection, offset, rayLength, warp);
+            Conform(
+                pathTransform,
+                path,
+                layers,
+                projectionDirection,
+                offset,
+                rayLength,
+                warp
+            );
 #pragma warning restore 618
         }
 
@@ -222,8 +256,10 @@ namespace FluffyUnderware.Curvy.Generator.Modules
         /// <param name="rayLength"></param>
         /// <param name="warp">If true, the projected path will keep its shape</param>
         /// <returns>The same path as the input parameter 'path'</returns>
+        [UsedImplicitly]
         [Obsolete("Use the other override")]
-        public static CGPath Conform(Transform pathTransform, CGPath path, LayerMask layers, Vector3 projectionDirection, float offset, float rayLength, bool warp)
+        public static CGPath Conform(Transform pathTransform, CGPath path, LayerMask layers, Vector3 projectionDirection,
+            float offset, float rayLength, bool warp)
         {
             if (path == null)
                 return null;
@@ -238,7 +274,13 @@ namespace FluffyUnderware.Curvy.Generator.Modules
                     float minDist = float.MaxValue;
 
                     for (int i = 0; i < pathCount; i++)
-                        if (Physics.Raycast(pathTransform.TransformPoint(path.Positions.Array[i]), projectionDirection, out raycastHit, rayLength, layers))
+                        if (Physics.Raycast(
+                                pathTransform.TransformPoint(path.Positions.Array[i]),
+                                projectionDirection,
+                                out raycastHit,
+                                rayLength,
+                                layers
+                            ))
                             if (raycastHit.distance < minDist)
                                 minDist = raycastHit.distance;
                     if (minDist != float.MaxValue)
@@ -249,14 +291,16 @@ namespace FluffyUnderware.Curvy.Generator.Modules
                     }
                 }
                 else
-                {
-
-
                     for (int i = 0; i < pathCount; i++)
-                        if (Physics.Raycast(pathTransform.TransformPoint(path.Positions.Array[i]), projectionDirection, out raycastHit, rayLength, layers))
+                        if (Physics.Raycast(
+                                pathTransform.TransformPoint(path.Positions.Array[i]),
+                                projectionDirection,
+                                out raycastHit,
+                                rayLength,
+                                layers
+                            ))
                             path.Positions.Array[i] += projectionDirection * (raycastHit.distance + offset);
-                }
-                
+
                 path.Recalculate();
 
                 /* //TODO a lot to fix before being able to execute the commented code
@@ -270,21 +314,11 @@ namespace FluffyUnderware.Curvy.Generator.Modules
 
                 path.RecalculateNormals(new List<int>());
                 */
-
             }
+
             return path;
         }
 
         #endregion
-
-        #region ### Privates ###
-        /*! \cond PRIVATE */
-
-
-        /*! \endcond */
-        #endregion
-
-
-
     }
 }

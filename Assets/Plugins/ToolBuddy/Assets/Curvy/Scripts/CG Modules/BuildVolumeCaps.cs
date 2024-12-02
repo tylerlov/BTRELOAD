@@ -1,5 +1,5 @@
 // =====================================================================
-// Copyright 2013-2022 ToolBuddy
+// Copyright © 2013 ToolBuddy
 // All rights reserved
 // 
 // http://www.toolbuddy.net
@@ -8,33 +8,41 @@
 using System;
 using System.Collections.Generic;
 using FluffyUnderware.Curvy.Pools;
-using ToolBuddy.Pooling.Pools;
-using UnityEngine;
-using FluffyUnderware.DevTools.Extensions;
-using FluffyUnderware.DevTools;
-using FluffyUnderware.Curvy.Utils;
-using UnityEngine.Serialization;
 using FluffyUnderware.Curvy.ThirdParty.LibTessDotNet;
+using FluffyUnderware.Curvy.Utils;
+using FluffyUnderware.DevTools;
 using ToolBuddy.Pooling.Collections;
+using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace FluffyUnderware.Curvy.Generator.Modules
 {
-    [ModuleInfo("Build/Volume Caps", ModuleName = "Volume Caps", Description = "Build volume caps")]
-    [HelpURL(CurvySpline.DOCLINK + "cgbuildvolumecaps")]
+    [ModuleInfo(
+        "Build/Volume Caps",
+        ModuleName = "Volume Caps",
+        Description = "Build volume caps"
+    )]
+    [HelpURL(AssetInformation.DocsRedirectionBaseUrl + "cgbuildvolumecaps")]
     public class BuildVolumeCaps : CGModule
     {
-
         [HideInInspector]
         [InputSlotInfo(typeof(CGVolume))]
         public CGModuleInputSlot InVolume = new CGModuleInputSlot();
 
         [HideInInspector]
-        [InputSlotInfo(typeof(CGVolume), Optional = true, Array = true)]
+        [InputSlotInfo(
+            typeof(CGVolume),
+            Optional = true,
+            Array = true
+        )]
         public CGModuleInputSlot InVolumeHoles = new CGModuleInputSlot();
 
         // change this to fit your requirements
         [HideInInspector]
-        [OutputSlotInfo(typeof(CGVMesh), Array = true)]
+        [OutputSlotInfo(
+            typeof(CGVMesh),
+            Array = true
+        )]
         public CGModuleOutputSlot OutVMesh = new CGModuleOutputSlot();
 
         #region ### Serialized Fields ###
@@ -42,29 +50,46 @@ namespace FluffyUnderware.Curvy.Generator.Modules
         [Tab("General")]
         [SerializeField]
         private CGYesNoAuto m_StartCap = CGYesNoAuto.Auto;
-        [SerializeField] private CGYesNoAuto m_EndCap = CGYesNoAuto.Auto;
+
+        [SerializeField]
+        private CGYesNoAuto m_EndCap = CGYesNoAuto.Auto;
+
         [SerializeField, FormerlySerializedAs("m_ReverseNormals")]
         private bool m_ReverseTriOrder;
-        [SerializeField] private bool m_GenerateUV = true;
-        [SerializeField] private bool m_GenerateUV2 = true;
+
+        [SerializeField]
+        private bool m_GenerateUV = true;
+
+        [SerializeField]
+        private bool m_GenerateUV2 = true;
 
         [Tab("Start Cap")]
         [Inline]
         [SerializeField]
         private CGMaterialSettings m_StartMaterialSettings = new CGMaterialSettings();
+
         [Label("Material")]
         [SerializeField]
         private Material m_StartMaterial;
+
         [Tab("End Cap")]
         [SerializeField]
         private bool m_CloneStartCap = true;
+
         [AsGroup(Invisible = true)]
-        [GroupCondition(nameof(m_CloneStartCap), false)]
+        [GroupCondition(
+            nameof(m_CloneStartCap),
+            false
+        )]
         [SerializeField]
         private CGMaterialSettings m_EndMaterialSettings = new CGMaterialSettings();
+
         [Group("Default/End Cap")]
         [Label("Material")]
-        [FieldCondition(nameof(m_CloneStartCap), false)]
+        [FieldCondition(
+            nameof(m_CloneStartCap),
+            false
+        )]
         [SerializeField]
         private Material m_EndMaterial;
 
@@ -74,108 +99,117 @@ namespace FluffyUnderware.Curvy.Generator.Modules
 
         public bool GenerateUV
         {
-            get { return m_GenerateUV; }
+            get => m_GenerateUV;
             set
             {
                 if (m_GenerateUV != value)
+                {
                     m_GenerateUV = value;
-                Dirty = true;
+                    Dirty = true;
+                }
             }
         }
+
         public bool GenerateUV2
         {
-            get { return m_GenerateUV2; }
+            get => m_GenerateUV2;
             set
             {
                 if (m_GenerateUV2 != value)
+                {
                     m_GenerateUV2 = value;
-                Dirty = true;
+                    Dirty = true;
+                }
             }
         }
 
         public bool ReverseTriOrder
         {
-            get { return m_ReverseTriOrder; }
+            get => m_ReverseTriOrder;
             set
             {
                 if (m_ReverseTriOrder != value)
+                {
                     m_ReverseTriOrder = value;
-                Dirty = true;
+                    Dirty = true;
+                }
             }
         }
 
         public CGYesNoAuto StartCap
         {
-            get { return m_StartCap; }
+            get => m_StartCap;
             set
             {
                 if (m_StartCap != value)
+                {
                     m_StartCap = value;
-                Dirty = true;
+                    Dirty = true;
+                }
             }
         }
 
         public Material StartMaterial
         {
-            get { return m_StartMaterial; }
+            get => m_StartMaterial;
             set
             {
                 if (m_StartMaterial != value)
+                {
                     m_StartMaterial = value;
-                Dirty = true;
+                    Dirty = true;
+                }
             }
         }
 
-        public CGMaterialSettings StartMaterialSettings
-        {
-            get { return m_StartMaterialSettings; }
-        }
+        public CGMaterialSettings StartMaterialSettings => m_StartMaterialSettings;
 
         public CGYesNoAuto EndCap
         {
-            get { return m_EndCap; }
+            get => m_EndCap;
             set
             {
                 if (m_EndCap != value)
+                {
                     m_EndCap = value;
-                Dirty = true;
+                    Dirty = true;
+                }
             }
         }
 
         public bool CloneStartCap
         {
-            get { return m_CloneStartCap; }
+            get => m_CloneStartCap;
             set
             {
                 if (m_CloneStartCap != value)
+                {
                     m_CloneStartCap = value;
-                Dirty = true;
+                    Dirty = true;
+                }
             }
         }
 
-        public CGMaterialSettings EndMaterialSettings
-        {
-            get { return m_EndMaterialSettings; }
-        }
+        public CGMaterialSettings EndMaterialSettings => m_EndMaterialSettings;
 
         public Material EndMaterial
         {
-            get { return m_EndMaterial; }
+            get => m_EndMaterial;
             set
             {
                 if (m_EndMaterial != value)
+                {
                     m_EndMaterial = value;
-                Dirty = true;
+                    Dirty = true;
+                }
             }
         }
 
         #endregion
 
-        #region ### Private Fields & Properties ###
-        #endregion
-
         #region ### Unity Callbacks ###
-        /*! \cond UNITY */
+
+#if DOCUMENTATION___FORCE_IGNORE___UNITY == false
 
         protected override void Awake()
         {
@@ -186,18 +220,6 @@ namespace FluffyUnderware.Curvy.Generator.Modules
             if (EndMaterial == null)
                 EndMaterial = CurvyUtility.GetDefaultMaterial();
         }
-
-#if UNITY_EDITOR
-        protected override void OnValidate()
-        {
-            base.OnValidate();
-            GenerateUV = m_GenerateUV;
-            GenerateUV2 = m_GenerateUV2;
-            ReverseTriOrder = m_ReverseTriOrder;
-            StartCap = m_StartCap;
-            EndCap = m_EndCap;
-        }
-#endif
 
         public override void Reset()
         {
@@ -214,7 +236,8 @@ namespace FluffyUnderware.Curvy.Generator.Modules
             CloneStartCap = true;
         }
 
-        /*! \endcond */
+#endif
+
         #endregion
 
         #region ### Public Methods ###
@@ -227,12 +250,12 @@ namespace FluffyUnderware.Curvy.Generator.Modules
 
             if (vol)
             {
-                bool genStart = (StartCap == CGYesNoAuto.Yes || (StartCap == CGYesNoAuto.Auto && !vol.Seamless));
-                bool genEnd = (EndCap == CGYesNoAuto.Yes || (EndCap == CGYesNoAuto.Auto && !vol.Seamless));
+                bool genStart = StartCap == CGYesNoAuto.Yes || (StartCap == CGYesNoAuto.Auto && !vol.Seamless);
+                bool genEnd = EndCap == CGYesNoAuto.Yes || (EndCap == CGYesNoAuto.Auto && !vol.Seamless);
 
                 if (!genStart && !genEnd)
                 {
-                    OutVMesh.SetData(null);
+                    OutVMesh.ClearData();
                     return;
                 }
 
@@ -248,24 +271,48 @@ namespace FluffyUnderware.Curvy.Generator.Modules
 
                     Tess tess = new Tess();
                     tess.UsePooling = true;
-                    tess.AddContour(make2DSegment(vol, 0));
+                    tess.AddContour(
+                        make2DSegment(
+                            vol,
+                            0
+                        )
+                    );
 
                     for (int h = 0; h < holes.Count; h++)
                     {
                         if (holes[h].Count < 3)
                         {
-                            OutVMesh.SetData(null);
+                            OutVMesh.ClearData();
                             UIMessages.Add("Hole Cross has less than 3 Vertices: Can't create Caps!");
                             return;
                         }
-                        tess.AddContour(make2DSegment(holes[h], 0));
+
+                        tess.AddContour(
+                            make2DSegment(
+                                holes[h],
+                                0
+                            )
+                        );
                     }
-                    tess.Tessellate(WindingRule.EvenOdd, ElementType.Polygons, 3);
+
+                    tess.Tessellate(
+                        WindingRule.EvenOdd,
+                        ElementType.Polygons,
+                        3
+                    );
                     ArrayPools.Vector3.Free(vtStart);
                     vtStart = UnityLibTessUtility.ContourVerticesToPositions(tess.Vertices);
                     Bounds b;
                     int capIndex = 0;
-                    vmesh.Vertices = applyMatrix(vtStart, getMatrix(vol, capIndex, true), out b);
+                    vmesh.Vertices = applyMatrix(
+                        vtStart,
+                        getMatrix(
+                            vol,
+                            capIndex,
+                            true
+                        ),
+                        out b
+                    );
                     //normals
                     {
                         SubArray<Vector3> normals = ArrayPools.Vector3.Allocate(vmesh.Vertices.Count);
@@ -281,18 +328,36 @@ namespace FluffyUnderware.Curvy.Generator.Modules
                     submesh.Material = StartMaterial;
                     submesh.TrianglesList = tess.ElementsArray.Value;
                     if (ReverseTriOrder)
-                        flipTris(submesh.TrianglesList, 0, submesh.TrianglesList.Count);
+                        flipTris(
+                            submesh.TrianglesList,
+                            0,
+                            submesh.TrianglesList.Count
+                        );
                     if (GenerateUV)
                     {
                         vmesh.UVs = ArrayPools.Vector2.Allocate(vtStart.Count);
-                        applyUV(vtStart, vmesh.UVs, 0, vtStart.Count, StartMaterialSettings, b);
+                        applyUV(
+                            vtStart,
+                            vmesh.UVs,
+                            0,
+                            vtStart.Count,
+                            StartMaterialSettings,
+                            b
+                        );
                     }
 
                     if (GenerateUV2)
                     {
                         vmesh.UV2s = ArrayPools.Vector2.Allocate(vtStart.Count);
-                        applyUV2(vtStart, vmesh.UV2s, 0, vtStart.Count, b);
+                        applyUV2(
+                            vtStart,
+                            vmesh.UV2s,
+                            0,
+                            vtStart.Count,
+                            b
+                        );
                     }
+
                     #endregion
                 }
 
@@ -302,19 +367,35 @@ namespace FluffyUnderware.Curvy.Generator.Modules
 
                     Tess tess = new Tess();
                     tess.UsePooling = true;
-                    tess.AddContour(make2DSegment(vol, vol.Count - 1));
+                    tess.AddContour(
+                        make2DSegment(
+                            vol,
+                            vol.Count - 1
+                        )
+                    );
 
                     for (int h = 0; h < holes.Count; h++)
                     {
                         if (holes[h].Count < 3)
                         {
-                            OutVMesh.SetData(null);
+                            OutVMesh.ClearData();
                             UIMessages.Add("Hole Cross has <3 Vertices: Can't create Caps!");
                             return;
                         }
-                        tess.AddContour(make2DSegment(holes[h], holes[h].Count - 1));
+
+                        tess.AddContour(
+                            make2DSegment(
+                                holes[h],
+                                holes[h].Count - 1
+                            )
+                        );
                     }
-                    tess.Tessellate(WindingRule.EvenOdd, ElementType.Polygons, 3);
+
+                    tess.Tessellate(
+                        WindingRule.EvenOdd,
+                        ElementType.Polygons,
+                        3
+                    );
 
                     SubArray<Vector3> vtEnd = UnityLibTessUtility.ContourVerticesToPositions(tess.Vertices);
                     Bounds b;
@@ -322,13 +403,31 @@ namespace FluffyUnderware.Curvy.Generator.Modules
                     int capIndex = vol.Count - 1;
                     SubArray<Vector3> subVertices = applyMatrix(
                         vtEnd,
-                        getMatrix(vol, capIndex, true), out b);
+                        getMatrix(
+                            vol,
+                            capIndex,
+                            true
+                        ),
+                        out b
+                    );
 
                     SubArray<Vector3> newVertices;
                     {
                         newVertices = ArrayPools.Vector3.Allocate(vmesh.Vertices.Count + subVertices.Count);
-                        Array.Copy(vmesh.Vertices.Array, 0, newVertices.Array, 0, vmesh.Vertices.Count);
-                        Array.Copy(subVertices.Array, 0, newVertices.Array, vmesh.Vertices.Count, subVertices.Count);
+                        Array.Copy(
+                            vmesh.Vertices.Array,
+                            0,
+                            newVertices.Array,
+                            0,
+                            vmesh.Vertices.Count
+                        );
+                        Array.Copy(
+                            subVertices.Array,
+                            0,
+                            newVertices.Array,
+                            vmesh.Vertices.Count,
+                            subVertices.Count
+                        );
                     }
 
                     vmesh.Vertices = newVertices;
@@ -347,8 +446,20 @@ namespace FluffyUnderware.Curvy.Generator.Modules
                         SubArray<Vector3> newNormals;
                         {
                             newNormals = ArrayPools.Vector3.Allocate(vmesh.NormalsList.Count + normals.Count);
-                            Array.Copy(vmesh.NormalsList.Array, 0, newNormals.Array, 0, vmesh.NormalsList.Count);
-                            Array.Copy(normals.Array, 0, newNormals.Array, vmesh.NormalsList.Count, normals.Count);
+                            Array.Copy(
+                                vmesh.NormalsList.Array,
+                                0,
+                                newNormals.Array,
+                                0,
+                                vmesh.NormalsList.Count
+                            );
+                            Array.Copy(
+                                normals.Array,
+                                0,
+                                newNormals.Array,
+                                vmesh.NormalsList.Count,
+                                normals.Count
+                            );
                         }
                         vmesh.NormalsList = newNormals;
 
@@ -356,13 +467,20 @@ namespace FluffyUnderware.Curvy.Generator.Modules
                     }
                     SubArray<int> tris = tess.ElementsArray.Value;
                     if (!ReverseTriOrder)
-                        flipTris(tris, 0, tris.Count);
+                        flipTris(
+                            tris,
+                            0,
+                            tris.Count
+                        );
                     for (int i = 0; i < tris.Count; i++)
                         tris.Array[i] += preEndCapVertexLength;
                     if (!CloneStartCap && StartMaterial != EndMaterial)
-                    {
-                        vmesh.AddSubMesh(new CGVSubMesh(tris, EndMaterial));
-                    }
+                        vmesh.AddSubMesh(
+                            new CGVSubMesh(
+                                tris,
+                                EndMaterial
+                            )
+                        );
                     else
                     {
                         submesh.Material = StartMaterial;
@@ -370,8 +488,20 @@ namespace FluffyUnderware.Curvy.Generator.Modules
                         SubArray<int> newTrianglesList;
                         {
                             newTrianglesList = ArrayPools.Int32.Allocate(submesh.TrianglesList.Count + tris.Count);
-                            Array.Copy(submesh.TrianglesList.Array, 0, newTrianglesList.Array, 0, submesh.TrianglesList.Count);
-                            Array.Copy(tris.Array, 0, newTrianglesList.Array, submesh.TrianglesList.Count, tris.Count);
+                            Array.Copy(
+                                submesh.TrianglesList.Array,
+                                0,
+                                newTrianglesList.Array,
+                                0,
+                                submesh.TrianglesList.Count
+                            );
+                            Array.Copy(
+                                tris.Array,
+                                0,
+                                newTrianglesList.Array,
+                                submesh.TrianglesList.Count,
+                                tris.Count
+                            );
                         }
                         submesh.TrianglesList = newTrianglesList;
                     }
@@ -379,18 +509,45 @@ namespace FluffyUnderware.Curvy.Generator.Modules
                     if (GenerateUV)
                     {
                         SubArray<Vector2> newUVs = ArrayPools.Vector2.Allocate(vmesh.UVs.Count + vtEnd.Count);
-                        Array.Copy(vmesh.UVs.Array, 0, newUVs.Array, 0, vmesh.UVs.Count);
+                        Array.Copy(
+                            vmesh.UVs.Array,
+                            0,
+                            newUVs.Array,
+                            0,
+                            vmesh.UVs.Count
+                        );
                         vmesh.UVs = newUVs;
 
-                        applyUV(vtEnd, vmesh.UVs, vtStart.Count, vtEnd.Count, (CloneStartCap) ? StartMaterialSettings : EndMaterialSettings, b);
+                        applyUV(
+                            vtEnd,
+                            vmesh.UVs,
+                            vtStart.Count,
+                            vtEnd.Count,
+                            CloneStartCap
+                                ? StartMaterialSettings
+                                : EndMaterialSettings,
+                            b
+                        );
                     }
 
                     if (GenerateUV2)
                     {
                         SubArray<Vector2> newUV2s = ArrayPools.Vector2.Allocate(vmesh.UV2s.Count + vtEnd.Count);
-                        Array.Copy(vmesh.UV2s.Array, 0, newUV2s.Array, 0, vmesh.UV2s.Count);
+                        Array.Copy(
+                            vmesh.UV2s.Array,
+                            0,
+                            newUV2s.Array,
+                            0,
+                            vmesh.UV2s.Count
+                        );
                         vmesh.UV2s = newUV2s;
-                        applyUV2(vtEnd, vmesh.UV2s, vtStart.Count, vtEnd.Count, b);
+                        applyUV2(
+                            vtEnd,
+                            vmesh.UV2s,
+                            vtStart.Count,
+                            vtEnd.Count,
+                            b
+                        );
                     }
 
                     ArrayPools.Vector3.Free(vtEnd);
@@ -400,7 +557,7 @@ namespace FluffyUnderware.Curvy.Generator.Modules
 
                 ArrayPools.Vector3.Free(vtStart);
 
-                OutVMesh.SetData(vmesh);
+                OutVMesh.SetDataToElement(vmesh);
             }
 
             if (isVolumeDisposable)
@@ -413,19 +570,36 @@ namespace FluffyUnderware.Curvy.Generator.Modules
         #endregion
 
         #region ### Privates ###
-        /*! \cond PRIVATE */
+
+#if DOCUMENTATION___FORCE_IGNORE___CURVY == false
 
         private static Matrix4x4 getMatrix(CGVolume vol, int index, bool inverse)
         {
             if (inverse)
             {
-                Quaternion Q = Quaternion.LookRotation(vol.Directions.Array[index], vol.Normals.Array[index]);
-                return Matrix4x4.TRS(vol.Positions.Array[index], Q, Vector3.one);
+                Quaternion Q = Quaternion.LookRotation(
+                    vol.Directions.Array[index],
+                    vol.Normals.Array[index]
+                );
+                return Matrix4x4.TRS(
+                    vol.Positions.Array[index],
+                    Q,
+                    Vector3.one
+                );
             }
             else
             {
-                Quaternion Q = Quaternion.Inverse(Quaternion.LookRotation(vol.Directions.Array[index], vol.Normals.Array[index]));
-                return Matrix4x4.TRS(-(Q * vol.Positions.Array[index]), Q, Vector3.one);
+                Quaternion Q = Quaternion.Inverse(
+                    Quaternion.LookRotation(
+                        vol.Directions.Array[index],
+                        vol.Normals.Array[index]
+                    )
+                );
+                return Matrix4x4.TRS(
+                    -(Q * vol.Positions.Array[index]),
+                    Q,
+                    Vector3.one
+                );
             }
         }
 
@@ -451,17 +625,39 @@ namespace FluffyUnderware.Curvy.Generator.Modules
 
             for (int i = 0; i < vt.Count; i++)
             {
-                lx = Mathf.Min(vt.Array[i].x, lx);
-                ly = Mathf.Min(vt.Array[i].y, ly);
-                hx = Mathf.Max(vt.Array[i].x, hx);
-                hy = Mathf.Max(vt.Array[i].y, hy);
+                lx = Mathf.Min(
+                    vt.Array[i].x,
+                    lx
+                );
+                ly = Mathf.Min(
+                    vt.Array[i].y,
+                    ly
+                );
+                hx = Mathf.Max(
+                    vt.Array[i].x,
+                    hx
+                );
+                hy = Mathf.Max(
+                    vt.Array[i].y,
+                    hy
+                );
                 res.Array[i] = matrix.MultiplyPoint3x4(vt.Array[i]);
             }
-            Vector3 sz = new Vector3(Mathf.Abs(hx - lx), Mathf.Abs(hy - ly));
-            bounds = new Bounds(new Vector3(lx + sz.x / 2, ly + sz.y / 2, 0), sz);
+
+            Vector3 sz = new Vector3(
+                Mathf.Abs(hx - lx),
+                Mathf.Abs(hy - ly)
+            );
+            bounds = new Bounds(
+                new Vector3(
+                    lx + (sz.x / 2),
+                    ly + (sz.y / 2),
+                    0
+                ),
+                sz
+            );
             return res;
         }
-
 
 
         /// <summary>
@@ -469,7 +665,11 @@ namespace FluffyUnderware.Curvy.Generator.Modules
         /// </summary>
         private static ContourVertex[] make2DSegment(CGVolume vol, int segmentIndex)
         {
-            Matrix4x4 m = getMatrix(vol, segmentIndex, false);
+            Matrix4x4 m = getMatrix(
+                vol,
+                segmentIndex,
+                false
+            );
             int vertexIndex = vol.GetSegmentIndex(segmentIndex);
 
             ContourVertex[] res = new ContourVertex[vol.CrossSize];
@@ -480,7 +680,8 @@ namespace FluffyUnderware.Curvy.Generator.Modules
         }
 
         // Attention: p needs to be 2D (X/Y-Plane)
-        private static void applyUV(SubArray<Vector3> vts, SubArray<Vector2> uvArray, int index, int count, CGMaterialSettings mat, Bounds bounds)
+        private static void applyUV(SubArray<Vector3> vts, SubArray<Vector2> uvArray, int index, int count,
+            CGMaterialSettings mat, Bounds bounds)
         {
             float u, v;
             float w = bounds.size.x;
@@ -510,7 +711,7 @@ namespace FluffyUnderware.Curvy.Generator.Modules
 
             if (mat.UVRotation != 0)
             {
-                float uvRotRad = (mat.UVRotation) * Mathf.Deg2Rad;
+                float uvRotRad = mat.UVRotation * Mathf.Deg2Rad;
                 float sn = Mathf.Sin(uvRotRad);
                 float cs = Mathf.Cos(uvRotRad);
                 float ox, oy;
@@ -518,39 +719,43 @@ namespace FluffyUnderware.Curvy.Generator.Modules
                 float fy2 = fy * 0.5f;
                 for (int i = 0; i < count; i++)
                 {
-                    u = (vts.Array[i].x - mx) / w * fx;
-                    v = (vts.Array[i].y - my) / h * fy;
+                    u = ((vts.Array[i].x - mx) / w) * fx;
+                    v = ((vts.Array[i].y - my) / h) * fy;
                     ox = u - fx2;
                     oy = v - fy2;
-                    u = (cs * ox - sn * oy + fx2) + mat.UVOffset.x;
-                    v = (sn * ox + cs * oy + fy2) + mat.UVOffset.y;
+                    u = ((cs * ox) - (sn * oy)) + fx2 + mat.UVOffset.x;
+                    v = (sn * ox) + (cs * oy) + fy2 + mat.UVOffset.y;
 
                     int uvArrayIndex = i + index;
                     Vector2 uv;
-                    uv.x = swapUv ? v : u;
-                    uv.y = swapUv ? u : v;
+                    uv.x = swapUv
+                        ? v
+                        : u;
+                    uv.y = swapUv
+                        ? u
+                        : v;
                     uvArray.Array[uvArrayIndex] = uv;
-
                 }
             }
             else
-            {
                 for (int i = 0; i < count; i++)
                 {
-                    u = mat.UVOffset.x + (vts.Array[i].x - mx) / w * fx;
-                    v = mat.UVOffset.y + (vts.Array[i].y - my) / h * fy;
+                    u = mat.UVOffset.x + (((vts.Array[i].x - mx) / w) * fx);
+                    v = mat.UVOffset.y + (((vts.Array[i].y - my) / h) * fy);
                     int uvArrayIndex = i + index;
                     Vector2 uv;
-                    uv.x = swapUv ? v : u;
-                    uv.y = swapUv ? u : v;
+                    uv.x = swapUv
+                        ? v
+                        : u;
+                    uv.y = swapUv
+                        ? u
+                        : v;
                     uvArray.Array[uvArrayIndex] = uv;
                 }
-            }
         }
 
         private static void applyUV2(SubArray<Vector3> vertice, SubArray<Vector2> uv2Array, int index, int count, Bounds bounds)
         {
-
             float inverseW = 1 / bounds.size.x;
             float inverseH = 1 / bounds.size.y;
 
@@ -567,8 +772,8 @@ namespace FluffyUnderware.Curvy.Generator.Modules
         }
 
 
-        /*! \endcond */
-        #endregion
+#endif
 
+        #endregion
     }
 }

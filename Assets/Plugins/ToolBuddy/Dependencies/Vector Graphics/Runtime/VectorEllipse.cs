@@ -11,7 +11,7 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
     {
         internal static BezierPathSegment[] BuildEllipsePath(Vector2 p0, Vector2 p1, float rotation, float rx, float ry, bool largeArc, bool sweep)
         {
-            if ((p1-p0).magnitude < VectorUtils.Epsilon)
+            if ((p1-p0).magnitude < Epsilon)
                 return new BezierPathSegment[0];
 
             Vector2 c;
@@ -25,14 +25,14 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
             if (Mathf.Abs(sweepTheta) <= Mathf.Epsilon)
             {
                 // Use a straight line if the sweep angle is tiny
-                path = VectorUtils.BezierSegmentToPath(VectorUtils.MakeLine(p0, p1));
+                path = BezierSegmentToPath(MakeLine(p0, p1));
             }
             else
             {
-                path = VectorUtils.MakeArc(Vector2.zero, theta1, sweepTheta, 1.0f);
+                path = MakeArc(Vector2.zero, theta1, sweepTheta, 1.0f);
 
                 var scaling = new Vector2(adjustedRx, adjustedRy);
-                path = VectorUtils.TransformBezierPath(path, c, rotation, scaling);                
+                path = TransformBezierPath(path, c, rotation, scaling);                
             }
 
 

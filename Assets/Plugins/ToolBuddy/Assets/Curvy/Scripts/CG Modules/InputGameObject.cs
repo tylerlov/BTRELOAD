@@ -1,24 +1,30 @@
 // =====================================================================
-// Copyright 2013-2022 ToolBuddy
+// Copyright © 2013 ToolBuddy
 // All rights reserved
 // 
 // http://www.toolbuddy.net
 // =====================================================================
 
-using UnityEngine;
-using System.Collections;
-using FluffyUnderware.DevTools;
 using System.Collections.Generic;
+using System.Linq;
+using FluffyUnderware.DevTools;
+using UnityEngine;
 
 namespace FluffyUnderware.Curvy.Generator.Modules
 {
-    [ModuleInfo("Input/GameObjects", ModuleName = "Input GameObjects", Description = "")]
-    [HelpURL(CurvySpline.DOCLINK + "cginputgameobject")]
+    [ModuleInfo(
+        "Input/GameObjects",
+        ModuleName = "Input GameObjects",
+        Description = ""
+    )]
+    [HelpURL(AssetInformation.DocsRedirectionBaseUrl + "cginputgameobject")]
     public class InputGameObject : CGModule
     {
-
         [HideInInspector]
-        [OutputSlotInfo(typeof(CGGameObject), Array = true)]
+        [OutputSlotInfo(
+            typeof(CGGameObject),
+            Array = true
+        )]
         public CGModuleOutputSlot OutGameObject = new CGModuleOutputSlot();
 
         #region ### Serialized Fields ###
@@ -31,41 +37,24 @@ namespace FluffyUnderware.Curvy.Generator.Modules
 
         #region ### Public Properties ###
 
-        public List<CGGameObjectProperties> GameObjects
-        {
-            get { return m_GameObjects; }
-        }
+        public List<CGGameObjectProperties> GameObjects => m_GameObjects;
 
-        public bool SupportsIPE
-        {
-            get { return false; }
-        }
+        public bool SupportsIPE => false;
 
-        #endregion
-
-        #region ### Private Fields & Properties ###
         #endregion
 
         #region ### Unity Callbacks ###
-        /*! \cond UNITY */
 
-
-#if UNITY_EDITOR
-        protected override void OnValidate()
-        {
-            base.OnValidate();
-            Dirty = true;
-        }
-#endif
+#if DOCUMENTATION___FORCE_IGNORE___UNITY == false
 
         public override void Reset()
         {
             base.Reset();
             GameObjects.Clear();
-            Dirty = true;
         }
 
-        /*! \endcond */
+#endif
+
         #endregion
 
         #region ### Public Methods ###
@@ -73,24 +62,16 @@ namespace FluffyUnderware.Curvy.Generator.Modules
         public override void Refresh()
         {
             base.Refresh();
-            //OutVMesh
-            if (OutGameObject.IsLinked)
-            {
-                CGGameObject[] data = new CGGameObject[GameObjects.Count];
-                int total = 0;
-                for (int i = 0; i < GameObjects.Count; i++)
-                {
-                    if (GameObjects[i].Object != null)
-                        data[total++] = new CGGameObject(GameObjects[i]);
-                }
-                System.Array.Resize(ref data, total);
-                OutGameObject.SetData(data);
-            }
 
-#if UNITY_EDITOR
-            if (GameObjects.Exists(g => g.Object == null))
-                UIMessages.Add("Missing Game Object input");
-#endif
+            WarnAboutInvalidInputs();
+
+            if (OutGameObject.IsLinked)
+                OutGameObject.SetDataToCollection(
+                    GameObjects
+                        .Where(go => go.Object != null)
+                        .Select(go => new CGGameObject(go))
+                        .ToArray()
+                );
         }
 
         public override void OnTemplateCreated()
@@ -102,13 +83,17 @@ namespace FluffyUnderware.Curvy.Generator.Modules
         #endregion
 
         #region ### Privates ###
-        /*! \cond PRIVATE */
 
+#if DOCUMENTATION___FORCE_IGNORE___CURVY == false
+        [System.Diagnostics.Conditional(CompilationSymbols.UnityEditor)]
+        private void WarnAboutInvalidInputs()
+        {
+            if (GameObjects.Exists(g => g.Object == null))
+                UIMessages.Add("Missing Game Object input");
+        }
 
-        /*! \endcond */
+#endif
+
         #endregion
-
-
-
     }
 }

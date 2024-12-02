@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using Chronos;
 using MoreMountains.Feedbacks;
 using UnityEngine;
@@ -55,7 +55,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
 
     private void GameOver()
     {
-        Debug.Log("Game Over!");
+        ConditionalDebug.Log("Game Over!");
         GameManager.Instance.HandlePlayerDeath();
     }
 
@@ -87,7 +87,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         else
         {
             // Optional: Log a warning if no inactive effects are available
-            Debug.LogWarning("No available hit effects in the pool. Consider increasing pool size.");
+            ConditionalDebug.LogWarning("No available hit effects in the pool. Consider increasing pool size.");
         }
     }
 

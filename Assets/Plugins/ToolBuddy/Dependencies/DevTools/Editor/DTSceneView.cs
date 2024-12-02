@@ -16,65 +16,49 @@ using System;
 namespace FluffyUnderware.DevToolsEditor
 {
 #if UNITY_2021_2_OR_NEWER
-    [Obsolete("Now that SceneView has a OnSceneGUI method, there is seemingly no need to use DTSceneView which implements its own OnSceneGUI. It might even conflict with SceneView.OnSceneGUI")]
+    [JetBrains.Annotations.UsedImplicitly] [Obsolete("Now that SceneView has a OnSceneGUI method, there is seemingly no need to use DTSceneView which implements its own OnSceneGUI. It might even conflict with SceneView.OnSceneGUI")]
 #endif
     public class DTSceneView : SceneView
     {
-
-        #region ### Serialized fields ###
-        #endregion
-
         #region ### Public Properties ###
 
         public bool In2DMode
         {
-            get { return in2DMode; }
-            set
-            {
-                in2DMode = value;
-            }
+            get => in2DMode;
+            set => in2DMode = value;
         }
 
         public SceneViewState State
         {
-            get
-            {
-                return mStateField.GetValue(this) as SceneViewState;
-            }
-            set
-            {
-                mStateField.SetValue(this, value);
-            }
+            get => mStateField.GetValue(this) as SceneViewState;
+            set => mStateField.SetValue(this, value);
         }
 
         #endregion
 
         #region ### Privates Fields ###
 
-        FieldInfo mStateField;
+        private FieldInfo mStateField;
 
         #endregion
 
         #region ### Unity Callbacks ###
-        /*! \cond UNITY */
+        #if DOCUMENTATION___FORCE_IGNORE___UNITY == false
 
         public override void OnEnable()
         {
             base.OnEnable();
             getInternals();
-            SceneView.duringSceneGui += onScene;
+            duringSceneGui += onScene;
         }
 
         public override void OnDisable()
         {
-            SceneView.duringSceneGui -= onScene;
+            duringSceneGui -= onScene;
             base.OnDisable();
         }
 
-        /*! \endcond */
-        #endregion
-
-        #region ### Public Static Methods ###
+        #endif
         #endregion
 
         #region ### Public Methods ###
@@ -90,13 +74,13 @@ namespace FluffyUnderware.DevToolsEditor
         #endregion
 
         #region ### Privates & Internals ###
-        /*! \cond PRIVATE */
+        #if DOCUMENTATION___FORCE_IGNORE___CURVY == false
 
-        void onScene(SceneView view)
+        private void onScene(SceneView view)
         {
             if (EditorApplication.isCompiling)
             {
-                SceneView.duringSceneGui -= onScene;
+                duringSceneGui -= onScene;
                 Close();
                 GUIUtility.ExitGUI();
             }
@@ -104,14 +88,14 @@ namespace FluffyUnderware.DevToolsEditor
                 OnSceneGUI();
         }
 
-        void getInternals()
+        private void getInternals()
         {
             mStateField = GetType().FieldByName("m_SceneViewState", true, true);
         }
 
 
 
-        /*! \endcond */
+        #endif
         #endregion
 
     }

@@ -24,7 +24,7 @@ namespace FluffyUnderware.DevToolsEditor
         {
             get
             {
-                if (mIcon==null && !string.IsNullOrEmpty(mIconPackedString) && Project.Resource!=null)
+                if (mIcon == null && !string.IsNullOrEmpty(mIconPackedString) && Project.Resource != null)
                     mIcon = Project.Resource.LoadPacked(mIconPackedString);
                 return mIcon;
             }
@@ -42,50 +42,54 @@ namespace FluffyUnderware.DevToolsEditor
 
         public static DTToolbarStatus _StatusBar = new DTToolbarStatus();
 
-        public List<EditorKeyBinding> KeyBindings
-        {
-            get { return mKeyBindings;}
-        }
+        public List<EditorKeyBinding> KeyBindings => mKeyBindings;
 
-        public GUIStyle Style
-        {
-            get { return DTStyles.TBButton; }
-        }
+        public GUIStyle Style => DTStyles.TBButton;
 
         public GUIContent Content
         {
             get
             {
-                string keyTT = (KeyBindings.Count>0) ? KeyBindings[0].ToTooltipString() : string.Empty;
+                string keyTT = (KeyBindings.Count > 0) ? KeyBindings[0].ToTooltipString() : string.Empty;
+
+                string tooltip;
+                {
+                    if (string.IsNullOrEmpty(Tooltip))
+                        tooltip = keyTT;
+                    else if (string.IsNullOrEmpty(keyTT))
+                        tooltip = Tooltip;
+                    else
+                        tooltip = $"{Tooltip} {keyTT}";
+                }
 
                 switch (Project.ToolbarMode)
                 {
                     case DTToolbarMode.Icon:
                         if (Icon != null)
-                            return new GUIContent(Icon, $"{Tooltip} {keyTT}");
+                            return new GUIContent(Icon, tooltip);
                         else // fallback to "Text"
-                            return new GUIContent(Label, $"{Tooltip} {keyTT}");
+                            return new GUIContent(Label, tooltip);
                     case DTToolbarMode.Text:
-                        return new GUIContent(Label, $"{Tooltip} {keyTT}");
+                        return new GUIContent(Label, tooltip);
                     default:
-                        return new GUIContent(Label, Icon, $"{Tooltip} {keyTT}");
+                        return new GUIContent(Label, Icon, tooltip);
                 }
             }
         }
 
         public bool Visible
         {
-            get { return mVisible; }
+            get => mVisible;
             set
             {
                 if (mVisible != value)
-                    mVisible=value;
+                    mVisible = value;
             }
         }
 
         public bool Enabled
         {
-            get { return mEnabled; }
+            get => mEnabled;
             set
             {
                 if (mEnabled != value)
@@ -95,7 +99,7 @@ namespace FluffyUnderware.DevToolsEditor
 
         public virtual bool ShowClientArea
         {
-            get { return mShowClientArea; }
+            get => mShowClientArea;
             set
             {
                 if (mShowClientArea != value)
@@ -103,37 +107,28 @@ namespace FluffyUnderware.DevToolsEditor
             }
         }
 
-        public bool IsMouseOver
-        {
-            get
-            {
-                return mItemRect.Contains(DTGUI.MousePosition);
-            }
-        }
+        public bool IsMouseOver => mItemRect.Contains(DTGUI.MousePosition);
 
-        public virtual string StatusBarInfo
-        {
-            get { return string.Empty; }
-        }
+        public virtual string StatusBarInfo => string.Empty;
 
-        bool mVisible = true;
-        bool mEnabled = true;
-        bool mShowClientArea;
-        readonly string mIconPackedString;
-        Texture2D mIcon;
-        readonly List<EditorKeyBinding> mKeyBindings = new List<EditorKeyBinding>();
+        private bool mVisible = true;
+        private bool mEnabled = true;
+        private bool mShowClientArea;
+        private readonly string mIconPackedString;
+        private Texture2D mIcon;
+        private readonly List<EditorKeyBinding> mKeyBindings = new List<EditorKeyBinding>();
 
-        static DTToolbarItem _lastClickedItem;
+        private static DTToolbarItem _lastClickedItem;
 
         internal Rect mItemRect;
         internal List<Rect> mBackgroundRects = new List<Rect>();
 
         protected DTToolbarItem()
         {
-            object[] attribs = this.GetType().GetCustomAttributes(typeof(ToolbarItemAttribute), true);
+            object[] attribs = GetType().GetCustomAttributes(typeof(ToolbarItemAttribute), true);
             if (attribs.Length > 0)
             {
-                ToolbarItemAttribute a=(ToolbarItemAttribute)attribs[0];
+                ToolbarItemAttribute a = (ToolbarItemAttribute)attribs[0];
                 Project = DT.Project(a.Project);
                 Project.ToolbarItems.Add(this);
                 Label = a.Label;
@@ -152,7 +147,7 @@ namespace FluffyUnderware.DevToolsEditor
 
         public virtual void OnClick()
         {
-            if (_lastClickedItem!=null && _lastClickedItem!=this)
+            if (_lastClickedItem != null && _lastClickedItem != this)
                 _lastClickedItem.OnOtherItemClicked(this);
             _lastClickedItem = this;
         }
@@ -196,9 +191,7 @@ namespace FluffyUnderware.DevToolsEditor
         /// </summary>
         /// <returns>the size the item needs</returns>
         public virtual Vector2 GetItemSize()
-        {
-            return Style.CalcSize(Content);
-        }
+            => Style.CalcSize(Content);
 
         public virtual void HandleEvents(Event e)
         {
@@ -227,13 +220,13 @@ namespace FluffyUnderware.DevToolsEditor
                     r.x -= r.width;
                     break;
                 case DTToolbarOrientation.Bottom:
-                    r.y-=r.height;
+                    r.y -= r.height;
                     break;
             }
 
 
             //SmallLineAdjust(ref r,height);
-            Rect scene=SceneView.currentDrawingSceneView.position;
+            Rect scene = SceneView.currentDrawingSceneView.position;
 
             if (r.xMax > scene.width)
                 r.xMin = scene.width - r.width;
@@ -248,7 +241,7 @@ namespace FluffyUnderware.DevToolsEditor
         /// <param name="width"></param>
         /// <param name="height"></param>
         /// <param name="guiStyle"></param>
-        protected void Background(Rect r, float width, float height,GUIStyle guiStyle=null)
+        protected void Background(Rect r, float width, float height, GUIStyle guiStyle = null)
         {
             mBackgroundRects.Add(r);
             if (guiStyle == null)
@@ -260,7 +253,7 @@ namespace FluffyUnderware.DevToolsEditor
             switch (Project.ToolbarOrientation)
             {
                 case DTToolbarOrientation.Right:
-                    r.x-=width;
+                    r.x -= width;
                     break;
                 case DTToolbarOrientation.Bottom:
                     r.y -= height;
@@ -318,7 +311,7 @@ namespace FluffyUnderware.DevToolsEditor
             }
         }
 
-        #endregion
+#endregion
 
         public int CompareTo(object obj)
         {
@@ -331,12 +324,10 @@ namespace FluffyUnderware.DevToolsEditor
         }
 
         public static implicit operator bool(DTToolbarItem a)
-        {
-            return !object.ReferenceEquals(a, null);
-        }
+            => !ReferenceEquals(a, null);
     }
 
-    [AttributeUsage(AttributeTargets.Class,AllowMultiple=false)]
+    [AttributeUsage(AttributeTargets.Class, AllowMultiple = false)]
     public class ToolbarItemAttribute : Attribute
     {
         public readonly string Project;
@@ -346,11 +337,11 @@ namespace FluffyUnderware.DevToolsEditor
         public readonly string Icon;
         public readonly string IconLightSkin;
 
-        public ToolbarItemAttribute(int order, string project, string label, string tooltip = "", string icon = "",string iconLight="") : this(project,label,tooltip,icon,iconLight,order)
+        public ToolbarItemAttribute(int order, string project, string label, string tooltip = "", string icon = "", string iconLight = "") : this(project, label, tooltip, icon, iconLight, order)
         {
         }
 
-        public ToolbarItemAttribute(string project, string label, string tooltip = "", string icon = "", string iconLight="", int order = 0)
+        public ToolbarItemAttribute(string project, string label, string tooltip = "", string icon = "", string iconLight = "", int order = 0)
         {
             Project = project;
             Label = label;

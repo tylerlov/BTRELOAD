@@ -2,35 +2,33 @@ using UnityEngine;
 
 public class TempoSpin : MonoBehaviour
 {
-    // Define an enum for the rotation axes
+    public float tempo = 120f;
+
     public enum RotationAxis
     {
         X_Axis,
         Y_Axis,
-        Z_Axis,
+        Z_Axis
     }
 
-    // Define an enum for rotation multipliers
+    public RotationAxis rotationAxis;
+
     public enum RotationMultiplier
     {
-        x1 = 1,
-        x2 = 2,
-        x4 = 4,
-        x8 = 8,
-        x16 = 16,
-        x32 = 32,
-        x64 = 64,
-        x128 = 128,
+        One = 1,
+        Two = 2,
+        Four = 4,
+        Eight = 8,
+        Sixteen = 16,
+        ThirtyTwo = 32,
+        SixtyFour = 64,
+        OneTwentyEight = 128,
+        TwoFiftySix = 256,
+        FiveOneTwo = 512,
+        OneZeroTwoFour = 1024
     }
 
-    [SerializeField]
-    private float tempo = 120f; // Tempo in beats per minute
-
-    [SerializeField]
-    private RotationAxis rotationAxis = RotationAxis.Y_Axis; // Default rotation around the Y-axis
-
-    [SerializeField]
-    private RotationMultiplier rotationMultiplier = RotationMultiplier.x1; // Default multiplier
+    public RotationMultiplier rotationMultiplier = RotationMultiplier.One;
 
     private float rotationSpeed;
     private Vector3 axisVector;

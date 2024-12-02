@@ -1,16 +1,17 @@
 // =====================================================================
-// Copyright 2013-2022 ToolBuddy
+// Copyright © 2013 ToolBuddy
 // All rights reserved
 // 
 // http://www.toolbuddy.net
 // =====================================================================
 
 using System;
-using UnityEngine;
-using System.Collections;
+using System.Collections.Generic;
 using FluffyUnderware.DevTools;
 using FluffyUnderware.DevTools.Extensions;
-using System.Collections.Generic;
+using JetBrains.Annotations;
+using UnityEngine;
+using UnityEngine.Assertions;
 using Object = UnityEngine.Object;
 
 namespace FluffyUnderware.Curvy.Generator
@@ -19,17 +20,19 @@ namespace FluffyUnderware.Curvy.Generator
     /// Mesh Resource Component used by Curvy Generator
     /// </summary>
     [RequireComponent(typeof(MeshRenderer))]
-    [HelpURL(CurvySpline.DOCLINK + "cgmeshresource")]
+    [HelpURL(AssetInformation.DocsRedirectionBaseUrl + "cgmeshresource")]
+#pragma warning disable CS0618
     public class CGMeshResource : DuplicateEditorMesh, IPoolable
+#pragma warning restore CS0618
     {
         /// <summary>
         /// The value of the "Everything" entry in a <see cref="MeshCollider.cookingOptions"/>'s inspector
         /// </summary>
-        public const MeshColliderCookingOptions EverMeshColliderCookingOptions = 
-            MeshColliderCookingOptions.EnableMeshCleaning|
-            MeshColliderCookingOptions.CookForFasterSimulation|
-            MeshColliderCookingOptions.UseFastMidphase|
-            MeshColliderCookingOptions.WeldColocatedVertices;
+        public const MeshColliderCookingOptions EverMeshColliderCookingOptions =
+            MeshColliderCookingOptions.EnableMeshCleaning
+            | MeshColliderCookingOptions.CookForFasterSimulation
+            | MeshColliderCookingOptions.UseFastMidphase
+            | MeshColliderCookingOptions.WeldColocatedVertices;
 
         private MeshRenderer mRenderer;
         private Collider mCollider;
@@ -52,15 +55,15 @@ namespace FluffyUnderware.Curvy.Generator
                     mCollider = GetComponent<Collider>();
                 return mCollider;
             }
-
         }
 
+        [UsedImplicitly]
+        [Obsolete("No more used in Curvy. Will get removed. Copy it if you still need it")]
         public Mesh Prepare()
-        {
-            return Filter.PrepareNewShared();
-        }
+            => Filter.PrepareNewShared();
 
-        public bool ColliderMatches(CGColliderEnum type)
+        public bool ColliderMatches(
+            CGColliderEnum type)
         {
             if (Collider == null && type == CGColliderEnum.None)
                 return true;
@@ -80,7 +83,10 @@ namespace FluffyUnderware.Curvy.Generator
         {
             if (Collider)
             {
-                mCollider.Destroy(false, false);
+                mCollider.Destroy(
+                    false,
+                    false
+                );
                 mCollider = null;
             }
         }
@@ -94,9 +100,18 @@ namespace FluffyUnderware.Curvy.Generator
         /// <param name="material">The collider's material</param>
         /// <param name="meshCookingOptions">Used only when mode is CGColliderEnum.Mesh</param>
         /// <returns></returns>
-        public bool UpdateCollider(CGColliderEnum mode, bool convex, bool isTrigger, PhysicsMaterial material
-            , MeshColliderCookingOptions meshCookingOptions = EverMeshColliderCookingOptions
-            )
+        public bool UpdateCollider(
+            CGColliderEnum mode,
+            bool convex,
+            bool isTrigger,
+#if UNITY_6000_0_OR_NEWER
+            PhysicsMaterial
+#else
+            PhysicMaterial
+#endif
+                material,
+            MeshColliderCookingOptions meshCookingOptions = EverMeshColliderCookingOptions
+        )
         {
             if (Collider == null)
                 switch (mode)
@@ -138,7 +153,10 @@ namespace FluffyUnderware.Curvy.Generator
 #if CURVY_SANITY_CHECKS
                             catch (Exception e)
                             {
-                                DTLog.LogException(e, this);
+                                DTLog.LogException(
+                                    e,
+                                    this
+                                );
 #else
                             catch
                             {
@@ -147,7 +165,11 @@ namespace FluffyUnderware.Curvy.Generator
                             }
                         }
                         else
-                            DTLog.LogError("[Curvy] Collider of wrong type", this);
+                            DTLog.LogError(
+                                "[Curvy] Collider of wrong type",
+                                this
+                            );
+
                         break;
                     case CGColliderEnum.Box:
                         BoxCollider boxCollider = Collider as BoxCollider;
@@ -158,7 +180,11 @@ namespace FluffyUnderware.Curvy.Generator
                             boxCollider.size = Filter.sharedMesh.bounds.size;
                         }
                         else
-                            DTLog.LogError("[Curvy] Collider of wrong type", this);
+                            DTLog.LogError(
+                                "[Curvy] Collider of wrong type",
+                                this
+                            );
+
                         break;
                     case CGColliderEnum.Sphere:
                         SphereCollider sphereCollider = Collider as SphereCollider;
@@ -169,7 +195,11 @@ namespace FluffyUnderware.Curvy.Generator
                             sphereCollider.radius = Filter.sharedMesh.bounds.extents.magnitude;
                         }
                         else
-                            DTLog.LogError("[Curvy] Collider of wrong type", this);
+                            DTLog.LogError(
+                                "[Curvy] Collider of wrong type",
+                                this
+                            );
+
                         break;
                     case CGColliderEnum.Capsule:
                         CapsuleCollider capsuleCollider = Collider as CapsuleCollider;
@@ -178,12 +208,19 @@ namespace FluffyUnderware.Curvy.Generator
                             Bounds sharedMeshBounds = Filter.sharedMesh.bounds;
                             capsuleCollider.isTrigger = isTrigger;
                             capsuleCollider.center = sharedMeshBounds.center;
-                            capsuleCollider.radius = new Vector2(sharedMeshBounds.extents.x, sharedMeshBounds.extents.y).magnitude;
+                            capsuleCollider.radius = new Vector2(
+                                sharedMeshBounds.extents.x,
+                                sharedMeshBounds.extents.y
+                            ).magnitude;
                             capsuleCollider.height = sharedMeshBounds.size.z;
-                            capsuleCollider.direction = 2;//Z
+                            capsuleCollider.direction = 2; //Z
                         }
                         else
-                            DTLog.LogError("[Curvy] Collider of wrong type", this);
+                            DTLog.LogError(
+                                "[Curvy] Collider of wrong type",
+                                this
+                            );
+
                         break;
                     default:
                         throw new ArgumentOutOfRangeException();
@@ -197,33 +234,185 @@ namespace FluffyUnderware.Curvy.Generator
 
         public void OnBeforePush()
         {
+            MeshFilter meshFilter = Filter;
+            Mesh sharedMesh = meshFilter.sharedMesh;
+            if (ReferenceEquals(
+                    sharedMesh,
+                    null
+                )
+                == false)
+            {
+                sharedMesh.Clear();
+                sharedMesh.subMeshCount = 0;
+            }
+
+            transform.DeleteChildren(
+                false,
+                true
+            );
         }
 
         public void OnAfterPop()
         {
-        }
-    }
-
-    /// <summary>
-    /// Collection of Mesh Resources
-    /// </summary>
-    [System.Serializable]
-    public class CGMeshResourceCollection : ICGResourceCollection
-    {
-        public List<CGMeshResource> Items = new List<CGMeshResource>();
-
-        public int Count
-        {
-            get
+            MeshFilter meshFilter = Filter;
+            if (ReferenceEquals(
+                    meshFilter.sharedMesh,
+                    null
+                ))
             {
-                return Items.Count;
+                Mesh mesh = GetNewMesh();
+                meshFilter.sharedMesh = mesh;
             }
         }
 
-        public Component[] ItemsArray
+        private static Mesh GetNewMesh()
         {
-            get { return Items.ToArray(); }
+            Mesh mesh = new Mesh();
+            mesh.MarkDynamic();
+            UsedMeshes.Add(mesh);
+
+            return mesh;
         }
 
+        private static Mesh GetNewMesh(
+            [NotNull] Mesh oldMesh)
+        {
+            Mesh mesh = Instantiate(oldMesh);
+            mesh.MarkDynamic();
+            UsedMeshes.Add(mesh);
+
+            return mesh;
+        }
+
+        #region Duplication handling
+
+        /// <summary>
+        /// A set of all the meshes used by CGMeshResource instances
+        /// </summary>
+        private static readonly HashSet<Mesh> UsedMeshes = new HashSet<Mesh>();
+
+        #region ### Unity Callbacks ###
+
+#if DOCUMENTATION___FORCE_IGNORE___UNITY == false
+
+        [UsedImplicitly]
+        protected void Awake()
+        {
+            //If there is another instance using the same SharedMesh, then make this instance use a different mesh. CGMeshResource assumes that its mesh is not shared with other instances
+
+            MeshFilter filter = Filter;
+            Mesh mesh = filter.sharedMesh;
+            if (ReferenceEquals(
+                    mesh,
+                    null
+                ))
+                return;
+
+            if (UsedMeshes.Contains(mesh))
+            {
+                //The mesh is shared
+#if CURVY_SANITY_CHECKS_PRIVATE
+#pragma warning disable CS0618
+                Assert.IsTrue(UsesSharedMesh(this));
+#pragma warning restore CS0618
+#endif
+                if (mesh.isReadable)
+                {
+                    //duplicate mesh
+                    Mesh newMesh = GetNewMesh(mesh);
+                    //reference it in MeshFilter
+                    filter.sharedMesh = newMesh;
+                    //reference it in MeshCollider
+                    MeshCollider meshCollider = Collider as MeshCollider;
+                    if (meshCollider != null
+                        && ReferenceEquals(
+                            meshCollider.sharedMesh,
+                            mesh
+                        ))
+                        meshCollider.sharedMesh = newMesh;
+                }
+            }
+            else
+            {
+                //the msh is not shared
+#if CURVY_SANITY_CHECKS_PRIVATE
+#pragma warning disable CS0618
+                Assert.IsFalse(UsesSharedMesh(this));
+#pragma warning restore CS0618
+#endif
+                UsedMeshes.Add(mesh);
+            }
+
+#if CURVY_SANITY_CHECKS_PRIVATE
+            Assert.IsTrue(UsedMeshes.Contains(filter.sharedMesh));
+#endif
+        }
+
+        [UsedImplicitly]
+        public void OnDestroy()
+        {
+            //Remove this instance's mesh from the used meshes set
+            Mesh mesh = Filter.sharedMesh;
+            if (ReferenceEquals(
+                    mesh,
+                    null
+                ))
+                return;
+
+            UsedMeshes.Remove(mesh);
+
+#if CURVY_SANITY_CHECKS_PRIVATE
+            Assert.IsFalse(UsedMeshes.Contains(Filter.sharedMesh));
+#endif
+        }
+
+#endif
+
+        #endregion
+
+        /// <summary>
+        /// A brut force method to find CGMeshResource instances using the same mesh
+        /// </summary>
+        [UsedImplicitly]
+        [Obsolete("Too slow, used only in sanity checks")]
+        private static bool UsesSharedMesh(
+            CGMeshResource meshResource)
+        {
+            MeshFilter meshFilter = meshResource.Filter;
+
+            if (meshFilter
+                && ReferenceEquals(
+                    meshFilter.sharedMesh,
+                    null
+                )
+                == false)
+            {
+                Object[] otherWatchdogs = FindObjectsOfType(typeof(CGMeshResource));
+
+                foreach (CGMeshResource other in otherWatchdogs)
+                    if (ReferenceEquals(
+                            other,
+                            meshResource
+                        )
+                        == false)
+                    {
+                        MeshFilter otherMF = other.Filter;
+                        if (ReferenceEquals(
+                                otherMF,
+                                null
+                            )
+                            == false
+                            && ReferenceEquals(
+                                otherMF.sharedMesh,
+                                meshFilter.sharedMesh
+                            ))
+                            return true;
+                    }
+            }
+
+            return false;
+        }
+
+        #endregion
     }
 }

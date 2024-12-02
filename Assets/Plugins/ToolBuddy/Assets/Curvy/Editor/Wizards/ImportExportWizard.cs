@@ -1,5 +1,5 @@
 // =====================================================================
-// Copyright 2013-2022 ToolBuddy
+// Copyright © 2013 ToolBuddy
 // All rights reserved
 // 
 // http://www.toolbuddy.net
@@ -11,6 +11,7 @@ using System.IO;
 using System.Linq;
 using FluffyUnderware.Curvy;
 using FluffyUnderware.Curvy.ImportExport;
+using FluffyUnderware.DevTools.Extensions;
 using FluffyUnderware.DevToolsEditor;
 using JetBrains.Annotations;
 using UnityEditor;
@@ -32,6 +33,7 @@ namespace FluffyUnderware.CurvyEditor
         /// serializedText copy that iqs used in the UI display. Truncated if too long to avoid Unity error.
         /// </summary>
         private string displayedSerializedText = string.Empty;
+
         /// <summary>
         /// Defines if which coordinates should be read/written
         /// </summary>
@@ -46,33 +48,45 @@ namespace FluffyUnderware.CurvyEditor
         private DTGroupNode actionsGroup;
         private DTGroupNode advancedActionsGroup;
 
-        static public void Open()
+        public static void Open()
         {
-            ImportExportWizard win = GetWindow<ImportExportWizard>(true, "Import/Export splines");
-            win.minSize = new Vector2(350, 340);
+            ImportExportWizard win = GetWindow<ImportExportWizard>(
+                true,
+                "Import/Export splines"
+            );
+            win.minSize = new Vector2(
+                350,
+                340
+            );
         }
 
-        private void OnDisable()
-        {
+        [UsedImplicitly]
+        private void OnDisable() =>
             DTSelection.OnSelectionChange -= Repaint;
-        }
 
+        [UsedImplicitly]
         private void OnEnable()
         {
             const string docLinkId = "import_export";
 
             GUIRenderer = new DTInspectorNodeDefaultRenderer();
 
-            configurationGroup = new DTGroupNode("Configuration") { HelpURL = CurvySpline.DOCLINK + docLinkId };
-            actionsGroup = new DTGroupNode("Actions") { HelpURL = CurvySpline.DOCLINK + docLinkId };
-            advancedActionsGroup = new DTGroupNode("Advanced Actions") { HelpURL = CurvySpline.DOCLINK + docLinkId };
+            configurationGroup = new DTGroupNode("Configuration")
+                { HelpURL = AssetInformation.DocsRedirectionBaseUrl + docLinkId };
+            actionsGroup = new DTGroupNode("Actions") { HelpURL = AssetInformation.DocsRedirectionBaseUrl + docLinkId };
+            advancedActionsGroup = new DTGroupNode("Advanced Actions")
+                { HelpURL = AssetInformation.DocsRedirectionBaseUrl + docLinkId };
 
             DTSelection.OnSelectionChange += Repaint;
         }
 
+        [UsedImplicitly]
         private void OnGUI()
         {
-            List<CurvySpline> selectedSplines = Selection.GetFiltered(typeof(CurvySpline), SelectionMode.ExcludePrefab).Where(o => o != null).Select(o => (CurvySpline)o).ToList();
+            List<CurvySpline> selectedSplines = Selection.GetFiltered(
+                typeof(CurvySpline),
+                SelectionMode.ExcludePrefab
+            ).Where(o => o != null).Select(o => (CurvySpline)o).ToList();
 
             //actions
             bool export = false;
@@ -94,23 +108,30 @@ namespace FluffyUnderware.CurvyEditor
                 GUIRenderer.RenderSectionHeader(configurationGroup);
                 if (configurationGroup.ContentVisible)
                 {
-                    coordinateSpace = (CurvySerializationSpace)EditorGUILayout.EnumPopup("Coordinate space to use", coordinateSpace, GUILayout.Width(280));
+                    coordinateSpace = (CurvySerializationSpace)EditorGUILayout.EnumPopup(
+                        "Coordinate space to use",
+                        coordinateSpace,
+                        GUILayout.Width(280)
+                    );
 
-                    var oldFileFormat = fileFormat;
+                    FileFormat oldFileFormat = fileFormat;
 
-                    fileFormat = (FileFormat)EditorGUILayout.EnumPopup("Format", fileFormat, GUILayout.Width(280));
+                    fileFormat = (FileFormat)EditorGUILayout.EnumPopup(
+                        "Format",
+                        fileFormat,
+                        GUILayout.Width(280)
+                    );
 
                     if (fileFormat != oldFileFormat)
                         OnFileFormatChanged();
-
                 }
+
                 GUIRenderer.RenderSectionFooter(configurationGroup);
 
 
                 //Actions
                 GUIRenderer.RenderSectionHeader(actionsGroup);
                 if (actionsGroup.ContentVisible)
-                {
                     switch (fileFormat)
                     {
                         case FileFormat.JSON:
@@ -128,7 +149,6 @@ namespace FluffyUnderware.CurvyEditor
                             throw new ArgumentOutOfRangeException();
                     }
 
-                }
                 GUIRenderer.RenderSectionFooter(actionsGroup);
 
 
@@ -136,7 +156,6 @@ namespace FluffyUnderware.CurvyEditor
                 GUIRenderer.RenderSectionHeader(advancedActionsGroup);
                 if (advancedActionsGroup.ContentVisible)
                 {
-
                     switch (fileFormat)
                     {
                         case FileFormat.JSON:
@@ -165,14 +184,22 @@ namespace FluffyUnderware.CurvyEditor
                     }
 
                     GUI.enabled = true;
-                    scrollingPosition = EditorGUILayout.BeginScrollView(scrollingPosition, GUILayout.MaxHeight(position.height - 100));
+                    scrollingPosition = EditorGUILayout.BeginScrollView(
+                        scrollingPosition,
+                        GUILayout.MaxHeight(position.height - 100)
+                    );
                     EditorGUI.BeginChangeCheck();
-                    string modifiedString = EditorGUILayout.TextArea(displayedSerializedText, EditorStyles.textArea, GUILayout.ExpandHeight(true));
+                    string modifiedString = EditorGUILayout.TextArea(
+                        displayedSerializedText,
+                        EditorStyles.textArea,
+                        GUILayout.ExpandHeight(true)
+                    );
                     if (GUI.changed)
                         editedString = modifiedString;
                     EditorGUI.EndChangeCheck();
                     EditorGUILayout.EndScrollView();
                 }
+
                 GUIRenderer.RenderSectionFooter(advancedActionsGroup);
                 GUILayout.Space(5);
 
@@ -195,7 +222,14 @@ namespace FluffyUnderware.CurvyEditor
                 writeToSelection = true;
             }
 
-            ProcessCommands(selectedSplines, readFromSelection, readFromFile, editedString, writeToSelection, writeToFile);
+            ProcessCommands(
+                selectedSplines,
+                readFromSelection,
+                readFromFile,
+                editedString,
+                writeToSelection,
+                writeToFile
+            );
         }
 
 
@@ -207,7 +241,8 @@ namespace FluffyUnderware.CurvyEditor
         }
 
 
-        private void ProcessCommands([NotNull] List<CurvySpline> selectedSplines, bool readFromSelection, bool readFromFile, [CanBeNull] string editedString, bool writeToSelection, bool writeToFile)
+        private void ProcessCommands([NotNull] List<CurvySpline> selectedSplines, bool readFromSelection, bool readFromFile,
+            [CanBeNull] string editedString, bool writeToSelection, bool writeToFile)
         {
             string fileExtension = fileFormat.ToString().ToLowerInvariant();
 
@@ -223,18 +258,27 @@ namespace FluffyUnderware.CurvyEditor
                                 switch (fileFormat)
                                 {
                                     case FileFormat.JSON:
-                                        raw = SplineJsonConverter.SplinesToJson(selectedSplines, coordinateSpace);
+                                        raw = SplineJsonConverter.SplinesToJson(
+                                            selectedSplines,
+                                            coordinateSpace
+                                        );
                                         break;
                                     default:
                                         throw new ArgumentOutOfRangeException();
                                 }
                             else
-                                throw new InvalidOperationException("Serialize Button should not be clickable when something other than splines is selected");
+                                throw new InvalidOperationException(
+                                    "Serialize Button should not be clickable when something other than splines is selected"
+                                );
                         }
                         else
                         {
-                            string fileToLoadFullName = EditorUtility.OpenFilePanel("Select file to load", Application.dataPath, fileExtension);
-                            if (String.IsNullOrEmpty(fileToLoadFullName))//Happens when user cancel the file selecting window
+                            string fileToLoadFullName = EditorUtility.OpenFilePanel(
+                                "Select file to load",
+                                Application.dataPath,
+                                fileExtension
+                            );
+                            if (String.IsNullOrEmpty(fileToLoadFullName)) //Happens when user cancel the file selecting window
                                 raw = displayedSerializedText;
                             else
                                 raw = File.ReadAllText(fileToLoadFullName);
@@ -255,10 +299,16 @@ namespace FluffyUnderware.CurvyEditor
                 switch (fileFormat)
                 {
                     case FileFormat.JSON:
-                        splines = SplineJsonConverter.JsonToSplines(serializedText, coordinateSpace);
+                        splines = SplineJsonConverter.JsonToSplines(
+                            serializedText,
+                            coordinateSpace
+                        );
                         break;
                     case FileFormat.SVG:
-                        splines = SplineSvgConverter.SvgToSplines(serializedText, coordinateSpace);
+                        splines = SplineSvgConverter.SvgToSplines(
+                            serializedText,
+                            coordinateSpace
+                        );
                         break;
                     default:
                         throw new ArgumentOutOfRangeException();
@@ -266,8 +316,16 @@ namespace FluffyUnderware.CurvyEditor
 
                 foreach (CurvySpline spline in splines)
                 {
-                    Undo.RegisterCreatedObjectUndo(spline.gameObject, "Deserialize");
-                    spline.transform.SetParent(Selection.activeTransform, coordinateSpace == CurvySerializationSpace.Global);
+                    const string undoOperationName = "Deserialize";
+                    Undo.RegisterCreatedObjectUndo(
+                        spline.gameObject,
+                        undoOperationName
+                    );
+                    spline.transform.UndoableSetParent(
+                        Selection.activeTransform,
+                        coordinateSpace == CurvySerializationSpace.Global,
+                        undoOperationName
+                    );
                 }
             }
             else if (writeToFile)
@@ -278,11 +336,16 @@ namespace FluffyUnderware.CurvyEditor
                     String.Format(
                         "Splines_{0}.{1}",
                         DateTime.Now.ToString("yyyy-MMMM-dd HH_mm"),
-                        fileExtension),
-                    fileExtension);
+                        fileExtension
+                    ),
+                    fileExtension
+                );
                 if (!string.IsNullOrEmpty(file))
                 {
-                    File.WriteAllText(file, serializedText);
+                    File.WriteAllText(
+                        file,
+                        serializedText
+                    );
                     AssetDatabase.Refresh();
                 }
             }

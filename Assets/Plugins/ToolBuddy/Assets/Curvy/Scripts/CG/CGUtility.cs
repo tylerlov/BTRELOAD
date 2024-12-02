@@ -1,17 +1,14 @@
 // =====================================================================
-// Copyright 2013-2022 ToolBuddy
+// Copyright © 2013 ToolBuddy
 // All rights reserved
 // 
 // http://www.toolbuddy.net
 // =====================================================================
 
 using System;
-using UnityEngine;
-using System.Collections;
-using System.Reflection;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
-using FluffyUnderware.DevTools;
+using JetBrains.Annotations;
+using UnityEngine;
 using UnityEngine.Assertions;
 
 namespace FluffyUnderware.Curvy.Generator
@@ -26,11 +23,16 @@ namespace FluffyUnderware.Curvy.Generator
         /// </summary>
         /// <param name="uv">the UV to create UV2 for</param>
         /// <returns>UV2</returns>
+        [UsedImplicitly]
         [Obsolete("Method will get remove in next major update. Copy its content if you need it")]
         public static Vector2[] CalculateUV2(Vector2[] uv)
         {
             Vector2[] UV2 = new Vector2[uv.Length];
-            CalculateUV2(uv, UV2, uv.Length);
+            CalculateUV2(
+                uv,
+                UV2,
+                uv.Length
+            );
             return UV2;
         }
 
@@ -40,6 +42,7 @@ namespace FluffyUnderware.Curvy.Generator
         /// <param name="uv">the UV to create UV2 for</param>
         /// <param name="uv2">the UV2 array to fill data into</param>
         /// <param name="elementsNumber"> number of array elements to process</param>
+        [UsedImplicitly]
         [Obsolete("Method will get remove in next major update. Copy its content if you need it")]
         public static void CalculateUV2(Vector2[] uv, Vector2[] uv2, int elementsNumber)
         {
@@ -47,8 +50,12 @@ namespace FluffyUnderware.Curvy.Generator
             float maxV = 0;
             for (int i = 0; i < elementsNumber; i++)
             {
-                maxU = maxU < uv[i].x ? uv[i].x : maxU;
-                maxV = maxV < uv[i].y ? uv[i].y : maxV;
+                maxU = maxU < uv[i].x
+                    ? uv[i].x
+                    : maxU;
+                maxV = maxV < uv[i].y
+                    ? uv[i].y
+                    : maxV;
             }
 
             float oneOnMaxU = 1f / maxU;
@@ -65,7 +72,8 @@ namespace FluffyUnderware.Curvy.Generator
         /// <summary>
         /// Rasterization Helper class
         /// </summary>
-        public static List<ControlPointOption> GetControlPointsWithOptions(CGDataRequestMetaCGOptions options, CurvySpline shape, float startDist, float endDist, bool optimize, out int initialMaterialID, out float initialMaxStep)
+        public static List<ControlPointOption> GetControlPointsWithOptions(CGDataRequestMetaCGOptions options, CurvySpline shape,
+            float startDist, float endDist, bool optimize, out int initialMaterialID, out float initialMaxStep)
         {
 #if CURVY_SANITY_CHECKS
             Assert.IsTrue(shape.Count > 0);
@@ -80,15 +88,20 @@ namespace FluffyUnderware.Curvy.Generator
             {
                 float clampedEndDist;
                 {
-                    clampedEndDist = shape.ClampDistance(endDist, shape.Closed ? CurvyClamping.Loop : CurvyClamping.Clamp);
+                    clampedEndDist = shape.ClampDistance(
+                        endDist,
+                        shape.Closed
+                            ? CurvyClamping.Loop
+                            : CurvyClamping.Clamp
+                    );
                     if (clampedEndDist == 0)
                         clampedEndDist = endDist;
                 }
-                finishSeg = (clampedEndDist == shape.Length) ? shape.LastVisibleControlPoint : shape.DistanceToSegment(clampedEndDist);
+                finishSeg = clampedEndDist == shape.Length
+                    ? shape.LastVisibleControlPoint
+                    : shape.DistanceToSegment(clampedEndDist);
                 if (endDist != shape.Length && endDist > finishSeg.Distance)
-                {
                     finishSeg = shape.GetNextControlPoint(finishSeg);
-                }
             }
 
             MetaCGOptions cgOptions;
@@ -96,7 +109,9 @@ namespace FluffyUnderware.Curvy.Generator
             if (startSeg)
             {
                 cgOptions = startSeg.GetMetadata<MetaCGOptions>(true);
-                initialMaxStep = (cgOptions.MaxStepDistance == 0) ? float.MaxValue : cgOptions.MaxStepDistance;
+                initialMaxStep = cgOptions.MaxStepDistance == 0
+                    ? float.MaxValue
+                    : cgOptions.MaxStepDistance;
                 initialMaterialID = cgOptions.MaterialID;
                 int currentMaterialID = initialMaterialID;
 
@@ -123,44 +138,56 @@ namespace FluffyUnderware.Curvy.Generator
                     cgOptions = seg.GetMetadata<MetaCGOptions>(true);
                     if (shape.GetControlPointIndex(seg) < shape.GetControlPointIndex(startSeg))
                         loopOffset = shape.Length;
-                    if (options.IncludeControlPoints ||
-                       cgOptions.CorrectedHardEdge ||
-                       cgOptions.MaterialID != currentMaterialID ||
-                       optimize && cgOptions.MaxStepDistance != maxDist ||
-                       (cgOptions.CorrectedUVEdge || cgOptions.ExplicitU)
-                        )
+                    if (options.IncludeControlPoints
+                        || cgOptions.CorrectedHardEdge
+                        || cgOptions.MaterialID != currentMaterialID
+                        || (optimize && cgOptions.MaxStepDistance != maxDist)
+                        || cgOptions.CorrectedUVEdge
+                        || cgOptions.ExplicitU
+                       )
                     {
-                        maxDist = (cgOptions.MaxStepDistance == 0) ? float.MaxValue : cgOptions.MaxStepDistance;
+                        maxDist = cgOptions.MaxStepDistance == 0
+                            ? float.MaxValue
+                            : cgOptions.MaxStepDistance;
                         currentMaterialID = cgOptions.MaterialID;
-                        res.Add(new ControlPointOption(seg.TF + Mathf.FloorToInt(loopOffset / shape.Length),
-                                                       seg.Distance + loopOffset,
-                                                       options.IncludeControlPoints,
-                                                       currentMaterialID,
-                                                        cgOptions.CorrectedHardEdge,
-                                                       cgOptions.MaxStepDistance,
-                                                       cgOptions.CorrectedUVEdge,
-                                                       cgOptions.ExplicitU,
-                                                       cgOptions.FirstU,
-                                                       cgOptions.SecondU));
-
+                        res.Add(
+                            new ControlPointOption(
+                                seg.TF + Mathf.FloorToInt(loopOffset / shape.Length),
+                                seg.Distance + loopOffset,
+                                options.IncludeControlPoints,
+                                currentMaterialID,
+                                cgOptions.CorrectedHardEdge,
+                                cgOptions.MaxStepDistance,
+                                cgOptions.CorrectedUVEdge,
+                                cgOptions.ExplicitU,
+                                cgOptions.FirstU,
+                                cgOptions.SecondU
+                            )
+                        );
                     }
+
                     seg = shape.GetNextSegment(seg);
                 } while (seg && seg != finishSeg);
+
                 // Check UV settings of last cp (not a segment if open spline!)
                 if (!seg && shape.LastVisibleControlPoint == finishSeg)
                 {
                     cgOptions = finishSeg.GetMetadata<MetaCGOptions>(true);
                     if (cgOptions.ExplicitU)
-                        res.Add(new ControlPointOption(1,
-                            finishSeg.Distance + loopOffset,
-                            options.IncludeControlPoints,
-                            currentMaterialID,
-                            cgOptions.CorrectedHardEdge,
-                            cgOptions.MaxStepDistance,
-                            cgOptions.CorrectedUVEdge,
-                            cgOptions.ExplicitU,
-                            cgOptions.FirstU,
-                            cgOptions.SecondU));
+                        res.Add(
+                            new ControlPointOption(
+                                1,
+                                finishSeg.Distance + loopOffset,
+                                options.IncludeControlPoints,
+                                currentMaterialID,
+                                cgOptions.CorrectedHardEdge,
+                                cgOptions.MaxStepDistance,
+                                cgOptions.CorrectedUVEdge,
+                                cgOptions.ExplicitU,
+                                cgOptions.FirstU,
+                                cgOptions.SecondU
+                            )
+                        );
                 }
             }
 
@@ -168,6 +195,5 @@ namespace FluffyUnderware.Curvy.Generator
         }
 
         #endregion
-
     }
 }

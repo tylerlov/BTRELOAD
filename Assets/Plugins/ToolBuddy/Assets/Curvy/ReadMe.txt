@@ -1,5 +1,5 @@
 // =====================================================================
-// Copyright 2013-2022 ToolBuddy
+// Copyright © 2013 ToolBuddy
 // All rights reserved
 // 
 // http://www.toolbuddy.net
@@ -24,33 +24,277 @@ Note: Starting from version 3.0.0, Curvy is using the versioning standard “Sem
 
 Warning: At each Curvy update, please delete the old Curvy folders before installing the new version
 
+8.9.2
+	General
+		[CHANGED] Curvy now logs the addition of define symbols.
+		[CHANGED] The "Leave a review" button now redirects to the review section on the store page.
+		[FIXED] Unity 6 preview shows warnings when compiling Curvy Splines.
+	Curvy Generator
+		[CHANGED] Enhanced the display of the module headers.
+		[FIXED] Modules have a distorted background when displayed on Windows with a display scale of 100%.
+	
+8.9.1
+	General
+		[NEW] Curvy Splines now adds the following define symbols to your project:
+			'CURVY_SPLINES'
+			'CURVY_SPLINES_X_Y_Z' where 'X.Y.Z' is the version of Curvy Splines.
+		[CHANGED] Bézier interpolation is now the default interpolation for new splines.
+			You can change the default interpolation type at Edit -> Preferences -> Curvy -> Default Spline Type.
+	Curvy Generator
+		[FIXED] Deform Mesh module: Errors when the input Path/Volume has a length of 0.
+		[FIXED] Dropping an object into a field selector also creates an unwanted input module.
+		[FIXED] The help message about canvas panning lists the wrong keyboard modifier.
+
+8.9.0
+	[CHANGED] Assembly Definitions are now included by default
+	[CHANGED] The Spline Selection Color in preferences now has a more visible default color.
+	[FIXED] Wrong symbol displayed in output slots of Curvy Generator modules.
+	[FIXED] Errors when destroying Connections under rare circumstances.
+	[FIXED] Errors when undoing deletion of Control Points under rare circumstances.
+	[FIXED] Control Point creation is not undoable in some cases.
+	[OPTIM] Avoided unnecessary splines refreshing when adding non Control Point game objects to the spline's hierarchy.
+	[API/NEW] Added CurvyConnection.SetSynchronizationOptions.
+	[API/NEW] Added CurvySpline.SetControlPointCount.
+	[API/NEW] CurvySpline now implements IComparable.
+	[API/FIXED] Setting the From and To properties of the BuildRasterizedPath and BuildShapeExtrusion modules does not yield similar results in edge cases.
+	[API/FIXED] BuildRasterizedPath and BuildShapeExtrusion property To can be lower than the value of From.
+
+8.8.1
+	Curvy Generator
+		[CHANGED] Changed the viewport's background and grid color to enhance readability.
+		[CHANGED] Changed the module selection highlight in Overview Mode to enhance readability.
+		[CHANGED] Centered the "Show Details" button for better alignment.
+		[FIXED] Toolbar icons and modules' background disappear when loading a generator from another scene.
+		[FIXED] Modules' custom background color is ignored when in Overview Mode.
+
+8.8.0
+	Curvy Generator
+		[NEW] Graph editor supports various zoom levels.
+		[NEW] Pressing the F key to centers view on selected modules, or the entire graph if none selected.
+		[NEW] Pressing the Escape key cancels the current link drag.
+		[NEW] Right-clicking on an existing link deletes it.
+		[NEW] Holding Alt while scrolling increases scroll speed.
+		[NEW] Ctrl and Shift modifiers are now taken into consideration when selecting/deselecting modules.
+		[NEW] Graph zoom and scroll are persisted between different editing sessions.
+		[NEW] Dragging a link or selection rectangle now initiates view scrolling when mouse is near the window's edges.
+		[NEW] The snap grid is now displayed in the backgound.
+		[NEW] When synchronize selection is set to false, double-clicking on a module in the hierarchy selects it in the graph.
+		[NEW] Dropping an input link into an empty space opens a filtered module list.
+		[CHANGED] Canvas size is now infinite.
+		[CHANGED] Dragging an input slot creates a new input link instead of modifying the existing one. To modify the existing one, hold the Ctrl key while dragging.
+		[CHANGED] Dropping an output link into an empty space now automatically opens the filtered module list, no need to hold the Ctrl key.
+		[CHANGED] Modules can be dragged from any empty space.
+		[CHANGED] When dragging a link, incompatible slots are now fully grayed.
+		[CHANGED] New generators now always dock next to a scene view.
+		[CHANGED] Changed module selection highlight color to match Unity's.
+		[CHANGED] Enhanced the Help box's position and message.
+		[CHANGED] Snap Grid values range from [1;20] to [10;40].
+		[CHANGED] Snap Grid default value changed from 5 to 20.
+		[CHANGED] Renaming a module while selecting multiple modules does not cancel the selection.
+		[CHANGED] Module titles are now truncated when too long.
+		[CHANGED] Reduced refresh highlight duration from 1.5s to 0.5s.
+		[FIXED] Errors when exiting Play Mode while the CG window is open and selecting a GameObject with no generator.
+		[FIXED] Errors when undoing the deletion of modules.
+		[FIXED] Invalid GUILayout State errors.
+		[FIXED] Layout Mismatch errors.
+		[FIXED] Editing a disabled generator while in play mode deletes modules.
+		[FIXED] Module linking/unlinking is not undoable.
+		[FIXED] Module selection highlights are not occluded properly when multiple modules are overlapping.
+		[FIXED] Module background sometimes disappears.
+		[FIXED] Dragged module is occluded by non-selected modules.
+		[FIXED] When multiple modules are selected, modifying a slider parameter drags all the selected modules.
+		[FIXED] Selection rectangle not ending when drag is released outside of the graph window.
+		[FIXED] Module focus animation has a different speed depending on how the module was selected.
+		[FIXED] View not being centered on the right module when a generator is opened via a module's inspector.
+		[FIXED] When multiple scenes are open, some Generator operations marked the wrong scene as dirty.
+		[FIXED] Removing a link does not dirty the scene.
+		[FIXED] Selection rectangle starts even when the mouse is outside of the viewport.
+		[FIXED] Middle mouse button (canvas drag) activates some controls on modules.
+		[FIXED] Modules are not drawn for a frame when refreshing a generator.
+		[FIXED] When selecting multiple modules, not all the modules have the same highlight.
+		[FIXED] Middle click when the cursor is on a module moves the module instead of dragging the canvas.
+		[FIXED] Link drag starts when clicking on the empty space between a module's slots.
+		[FIXED] Snapping multiple modules sometimes makes the modules move too far.
+		[FIXED] Snap Grid Size not respected for the first snapped module drag after the editor's rebuild.
+		[FIXED] Opening a generator clears the hierarchy selection.
+		[FIXED] Module reordering not positionning culled modules correctly.
+		[FIXED] Selection rectangle overlaps the editor's toolbar.
+		[OPTIM] Enhanced drawing performance, especially for big generators.
+		[NEW/API] Added CurvyGenerator.DeleteLink(CGModuleLink).
+	Curvy Splines
+		[OPTIM] Reduced spline refresh duration, especially for B-Splines (up to 50%)
+		[OPTIM] Spline refreshing generates 0 allocations.
+
+8.7.3
+	General
+		[FIXED] Compilation error when using Unity 2021.2
+		[FIXED] Changes in Preferences do not reflect instantly on all scene views
+	Toolbar
+		[NEW] Added a Toolbar Customization section to Preferences. Allows for better placement of the toolbar.
+		[CHANGED] Renamed some toolbar related options in Preferences.
+		[FIXED] Sub-menus are sometimes displayed too far from their associated buttons.
+		[FIXED] Toolbar overflows before wrapping.
+		[FIXED] Toolbar is partially hidden by Unity's toolbars.
+		[FIXED] Import/Export button is not visible when toolbar is shown contextually.
+	
+8.7.2
+	[CHANGED] Example scene 05_NearestPoint now uses the Nearest Spline Point component
+	[FIXED] Nearest Spline Point: On Updated event not visible in the inspector
+	[FIXED] Nearest Spline Point: Object not positioned properly when spline is moved
+	
+8.7.1
+	[CHANGED] Create Mesh module: Removed unnecessary logs related to Unwrap UV2, and increased severity of the necessary ones
+	[FIXED] Create Mesh module: Generated static meshes sometimes missing in builds
+	[FIXED] The Overlay Menu closes as soon as it opens when using Curvy Splines
+	[FIXED] Curvy Generators errors in builds made using Unity versions prior to 2021 LTS
+	
+8.7.0
+	[NEW] Curvy Spline: Added an On Initialized event
+	[CHANGED] Better error message when trying to create a connection while in prefab mode
+	[FIXED] Input Spline modules: Start and End CPs are reset when loading a scene
+	[FIXED] Input Spline modules: Start and End CPs can have invalid order if you assign them while their spline is disabled
+
+8.6.1
+	[FIXED] "Invalid GUILayout state" error in the console when editing a CG graph
+	
+8.6.0
+	General
+		[NEW] Orientation Anchors are now annotated in the Hierarchy view
+		[NEW] Added setting in Preferences: Annotate Hierarchy
+		[NEW] Now uses the new API Reference website
+		[FIXED] Version 8.5.0 introduced a regression where _CurvyGlobal_ is automatically instantiated in every scene
+		[FIXED] Blurry icons in the UI
+		[FIXED] The Nearest Spline Point helper component not working in builds
+	Editor Undoing
+		[FIXED] Some tools in the toolbar are not undoable in play mode
+		[FIXED] Multiple error messages when undoing deletion of connected control points
+		[FIXED] Console warning message when undoing connection creation
+		[FIXED] Volume Mesh module: Adding/Removing a material is not undoable
+
+8.5.0
+	General
+		[NEW] Curvy Splines is now fully compatible with the Enter Play Mode Options.
+			More about that here: https://docs.unity3d.com/2021.3/Documentation/Manual/ConfigurableEnterPlayMode.html
+		[OPTIM] Improved initialization time
+		[OPTIM] Better general performance when scene has a lot of objects
+		[FIXED] Multiple warning messages appear while Reload Scene is disabled
+		[FIXED] Toolbar buttons can have empty tooltips
+		[FIXED] Curvy Line Renderer and Curvy Spline To Edge Collider 2D: scripts update twice when a spline is moved
+		[FIXED] Build failure when code stripping is set to high
+		[FIXED] WebGL build freezes on black screen
+		[API/NEW] Added EnvironmentAgnosticInitializeOnLoadMethodAttribute
+		[API/NEW] Added CameraFrustumPlanesProvider
+		[API/NEW] DTVersionedMonoBehaviour: Added IsActiveAndEnabled, OnEnable, OnValidate, and Reset
+	Curvy Generator
+		General
+			[OPTIM] Reduced memory consumption of CG modules in edit mode
+			[FIXED] Some modules show "Serialized Property" instead of the list name
+			[FIXED] ArgumentException when dropping a game object on some specific areas of some modules
+			[FIXED] Shape Extrusion module: Shape editor occasionally misplaced when volume is empty
+			[API/NEW] Added CGResourceHandler.RegisterResourceLoader
+			[API/FIXED] CGModuleOutputSlot.UnlinkAll not working
+			[API/CHANGE] CGModuleOutputSlot: Changed some members to ensure returned ojects are not null
+			[API/CHANGE] IOnRequestProcessing.OnSlotDataRequest must now return non-null arrays containing non-null items
+			[API/CHANGE] ICGResourceLoader instances are no more found using reflection. Implementers need to self-register using CGResourceHandler.RegisterResourceLoader
+			[API/FIXED] BuildVolumeSpots.CrossBase's setter transforms valid negative values to positive ones
+		Modules management
+			[NEW] Added the Duplicate action to module's contextual menu
+			[FIXED] Resetting a module via the editor's hierarchy breaks the generator
+			[FIXED] Duplicating a module via the editor's hierarchy generates errors
+			[FIXED] Errors when pasting twice a copied or cut module
+			[FIXED] Managed resources in copied modules are named using the wrong module's name
+			[FIXED] Occasional errors regarding invalid module ids			
+			[API/NEW] Added CurvyGenerator.AddModule(CGModule)
+			[API/NEW] Added CurvyGenerator.RemoveModule(CGModule)		
+		Meshes
+			[OPTIM] Reduced memory usage of pooled meshes
+			[OPTIM] Improved loading times for scenes with many Curvy Generators meshes
+			[FIXED] Generators duplicated in Play mode use the same mesh as the original
+			[FIXED] Pooled meshes keep their children when reused			
+		Refreshing
+			[FIXED] Some Input modules not refreshing when adding a new input
+			[FIXED] Auto refreshing is broken while Reload Scene is disabled
+			[FIXED] Unnecessary updates happening when an input spline changes its coordinates 
+			[FIXED] Resetting some modules do not reset their result
+		Path Line Renderer
+			[CHANGE] Now requires a Line Renderer component
+			[FIXED] Deleting the associated Line Renderer generates errors				
+	Curvy Spline / Shapes
+		[OPTIM] Improved Dynamic Orientation computation time for specific cases in Curvy Spline
+		[OPTIM] Drastically reduced memory allocations/garbage collection when updating splines
+		[FIXED] Selecting a spline hides its gizmo when using Unity 2021.3.22
+		[FIXED] Swirl is not applied properly
+		[FIXED] Updating Control Point hierarchy in editor doesn't automatically update the spline
+		[FIXED] Error in Curvy Spline Segment inspector trying to access destroyed control point
+		[FIXED] Removing Control Points from connected splines with Follow Ups can lead to errors
+		[FIXED] Join Splines, Split Spline, and Subdivide tools not being undoable in play mode
+		[FIXED] Import/Export Splines window: Undoing a "Write new spline(s)" operation generates errors
+		[FIXED] Pooled Control Points keep their pre-pooling value of the Bake Orientation property
+		[FIXED] MetaCGOptions modification triggers its spline's On Refresh event multiple times
+		[FIXED] Enabling a Shape, which Plane value was modified while disabled, does not update its Spline's Restricted 2D Plane value
+		[FIXED] Pooled control points keep their children when reused
+		[API/NEW] Added CurvySplineSegment.EffectiveTcbParameters
+		[API/CHANGE]CurvySpline.UseThreading no longer returns false when threading is unsupported in the current environment
+		[API/FIXED] Control Points not part of a segment have their Up approximation set to zero
+		[API/FIXED] Typo in CurvySplineSegment.OrientatinInfluencesSpline
+		[API/FIXED] CSStart: Sides, OuterRoundness and InnerRoundness properties don't properly constrain input values
+	Curvy Global Manager
+		[OPTIM] Improved performance (CPU and memory) when loading scenes containing _CurvyGlobal_
+		[FIXED] Error message logged in console about Curvy Global Manager not being found
+		[FIXED] Error when deleting _CurvyGlobal_ at runtime and loading another scene
+		[FIXED] Error when changing scenes while Reload Scene is disabled
+		[FIXED] Warning about multiple instances of 'Array Pools Settings' when changing scenes
+		[FIXED] Errors when opening a prefab containing a spline while active scene has no _CurvyGlobal_
+		[FIXED] Editor freeze when opening a prefab containing a spline but no _CurvyGlobal_
+		[FIXED] Opening a prefab containing _CurvyGlobal_ modifies the one in the active scene
+		[FIXED] Error message when opening a prefab having _CurvyGlobal_ as its root
+	Pools
+		[CHANGE] Enhanced the inspector with better names and tooltips
+		[FIXED] Minimal and maximal thresholds not being respected
+		[FIXED] Reset not working	
+		[FIXED] PrefabPool: OnBeforePush not triggered in edit mode
+		[FIXED] Component Pool: failure while Reload Domain is disabled
+		[API/NEW] Added PoolSettings.SetToDefault
+		[API/CHANGE] PrefabPool, ComponentPool, and Pool<T> now have unified event handling, following the behavior of Pool<T>
+		[API/FIXED] Copy constructor of PoolSettings does not copy the AutoEnableDisable field
+	Curvy Connection
+		[FIXED] Null reference exception from inspector of disabled connection
+		[FIXED] Create Connection tool not being undoable in play mode
+		[FIXED] Editing a prefab containing _CurvyGlobal_ can cause connection duplication
+	Controllers
+		[CHANGE] Enabling or starting a controller is now consistent: it is stopped by default unless Play Automatically is true
+		[FIXED] Volume Controller: Empty volume inputs result in errors
+	Curvy GL Renderer
+		[OPTIM] Reduced memory usage
+		[FIXED] Drawing outdated spline data
+
 8.4.0
-	General:
-		[CHANGED] Made all editors support multi-object editing
-		[CHANGED] Enhanced some example scenes
+	General
+		[CHANGE] Made all editors support multi-object editing
+		[CHANGE] Enhanced some example scenes
 		[NEW] Most console messages now highlight the object that triggered them when clicking on the messages
 		[FIXED] Corrected factual error in the documentation of OnBeforeControlPointAdd
-	Curvy Generator:
-		[CHANGED] Shape Extrusion/Deform Mesh: Better presentation of advanced scaling fields
+	Curvy Generator
+		[CHANGE] Shape Extrusion/Deform Mesh: Better presentation of advanced scaling fields
 		[OPTIM] Deform Mesh: better performance when Scale Mode is set to Advanced but its scaling multiplier curves are equivalent to the constant value of 1
 		Path Relative Translation:
 			[OPTIM] Multithreaded the logic of the module
 			[NEW] Made translation that varies along the path possible, by adding the Multiplier setting
 			[NEW] Made the translation direction parametrizable through the Angle setting
 		Variable Mix Shapes:
-			[CHANGED] Invalid Mix Curve values are now substituted with valid ones, in addition to the warning previously shown
+			[CHANGE] Invalid Mix Curve values are now substituted with valid ones, in addition to the warning previously shown
 			[OPTIM] Updating takes less CPU time
 	Line Renderer/ Curvy Spline To Edge Collider 2D:
-		[CHANGED] Scripts are now listed under the Converters menu (instead of Misc)
-		[CHANGED] The Line Renderer/Edge Collider 2D is now kept as is when the source Spline is set to None (instead of emptied)
+		[CHANGE] Scripts are now listed under the Converters menu (instead of Misc)
+		[CHANGE] The Line Renderer/Edge Collider 2D is now kept as is when the source Spline is set to None (instead of emptied)
 		[FIXED] The scripts are being Updated unnecessarily under some circumstances
-	Spline Controller:	
+	Spline Controller	
 		[FIXED] On Position Reached events: In closed loops, events at spline start/end are not always triggered
 		[FIXED] On Position Reached events: In closed loops, events not at spline start/end are triggered when the controller goes through the spline's start/end
-	API:
+	API
 		[API/NEW] Added CurvySplineSegment[] Add(int controlPointsCount)
-		[API/CHANGED] Method TypeExt.GetLoadedTypes, that was set as Obsolete in 8.1.0, is no more obsolete
-		
+		[API/CHANGE] Method TypeExt.GetLoadedTypes, that was set as Obsolete in 8.1.0, is no more obsolete
+
 8.3.0
 	[NEW] Deform Mesh module: added a Scale tab with scale parameters, similar to the one in the Shape Extrusion module
 	[NEW] Controllers: Added a Constraints setting, to set position and rotation constraints
@@ -81,12 +325,12 @@ Warning: At each Curvy update, please delete the old Curvy folders before instal
 
 8.1.0
 	[NEW] Curvy Spline Segment: added the CP's Relative Distance to the info box
-	[NEW] Create Mesh module: added a 3rd export button, to export meshes to both the scene and assets.
+	[NEW] Create Mesh module: added a 3rd export button, to export meshes to both the scene and assets
 		This is useful when you want to make a prefab out of the exported to scene gameobject
-	[CHANGED] Made prefabs containing scripts from Curvy Splines openable in Play Mode
-	[CHANGED] Position gizmo for Bezier handles is now slightly different than Unity's position gizmo
+	[CHANGE] Made prefabs containing scripts from Curvy Splines openable in Play Mode
+	[CHANGE] Position gizmo for Bezier handles is now slightly different than Unity's position gizmo
 		This is to make it easier to distinguish the position gizmo of a Control Point from its handles'
-	[CHANGED] Volume Spots module: the minimal allowed depth for objects was changed from 0.01 to 0.001
+	[CHANGE] Volume Spots module: the minimal allowed depth for objects was changed from 0.01 to 0.001
 		This is to allow for placement of smaller objects
 	[OPTIM] Reduced various initialization times, as well as entering Play Mode and reload times
 		This is especially visible in projects with a big number of scripts
@@ -96,13 +340,13 @@ Warning: At each Curvy update, please delete the old Curvy folders before instal
 8.0.2
 	[OPTIM] Minor optimization of the Deform Mesh module
 	[FIXED] Control point's gizmo labels are not positioned properly under certain Unity versions
-		This bug is due to a regression in Unity that has been fixed lately. Curvy had a workaround to that regression. This update disables the workaround for the latest Unity versions that don't need the workaround. It is recommended to use both Curvy 8.0.2 or higher, and Unity 2021.2.12f1 or higher.
+		This bug is due to a regression in Unity that has been fixed lately. Curvy had a workaround to that regression. This update disables the workaround for the latest Unity versions that don't need the workaround. It is recommended to use both Curvy 8.0.2 or higher, and Unity 2021.2.12f1 or higher
 		More about the issue here: https://issuetracker.unity3d.com/issues/handles-dot-label-does-not-appear-in-the-supposed-place
 	
 8.0.1
 	[NEW] Added a warning when a spline's gizmo color is transparent
 	[FIXED] Spline's gizmo colors are sometimes automatically set to a transparent color
-	[CHANGED] Create Mesh module: GroupMeshes is now hidden if Combine is set to false
+	[CHANGE] Create Mesh module: GroupMeshes is now hidden if Combine is set to false
 		Before this change, the GroupMeshes parameter was visible even when its value was not used
 		
 8.0.0
@@ -112,22 +356,22 @@ Warning: At each Curvy update, please delete the old Curvy folders before instal
 		[NEW] Added a Curvy Spline To Edge Collider 2D script
 		[NEW] Added an Array Pools Settings script
 			Curvy Splines now use pools of arrays as a mean to reduce CPU time. These pools have a default capacity. Automatically, an instance of Array Pools Settings is added to the _CurvyGlobal_ object. It allows you to define the capacity of the pools, and shows you their current usage. Set the Capacity to 0 to not use the pools at all
-		[CHANGED] Changed the folders structure. Now everything is in a Plugins/ToolBuddy folder. As recommended for every update, please delete the old Curvy folders before installing the new version
-		[CHANGED] Improved various UIs, including the Curvy Generator: improved ease of use, added tooltips, added warning messages when relevant, etc...
-		[CHANGED] Various documentation enhancements
+		[CHANGE] Changed the folders structure. Now everything is in a Plugins/ToolBuddy folder. As recommended for every update, please delete the old Curvy folders before installing the new version
+		[CHANGE] Improved various UIs, including the Curvy Generator: improved ease of use, added tooltips, added warning messages when relevant, etc..
+		[CHANGE] Various documentation enhancements
 		[OPTIM] Optimized various features, both in edit mode and play mode. The optimizations are related to both CPU time and memory usage. The biggest of these optimizations greatly improves scenarios involving frequent updates of Curvy Generator, such as real-time mesh generation
 		[FIXED] Toolbar not displaying when setting the Unity Editor language to a language other than English
 		[FIXED] Truncated text in some buttons due to new UI
-		[API/CHANGED] SerializableArray has changed namespace from FluffyUnderware.CurvyEditor to FluffyUnderware.Curvy.Utils
+		[API/CHANGE] SerializableArray has changed namespace from FluffyUnderware.CurvyEditor to FluffyUnderware.Curvy.Utils
 
 	Splines
 		General
 			[NEW] Support for B-Splines
 			[NEW] Restrict To 2D can now restrict the spline in any of the main 3 planes. You can select the plane via a new setting, Restricted 2D Plane
 			[NEW] Nearest Spline Point: a script to get the nearest point on a spline
-			[CHANGED] Splines created via the editor have now a numbered suffix added to their name
-			[CHANGED] When adding a Control Point to a spline, its local rotation is set to zero, instead of its global rotation as it was the case
-			[CHANGED] Spline segments have now a maximal cache size of 1.000.000 points
+			[CHANGE] Splines created via the editor have now a numbered suffix added to their name
+			[CHANGE] When adding a Control Point to a spline, its local rotation is set to zero, instead of its global rotation as it was the case
+			[CHANGE] Spline segments have now a maximal cache size of 1.000.000 points
 			[FIXED] Curvy Spline inspector showing a false warning about a spline not being restricted to a 2D plane
 			[FIXED] Sometimes splines refresh every frame even when there are no changes to process
 			[FIXED] "Set center/pivot point" tool in the toolbar does not update when a spline switches from being 3D to restricted to 2D
@@ -136,34 +380,34 @@ Warning: At each Curvy update, please delete the old Curvy folders before instal
 			[API/NEW] Added CurvyUtility.GetNearestPointIndex
 			[API/NEW] CurvySpline.Clear has now an optional parameter to define if the spline clearing should be undoable in the editor or not
 			[API/NEW] Added new methods to get the spline's cached data. Those methods use pooled arrays: GetPositionsCache, GetTangentsCache and GetNormalsCache
-			[API/CHANGED] Start and OnEnable now invoke the OnRefresh event always if the spline has Control Points, and never if the spline is empty
-			[API/CHANGED] Refresh now invokes the OnRefresh event only if there were actual modifications processed by the Refresh method
+			[API/CHANGE] Start and OnEnable now invoke the OnRefresh event always if the spline has Control Points, and never if the spline is empty
+			[API/CHANGE] Refresh now invokes the OnRefresh event only if there were actual modifications processed by the Refresh method
 		Scene view UI
 			[NEW] Added an Orientation Anchors gizmo
 			[NEW] Added a Relative Distances gizmo
 			[NEW] Added a TF gizmo
 			[NEW] Draw Splines tool: Added a new drawing plane, the view plane
 			[NEW] Draw Splines tool: CTRL+clicking on the first Control Point of a spline closes it/opens it
-			[CHANGED] Connection gizmos are now a separate setting from the Curve gizmo. They can now be activated separately
-			[CHANGED] Control Points' Label gizmos are now displayed even when the CP is not selected
+			[CHANGE] Connection gizmos are now a separate setting from the Curve gizmo. They can now be activated separately
+			[CHANGE] Control Points' Label gizmos are now displayed even when the CP is not selected
 		Shapes
-			[CHANGED] Pie's roundness is now by default 1 when shape is reset
+			[CHANGE] Pie's roundness is now by default 1 when shape is reset
 			[FIXED] Shapes are not refreshed when their component are reset via the inspector
 			[FIXED] Pie's normals are incorrect
 			[FIXED] Rectangle's normals are incorrect when increasing the cache density
 			[FIXED] Shapes not having the proper normals when setting planes other than the default one
 		Splines Import/Export window
 			[NEW] Added support for SVG import
-			[CHANGED] The local/global selector now applies also on the spline's coordinates, not only the Control Points'
-			[CHANGED] File selector now displays only the relevant file formats
+			[CHANGE] The local/global selector now applies also on the spline's coordinates, not only the Control Points'
+			[CHANGE] File selector now displays only the relevant file formats
 			[FIXED] Synchronize TCB is ignored when importing/exporting a spline
 			[FIXED] Error when exiting the file selector without choosing a file
 			[API/NEW] Exposed methods converting between splines and JSON in SplineJsonConverter
 
 	Controllers
 		[NEW] Spline Controller: Added new type of events, "On Position Reached" events, allowing for events to be triggered at any position on the spline
-		[CHANGED] Position Mode's default value changed from Relative to Absolute
-		[CHANGED] When Move Mode is set to Absolute, Position slider is now greyed when no source for the controller is set
+		[CHANGE] Position Mode's default value changed from Relative to Absolute
+		[CHANGE] When Move Mode is set to Absolute, Position slider is now greyed when no source for the controller is set
 		[FIXED] Errors when UITextSplineController has spaces in its input text
 		[FIXED] Spline Controller: Wrong documentation link for the Connections Handling section
 		[FIXED] Rarely, an exception is thrown when using a spline controller
@@ -175,13 +419,13 @@ Warning: At each Curvy update, please delete the old Curvy folders before instal
 			[NEW] New module: Input Transform Spots. Sets a spot that is tied with a Game Object's transform
 			[NEW] New module: GameObject To Mesh. Converts GameObjects to Volume Meshes
 			[NEW] Create GameObject module: Added a new setting: "Apply Layer On Children"
-			[CHANGED] Create Mesh module: a 32 bit index format is now used if the mesh has too many vertices, allowing to create meshes with more than 65535 vertices
-			[CHANGED] Create Mesh module: The default mesh collider's cooking options now includes Use Fast Midphase for the relevant Unity versions
-			[CHANGED] Create Mesh module: The AddNormals and AddTangents enums are replaced with boolean parameters
-			[CHANGED] Volume Mesh module: Removed Material ID from the UI since it was not used. The used material id is the material group's index (displayed as the tab's title)
-			[CHANGED] Input Spline Shape module: created shapes no more have their gizmos hidden by default
-			[CHANGED] Curvy Generators' instances now have incremental names
-			[CHANGED] Shape Extrusion Module: the following settings are not available anymore, and are assumed to be always true: Hard Edges, Materials and Extended UV
+			[CHANGE] Create Mesh module: a 32 bit index format is now used if the mesh has too many vertices, allowing to create meshes with more than 65535 vertices
+			[CHANGE] Create Mesh module: The default mesh collider's cooking options now includes Use Fast Midphase for the relevant Unity versions
+			[CHANGE] Create Mesh module: The AddNormals and AddTangents enums are replaced with boolean parameters
+			[CHANGE] Volume Mesh module: Removed Material ID from the UI since it was not used. The used material id is the material group's index (displayed as the tab's title)
+			[CHANGE] Input Spline Shape module: created shapes no more have their gizmos hidden by default
+			[CHANGE] Curvy Generators' instances now have incremental names
+			[CHANGE] Shape Extrusion Module: the following settings are not available anymore, and are assumed to be always true: Hard Edges, Materials and Extended UV
 				The reason behind this change is to lift the legitimate confusion some users had: until now, to use one of those settings in a shape extrusion, you had to both activate the setting in the module and activate the equivalent setting in the "Meta CG Options" meta data of the relevant Control Point. Now you only need to activate the setting in the meta data
 			[OPTIM] Create Mesh module: When creating multiple meshes with mesh colliders, the colliders are baked in parallel
 				Warning: as a limitation from Unity, the parallel baking will be ignored if you set the cooking options to any value different than the default value. For more details: https://forum.unity.com/threads/physics-bakemesh-question.741257/#post-4999400
@@ -210,9 +454,9 @@ Warning: At each Curvy update, please delete the old Curvy folders before instal
 			[FIXED] Dropping a spline in the generator window sometimes does not create an input module
 			[API/NEW] Added CGVolume.Scales
 			[API/NEW] CGVMesh.GetSortedVertexIndices
-			[API/CHANGED] CGVMesh.ToMesh now has two optional parameters defining whether the normals and tangents should be copied or not
-			[API/CHANGED] Made mandatory the previously optional includeOnRequestProcessing parameter of the CurvyGenerator.GetModules methods. It being optional and having a default value set to false made it confusing for its users
-			[API/CHANGED] The BuildRasterizedPath.From setter now handles the edge value of 1 similarly to BuildShapeExtrusion.From
+			[API/CHANGE] CGVMesh.ToMesh now has two optional parameters defining whether the normals and tangents should be copied or not
+			[API/CHANGE] Made mandatory the previously optional includeOnRequestProcessing parameter of the CurvyGenerator.GetModules methods. It being optional and having a default value set to false made it confusing for its users
+			[API/CHANGE] The BuildRasterizedPath.From setter now handles the edge value of 1 similarly to BuildShapeExtrusion.From
 			[API/FIXED] The following methods ignore the modules that implement the IOnRequestProcessing interface: CurvyGenerator.GetModuleOutputSlot(int, string) and CurvyGenerator.GetModuleOutputSlot(string, string)
 			[API/FIXED] Conform Path and Path Relative Translation modules: the output path's Length and F are not updated
 			[API/FIXED] The CGSpots(CGSpots source) constructor does not copy the source spots, but copies just the reference
@@ -221,10 +465,10 @@ Warning: At each Curvy update, please delete the old Curvy folders before instal
 			[NEW] Added a Save Output To Scene button in the toolbar. This will copy to outside the generator all the generated meshes and game objects
 			[NEW] Added a Clear Outputs button in the toolbar. This will delete all the generated meshes and game objects in a single click
 			[NEW] Create GameObject module: Added a Save To Scene button
-			[CHANGED] Create GameObject and Create Mesh modules: Now exported game objects are always under a parent game object, even if there is only one exported game object
-			[CHANGED] Create GameObject and Create Mesh modules: When multiple objects are exported, their parent GameObject is now named "<module_name> Exported Resources" instead of "<module_name>"
+			[CHANGE] Create GameObject and Create Mesh modules: Now exported game objects are always under a parent game object, even if there is only one exported game object
+			[CHANGE] Create GameObject and Create Mesh modules: When multiple objects are exported, their parent GameObject is now named "<module_name> Exported Resources" instead of "<module_name>"
 		Prefabs
-			[CHANGED] Prefabs: Better handling of forbidden prefab related operations
+			[CHANGE] Prefabs: Better handling of forbidden prefab related operations
 				Some operations, like deleting a game object, are not allowed in a prefab instance due to Unity's New Prefab System. When Curvy Generator was asked to delete an object part of a prefab instance, it showed an error message in the console. Now, it will behave as follows:
 					- If the object to delete is automatically generated, like an output mesh, and thus can be regenerated by refreshing the Curvy Generator, any operation that leads to its automatic deletion will also delete it from the prefab asset
 					- For the other cases, like deleting a module from a graph window, a popup will ask the user to first delete the associated object from the prefab asset
@@ -238,10 +482,10 @@ Warning: At each Curvy update, please delete the old Curvy folders before instal
 				Ctrl+X cut selected module (module is deleted when pasting the cut module)
 				Ctrl+V past module
 			[NEW] Support for drag and drop of Game Objects, shapes and meshes in the generator view
-			[CHANGED] Dropping a link on a module no more selects and focuses the view on said module
-			[CHANGED] Module focus is now on the top of the module instead of its bottom. This makes working with big modules, such as Volume Spots, easier
-			[CHANGED] A right click on a module now also selects it
-			[CHANGED] Dragging a module now selects it
+			[CHANGE] Dropping a link on a module no more selects and focuses the view on said module
+			[CHANGE] Module focus is now on the top of the module instead of its bottom. This makes working with big modules, such as Volume Spots, easier
+			[CHANGE] A right click on a module now also selects it
+			[CHANGE] Dragging a module now selects it
 			[FIXED] CG's graph sometimes scrolls in weird directions when dragging a module
 			[FIXED] Couldn't deselect a selected module under some circumstances 
 			[FIXED] Couldn't do a rectangle drag under some circumstances
@@ -261,8 +505,8 @@ Warning: At each Curvy update, please delete the old Curvy folders before instal
 			General
 				[NEW] Create Mesh module: When combining multiple Volume Meshes, you now have the option to recompute UV2 for the combined mesh. This can give better results than computing UV2 for each Volume Mesh individually. That option is called Unwrap UV2
 				[NEW] Volume Mesh module: Added a new setting, Unscale U, that allows for the U coordinates to be independent from the scaling
-				[CHANGED] Create Mesh module: Replaced "Add UV2" with Volume Mesh module's "Generate UV2". Now both UV and UV2 are generated by the Volume Mesh module
-				[CHANGED] Volume Mesh module: the Keep Aspect setting now has three possible values: Off, Scale U or Scale V
+				[CHANGE] Create Mesh module: Replaced "Add UV2" with Volume Mesh module's "Generate UV2". Now both UV and UV2 are generated by the Volume Mesh module
+				[CHANGE] Volume Mesh module: the Keep Aspect setting now has three possible values: Off, Scale U or Scale V
 				[FIXED] Volume Mesh module: UV2 calculation is wrong when using the Split setting
 					For backward compatibility reasons, the pre Curvy 8 behaviour is still available through the Split UV2 setting, in the Backward Compatibility section
 				[FIXED] Volume Mesh module: UV2 incorrectly computed when UV is swapped or negatively scaled
@@ -271,8 +515,8 @@ Warning: At each Curvy update, please delete the old Curvy folders before instal
 				[FIXED] Build Volume Caps module: Wrong UV2 values
 				[FIXED] Volume Caps module: The Keep Aspect enum does not work properly
 			Meta CG Options
-				[CHANGED] Now shows only the settings that are relevant (that will be used in that specific context)
-				[CHANGED] "Explicit U" and "Set U from neighbours" are now possible for CPs with a change of Material ID
+				[CHANGE] Now shows only the settings that are relevant (that will be used in that specific context)
+				[CHANGE] "Explicit U" and "Set U from neighbours" are now possible for CPs with a change of Material ID
 				[FIXED] When there is a change of Material ID at a specific CP, its "UV Edge" is overridden to true
 					For those relaying on that old behaviour, you will have to set "UV Edge" to true for all the CPs with a change of Material ID. You can find a code snippet that does that here: https://forum.curvyeditor.com/thread-1294.html
 				[FIXED] On the first CP of an open spline, in some cases First U is ignored when setting Explicit U (second U is used instead)
@@ -283,7 +527,7 @@ Warning: At each Curvy update, please delete the old Curvy folders before instal
 				[FIXED] When setting an explicit U value to any CP other than the last one of an open spline, the automatically generated U value of the last CP is wrong
 				[FIXED] Invalid UV coordinates in some cases when using two different materials on closed splines
 				[FIXED] Shape Extrusion module: UV coordinates of an extruded shape are wrong if you activate Hard Edges and Extended UV options while not providing any value for those options
-				[API/CHANGED] MetaCGOptions.HasDifferentMaterial does not create anymore a MetaCGOptions instance at the previous CP if such instance does not exist
+				[API/CHANGE] MetaCGOptions.HasDifferentMaterial does not create anymore a MetaCGOptions instance at the previous CP if such instance does not exist
 		Data disposal (API only)
 			In connection with the array pools addition explained earlier, instances of CGData and their inheriting classes need to be disposed. This allows for the arrays they use to be returned to the pools
 				[API/NEW] Added OutputSlotInfo.DisposableData: Whether the data outputted through this slot can be disposed when it is replaced by a newer outputted data
@@ -295,8 +539,8 @@ Warning: At each Curvy update, please delete the old Curvy folders before instal
 		[NEW] New setting: Enable Announcements
 		[NEW] New setting: Enable Metrics
 		[NEW] New setting: Auto Fade Labels
-		[CHANGED] When resetting preferences, Use Tiny 2D Handles is now set to true
-		[CHANGED] Changed the default value of Spline Selection Color to a color that is more visible on dark backgrounds. To set back the previous color, please set the color's RGB 0-1 values to red:0.15, green:0.35 and blue:0.68
+		[CHANGE] When resetting preferences, Use Tiny 2D Handles is now set to true
+		[CHANGE] Changed the default value of Spline Selection Color to a color that is more visible on dark backgrounds. To set back the previous color, please set the color's RGB 0-1 values to red:0.15, green:0.35 and blue:0.68
 		[FIXED] Resetting preferences does not reset the "Hide _CurvyGlobal_" and "Snap Value Precision" preferences
 
 7.1.8
@@ -345,7 +589,7 @@ Warning: At each Curvy update, please delete the old Curvy folders before instal
 		[CHANGE] Replace a Connection Synchronization icon for the dark theme UI for more visibility
 		[CHANGE] Minor improvements in UI and documentation
 		[FIXED] A compiler warning appears when using Unity 2020.2 or above
-			Sorry about this one, the fix was accidentally not included in 7.1.3.
+			Sorry about this one, the fix was accidentally not included in 7.1.3
 
 7.1.3
 	[FIXED] Compiler warnings appear when using Unity 2020.2 or above
@@ -373,7 +617,7 @@ Warning: At each Curvy update, please delete the old Curvy folders before instal
 		[FIXED] A console error is displayed when the Simplify tool removes a connected control point
 		[FIXED] When rotating a Bézier spline's control point while holding the Shift button, the rotated handles synchronize with the connected control points even if the handles synchronization option is not activated
 		[FIXED] In some situations, Follow-Up's value is not taken into consideration if the connection's inspector is not displayed
-		[FIXED] Follow-Up: Automatic heading direction is sometimes not resolved properly.
+		[FIXED] Follow-Up: Automatic heading direction is sometimes not resolved properly
 			The "Automatic" heading direction will now be resolved to "To spline's end" instead of "Nowhere" when no obvious value is found. It gives better result most of the time
 		[FIXED] Duplicating a connected spline will create a spline that seems connected while it isn't
 		[API/NEW] Added CurvyConnection.Disconnect(bool destroyEmptyConnection)
@@ -382,7 +626,7 @@ Warning: At each Curvy update, please delete the old Curvy folders before instal
 		[API/FIXED] CurvyConnection.RemoveControlPoint does not unset the removed CP as a Follow-Up for the still connected CPs
 	Others
 		[NEW] Added a button in the about window to display the publisher's page on the asset store
-		[NEW] The following metrics are now send to Curvy's server at each import of a new Curvy version: Curvy version, Unity version, Scripting version.
+		[NEW] The following metrics are now send to Curvy's server at each import of a new Curvy version: Curvy version, Unity version, Scripting version
 			The collected metrics will help making decisions when it comes to maintaining Curvy's old code, and using Unity's version specific features. The send data is anonymous
 		[CHANGE] Made the "Generate Assembly Definition" button's icon compatible with the dark ("Professional") editor theme
 		[FIXED] Wrong UV2 calculation when UV scale is in between 0 and 1
@@ -412,9 +656,9 @@ Warning: At each Curvy update, please delete the old Curvy folders before instal
 		Volume Spots
 			[NEW] You can now set the scale of the spots
 			[NEW] You can now set the translation in all directions, and in either the relative or absolute frame
-			[CHANGED] Modified the module's inspector to make it easier to use and understand. Some parameters changed name in the process
-			[CHANGED] Use Volume is now set to true by default
-			[CHANGED] Use Volume is no more automatically set to false when input is not a volume (in which case its value is ignored) or the module is reset
+			[CHANGE] Modified the module's inspector to make it easier to use and understand. Some parameters changed name in the process
+			[CHANGE] Use Volume is now set to true by default
+			[CHANGE] Use Volume is no more automatically set to false when input is not a volume (in which case its value is ignored) or the module is reset
 			[FIXED] When using Rotation Scatter, the rotation value changes depending on whether Height is set to a fixed value or a random value
 			[FIXED] Rotation Scatter is not applied on all objects
 			[FIXED] Changing the Seed parameter has no effect on the randomly generated values
@@ -450,7 +694,7 @@ Warning: At each Curvy update, please delete the old Curvy folders before instal
 		[API/CHANGE] CalculateSamplingPointsPerUnit now always return non zero values
 	Others
 		[NEW] Added a Generate Assembly Definitions button in the toolbar, under Curvy Options
-			This solution replaces the previously included *.asmdef.disabled files.
+			This solution replaces the previously included *.asmdef.disabled files
 		[NEW] Added a Review button and a Custom Development button to the About window
 		[CHANGE] Curvy Line Renderer: Added warning when Spline is not assigned
 		[CHANGE] Removed from the components list the ones that are not meant to be instantiated directly
@@ -482,7 +726,7 @@ Warning: At each Curvy update, please delete the old Curvy folders before instal
 		[FIXED] Error messages about dirty modules displayed when it should not
 		[FIXED] Errors when creating a generator in an unsaved scene and then creating a new scene
 			A consequence of this fix is that a Curvy Generator component will move up in the list of its related gameobject's components
-		[FIXED/CHANGED] Various UI fixes and tweaks, most of them for all Unity versions, few of them exclusive to the new Unity's UI (2019.3 and above)
+		[FIXED/CHANGE] Various UI fixes and tweaks, most of them for all Unity versions, few of them exclusive to the new Unity's UI (2019.3 and above)
 	Others
 		[OPTIM] Various optimizations having impact on the following:
 			- Spline gizmo display
@@ -497,15 +741,15 @@ Warning: At each Curvy update, please delete the old Curvy folders before instal
 6.1.0
 	Curvy Generator
 		[FIXED] Generators break when having other generators as children
-		[FIXED] The Auto Refresh parameters where ignored when modifying an input spline that is not a child of an input module.
+		[FIXED] The Auto Refresh parameters where ignored when modifying an input spline that is not a child of an input module
 		[FIXED] Volume Caps module: end cap not using the right volume scaling
 	Others
-		[FIXED] Controllers: Offset feature still applies even when it should not i.e. when the Orientation mode is set to None.
+		[FIXED] Controllers: Offset feature still applies even when it should not i.e. when the Orientation mode is set to None
 		[FIXED] The UI is broken in some places when using new UI system introduced by Unity 2019.3
 		[FIXED] When using Unity 2019.3, you can't assign a dynamic event handler to events inherited from parent class
 		[FIXED] When using Unity 2019.3, warnings are displayed when opening some example scenes
 		[FIXED] In rare cases, singletons can be duplicated
-		[API/CHANGE] Controllers have now some previously private members exposed to inheriting classes. This is to make it easier to make custom controllers.
+		[API/CHANGE] Controllers have now some previously private members exposed to inheriting classes. This is to make it easier to make custom controllers
 
 6.0.1
 	[OPTIM] Reduced cost of drawing a spline's gizmos
@@ -513,10 +757,10 @@ Warning: At each Curvy update, please delete the old Curvy folders before instal
 
 6.0.0
 	Curvy Generator
-		[NEW] Variable Mix Shapes module: Interpolates between two shapes in a way that varies along the shape extrusion. This module is used in the example scene 27.
+		[NEW] Variable Mix Shapes module: Interpolates between two shapes in a way that varies along the shape extrusion. This module is used in the example scene 27
 		[OPTIM] Modules that are out of the view are now culled
 		[OPTIM] Optimized shapes interpolation
-		[CHANGE] Shape Extrusion module: The shape used in the extrusion can now vary along the extrusion. To do so, you should link as a shape input a module that provides a varying shape. This is the case of the Variable Mix Shapes module.
+		[CHANGE] Shape Extrusion module: The shape used in the extrusion can now vary along the extrusion. To do so, you should link as a shape input a module that provides a varying shape. This is the case of the Variable Mix Shapes module
 		[CHANGE] Made TRS modules larger to show more digits
 		[CHANGE] Better error messages when something goes wrong with resources creation
 		[FIXED] Mix Shapes module: Normals interpolation in not correctly computed
@@ -587,7 +831,7 @@ Warning: At each Curvy update, please delete the old Curvy folders before instal
 		[CHANGE] Reworked the inspector
 		[CHANGE] Gizmo labels now have the same color than the icon
 		[FIXED] Inspector is not displayed inside the Curvy Spline Segment inspector when deleting then re-adding a connection
-		[FIXED] When having some of the control points synchronized, and some not, moving a not synchronized control point make the synchronized ones move too.
+		[FIXED] When having some of the control points synchronized, and some not, moving a not synchronized control point make the synchronized ones move too
 		[FIXED] When using Synchronization presets, the synchronized position/rotation is not the one of the connection's game object as it should be, but one of the synchronized control points
 		[FIXED] Gizmo labels are not drawn at the right position under some circumstances
 		[FIXED] Updating the synchronization options from the inspector don't apply them right away, but until one of the synchronized transforms is modified
@@ -600,7 +844,7 @@ Warning: At each Curvy update, please delete the old Curvy folders before instal
 		[FIXED] Shape Extrusion CG module: when Optimize is true, in certain conditions the following computations give wrong results: advanced scaling, volume splitting, UV coordinates
 	Controllers
 		[CHANGE] "Update In" is now taken into consideration even when in Edit Mode. Note: Since in Edit Mode there no fixed updates, setting "Update In" to "Fixed Update" will be equivalent to setting it to "Late Update" while in Edit Mode
-		[FIXED] Controllers not updating frequently enough while in Edit Mode.
+		[FIXED] Controllers not updating frequently enough while in Edit Mode
 	Others
 		[FIXED] When using Unity 2018.3, opening Curvy preferences from the toolbar does not work
 		[CHANGE] Made Curvy Global Manager execute before anything Curvy
@@ -616,7 +860,7 @@ Warning: At each Curvy update, please delete the old Curvy folders before instal
 	Curvy Generator:
 		[NEW] Added new CG module PathRelativeTranslation. It translates a Path relatively to it's direction, instead of relatively to the world as does the TRS Path module
 		[CHANGE] Volume Spots CG module: Extended the valid range of Position Offset's values to [-1,1]. Now all the volume can be covered
-		[CHANGE] The "Delete Resource" button now results in an undoable action. The confirmation message was updated to reflect this change.
+		[CHANGE] The "Delete Resource" button now results in an undoable action. The confirmation message was updated to reflect this change
 		[FIXED] Volume Spots CG module: crash when bounds are too small
 		[FIXED] Shape Extrusion CG module: resetting the module do not reset its scaling multiplier curves
 		[FIXED] TRS Path not transforming the Normals correctly
@@ -677,10 +921,10 @@ Warning: At each Curvy update, please delete the old Curvy folders before instal
 3.0.0
 	Starting from this version, Curvy is using the versioning standard "Semantic Versioning 2.0.0". More about it here: https://semver.org/
 	In a nutshell, and given a version number MAJOR.MINOR.PATCH:
-	 -  An increase in MAJOR is done when there are non backwards-compatible changes.
-	 -  An increase in MINOR is done when there are backwards-compatible changes that adds new features/API member, or modifies existing ones.
-	 -  An increase in PATCH is done when there are backwards-compatible bug fixes.
-	Whenever a number is increased, the numbers to its right are set to 0.
+	 -  An increase in MAJOR is done when there are non backwards-compatible changes
+	 -  An increase in MINOR is done when there are backwards-compatible changes that adds new features/API member, or modifies existing ones
+	 -  An increase in PATCH is done when there are backwards-compatible bug fixes
+	Whenever a number is increased, the numbers to its right are set to 0
 
 	Curvy Generator:
 		[NEW] Added a  Reorder Modules" in the Curvy Generator toolbar. This will automatically sort the position of modules to make the graph easily readable
@@ -709,8 +953,8 @@ Warning: At each Curvy update, please delete the old Curvy folders before instal
 			[NEW] Added an OnInitialized Unity event
 			[NEW] Controller's position can now be animated via Unity's Animation window, or any other animation tool
 			[DEPRECATED] The "Animate" option is removed. Use Unity's Animation window or any other animation tool instead
-			[DEPRECATED] "Adapt On Change" is removed, but it's behaviour is still there. Controllers will now always "adapt" (keeping their relative or absolute position, depending on the Position Mode value) when there source changes.
-			[DEPRECATED] The Space parameter is no more used. The controller now works correctly without the need to set the correct Space value.
+			[DEPRECATED] "Adapt On Change" is removed, but it's behaviour is still there. Controllers will now always "adapt" (keeping their relative or absolute position, depending on the Position Mode value) when there source changes
+			[DEPRECATED] The Space parameter is no more used. The controller now works correctly without the need to set the correct Space value
 			[CHANGE] Direction is no more set from the sign of the Speed, but through a new value, Direction
 			[CHANGE] When orientation's source has a value of "None", any rotation previously applied by the controller will be reverted
 			[CHANGE] When orientation's source has a value of "None", Target and Ignore Direction are no more displayed in the inspector
@@ -732,7 +976,7 @@ Warning: At each Curvy update, please delete the old Curvy folders before instal
 			[API/FIXED] Wrap method does not take Offset into consideration
 			[API/FIXED] Apply method does not take Offset into consideration
 		Spline Controller:
-			[NEW] Added options in the inspector to define the controller's behaviour when reaching a Connection: continue on the current spline, use the Follow-Up, ...
+			[NEW] Added options in the inspector to define the controller's behaviour when reaching a Connection: continue on the current spline, use the Follow-Up, ..
 			[FIXED] Adding a listener to a SplineController's event is ignored if that event had no listener when the controller is initialized
 			[FIXED] Spline Controller not working properly with Catmull-Rom splines having Auto End Tangents to false
 			[FIXED] Switching splines ignores Offset
@@ -772,7 +1016,7 @@ Warning: At each Curvy update, please delete the old Curvy folders before instal
 		[API/FIXED] CurvySpline.GetTangentFast returns non normalized vectors
 		[API/FIXED] DistanceToSegment returns different result that TFToSegment for the same segment
 	Misc:
-		[NEW] Added support for compiler symbol: CURVY_SANITY_CHECKS. It activates various sanity checks in Curvy's code. Very useful to debug your code when using the Curvy API. This symbol is not set by default. For performance reasons, please do not set this symbol when building your release binary.
+		[NEW] Added support for compiler symbol: CURVY_SANITY_CHECKS. It activates various sanity checks in Curvy's code. Very useful to debug your code when using the Curvy API. This symbol is not set by default. For performance reasons, please do not set this symbol when building your release binary
 		[CHANGE] Set script execution order for some script: CurvyConection < CurvySplineSegment < CurvySpline < CurvyController
 		[CHANGE] CurvySplineExportWizard do not support CurvySplineGroups anymore (but still supports multiple CurvySplines)
 		[CHANGE] Moved files to the Plugins folder
@@ -780,7 +1024,7 @@ Warning: At each Curvy update, please delete the old Curvy folders before instal
 		[FIXED] Draw Splines tool: the "Add & Smart Connect" action generates splines that have incorrect shapes
 		[FIXED] CG options handled incorrectly when extruding a mesh using a Cross with non null Start PC and End CP
 		[FIXED] Namespace conflict with Oculus example project
-		[FIXED] ThreadPoolWorker does not use all available cores in some cases.
+		[FIXED] ThreadPoolWorker does not use all available cores in some cases
 		
 2.2.4.2
 	[OPTIM] Huge optimizations related to splines modification. Real time splines modification can take up to an order of magnitude less time
@@ -827,12 +1071,12 @@ Warning: At each Curvy update, please delete the old Curvy folders before instal
 	[API/FIXED] Poolable objects do not get their OnBeforePush method called before being pushed into a pool
 	[API/FIXED] Setters of CurvySpline.MaxPointsPerUnit, CurvySplineGroup.Splines and BuildShapeExtrusion.CrossShiftValue did not update these values correctly
 	Changes since 2.2.4.1
-		[FIXED] StartCP and EndCP in InputSplinePath and InputSplineShape modules are set automatically to null.
+		[FIXED] StartCP and EndCP in InputSplinePath and InputSplineShape modules are set automatically to null
 		
 2.2.3
-Reminder: at each Curvy update, please delete the old Curvy folders before installing the new version.
+Reminder: at each Curvy update, please delete the old Curvy folders before installing the new version
 	[NEW] Assembly definitions support
-		Curvy was restructured and modified to support Unity's assembly definitions. This feature is disabled by default in this release. To enable it, search in Curvy installed folders for files with ".asmdef.disabled" extension, and rename the extension to ".asmdef".
+		Curvy was restructured and modified to support Unity's assembly definitions. This feature is disabled by default in this release. To enable it, search in Curvy installed folders for files with ".asmdef.disabled" extension, and rename the extension to ".asmdef"
 	[NEW] CG module slots can be renamed without breaking the generator's data
 	[CHANGE] Spline sampling parameters were modified:
 		- The global "Max Cache PPU" is now obsolete and replaced with a per spline "Max Max Points Per Unit"
@@ -841,15 +1085,15 @@ Reminder: at each Curvy update, please delete the old Curvy folders before insta
 	[CHANGE] Fixed an example script's namespace
 	[CHANGE] Added relevant dlls generated by asmdefs to link.xml
 	[CHANGE] 0 is no more a valid value for the Resolution parameter in "Rasterize Path" and "Shape Extrusion" CG modules
-	[CHANGE] Modified some CG module slots names to reflect the need for a rasterized path, in opposition to a non rasterized one.
+	[CHANGE] Modified some CG module slots names to reflect the need for a rasterized path, in opposition to a non rasterized one
 	[FIXED] Some CurvyUISpline properties do not get reset properly when resetting the component
-	[FIXED] Spline's level of detail is different between the editor and the build.
+	[FIXED] Spline's level of detail is different between the editor and the build
 	[FIXED] Extruded shapes become two dimensional if small enough
-	[FIXED] The "Use Cache" parameter in the spline input CG modules is ignored when linked to "Shape Extrusion" or "Rasterize Path" CG modules having "Optimize" set to true. 
-	[FIXED] The rasterization resolution in the "Rasterize Path" CG module is modified if the module's Length parameter is modified.
+	[FIXED] The "Use Cache" parameter in the spline input CG modules is ignored when linked to "Shape Extrusion" or "Rasterize Path" CG modules having "Optimize" set to true
+	[FIXED] The rasterization resolution in the "Rasterize Path" CG module is modified if the module's Length parameter is modified
 	[FIXED] Extruded mesh jitters when modifying its path spline's length
 	[FIXED] Wrong name of Rasterize Path in the CG modules list
-	[FIXED, except when building against .NET Core] Curvy doesn't detect custom CG modules and Shapes from other assemblies.
+	[FIXED, except when building against .NET Core] Curvy doesn't detect custom CG modules and Shapes from other assemblies
 	[FIXED] The Curvy generator templates list is broken in .Net 4.6
 	[FIXED] In the CG graph, the suggested list of modules to connect with the current module contains modules you can't connect to
 	[FIXED] Spline to Mesh tool generated spline at the wrong position
@@ -865,7 +1109,7 @@ Reminder: at each Curvy update, please delete the old Curvy folders before insta
 		
 2.2.2
 	Spline to Mesh:
-		[CHANGE] Renamed the "Mesh Export" tool to "Spline to Mesh" to avoid confusion.
+		[CHANGE] Renamed the "Mesh Export" tool to "Spline to Mesh" to avoid confusion
 		[CHANGE] Spline to Mesh does no more require the input spline to be on the X/Y plane
 		[FIXED] Spline to Mesh does not open in recent Unity version
 		[FIXED] Spline to Mesh produces wrong values in UV2.y
@@ -885,31 +1129,31 @@ Reminder: at each Curvy update, please delete the old Curvy folders before insta
 		
 2.2.1
 	[CHANGE] Modified the UI of the CG module "Create Mesh" to avoid confusion regarding the "Make Static" option:
-		- "Make Static" is now not editable in play mode, since its Unity equivalent (GameObject.IsStatic) is an editor only property.
-		- When "Make Static" is true, the other options are not editable while in play mode. This is to reflect the behaviour of the "Create Mesh" module, which is to not update the mesh while under those conditions, to avoid overriding the optimizations Unity do to static game objects' meshs.
+		- "Make Static" is now not editable in play mode, since its Unity equivalent (GameObject.IsStatic) is an editor only property
+		- When "Make Static" is true, the other options are not editable while in play mode. This is to reflect the behaviour of the "Create Mesh" module, which is to not update the mesh while under those conditions, to avoid overriding the optimizations Unity do to static game objects' meshs
 	[FIXED] When combining multiple Volumes having different values for the "Generate UV" setting, the created mesh has invalid UVs
 	[FIXED] "Mesh.normals is out of bounds" error when Generating a mesh that has Caps while using the Combine option
 	[FIXED] Convex property, in CG module Create Mesh, not applied on generated mesh collider
 	[FIXED] Negative SwirlTurns are ignored
 	[FIXED] Orientation interpolated the wrong way (Lerping instead of SLerping)
 	[FIXED] Cross's "Reverse Normal" in "Shape Extrusion" module is ignored when a "Volume Hollow" is set
-	[FIXED] Crash on IOS when using code stripping on Unity 2017.2 and above.
+	[FIXED] Crash on IOS when using code stripping on Unity 2017.2 and above
 	[Optimization] Various optimizations, the most important ones are related to "Shape Extrusion"'s normals computations and Orientation computation
 	[API] Added a new GetNearestPointTF overload that also returns the nearestSegment and the nearestSegmentF
 	[API] Made CrossReverseNormals, HollowInset and HollowReverseNormals properties public in BuildShapeExtrusion
 	
 2.2.0
 	[NEW] Addressed Unity 2017.3 incompatibilities
-	[NEW] Added a RendererEnabled option to the CreateMesh CG module. Useful if you generate a mesh for collider purposes only.
+	[NEW] Added a RendererEnabled option to the CreateMesh CG module. Useful if you generate a mesh for collider purposes only
 	[FIXED] Error when using pooling with Unity 2017.2 and above
 	[FIXED] Incompatibility with UWP10 build
 	[FIXED] SceneSwitcher.cs causing issues with the global namespace of Scene Switcher being occupied by the PS4's SDK
 	[FIXED] Curvy crashing when compiled with the -checked compiler option
 	[FIXED] TRSShape CG module not updating properly the shape's normals
 	[FIXED] ReverseNormals not reversing normals in some cases
-	      Note: You might have ticked "Reverse Normals" in some of your Curvy Generators, but didn't notice it because of the bug. Now that the bug is fixed, those accidental "Reverse Normals" will get activated.
+	      Note: You might have ticked "Reverse Normals" in some of your Curvy Generators, but didn't notice it because of the bug. Now that the bug is fixed, those accidental "Reverse Normals" will get activated
 	[FIXED] Split meshes not having the correct normals
-	[CHANGE] Replaced website, documentation and forum URLs with the new ones.
+	[CHANGE] Replaced website, documentation and forum URLs with the new ones
 	[Optimization] Various optimizations, the most important ones are related to mesh generation (UVs, normals and tangents computation)
 	
 2.1.3
@@ -1012,4 +1256,150 @@ Reminder: at each Curvy update, please delete the old Curvy folders before insta
 	[FIXED] Controllers resets when changing inspector while playing
 	A few minor fixes and improvements
 	
-2.0.0 Initial Curvy 2 release
+2.0.0 
+	Initial Curvy 2 release
+	
+1.61:
+	New:
+		Added option to SplinePathMeshBuilder to refresh an existing mesh collider
+	Changes:
+		Added shortcut to "Select First CP" toolbar action (defaults to 'T')
+	Fixes:
+		Fixed Toolbar bug when using Deferred Rendering together with Perspective SceneView
+		Several small bugfixes
+	
+1.60:
+	New:
+		Added new UI: Toolbar with Hotkey-Binding, new Inspectors
+		Added new components: AlignToSpline, FollowSpline
+		Added CurvySplineBase.IsContinuous and CurvySplineBase.IsClosed
+		Added CurvySplineBase.GetPolygonByAngle()
+		Added CurvySpline.FirstVisibleControlPoint/CurvySpline.LastVisibleControlPoint
+		Added option to inverse rotation in CurvySplineBase.GetOrientationFast()
+		Added Spline2Mesh class
+		Reworked Mesh Export wizard (featuring Delauny Triangulation and holes support)
+	Changes:
+		Old components (SplineAlign, SplineWalker, SplineWalkerCon, SplineWalkerDistance) moved to Legacy folder
+		Except the legacy components Curvy is now completely namespaced
+		Streamlined Uppercasing of some of CurvyUtility's methods. Old methods flagged as obsolete
+		CurvyUtility.CreateSplineMesh is obsolete now. Use the new Spline2Mesh class instead!
+		UI Icons moved to Ressource DLL
+	Fixes:
+		Undo now working for all 4.x versions
+		Distance of the last visible Control Point now set correctly
+		Fixed problem with saving MeshBuilder's mesh
+		Fixed a floating point accuracy problem in CurvySpline.DistanceToSegment()
+	
+1.51
+	New:
+		Added CurvySplineGroup component
+		Added class CurvySplineBase as base class for CurvySpline and CurvySplineGroup. Almost all functionality now working on Groups as well
+		Added CurvyInterpolation.Bezier, including full handle control
+		Added Shortcut Key Bindings to Preferences
+		Added custom Transform Handle that takes Constraints into account
+		Added options to split, join and flip splines
+		Added option to clone another spline's settings to CurvySpline.Create()
+		New Control Points in the scene view will be created at mouse position if not inserted within an existing segment
+		Added CurvySplineBase.MoveByLengthFast() to move by distance using actual length calculations instead of extrapolating
+		Added CurvySplineSegment.IsFirstControlPoint() / CurvySplineSegment.IsLastControlPoint()
+		Added option to show labels in the Scene View
+		Added option to SplineMeshBuilder to calculate tangents
+		Added new examples: EndlessRunner, JunctionWalker,SplineGroup
+		Added CurvyShaper (Superformula)
+		Added an option to CurvySpline.GetNearestPointTF() to accept a list of segments to check
+		Added CurvySplineBase.ExtrapolateDistanceToTF()/CurvySplineBase.ExtrapolateDistanceToTFFast()
+		Added Forward option to SplineWalker and SplineWalkerDistance to set movement direction
+		Code now Windows Store compliant (untested)
+	Changes:
+		CurvySplineBase.Refresh() now refreshes on the next call to Update(). Use RefreshImmediately() for instant refresh
+		Renamed OnRefreshEvent to RefreshEvent
+		Changed SplinePathCloneBuilder.Spline type to support CurvySplineBase
+		Changed SplinePathMeshBuilder.Spline type to support CurvySplineBase
+		Closing the Constraint Window will now deactivate any constraints
+		Reworked Control Point Gizmo Scaling
+		CurvySplineBase.Interpolate() now accepts an additional interpolation method
+		Changed examples folder structure to better categorize the examples
+		CurvySplineBase.GetExtrusionPoint() simplified. Flagged the old syntax as obsolete (will be removed in the next version)
+		SplineWalker and SplineWalkerFixed don't set initial direction by the sign of speed anymore.
+	Fixes:
+		Shortcuts working when Control Point is selected in the hierarchy window. Finally!
+		Fixed several methods (mostly movement based) not dealing with large values correctly
+		Fixed some bugs and possible runtime errors in SplineMeshBuilder
+		Fixed UserValue array size could be set to a negative value
+		Several small bugfixes
+		Several stability and performance optimizations
+	
+1.50
+	New:
+		Added SplinePathCloneBuilder script to dynamically clone transforms along a spline 
+		Added SplinePathMeshBuilder script to dynamically create a mesh representation
+		Added Export wizard to export closed splines as meshes
+		Added SceneView shortcuts for adding (G/Shift-G), deleting(H) and toggling Control Points (T/Shift-T)
+		Added option to let a Control Point become the first Control Point
+		Added option to CurvySpline.Add() to insert before (also available in the Control Point's scene GUI)
+		Added option to CurvySpline.MoveBy() and CurvySpline.MoveByFast() to change accuracy
+		Added option to GetApproximation() to return local coordinates
+		Added CurvySpline.GetBounds()
+		Added CurvySpline.MoveByAngle() and CurvySpline.MoveByAngleFast() to move until a certain curvation angle is reached
+		Added CurvySpline.OnRefresh event that will be raised when the spline updates
+		Added CurvySpline.InterpolateScale() and CurvySplineSegment.InterpolateScale()
+		Added CurvySpline.Destroy()
+	Changes:
+		Removed RailRunner example
+		Improved inspector look&feel
+		Reworked GameObject->Create Other->Curvy menu structure into a subfolder to make room for future components
+		Added proper Undo support for all scene view operations
+		Reworked Constraint wizard
+	Fixes:
+		Fixed TCB properties bug when multi-editing Control Points
+		Fixed distance to f returning 0.9999999 instead of 1 due to float inaccuracy
+		Fixed some crash cases when recompiling during runtime
+		Fixed broken AlignWizard example
+		Fixed a bug sometimes causing weird spline orientation when entering runtime
+		Fixed several minor bugs
+	
+1.04
+	New:
+		Added CurvySplineSegment.NextControlPoint and CurvySplineSegment.PreviousControlPoint
+		Added CurvySplineSegment.IsFirstSegment and CurvySplineSegment.IsLastSegment
+		Added CurvySpline.Swirl to swirl orientation vector by several modes
+		Added option to show tangent gizmos
+		Added option to show UserValues in the scene view
+		Added CurvySplineSegment.SmoothEdgeTangent (results in orientation lerp between corners)
+		Added API for better playMaker access: CurvySplineSegment.SegmentIndex, CurvySplineSegment.ControlPointIndex, CurvySpline.Segments
+		Added Rails example scene
+		Improved documentation
+	Changes:
+		Changed Orientation calculation to Parallel Transport Framing, making it much more stable
+		Tangent->ControlPoint orientation: First Up-Vector now keeps orthogonal
+		Huge performance increase of Distance based methods
+		Reworked Performance example
+	Fixes:
+		Several fixes regarding caching
+		Fixed Tangent calculation
+		Fixed error when using GetNearestTF on an empty spline
+	
+1.02/1.03
+	New:
+		Added SplineWalkerDistance script - can be useful when working with dynamic splines
+		Added CurvySpline.ReloadControlPoints()
+		Added new example scene: DynamicSpline
+	Changes:
+		Improved SplineWalker script
+		Control points now will be numbered consecutively when adding/deleting control points
+	Fixes:
+		- CurvySpline.GetApproximation(), CurvySpline.GetApproximationT() and CurvySpline.GetApproximationUpVectors() returning wrong values
+		- CurvySplineAlignWizard now uses ArrowCap instead of DrawArrow
+	
+1.01
+	New:
+		Added UserValues array to Control Points, to be used with InterpolateUserValue()
+		Added editor wizard to align objects to a spline
+		SplineAlign script to just align position and rotation of objects both in editor and at runtime
+	Changes:
+		SplineWalker now continuously sets initial position and rotation in the editor
+	Fixes:
+		- Up-Vectors of closed splines not smoothed out when using Tangent Orientation
+	
+1.00
+	Initial release

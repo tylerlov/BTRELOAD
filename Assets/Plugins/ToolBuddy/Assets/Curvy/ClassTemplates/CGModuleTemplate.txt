@@ -41,7 +41,7 @@ namespace FluffyUnderware.Curvy.Generator.Modules
         #endregion
 
         #region ### Unity Callbacks ###
-        /*! \cond UNITY */
+        #if DOCUMENTATION___FORCE_IGNORE___UNITY == false
         protected override void OnEnable()
         {
             base.OnEnable();
@@ -61,7 +61,7 @@ namespace FluffyUnderware.Curvy.Generator.Modules
             base.Reset();
         }
 
-        /*! \endcond */
+        #endif
         #endregion
 
         #region ### Module Overrides ###

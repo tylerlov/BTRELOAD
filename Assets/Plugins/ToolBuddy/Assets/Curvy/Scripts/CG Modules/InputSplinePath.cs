@@ -1,22 +1,22 @@
 // =====================================================================
-// Copyright 2013-2022 ToolBuddy
+// Copyright © 2013 ToolBuddy
 // All rights reserved
 // 
 // http://www.toolbuddy.net
 // =====================================================================
 
-using UnityEngine;
-using System.Collections;
-using System.Collections.Generic;
+using System;
 using FluffyUnderware.DevTools;
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
+using UnityEngine;
 
 namespace FluffyUnderware.Curvy.Generator.Modules
 {
-    [ModuleInfo("Input/Spline Path", ModuleName = "Input Spline Path", Description = "Spline Path")]
-    [HelpURL(CurvySpline.DOCLINK + "cginputsplinepath")]
+    [ModuleInfo(
+        "Input/Spline Path",
+        ModuleName = "Input Spline Path",
+        Description = "Spline Path"
+    )]
+    [HelpURL(AssetInformation.DocsRedirectionBaseUrl + "cginputsplinepath")]
 #pragma warning disable 618
     public class InputSplinePath : SplineInputModuleBase, IExternalInput, IOnRequestProcessing, IPathProvider
 #pragma warning restore 618
@@ -27,10 +27,19 @@ namespace FluffyUnderware.Curvy.Generator.Modules
 
         #region ### Serialized Fields ###
 
-        [Tab("General", Sort = 0)]
+        [Tab(
+            "General",
+            Sort = 0
+        )]
         [SerializeField]
         [CGResourceManager("Spline")]
-        [FieldCondition(nameof(m_Spline), null, false, ActionAttribute.ActionEnum.ShowWarning, "Missing Spline input")]
+        [FieldCondition(
+            nameof(m_Spline),
+            null,
+            false,
+            ActionAttribute.ActionEnum.ShowWarning,
+            "Missing Spline input"
+        )]
         private CurvySpline m_Spline;
 
         #endregion
@@ -39,31 +48,34 @@ namespace FluffyUnderware.Curvy.Generator.Modules
 
         public CurvySpline Spline
         {
-            get { return m_Spline; }
+            get => m_Spline;
             set
             {
                 if (m_Spline != value)
                 {
                     m_Spline = value;
-                    OnSplineAssigned();
+                    if (IsActiveAndEnabled) OnSplineAssigned();
                     ValidateStartAndEndCps();
+                    Dirty = true;
                 }
-                Dirty = true;
             }
         }
 
-        public bool SupportsIPE { get { return false; } }
+        public bool SupportsIPE => false;
 
         #endregion
 
         #region ### IOnRequestModule ###
 
-        public CGData[] OnSlotDataRequest(CGModuleInputSlot requestedBy, CGModuleOutputSlot requestedSlot, params CGDataRequestParameter[] requests)
+        public CGData[] OnSlotDataRequest(CGModuleInputSlot requestedBy, CGModuleOutputSlot requestedSlot,
+            params CGDataRequestParameter[] requests)
         {
             CGDataRequestRasterization raster = GetRequestParameter<CGDataRequestRasterization>(ref requests);
             CGDataRequestMetaCGOptions options = GetRequestParameter<CGDataRequestMetaCGOptions>(ref requests);
             if (options)
-                UIMessages.Add("Meta CG Options are not supported for Path rasterization. They are supported only for Shape rasterization.");
+                UIMessages.Add(
+                    "Meta CG Options are not supported for Path rasterization. They are supported only for Shape rasterization."
+                );
 
             /*TODO the logic related to the whole OnSlotDataRequest and the CGModuleInputSlot.GetData<T>(params CGDataRequestParameter[] requests) is flawed, and here are the issues I see:
             Some modules need a CGDataRequestParameter[] as a parameter to properly work. This module is one of them. As you can see bellow, if such requeset array is null or empty, the method returns null. This raises some issues:
@@ -73,11 +85,17 @@ namespace FluffyUnderware.Curvy.Generator.Modules
             So the logic for connecting mdules should be hardly tied with the logic of sending the CGDataRequestParameter[] params, and the logic of UI display. This needs some work that I hope will be done sometime soon.
             */
             if (!raster || raster.RasterizedRelativeLength == 0)
-                return null;
+                return Array.Empty<CGData>();
 
-            CGData data = GetSplineData(Spline, true, raster, options);
-
-            return new CGData[1] { data };
+            CGData data = GetSplineData(
+                Spline,
+                true,
+                raster,
+                options
+            );
+            return data == null
+                ? Array.Empty<CGData>()
+                : new[] { data };
         }
 
         #endregion
@@ -89,9 +107,7 @@ namespace FluffyUnderware.Curvy.Generator.Modules
         {
             base.OnTemplateCreated();
             if (Spline && !IsManagedResource(Spline))
-            {
                 Spline = null;
-            }
         }
 
         #endregion
@@ -100,9 +116,8 @@ namespace FluffyUnderware.Curvy.Generator.Modules
 
         protected override CurvySpline InputSpline
         {
-            get { return Spline; }
-            set { Spline = value; }
-
+            get => Spline;
+            set => Spline = value;
         }
 
         #endregion

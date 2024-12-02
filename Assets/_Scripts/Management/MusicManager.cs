@@ -55,7 +55,7 @@ public class MusicManager : MonoBehaviour
                 }
             }
         }
-        Debug.LogWarning($"Section '{sectionName}' not found in the current group.");
+        ConditionalDebug.LogWarning($"Section '{sectionName}' not found in the current group.");
     }
 
     public void ChangeSongSection(
@@ -71,7 +71,7 @@ public class MusicManager : MonoBehaviour
             || currentScene >= currentGroup.scenes.Length
         )
         {
-            Debug.LogWarning("Invalid parameters in ChangeSongSection.");
+            ConditionalDebug.LogWarning("Invalid parameters in ChangeSongSection.");
             return;
         }
 
@@ -83,14 +83,14 @@ public class MusicManager : MonoBehaviour
 
         if (sectionIndex == -1)
         {
-            Debug.LogWarning(
+            ConditionalDebug.LogWarning(
                 $"Could not find section with value {currentSongSection} in scene {currentScene}"
             );
             return;
         }
 
         SetMusicParameter("Sections", currentSongSection);
-        Debug.Log(
+        ConditionalDebug.Log(
             $"Song section changed to: {songSections[sectionIndex].name} (Section value: {currentSongSection})"
         );
     }
@@ -99,7 +99,7 @@ public class MusicManager : MonoBehaviour
     {
         if (musicPlayback == null || !musicPlayback.EventInstance.isValid())
         {
-            Debug.LogError(
+            ConditionalDebug.LogError(
                 $"Failed to set music parameter '{parameterName}': Invalid event instance"
             );
             return;
@@ -110,14 +110,14 @@ public class MusicManager : MonoBehaviour
 
         if (playbackState != FMOD.Studio.PLAYBACK_STATE.PLAYING)
         {
-            Debug.LogWarning("FMOD event is not playing. Starting playback.");
+            ConditionalDebug.LogWarning("FMOD event is not playing. Starting playback.");
             musicPlayback.Play();
         }
 
         FMOD.RESULT result = musicPlayback.EventInstance.setParameterByName(parameterName, value);
         if (result != FMOD.RESULT.OK)
         {
-            Debug.LogError($"Failed to set music parameter '{parameterName}': {result}");
+            ConditionalDebug.LogError($"Failed to set music parameter '{parameterName}': {result}");
         }
     }
 }

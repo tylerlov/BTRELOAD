@@ -1,29 +1,35 @@
 // =====================================================================
-// Copyright 2013-2022 ToolBuddy
+// Copyright © 2013 ToolBuddy
 // All rights reserved
 // 
 // http://www.toolbuddy.net
 // =====================================================================
 
-using UnityEngine;
-using System.Collections;
+using System;
 using System.Collections.Generic;
 using FluffyUnderware.Curvy.Pools;
-using ToolBuddy.Pooling.Pools;
-using FluffyUnderware.DevTools.Extensions;
-using FluffyUnderware.DevTools;
 using FluffyUnderware.Curvy.Utils;
+using FluffyUnderware.DevTools;
+using FluffyUnderware.DevTools.Extensions;
+using JetBrains.Annotations;
 using ToolBuddy.Pooling.Collections;
+using UnityEditor;
+using UnityEngine;
 using UnityEngine.Assertions;
 using UnityEngine.Serialization;
 
-
 namespace FluffyUnderware.Curvy.Generator.Modules
 {
-    [ModuleInfo("Build/Volume Mesh", ModuleName = "Volume Mesh", Description = "Build a volume mesh")]
-    [HelpURL(CurvySpline.DOCLINK + "cgbuildvolumemesh")]
+    [ModuleInfo(
+        "Build/Volume Mesh",
+        ModuleName = "Volume Mesh",
+        Description = "Build a volume mesh"
+    )]
+    [HelpURL(AssetInformation.DocsRedirectionBaseUrl + "cgbuildvolumemesh")]
     public class BuildVolumeMesh : CGModule
     {
+        private const float DefaultUnscalingOrigin = 0.5f;
+        private const int DefaultSplitLength = 100;
 
 
         [HideInInspector]
@@ -31,56 +37,87 @@ namespace FluffyUnderware.Curvy.Generator.Modules
         public CGModuleInputSlot InVolume = new CGModuleInputSlot();
 
         [HideInInspector]
-        [OutputSlotInfo(typeof(CGVMesh), Array = true)]
+        [OutputSlotInfo(
+            typeof(CGVMesh),
+            Array = true
+        )]
         public CGModuleOutputSlot OutVMesh = new CGModuleOutputSlot();
 
         #region ### Serialized Fields ###
 
         [Tab("General")]
-
         [FieldAction("CBAddMaterial")]
         [SerializeField, FormerlySerializedAs("m_ReverseNormals")]
         private bool m_ReverseTriOrder;
 
         [Section("Default/General/UV")]
-
         [SerializeField]
         private bool m_GenerateUV = true;
 
         [SerializeField]
-        [Tooltip("When set to true, and if the input Shape Extrusion module is set to apply scaling, the U coordinate of the generated mesh will be modified to compensate that scaling.\nOnly the X component of the scaling is taken into consideration.\nThe unscaling works best on volumes with flat shapes.")]
-        [FieldCondition(nameof(m_GenerateUV), true)]
-        private bool unscaleU = false;
+        [Tooltip(
+            "When set to true, and if the input Shape Extrusion module is set to apply scaling, the U coordinate of the generated mesh will be modified to compensate that scaling.\nOnly the X component of the scaling is taken into consideration.\nThe unscaling works best on volumes with flat shapes."
+        )]
+        [FieldCondition(
+            nameof(m_GenerateUV),
+            true
+        )]
+        private bool unscaleU;
 
         [SerializeField]
-        [FieldCondition(nameof(unscaleU), true, false, ConditionalAttribute.OperatorEnum.AND, nameof(m_GenerateUV), true, false)]
-        [Tooltip("When unscaling the U coordinate, this field defines what is the scaling origin.\n0.5 gives usually the best results, but you might need to set it to a different value, usually between 0 and 1")]
-        private float unscalingOrigin = 0.5f;
+        [FieldCondition(
+            nameof(unscaleU),
+            true,
+            false,
+            ConditionalAttribute.OperatorEnum.AND,
+            nameof(m_GenerateUV),
+            true,
+            false
+        )]
+        [Tooltip(
+            "When unscaling the U coordinate, this field defines what is the scaling origin.\n0.5 gives usually the best results, but you might need to set it to a different value, usually between 0 and 1"
+        )]
+        private float unscalingOrigin = DefaultUnscalingOrigin;
 
-        [SerializeField] private bool m_GenerateUV2 = true;
+        [SerializeField]
+        private bool m_GenerateUV2 = true;
 
         [Section("Default/General/Split")]
-
         [Tooltip("Split the mesh into submeshes")]
         [SerializeField]
         private bool m_Split;
 
         [Positive(MinValue = 1)]
-        [FieldCondition(nameof(m_Split), true)]
+        [FieldCondition(
+            nameof(m_Split),
+            true
+        )]
         [SerializeField]
-        private float m_SplitLength = 100;
+        private float m_SplitLength = DefaultSplitLength;
 
-        [Group("Default/General/Backward Compatibility", Expanded = false)]
-        [Tooltip("Is ignored when Split or Generate UV2 is false.\nIf enabled, UV2s of a split mesh will be computed as in Curvy versions prior to 8.0.0, which had a bug: all the split submeshes used the full range of UV2 coordinates, instead of keeping the same UV2s from the unsplit mesh.")]
-        [FieldCondition(nameof(IsSplitUV2Togglable), true, false, ActionAttribute.ActionEnum.Enable)]
+        [Group(
+            "Default/General/Backward Compatibility",
+            Expanded = false
+        )]
+        [Tooltip(
+            "Is ignored when Split or Generate UV2 is false.\nIf enabled, UV2s of a split mesh will be computed as in Curvy versions prior to 8.0.0, which had a bug: all the split submeshes used the full range of UV2 coordinates, instead of keeping the same UV2s from the unsplit mesh."
+        )]
+        [FieldCondition(
+            nameof(IsSplitUV2Togglable),
+            true,
+            false,
+            ActionAttribute.ActionEnum.Enable
+        )]
         [SerializeField]
-        private bool splitUV2 = false;
+        private bool splitUV2;
 
         // SubMesh-Settings
 
-        [SerializeField, HideInInspector] private List<CGMaterialSettingsEx> m_MaterialSettings = new List<CGMaterialSettingsEx>();
+        [SerializeField, HideInInspector]
+        private List<CGMaterialSettingsEx> m_MaterialSettings = new List<CGMaterialSettingsEx>();
 
-        [SerializeField, HideInInspector] private Material[] m_Material = new Material[0];
+        [SerializeField, HideInInspector]
+        private Material[] m_Material = new Material[0];
 
         #endregion
 
@@ -88,23 +125,27 @@ namespace FluffyUnderware.Curvy.Generator.Modules
 
         public bool GenerateUV
         {
-            get { return m_GenerateUV; }
+            get => m_GenerateUV;
             set
             {
                 if (m_GenerateUV != value)
+                {
                     m_GenerateUV = value;
-                Dirty = true;
+                    Dirty = true;
+                }
             }
         }
-        
+
         public bool GenerateUV2
         {
-            get { return m_GenerateUV2; }
+            get => m_GenerateUV2;
             set
             {
                 if (m_GenerateUV2 != value)
+                {
                     m_GenerateUV2 = value;
-                Dirty = true;
+                    Dirty = true;
+                }
             }
         }
 
@@ -115,12 +156,14 @@ namespace FluffyUnderware.Curvy.Generator.Modules
         /// </summary>
         public bool UnscaleU
         {
-            get { return unscaleU; }
+            get => unscaleU;
             set
             {
                 if (unscaleU != value)
+                {
                     unscaleU = value;
-                Dirty = true;
+                    Dirty = true;
+                }
             }
         }
 
@@ -130,23 +173,27 @@ namespace FluffyUnderware.Curvy.Generator.Modules
         /// </summary>
         public float UnscalingOrigin
         {
-            get { return unscalingOrigin; }
+            get => unscalingOrigin;
             set
             {
                 if (unscalingOrigin != value)
+                {
                     unscalingOrigin = value;
-                Dirty = true;
+                    Dirty = true;
+                }
             }
         }
 
         public bool ReverseTriOrder
         {
-            get { return m_ReverseTriOrder; }
+            get => m_ReverseTriOrder;
             set
             {
                 if (m_ReverseTriOrder != value)
+                {
                     m_ReverseTriOrder = value;
-                Dirty = true;
+                    Dirty = true;
+                }
             }
         }
 
@@ -155,24 +202,31 @@ namespace FluffyUnderware.Curvy.Generator.Modules
         /// </summary>
         public bool Split
         {
-            get { return m_Split; }
+            get => m_Split;
             set
             {
                 if (m_Split != value)
+                {
                     m_Split = value;
-                Dirty = true;
+                    Dirty = true;
+                }
             }
         }
 
         public float SplitLength
         {
-            get { return m_SplitLength; }
+            get => m_SplitLength;
             set
             {
-                float v = Mathf.Max(1, value);
+                float v = Mathf.Max(
+                    1,
+                    value
+                );
                 if (m_SplitLength != v)
+                {
                     m_SplitLength = v;
-                Dirty = true;
+                    Dirty = true;
+                }
             }
         }
 
@@ -183,41 +237,29 @@ namespace FluffyUnderware.Curvy.Generator.Modules
         /// </summary>
         public bool SplitUV2
         {
-            get { return splitUV2; }
+            get => splitUV2;
             set
             {
                 if (splitUV2 != value)
+                {
                     splitUV2 = value;
-                Dirty = true;
+                    Dirty = true;
+                }
             }
         }
 
-        [System.Obsolete("Use MaterialSettings (with the correct number of Ts) instead")]
-        public List<CGMaterialSettingsEx> MaterialSetttings
-        {
-            get { return MaterialSettings; }
-        }
+        [Obsolete("Use MaterialSettings (with the correct number of Ts) instead")]
+        public List<CGMaterialSettingsEx> MaterialSetttings => MaterialSettings;
 
-        public List<CGMaterialSettingsEx> MaterialSettings
-        {
-            get { return m_MaterialSettings; }
-        }
+        public List<CGMaterialSettingsEx> MaterialSettings => m_MaterialSettings;
 
-        public int MaterialCount
-        {
-            get { return m_MaterialSettings.Count; }
-        }
-
-        #endregion
-
-        #region ### Private Fields & Properties ###
-
-        private List<SamplePointsMaterialGroupCollection> groupsByMatID;
+        public int MaterialCount => m_MaterialSettings.Count;
 
         #endregion
 
         #region ### Unity Callbacks ###
-        /*! \cond UNITY */
+
+#if DOCUMENTATION___FORCE_IGNORE___UNITY == false
 
         protected override void Awake()
         {
@@ -226,35 +268,23 @@ namespace FluffyUnderware.Curvy.Generator.Modules
                 AddMaterial();
         }
 
-#if UNITY_EDITOR
-        protected override void OnValidate()
-        {
-            base.OnValidate();
-            GenerateUV = m_GenerateUV;
-            GenerateUV2 = m_GenerateUV2;
-            UnscaleU = unscaleU;
-            UnscalingOrigin = unscalingOrigin;
-            SplitUV2 = splitUV2;
-            ReverseTriOrder = m_ReverseTriOrder;
-        }
-#endif
-
         public override void Reset()
         {
             base.Reset();
             GenerateUV = true;
             GenerateUV2 = true;
             UnscaleU = false;
-            UnscalingOrigin = 0.5f;
+            UnscalingOrigin = DefaultUnscalingOrigin;
             Split = false;
-            SplitLength = 100;
+            SplitLength = DefaultSplitLength;
             SplitUV2 = false;
             ReverseTriOrder = false;
             m_MaterialSettings = new List<CGMaterialSettingsEx>(new CGMaterialSettingsEx[1] { new CGMaterialSettingsEx() });
             m_Material = new Material[1] { CurvyUtility.GetDefaultMaterial() };
         }
 
-        /*! \endcond */
+#endif
+
         #endregion
 
         #region ### Public Methods ###
@@ -269,7 +299,6 @@ namespace FluffyUnderware.Curvy.Generator.Modules
                 List<IntRegion> volSets = new List<IntRegion>();
                 if (Split)
                 {
-
                     float dist;
                     float lastdist = 0;
                     int lastIndex = 0;
@@ -281,40 +310,74 @@ namespace FluffyUnderware.Curvy.Generator.Modules
                         dist = vol.FToDistance(vol.RelativeDistances.Array[sample]);
                         if (dist - lastdist >= SplitLength)
                         {
-                            volSets.Add(new IntRegion(lastIndex, sample));
+                            volSets.Add(
+                                new IntRegion(
+                                    lastIndex,
+                                    sample
+                                )
+                            );
                             lastdist = dist;
                             lastIndex = sample;
                         }
                     }
-                    if (lastIndex < vol.Count - 1)
-                        volSets.Add(new IntRegion(lastIndex, vol.Count - 1));
 
+                    if (lastIndex < vol.Count - 1)
+                        volSets.Add(
+                            new IntRegion(
+                                lastIndex,
+                                vol.Count - 1
+                            )
+                        );
                 }
                 else
-                    volSets.Add(new IntRegion(0, vol.Count - 1));
+                    volSets.Add(
+                        new IntRegion(
+                            0,
+                            vol.Count - 1
+                        )
+                    );
 
-                CGVMesh[] data = OutVMesh.GetAllData<CGVMesh>();
-                System.Array.Resize(ref data, volSets.Count);
+                CGVMesh[] data = new CGVMesh[volSets.Count];
+                // We have groups (different MaterialID) of patches (e.g. by Hard Edges).
+                // Create Collection of groups sharing the same material ID
+                List<SamplePointsMaterialGroupCollection> materialIdGroups = getMaterialIDGroups(vol);
 
-                prepare(vol);
                 for (int sub = 0; sub < volSets.Count; sub++)
                 {
-                    data[sub] = CGVMesh.Get(data[sub], vol, volSets[sub], GenerateUV, GenerateUV2, ReverseTriOrder);
-                    build(data[sub], vol, volSets[sub]);
+                    CGVMesh cgvMesh = CGVMesh.Get(
+                        null,
+                        vol,
+                        volSets[sub],
+                        GenerateUV,
+                        GenerateUV2,
+                        ReverseTriOrder
+                    );
+                    build(
+                        cgvMesh,
+                        vol,
+                        volSets[sub],
+                        materialIdGroups
+                    );
+                    data[sub] = cgvMesh;
                 }
 
-                OutVMesh.SetData(data);
+                OutVMesh.SetDataToCollection(data);
             }
             else
-                OutVMesh.SetData(null);
+                OutVMesh.ClearData();
 
             if (isDisposable)
                 vol.Dispose();
-
         }
 
         public int AddMaterial()
         {
+#if UNITY_EDITOR
+            Undo.RecordObject(
+                this,
+                "Add Material"
+            );
+#endif
             m_MaterialSettings.Add(new CGMaterialSettingsEx());
             m_Material = m_Material.Add(CurvyUtility.GetDefaultMaterial());
             Dirty = true;
@@ -325,6 +388,13 @@ namespace FluffyUnderware.Curvy.Generator.Modules
         {
             if (!validateMaterialIndex(index))
                 return;
+
+#if UNITY_EDITOR
+            Undo.RecordObject(
+                this,
+                "Remove Material"
+            );
+#endif
             m_MaterialSettings.RemoveAt(index);
             m_Material = m_Material.RemoveAt(index);
             Dirty = true;
@@ -337,7 +407,10 @@ namespace FluffyUnderware.Curvy.Generator.Modules
             if (m_Material[index] != mat)
             {
 #if UNITY_EDITOR
-                UnityEditor.Undo.RegisterCompleteObjectUndo(this, "Set Material");
+                Undo.RecordObject(
+                    this,
+                    "Set Material"
+                );
 #endif
                 m_Material[index] = mat;
                 Dirty = true;
@@ -354,73 +427,107 @@ namespace FluffyUnderware.Curvy.Generator.Modules
         #endregion
 
         #region ### Privates ###
-        /*! \cond PRIVATE */
 
-        private void prepare(CGVolume vol)
+        private void build([NotNull] CGVMesh vmesh, CGVolume vol, IntRegion subset,
+            List<SamplePointsMaterialGroupCollection> materialIdGroups)
         {
-            // We have groups (different MaterialID) of patches (e.g. by Hard Edges).
-            // Create Collection of groups sharing the same material ID
-            groupsByMatID = getMaterialIDGroups(vol);
-        }
-
-        private void build(CGVMesh vmesh, CGVolume vol, IntRegion subset)
-        {
-
             // Because each Material ID forms a submesh
             // Do we need to calculate localU?
 
 #if CURVY_SANITY_CHECKS
-            UnityEngine.Assertions.Assert.IsTrue(GenerateUV == false || vmesh.UVs.Count == vmesh.Vertices.Count);
-            UnityEngine.Assertions.Assert.IsTrue(GenerateUV2 == false || vmesh.UV2s.Count == vmesh.Vertices.Count);
+            Assert.IsTrue(GenerateUV == false || vmesh.UVs.Count == vmesh.Vertices.Count);
+            Assert.IsTrue(GenerateUV2 == false || vmesh.UV2s.Count == vmesh.Vertices.Count);
 #endif
 
             // Prepare Submeshes
-            prepareSubMeshes(vmesh, groupsByMatID, subset.Length, ref m_Material);
-            //prepareSubMeshes(vmesh, groupsByMatID, vol.Count - 1, ref m_Material);
+            prepareSubMeshes(
+                vmesh,
+                materialIdGroups,
+                subset.Length,
+                ref m_Material
+            );
+            //prepareSubMeshes(vmesh, materialIdGroups, vol.Count - 1, ref m_Material);
 
             SamplePointsMaterialGroupCollection col;
             SamplePointsMaterialGroup grp;
 
             int vtIdx = 0;
-            var triIdx = ArrayPools.Int32.Allocate(groupsByMatID.Count); // triIdx for each submesh
+            SubArray<int> triIdx = ArrayPools.Int32.Allocate(materialIdGroups.Count); // triIdx for each submesh
             // for all sample segments (except the last) along the path, create Triangles to the next segment 
             for (int sample = subset.From; sample < subset.To; sample++)
             {
                 // for each submesh (collection)
-                for (int subMeshIdx = 0; subMeshIdx < groupsByMatID.Count; subMeshIdx++)
+                for (int subMeshIdx = 0; subMeshIdx < materialIdGroups.Count; subMeshIdx++)
                 {
-                    col = groupsByMatID[subMeshIdx];
+                    col = materialIdGroups[subMeshIdx];
                     // create UV and triangles for all groups in submesh
                     for (int g = 0; g < col.Count; g++)
                     {
                         grp = col[g];
                         if (GenerateUV)
-                            createMaterialGroupUV(vmesh, vol, grp, col.MaterialID, col.AspectCorrectionV, col.AspectCorrectionU, sample, vtIdx);
+                            createMaterialGroupUV(
+                                vmesh,
+                                vol,
+                                grp,
+                                col.MaterialID,
+                                col.AspectCorrectionV,
+                                col.AspectCorrectionU,
+                                sample,
+                                vtIdx
+                            );
 
                         if (GenerateUV2)
-                            createMaterialGroupUV2(vmesh, vol, grp, sample, vtIdx);
+                            createMaterialGroupUV2(
+                                vmesh,
+                                vol,
+                                grp,
+                                sample,
+                                vtIdx
+                            );
                         for (int p = 0; p < grp.Patches.Count; p++)
-                            createPatchTriangles(vmesh.SubMeshes[subMeshIdx].TrianglesList.Array, ref triIdx.Array[subMeshIdx], vtIdx + grp.Patches[p].Start, grp.Patches[p].Count, vol.CrossSize, ReverseTriOrder);
+                            createPatchTriangles(
+                                vmesh.SubMeshes[subMeshIdx].TrianglesList.Array,
+                                ref triIdx.Array[subMeshIdx],
+                                vtIdx + grp.Patches[p].Start,
+                                grp.Patches[p].Count,
+                                vol.CrossSize,
+                                ReverseTriOrder
+                            );
                     }
                 }
+
                 vtIdx += vol.CrossSize;
             }
 
             // UV && UV2 for last path segment
             // for each submesh (collection)
-            for (int subMeshIdx = 0; subMeshIdx < groupsByMatID.Count; subMeshIdx++)
+            for (int subMeshIdx = 0; subMeshIdx < materialIdGroups.Count; subMeshIdx++)
             {
-                col = groupsByMatID[subMeshIdx];
+                col = materialIdGroups[subMeshIdx];
                 // create triangles
                 for (int g = 0; g < col.Count; g++)
                 {
                     grp = col[g];
                     if (GenerateUV)
-                        createMaterialGroupUV(vmesh, vol, grp, col.MaterialID, col.AspectCorrectionV, col.AspectCorrectionU, subset.To, vtIdx);
+                        createMaterialGroupUV(
+                            vmesh,
+                            vol,
+                            grp,
+                            col.MaterialID,
+                            col.AspectCorrectionV,
+                            col.AspectCorrectionU,
+                            subset.To,
+                            vtIdx
+                        );
 
                     if (GenerateUV2)
-                        createMaterialGroupUV2(vmesh, vol, grp, subset.To, vtIdx);
-
+                        createMaterialGroupUV2(
+                            vmesh,
+                            vol,
+                            grp,
+                            subset.To,
+                            vtIdx
+                        );
                 }
             }
 
@@ -429,7 +536,7 @@ namespace FluffyUnderware.Curvy.Generator.Modules
             //normalize UV2's V coordinate
             if (Split && GenerateUV2 && SplitUV2)
             {
-                var uv2sArray = vmesh.UV2s.Array;
+                Vector2[] uv2sArray = vmesh.UV2s.Array;
 
                 float minV = uv2sArray[0].y;
                 float maxV = uv2sArray[vmesh.UV2s.Count - 1].y;
@@ -441,9 +548,16 @@ namespace FluffyUnderware.Curvy.Generator.Modules
                     float maxVTest = 0;
                     for (int i = 0; i < vmesh.UV2s.Count; i++)
                     {
-                        minVTest = Mathf.Min(minVTest, uv2sArray[i].y);
-                        maxVTest = Mathf.Max(maxVTest, uv2sArray[i].y);
+                        minVTest = Mathf.Min(
+                            minVTest,
+                            uv2sArray[i].y
+                        );
+                        maxVTest = Mathf.Max(
+                            maxVTest,
+                            uv2sArray[i].y
+                        );
                     }
+
                     Assert.IsTrue(maxVTest.Approximately(maxV));
                     Assert.IsTrue(minVTest.Approximately(minV));
                 }
@@ -455,18 +569,27 @@ namespace FluffyUnderware.Curvy.Generator.Modules
             }
         }
 
-        private static void prepareSubMeshes(CGVMesh vmesh, List<SamplePointsMaterialGroupCollection> groupsBySubMeshes, int extrusions, ref Material[] materials)
+        private static void prepareSubMeshes([NotNull] CGVMesh vmesh, List<SamplePointsMaterialGroupCollection> groupsBySubMeshes,
+            int extrusions, ref Material[] materials)
         {
             vmesh.SetSubMeshCount(groupsBySubMeshes.Count);
             for (int g = 0; g < groupsBySubMeshes.Count; g++)
             {
                 CGVSubMesh sm = vmesh.SubMeshes[g];
-                vmesh.SubMeshes[g] = CGVSubMesh.Get(sm, groupsBySubMeshes[g].TriangleCount * extrusions * 3, materials[Mathf.Min(groupsBySubMeshes[g].MaterialID, materials.Length - 1)]);
+                vmesh.SubMeshes[g] = CGVSubMesh.Get(
+                    sm,
+                    groupsBySubMeshes[g].TriangleCount * extrusions * 3,
+                    materials[Mathf.Min(
+                        groupsBySubMeshes[g].MaterialID,
+                        materials.Length - 1
+                    )]
+                );
             }
         }
 
         // OPTIMIZE: Store array of U values and just copy them
-        private void createMaterialGroupUV(CGVMesh vmesh, CGVolume volume, SamplePointsMaterialGroup materialGroup, int matIndex, float aspectCorrectionV, float aspectCorrectionU, int sample, int baseVertex)
+        private void createMaterialGroupUV(CGVMesh vmesh, CGVolume volume, SamplePointsMaterialGroup materialGroup, int matIndex,
+            float aspectCorrectionV, float aspectCorrectionU, int sample, int baseVertex)
         {
             CGMaterialSettingsEx mat = m_MaterialSettings[matIndex];
             int hi = materialGroup.EndVertex;
@@ -481,19 +604,24 @@ namespace FluffyUnderware.Curvy.Generator.Modules
                     uMultiplier *= volume.Scales.Array[sample].x;
             }
 
-            float v = mat.UVOffset.y + volume.RelativeDistances.Array[sample] * mat.UVScale.y * aspectCorrectionV;
+            float v = mat.UVOffset.y + (volume.RelativeDistances.Array[sample] * mat.UVScale.y * aspectCorrectionV);
 
             for (int c = materialGroup.StartVertex; c <= hi; c++)
             {
                 float u = UnscaleU
-                    ? mat.UVOffset.x + unscalingOrigin + (crossCustomValues[c] - unscalingOrigin) * uMultiplier
-                    : mat.UVOffset.x + crossCustomValues[c] * uMultiplier;
-                uvsArray[baseVertex + c].x = swapUV ? v : u;
-                uvsArray[baseVertex + c].y = swapUV ? u : v;
+                    ? mat.UVOffset.x + unscalingOrigin + ((crossCustomValues[c] - unscalingOrigin) * uMultiplier)
+                    : mat.UVOffset.x + (crossCustomValues[c] * uMultiplier);
+                uvsArray[baseVertex + c].x = swapUV
+                    ? v
+                    : u;
+                uvsArray[baseVertex + c].y = swapUV
+                    ? u
+                    : v;
             }
         }
 
-        private void createMaterialGroupUV2(CGVMesh vmesh, CGVolume volume, SamplePointsMaterialGroup materialGroup, int sample, int baseVertex)
+        private void createMaterialGroupUV2(CGVMesh vmesh, CGVolume volume, SamplePointsMaterialGroup materialGroup, int sample,
+            int baseVertex)
         {
             int hi = materialGroup.EndVertex;
             Vector2[] uv2sArray = vmesh.UV2s.Array;
@@ -515,9 +643,12 @@ namespace FluffyUnderware.Curvy.Generator.Modules
         /// <param name="reverse">whether triangles should flip (i.e. a reversed triangle order should be used)</param>
         /// <param name="patchEndVT">size of the cross group (i.e. number of sample points to connect)</param>
         /// <returns></returns>
-        private static void createPatchTriangles(int[] triangles, ref int triIdx, int curVTIndex, int patchSize, int crossSize, bool reverse)
+        private static void createPatchTriangles(int[] triangles, ref int triIdx, int curVTIndex, int patchSize, int crossSize,
+            bool reverse)
         {
-            int rv0 = (reverse) ? 1 : 0; // flipping +0 and +1 when reversing
+            int rv0 = reverse
+                ? 1
+                : 0; // flipping +0 and +1 when reversing
             int rv1 = 1 - rv0;
             int nextCrossVT = curVTIndex + crossSize;
             for (int vt = 0; vt < patchSize; vt++)
@@ -539,8 +670,8 @@ namespace FluffyUnderware.Curvy.Generator.Modules
         /// <returns></returns>
         private List<SamplePointsMaterialGroupCollection> getMaterialIDGroups(CGVolume volume)
         {
-
-            Dictionary<int, SamplePointsMaterialGroupCollection> matCollections = new Dictionary<int, SamplePointsMaterialGroupCollection>();
+            Dictionary<int, SamplePointsMaterialGroupCollection> matCollections =
+                new Dictionary<int, SamplePointsMaterialGroupCollection>();
 
             SamplePointsMaterialGroupCollection col;
 
@@ -551,16 +682,25 @@ namespace FluffyUnderware.Curvy.Generator.Modules
                     materialID = volume.CrossMaterialGroups[g].MaterialID;
                 else
                 {
-                    UIMessages.Add($"Input Volume is using material id {volume.CrossMaterialGroups[g].MaterialID}, which has no associate Material in this module. Use the 'Add Material Group'");
+                    UIMessages.Add(
+                        $"Input Volume is using material id {volume.CrossMaterialGroups[g].MaterialID}, which has no associate Material in this module. Use the 'Add Material Group'"
+                    );
                     materialID = MaterialCount - 1;
                 }
 
-                if (!matCollections.TryGetValue(materialID, out col))
+                if (!matCollections.TryGetValue(
+                        materialID,
+                        out col
+                    ))
                 {
                     col = new SamplePointsMaterialGroupCollection();
                     col.MaterialID = materialID;
-                    matCollections.Add(materialID, col);
+                    matCollections.Add(
+                        materialID,
+                        col
+                    );
                 }
+
                 col.Add(volume.CrossMaterialGroups[g]);
             }
 
@@ -568,11 +708,14 @@ namespace FluffyUnderware.Curvy.Generator.Modules
 
             foreach (SamplePointsMaterialGroupCollection item in matCollections.Values)
             {
-                item.CalculateAspectCorrection(volume, MaterialSettings[item.MaterialID]);
+                item.CalculateAspectCorrection(
+                    volume,
+                    MaterialSettings[item.MaterialID]
+                );
                 res.Add(item);
             }
-            return res;
 
+            return res;
         }
 
         private bool validateMaterialIndex(int index)
@@ -582,19 +725,12 @@ namespace FluffyUnderware.Curvy.Generator.Modules
                 Debug.LogError("TriangulateTube: Invalid Material Index!");
                 return false;
             }
+
             return true;
         }
 
         private bool IsSplitUV2Togglable => Split && GenerateUV2;
 
-
-        /*! \endcond */
         #endregion
-
-
-
-
-
-
     }
 }

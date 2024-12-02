@@ -1,22 +1,24 @@
 // =====================================================================
-// Copyright 2013-2022 ToolBuddy
+// Copyright © 2013 ToolBuddy
 // All rights reserved
 // 
 // http://www.toolbuddy.net
 // =====================================================================
 
-using UnityEngine;
-using System.Collections;
 using System.Collections.Generic;
 using FluffyUnderware.DevTools;
+using UnityEngine;
 
 namespace FluffyUnderware.Curvy.Generator.Modules
 {
-    [ModuleInfo("Input/Spots", ModuleName = "Input Spots", Description = "Defines an array of placement spots")]
-    [HelpURL(CurvySpline.DOCLINK + "cginputspots")]
+    [ModuleInfo(
+        "Input/Spots",
+        ModuleName = "Input Spots",
+        Description = "Defines an array of placement spots"
+    )]
+    [HelpURL(AssetInformation.DocsRedirectionBaseUrl + "cginputspots")]
     public class InputSpots : CGModule
     {
-
         [HideInInspector]
         [OutputSlotInfo(typeof(CGSpots))]
         public CGModuleOutputSlot OutSpots = new CGModuleOutputSlot();
@@ -33,22 +35,22 @@ namespace FluffyUnderware.Curvy.Generator.Modules
 
         public List<CGSpot> Spots
         {
-            get { return m_Spots; }
+            get => m_Spots;
             set
             {
                 if (m_Spots != value)
+                {
                     m_Spots = value;
-                Dirty = true;
+                    Dirty = true;
+                }
             }
         }
 
         #endregion
 
-        #region ### Private Fields & Properties ###
-        #endregion
-
         #region ### Unity Callbacks ###
-        /*! \cond UNITY */
+
+#if DOCUMENTATION___FORCE_IGNORE___UNITY == false
 
         protected override void OnEnable()
         {
@@ -56,21 +58,14 @@ namespace FluffyUnderware.Curvy.Generator.Modules
             Properties.MinWidth = 250;
         }
 
-#if UNITY_EDITOR
-        protected override void OnValidate()
-        {
-            base.OnValidate();
-        }
-#endif
-
         public override void Reset()
         {
             base.Reset();
             Spots.Clear();
-            Dirty = true;
         }
 
-        /*! \endcond */
+#endif
+
         #endregion
 
         #region ### Public Methods ###
@@ -80,19 +75,9 @@ namespace FluffyUnderware.Curvy.Generator.Modules
             base.Refresh();
 
             if (OutSpots.IsLinked)
-            {
-                OutSpots.SetData(new CGSpots(Spots));
-            }
+                OutSpots.SetDataToElement(new CGSpots(Spots));
         }
 
         #endregion
-
-        #region ### Privates ###
-        /*! \cond PRIVATE */
-
-
-        /*! \endcond */
-        #endregion
-
     }
 }

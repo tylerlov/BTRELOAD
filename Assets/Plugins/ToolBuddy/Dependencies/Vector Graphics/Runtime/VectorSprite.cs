@@ -278,7 +278,12 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
                 RenderSprite(sprite, mat);
             }
 
-            Texture2D copy = new Texture2D(width, height, TextureFormat.RGBA32, false);
+            Texture2D copy = new Texture2D(
+                width,
+                height,
+                TextureFormat.RGBA32,
+                false
+            );
             copy.hideFlags = HideFlags.HideAndDontSave;
             copy.ReadPixels(new Rect(0, 0, width, height), 0, 0);
             copy.Apply();

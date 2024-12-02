@@ -1,14 +1,14 @@
 // =====================================================================
-// Copyright 2013-2022 ToolBuddy
+// Copyright © 2013 ToolBuddy
 // All rights reserved
 // 
 // http://www.toolbuddy.net
 // =====================================================================
 
-using FluffyUnderware.DevTools;
 using System;
-using System.Threading.Tasks;
+using FluffyUnderware.DevTools;
 using FluffyUnderware.DevTools.Extensions;
+using FluffyUnderware.DevTools.Threading;
 using UnityEngine;
 using UnityEngine.Assertions;
 
@@ -17,14 +17,23 @@ namespace FluffyUnderware.Curvy.Generator.Modules
     /// <summary>
     /// Translates a path relatively to it's direction, instead of relatively to the world as does the TRS Path module.
     /// </summary>
-    [ModuleInfo("Modifier/Path Relative Translation", ModuleName = "Path Relative Translation", Description = "Translates a path relatively to it's direction, instead of relatively to the world as does the TRS Path module.")]
-    [HelpURL(CurvySpline.DOCLINK + "cgpathrelativetranslation")]
+    [ModuleInfo(
+        "Modifier/Path Relative Translation",
+        ModuleName = "Path Relative Translation",
+        Description =
+            "Translates a path relatively to it's direction, instead of relatively to the world as does the TRS Path module."
+    )]
+    [HelpURL(AssetInformation.DocsRedirectionBaseUrl + "cgpathrelativetranslation")]
 #pragma warning disable 618
     public class ModifierPathRelativeTranslation : CGModule, IOnRequestProcessing, IPathProvider
 #pragma warning restore 618
     {
         [HideInInspector]
-        [InputSlotInfo(typeof(CGPath), Name = "Path A", ModifiesData = true)]
+        [InputSlotInfo(
+            typeof(CGPath),
+            Name = "Path A",
+            ModifiesData = true
+        )]
         public CGModuleInputSlot InPath = new CGModuleInputSlot();
 
         [HideInInspector]
@@ -45,7 +54,12 @@ namespace FluffyUnderware.Curvy.Generator.Modules
         [SerializeField]
         [Tooltip("Defines translation multiplier, depending on the Relative Distance (between 0 and 1) of a point on the path")]
         [AnimationCurveEx("    Multiplier")]
-        private AnimationCurve multiplier = AnimationCurve.Linear(0, 1, 1, 1);
+        private AnimationCurve multiplier = AnimationCurve.Linear(
+            0,
+            1,
+            1,
+            1
+        );
 
         /// <summary>
         /// The translation angle, in degrees
@@ -63,7 +77,7 @@ namespace FluffyUnderware.Curvy.Generator.Modules
         /// </summary>
         public float LateralTranslation
         {
-            get { return lateralTranslation; }
+            get => lateralTranslation;
             set
             {
                 if (lateralTranslation != value)
@@ -82,11 +96,13 @@ namespace FluffyUnderware.Curvy.Generator.Modules
             get { return angle; }
             set
             {
-
                 if (Single.IsNaN(value))
                 {
 #if CURVY_SANITY_CHECKS
-                    DTLog.LogWarning($"[Curvy] Invalid Angle value: {value}. 0 will be assigned instead", this);
+                    DTLog.LogWarning(
+                        $"[Curvy] Invalid Angle value: {value}. 0 will be assigned instead",
+                        this
+                    );
 #endif
                     value = 0;
                 }
@@ -105,69 +121,76 @@ namespace FluffyUnderware.Curvy.Generator.Modules
         /// <remarks>You will need to set this module's Dirty to true yourself if you modify the AnimationCurve without setting a new one</remarks>
         public AnimationCurve Multiplier
         {
-            get { return multiplier; }
+            get => multiplier;
             set
             {
                 if (multiplier != value)
+                {
                     multiplier = value;
-                Dirty = true;
+                    Dirty = true;
+                }
             }
         }
 
-        public bool PathIsClosed
-        {
-            get
-            {
-                return (IsConfigured) && InPath.SourceSlot().PathProvider.PathIsClosed;
-            }
-        }
+        public bool PathIsClosed => IsConfigured && InPath.SourceSlot().PathProvider.PathIsClosed;
 
         #endregion
 
         #region ### IOnRequestProcessing ###
 
-        public CGData[] OnSlotDataRequest(CGModuleInputSlot requestedBy, CGModuleOutputSlot requestedSlot, params CGDataRequestParameter[] requests)
+        public CGData[] OnSlotDataRequest(CGModuleInputSlot requestedBy, CGModuleOutputSlot requestedSlot,
+            params CGDataRequestParameter[] requests)
         {
-            CGData[] result;
-            if (requestedSlot == OutPath)
-            {
-                CGPath data = InPath.GetData<CGPath>(out bool isDisposable, requests);
+            if (requestedSlot != OutPath)
+                return Array.Empty<CGData>();
+
+            CGPath data = InPath.GetData<CGPath>(
+                out bool isDisposable,
+                requests
+            );
 #if CURVY_SANITY_CHECKS
-                // I forgot why I added this assertion, but I trust my past self
-                Assert.IsTrue(data == null || isDisposable);
+            // I forgot why I added this assertion, but I trust my past self
+            Assert.IsTrue(data == null || isDisposable);
 #endif
-                if (data)
-                {
-                    bool evaluateTranslationMultiplier = Multiplier.ValueIsOne() == false;
+            if (data == null)
+                return Array.Empty<CGData>();
 
-                    if (evaluateTranslationMultiplier)
-                        //no parallelization if we are going to evaluate TranslationMultiplier, since evaluating Animation Curves is not thread safe 
-                        for (int i = 0; i < data.Count; i++)
-                            TranslatePoint(i, data, evaluateTranslationMultiplier, 
-                                lateralTranslation, multiplier, angle);
-                    else
-                        Parallel.For(0,
-                            data.Count,
-                            i => TranslatePoint(i, data, evaluateTranslationMultiplier, 
-                                lateralTranslation, multiplier, angle)
-                            );
+            bool evaluateTranslationMultiplier = Multiplier.ValueIsOne() == false;
 
-                    data.Recalculate();
-                }
-
-                //TODO after fixing Directions computation in ConformPath, do the same here
-
-                result = new CGData[1] { data };
-            }
+            if (evaluateTranslationMultiplier)
+                //no parallelization if we are going to evaluate TranslationMultiplier, since evaluating Animation Curves is not thread safe 
+                for (int i = 0; i < data.Count; i++)
+                    TranslatePoint(
+                        i,
+                        data,
+                        true,
+                        lateralTranslation,
+                        multiplier,
+                        angle
+                    );
             else
-                result = null;
+                Parallel.For(
+                    0,
+                    data.Count,
+                    i => TranslatePoint(
+                        i,
+                        data,
+                        false,
+                        lateralTranslation,
+                        multiplier,
+                        angle
+                    )
+                );
 
-            return result;
+            //TODO after fixing Directions computation in ConformPath, do the same here
+            data.Recalculate();
+
+            return new CGData[] { data };
         }
 
-        private static void TranslatePoint(int index, CGPath data, bool evaluateTranslationMultiplier, float translation, AnimationCurve translationMultiplier, float angle)
+        private static void TranslatePoint(int index, CGPath data, bool evaluateTranslationMultiplier, float translation,
+            AnimationCurve translationMultiplier, float angle)
         {
-
             float translationMagnitude;
             {
                 if (evaluateTranslationMultiplier)
@@ -182,9 +205,21 @@ namespace FluffyUnderware.Curvy.Generator.Modules
                 Vector3 normal = data.Normals.Array[index];
 
                 if (angle != 0f)
-                    translationVector = Quaternion.AngleAxis(angle, direction) * Vector3.Cross(normal, direction) * translationMagnitude;
+                    translationVector = Quaternion.AngleAxis(
+                                            angle,
+                                            direction
+                                        )
+                                        * Vector3.Cross(
+                                            normal,
+                                            direction
+                                        )
+                                        * translationMagnitude;
                 else
-                    translationVector = Vector3.Cross(normal, direction) * translationMagnitude;
+                    translationVector = Vector3.Cross(
+                                            normal,
+                                            direction
+                                        )
+                                        * translationMagnitude;
             }
 
             Vector3[] positions = data.Positions.Array;
@@ -197,7 +232,8 @@ namespace FluffyUnderware.Curvy.Generator.Modules
 
 
         #region ### Unity Callbacks ###
-        /*! \cond UNITY */
+
+#if DOCUMENTATION___FORCE_IGNORE___UNITY == false
 
         protected override void OnEnable()
         {
@@ -211,21 +247,23 @@ namespace FluffyUnderware.Curvy.Generator.Modules
             base.Reset();
             LateralTranslation = 0;
             Angle = 0;
-            Multiplier = AnimationCurve.Linear(0, 1, 1, 1);
+            Multiplier = AnimationCurve.Linear(
+                0,
+                1,
+                1,
+                1
+            );
         }
 
-#if UNITY_EDITOR
         protected override void OnValidate()
         {
             base.OnValidate();
-            LateralTranslation = lateralTranslation;
+
             Angle = angle;
-            Multiplier = multiplier;
-            Dirty = true;
         }
+
 #endif
 
-        /*! \endcond */
         #endregion
     }
 }

@@ -1,6 +1,7 @@
 using Chronos;
 using Pathfinding;
 using UnityEngine;
+using PrimeTween;
 
 public class TailOrientation : MonoBehaviour
 {
@@ -34,6 +35,9 @@ public class TailOrientation : MonoBehaviour
     private Quaternion currentRotation;
     private float currentAngle = 0f;
 
+    private Tween positionTween;
+    private Tween rotationTween;
+
     private void Awake()
     {
         Transform parent = transform.parent;
@@ -48,7 +52,7 @@ public class TailOrientation : MonoBehaviour
     {
         if (parentAI == null || parentTimeline == null)
         {
-            Debug.LogError(
+            ConditionalDebug.LogError(
                 "TailOrientation: Parent object must have CustomAIPathAlignedToSurface and Timeline components."
             );
             enabled = false;
@@ -71,19 +75,31 @@ public class TailOrientation : MonoBehaviour
         Vector3 targetPosition = CalculateTargetPosition(deltaTime);
         Quaternion targetRotation = CalculateTargetRotation();
 
-        currentPosition = Vector3.Lerp(
-            currentPosition,
+        // Stop existing tweens
+        positionTween.Stop();
+        rotationTween.Stop();
+
+        // Create new position tween
+        positionTween = Tween.Position(
+            transform,
             targetPosition,
-            1f - Mathf.Pow(positionSmoothness, deltaTime * 60f)
-        );
-        currentRotation = Quaternion.Slerp(
-            currentRotation,
-            targetRotation,
-            1f - Mathf.Pow(rotationSmoothness, deltaTime * 60f)
+            deltaTime * 60f,
+            Ease.OutExpo
         );
 
-        transform.position = currentPosition;
-        transform.rotation = currentRotation;
+        // Create new rotation tween
+        rotationTween = Tween.Rotation(
+            transform,
+            targetRotation,
+            deltaTime * 60f,
+            Ease.OutExpo
+        );
+    }
+
+    private void OnDestroy()
+    {
+        positionTween.Stop();
+        rotationTween.Stop();
     }
 
     private Vector3 CalculateTargetPosition(float deltaTime)

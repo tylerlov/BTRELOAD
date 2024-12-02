@@ -30,13 +30,11 @@ namespace FluffyUnderware.DevToolsEditor.Data{
         }
         protected override Vector2 GetValue()
         {
-            this.m_Value = Vector2.Lerp(base.start, base.target, base.lerpPosition);
-            return this.m_Value;
+            m_Value = Vector2.Lerp(start, target, lerpPosition);
+            return m_Value;
         }
 
         public override string ToString()
-        {
-            return $"{value} / {target}. Speed {speed}. Lerp {lerpPosition}";
-        }
+            => $"{value} / {target}. Speed {speed}. Lerp {lerpPosition}";
     }
 }

@@ -1,5 +1,5 @@
 // =====================================================================
-// Copyright 2013-2022 ToolBuddy
+// Copyright © 2013 ToolBuddy
 // All rights reserved
 // 
 // http://www.toolbuddy.net
@@ -23,15 +23,18 @@ namespace FluffyUnderware.Curvy
         /// </summary>
         public CurvySpline Spline
         {
-            get { return m_Spline; }
+            get => m_Spline;
             set
             {
                 if (m_Spline != value)
                 {
                     UnbindEvents();
                     m_Spline = value;
-                    BindEvents();
-                    Refresh();
+                    if (IsActiveAndEnabled)
+                    {
+                        BindEvents();
+                        Refresh(); //properties should not execute heavy code, this is bad design
+                    }
                 }
             }
         }
@@ -39,31 +42,28 @@ namespace FluffyUnderware.Curvy
         /// <summary>
         /// Method that processes the associated <see cref="CurvySpline"/>
         /// </summary>
-        abstract public void Refresh();
+        public abstract void Refresh();
 
         #region private
 
-        /*! \cond PRIVATE */
+#if DOCUMENTATION___FORCE_IGNORE___CURVY == false
 
-        [SerializeField] protected CurvySpline m_Spline;
+        [SerializeField]
+        protected CurvySpline m_Spline;
 
-        /*! \endcond */
+#endif
 
-        private void OnSplineRefresh(CurvySplineEventArgs e)
-        {
+        private void OnSplineRefresh(CurvySplineEventArgs e) =>
             ProcessEvent(e.Spline);
-        }
 
-        private void OnSplineCoordinatesChanged(CurvySpline spline)
-        {
+        private void OnSplineCoordinatesChanged(CurvySpline spline) =>
             ProcessEvent(spline);
-        }
 
         private void ProcessEvent([NotNull] CurvySpline spline)
         {
             if (Spline != spline)
                 UnbindEvents(spline);
-            else
+            else if (IsActiveAndEnabled)
                 Refresh();
         }
 
@@ -73,39 +73,62 @@ namespace FluffyUnderware.Curvy
 
         #region Unity callbacks
 
+#if DOCUMENTATION___FORCE_IGNORE___UNITY == false
+
+        [UsedImplicitly]
         protected virtual void Awake()
         {
             if (m_Spline == null)
             {
                 m_Spline = GetComponent<CurvySpline>();
-                if (ReferenceEquals(m_Spline, null) == false)
-                    DTLog.Log(String.Format("[Curvy] Spline '{0}' was assigned to the {1} by default.", this.name, this.GetType().Name), this);
+                if (ReferenceEquals(
+                        m_Spline,
+                        null
+                    )
+                    == false)
+                    DTLog.Log(
+                        String.Format(
+                            "[Curvy] Spline '{0}' was assigned to the {1} by default.",
+                            name,
+                            GetType().Name
+                        ),
+                        this
+                    );
             }
         }
 
-        protected virtual void OnEnable()
+        protected override void OnEnable()
         {
-            BindEvents();
-        }
+            base.OnEnable();
 
-        protected virtual void OnDisable()
-        {
-            UnbindEvents();
-        }
-
-#if UNITY_EDITOR
-        protected virtual void OnValidate()
-        {
             UnbindEvents();
             BindEvents();
-
             Refresh();
         }
+
+        protected override void OnDisable()
+        {
+            base.OnDisable();
+
+            UnbindEvents();
+        }
+
+        protected override void OnValidate()
+        {
+            base.OnValidate();
+
+            if (IsActiveAndEnabled)
+            {
+                BindEvents();
+                Refresh();
+            }
+        }
+
+        [UsedImplicitly]
+        protected virtual void Start() =>
+            Refresh();
+
 #endif
-        protected virtual void Start()
-        {
-            Refresh();
-        }
 
         #endregion
 
@@ -114,6 +137,12 @@ namespace FluffyUnderware.Curvy
             if (Spline)
             {
                 Spline.OnRefresh.AddListenerOnce(OnSplineRefresh);
+
+                //To avoid setting OnSplineCoordinatesChanged as a listener multiple times. This should not happen, because BindEvents should not be able to be called multiple successive times on the same spline, but I am handling it anyway for two reasons:
+                // 1 - Unity proved me that their assumptions do not hold, like what they did with Enter Play Mode options. Who knows when OnEnabled will be called twice with no OnDisabled in between
+                // 2 - In case I introduce a bug
+                Spline.OnGlobalCoordinatesChanged -= OnSplineCoordinatesChanged;
+
                 Spline.OnGlobalCoordinatesChanged += OnSplineCoordinatesChanged;
             }
         }

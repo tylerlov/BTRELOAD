@@ -1,31 +1,45 @@
 // =====================================================================
-// Copyright 2013-2022 ToolBuddy
+// Copyright © 2013 ToolBuddy
 // All rights reserved
 // 
 // http://www.toolbuddy.net
 // =====================================================================
 
 using System;
-using UnityEngine;
 using System.Collections.Generic;
 using FluffyUnderware.DevTools;
 using FluffyUnderware.DevTools.Extensions;
+using JetBrains.Annotations;
+using UnityEngine;
 
 namespace FluffyUnderware.Curvy.Generator.Modules
 {
-    [ModuleInfo("Create/GameObject", ModuleName = "Create GameObject")]
-    [HelpURL(CurvySpline.DOCLINK + "cgcreategameobject")]
+    [ModuleInfo(
+        "Create/GameObject",
+        ModuleName = "Create GameObject"
+    )]
+    [HelpURL(AssetInformation.DocsRedirectionBaseUrl + "cgcreategameobject")]
     public class CreateGameObject : ResourceExportingModule
     {
         [HideInInspector]
-        [InputSlotInfo(typeof(CGGameObject), Array = true, Name = "GameObject")]
+        [InputSlotInfo(
+            typeof(CGGameObject),
+            Array = true,
+            Name = "GameObject"
+        )]
         public CGModuleInputSlot InGameObjectArray = new CGModuleInputSlot();
 
         [HideInInspector]
-        [InputSlotInfo(typeof(CGSpots), Name = "Spots")]
+        [InputSlotInfo(
+            typeof(CGSpots),
+            Name = "Spots"
+        )]
         public CGModuleInputSlot InSpots = new CGModuleInputSlot();
 
-        [SerializeField, CGResourceCollectionManager("GameObject", ShowCount = true)]
+        [SerializeField, CGResourceCollectionManager(
+             "GameObject",
+             ShowCount = true
+         )]
         private CGGameObjectResourceCollection m_Resources = new CGGameObjectResourceCollection();
 
         #region ### Serialized Fields ###
@@ -38,7 +52,9 @@ namespace FluffyUnderware.Curvy.Generator.Modules
         [Layer]
         private int m_Layer;
 
-        [Tooltip("Whether Layer should be applied only on the root of a created game object, or it should be applied on its whole hierarchy")]
+        [Tooltip(
+            "Whether Layer should be applied only on the root of a created game object, or it should be applied on its whole hierarchy"
+        )]
         [SerializeField]
         private bool applyLayerOnChildren;
 
@@ -48,13 +64,19 @@ namespace FluffyUnderware.Curvy.Generator.Modules
 
         public int Layer
         {
-            get { return m_Layer; }
+            get => m_Layer;
             set
             {
-                int v = Mathf.Clamp(value, 0, 32);
+                int v = Mathf.Clamp(
+                    value,
+                    0,
+                    32
+                );
                 if (m_Layer != v)
+                {
                     m_Layer = v;
-                Dirty = true;
+                    Dirty = true;
+                }
             }
         }
 
@@ -63,54 +85,49 @@ namespace FluffyUnderware.Curvy.Generator.Modules
         /// </summary>
         public bool ApplyLayerOnChildren
         {
-            get { return applyLayerOnChildren; }
+            get => applyLayerOnChildren;
             set
             {
                 if (applyLayerOnChildren != value)
+                {
                     applyLayerOnChildren = value;
-                Dirty = true;
+                    Dirty = true;
+                }
             }
         }
+
         public bool MakeStatic
         {
-            get { return m_MakeStatic; }
+            get => m_MakeStatic;
             set
             {
                 if (m_MakeStatic != value)
+                {
                     m_MakeStatic = value;
-                Dirty = true;
+                    Dirty = true;
+                }
             }
         }
 
-        public CGGameObjectResourceCollection GameObjects
-        {
-            get { return m_Resources; }
-        }
+        public CGGameObjectResourceCollection GameObjects => m_Resources;
 
-        public int GameObjectCount
-        {
-            get { return GameObjects.Count; }
-        }
+        public int GameObjectCount => GameObjects.Count;
 
         #endregion
 
         #region ### Private Fields & Properties ###
+
         /// <summary>
         /// Key is the created game objects' transforms. Value is the associated pool name. Is filled in the Refresh method.
         /// </summary>
         private readonly Dictionary<Transform, string> usedPoolsDictionary = new Dictionary<Transform, string>();
+
         #endregion
 
         #region ### Unity Callbacks ###
-        /*! \cond UNITY */
 
-#if UNITY_EDITOR
-        protected override void OnValidate()
-        {
-            base.OnValidate();
-            Dirty = true;
-        }
-#endif
+#if DOCUMENTATION___FORCE_IGNORE___UNITY == false
+
 
         public override void Reset()
         {
@@ -127,7 +144,8 @@ namespace FluffyUnderware.Curvy.Generator.Modules
             base.OnDestroy();
         }
 
-        /*! \endcond */
+#endif
+
         #endregion
 
         #region ### Public Methods ###
@@ -146,12 +164,22 @@ namespace FluffyUnderware.Curvy.Generator.Modules
 
             //it might seem a good idea to not use destructionTargets, and just iterate through all children and delete them, but the deletion code can, depending on different on edit/play mode and prefab status, either delete instantly the object, delete it at the end of the frame, or not delete it at all, leading to the iteration logic having to handle all of those cases in deciding what should be the iteration index. I prefer to play it safe, and use the destructionTargets list
             foreach (Transform child in destructionTargets)
-            {
-                if (usedPoolsDictionary.TryGetValue(child, out string poolName))
-                    DeleteManagedResource("GameObject", child, poolName, false);
+                if (usedPoolsDictionary.TryGetValue(
+                        child,
+                        out string poolName
+                    ))
+                    DeleteManagedResource(
+                        "GameObject",
+                        child,
+                        poolName
+                    );
                 else
-                    DeleteManagedResource("GameObject", child, string.Empty, true);
-            }
+                    DeleteManagedResource(
+                        "GameObject",
+                        child,
+                        string.Empty,
+                        true
+                    );
 
             GameObjects.Items.Clear();
             GameObjects.PoolNames.Clear();
@@ -160,11 +188,10 @@ namespace FluffyUnderware.Curvy.Generator.Modules
             return result;
         }
 
+        [UsedImplicitly]
         [Obsolete("Use DeleteAllOutputManagedResources instead")]
-        public void Clear()
-        {
+        public void Clear() =>
             DeleteAllOutputManagedResources();
-        }
 
         public override void Refresh()
         {
@@ -196,7 +223,11 @@ namespace FluffyUnderware.Curvy.Generator.Modules
 
                         string poolIdent = GetPrefabPool(inputCGGameObject.Object).Identifier;
                         usedPools.Add(poolIdent);
-                        Transform res = (Transform)AddManagedResource("GameObject", poolIdent, s);
+                        Transform res = (Transform)AddManagedResource(
+                            "GameObject",
+                            poolIdent,
+                            s
+                        );
                         res.gameObject.isStatic = MakeStatic;
                         res.gameObject.layer = Layer;
                         if (ApplyLayerOnChildren)
@@ -206,9 +237,14 @@ namespace FluffyUnderware.Curvy.Generator.Modules
                             foreach (Transform descendantTransform in descendants)
                                 descendantTransform.gameObject.layer = Layer;
                         }
+
                         res.localPosition = spot.Position;
                         res.localRotation = spot.Rotation;
-                        res.localScale = new Vector3(inputCGGameObject.Object.transform.localScale.x * spot.Scale.x * inputCGGameObject.Scale.x, inputCGGameObject.Object.transform.localScale.y * spot.Scale.y * inputCGGameObject.Scale.y, inputCGGameObject.Object.transform.localScale.z * spot.Scale.z * inputCGGameObject.Scale.z);
+                        res.localScale = new Vector3(
+                            inputCGGameObject.Object.transform.localScale.x * spot.Scale.x * inputCGGameObject.Scale.x,
+                            inputCGGameObject.Object.transform.localScale.y * spot.Scale.y * inputCGGameObject.Scale.y,
+                            inputCGGameObject.Object.transform.localScale.z * spot.Scale.z * inputCGGameObject.Scale.z
+                        );
 
                         if (inputCGGameObject.Translate != Vector3.zero)
                             res.Translate(inputCGGameObject.Translate);
@@ -225,16 +261,13 @@ namespace FluffyUnderware.Curvy.Generator.Modules
 
             // Remove unused pools
             foreach (IPool pool in existingPools)
-            {
                 if (!usedPools.Contains(pool.Identifier))
                     Generator.PoolManager.DeletePool(pool);
-            }
 
             if (isGOsDisposable)
                 VGO.ForEach(d => d.Dispose());
             if (isSpotsDisposable)
                 Spots.Dispose();
-
         }
 
         #endregion
@@ -245,5 +278,13 @@ namespace FluffyUnderware.Curvy.Generator.Modules
             duplicateGameObject.name = managedResource.name;
             return duplicateGameObject;
         }
+
+#if DOCUMENTATION___FORCE_IGNORE___CURVY == false
+        protected override void ResetOnEnable()
+        {
+            base.ResetOnEnable();
+            usedPoolsDictionary.Clear();
+        }
     }
+#endif
 }

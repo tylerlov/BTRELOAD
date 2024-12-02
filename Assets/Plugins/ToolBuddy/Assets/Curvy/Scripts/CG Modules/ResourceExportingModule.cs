@@ -1,15 +1,12 @@
 // =====================================================================
-// Copyright 2013-2022 ToolBuddy
+// Copyright © 2013 ToolBuddy
 // All rights reserved
 // 
 // http://www.toolbuddy.net
 // =====================================================================
 
-using System;
-using UnityEngine;
 using System.Collections.Generic;
-using FluffyUnderware.DevTools;
-using FluffyUnderware.DevTools.Extensions;
+using UnityEngine;
 
 namespace FluffyUnderware.Curvy.Generator.Modules
 {
@@ -26,18 +23,24 @@ namespace FluffyUnderware.Curvy.Generator.Modules
         public GameObject SaveToScene(Transform parent = null)
         {
             List<Component> managedResources;
-            GetManagedResources(out managedResources, out _);
+            GetManagedResources(
+                out managedResources,
+                out _
+            );
             if (managedResources.Count == 0)
                 return null;
 
             GameObject result = new GameObject($"{ModuleName} Exported Resources");
             result.transform.parent = parent;
             for (int i = 0; i < managedResources.Count; i++)
-                SaveResourceToScene(managedResources[i], result.transform);
+                SaveResourceToScene(
+                    managedResources[i],
+                    result.transform
+                );
 
-            result.transform.position = this.transform.position;
-            result.transform.rotation = this.transform.rotation;
-            result.transform.localScale = this.transform.localScale;
+            result.transform.position = transform.position;
+            result.transform.rotation = transform.rotation;
+            result.transform.localScale = transform.localScale;
             return result;
         }
 

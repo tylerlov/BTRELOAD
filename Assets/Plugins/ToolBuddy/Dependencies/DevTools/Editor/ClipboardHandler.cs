@@ -41,10 +41,7 @@ namespace FluffyUnderware.DevToolsEditor
         }
 
         public bool CanPasteFrom(Type clipboardType)
-        {
-            return (clipboardType.Matches(typeof(Vector2), typeof(Vector3), typeof(Vector4)));
-        }
-
+            => (clipboardType.Matches(typeof(Vector2), typeof(Vector3), typeof(Vector4)));
     }
 
     public class DTVector3Clipboard : IDTClipboardHandler
@@ -67,11 +64,7 @@ namespace FluffyUnderware.DevToolsEditor
         }
 
         public bool CanPasteFrom(Type clipboardType)
-        {
-            return (clipboardType.Matches(typeof(Vector3), typeof(Vector4)));
-        }
-
-
+            => (clipboardType.Matches(typeof(Vector3), typeof(Vector4)));
     }
 
     public class DTAnimationCurveClipboard : IDTClipboardHandler
@@ -84,16 +77,14 @@ namespace FluffyUnderware.DevToolsEditor
         public object Paste(object data)
         {
             AnimationCurve clp=(AnimationCurve)data;
-            AnimationCurve curve=new AnimationCurve(clp.keys);
+            AnimationCurve curve= new AnimationCurve(clp.keys);
             curve.preWrapMode = clp.preWrapMode;
             curve.postWrapMode = clp.postWrapMode;
             return curve;
         }
 
         public bool CanPasteFrom(Type clipboardType)
-        {
-            return clipboardType == typeof(AnimationCurve);
-        }
+            => clipboardType == typeof(AnimationCurve);
     }
     
     

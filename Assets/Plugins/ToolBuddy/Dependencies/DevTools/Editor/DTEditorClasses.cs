@@ -47,7 +47,8 @@ namespace FluffyUnderware.DevToolsEditor
         /// <summary>
         /// Gets the number of child nodes
         /// </summary>
-        public int Count { get { return Items.Count; } }
+        public int Count => Items.Count;
+
         /// <summary>
         /// Gets all attributes for this node
         /// </summary>
@@ -70,8 +71,8 @@ namespace FluffyUnderware.DevToolsEditor
         /// </summary>
         public virtual bool ContentVisible
         {
-            get { return mContentVisible; }
-            set { mContentVisible = value; }
+            get => mContentVisible;
+            set => mContentVisible = value;
         }
 
         /// <summary>
@@ -79,8 +80,8 @@ namespace FluffyUnderware.DevToolsEditor
         /// </summary>
         public virtual bool Visible
         {
-            get { return mVisible; }
-            set { mVisible = value; }
+            get => mVisible;
+            set => mVisible = value;
         }
         /// <summary>
         /// Whether this node is disabled or not
@@ -97,13 +98,8 @@ namespace FluffyUnderware.DevToolsEditor
         /// <summary>
         /// The absolute Path of this node
         /// </summary>
-        public string Path
-        {
-            get
-            {
-                return (Parent) ? Parent.Path + "/" + Name : Name;
-            }
-        }
+        public string Path => (Parent) ? Parent.Path + "/" + Name : Name;
+
         /// <summary>
         /// The nesting Level of this node
         /// </summary>
@@ -118,13 +114,8 @@ namespace FluffyUnderware.DevToolsEditor
         /// </summary>
         /// <param name="index">index of the child</param>
         /// <returns>a node or null</returns>
-        public DTInspectorNode this[int index]
-        {
-            get
-            {
-                return Items[index];
-            }
-        }
+        public DTInspectorNode this[int index] => Items[index];
+
         /// <summary>
         /// Gets a child node by it's name
         /// </summary>
@@ -141,9 +132,8 @@ namespace FluffyUnderware.DevToolsEditor
         public int Index { get; protected set; }
 
 
-
-        bool mContentVisible = true;
-        bool mVisible = true;
+        private bool mContentVisible = true;
+        private bool mVisible = true;
 
 
         protected DTInspectorNode(string name)
@@ -219,9 +209,7 @@ namespace FluffyUnderware.DevToolsEditor
         }
 
         public static implicit operator bool(DTInspectorNode a)
-        {
-            return !object.ReferenceEquals(a, null);
-        }
+            => !ReferenceEquals(a, null);
 
         /// <summary>
         /// Search for a node at a specific path
@@ -339,16 +327,16 @@ namespace FluffyUnderware.DevToolsEditor
 
                         switch (condA.Action)
                         {
-                            case ConditionalAttribute.ActionEnum.Show:
+                            case ActionAttribute.ActionEnum.Show:
                                 Visible = met;
                                 break;
-                            case ConditionalAttribute.ActionEnum.Hide:
+                            case ActionAttribute.ActionEnum.Hide:
                                 Visible = !met;
                                 break;
-                            case ConditionalAttribute.ActionEnum.Enable:
+                            case ActionAttribute.ActionEnum.Enable:
                                 Disabled = !met;
                                 break;
-                            case ConditionalAttribute.ActionEnum.Disable:
+                            case ActionAttribute.ActionEnum.Disable:
                                 Disabled = met;
                                 break;
                             default:
@@ -377,14 +365,11 @@ namespace FluffyUnderware.DevToolsEditor
     public class DTGroupNode : DTInspectorNode
     {
 
-        static internal SerializedObject _serializedObject;
+        internal static SerializedObject _serializedObject;
 
         public override bool Expanded
         {
-            get
-            {
-                return mState.target;
-            }
+            get => mState.target;
             set
             {
 
@@ -398,33 +383,15 @@ namespace FluffyUnderware.DevToolsEditor
             }
         }
 
-        public float ExpandedFaded
-        {
-            get
-            {
-                return mState.faded;
-            }
-        }
+        public float ExpandedFaded => mState.faded;
 
         public override bool ContentVisible
         {
-            get
-            {
-                return base.ContentVisible && ExpandedFaded != 0;
-            }
-            set
-            {
-                base.ContentVisible = value;
-            }
+            get => base.ContentVisible && ExpandedFaded != 0;
+            set => base.ContentVisible = value;
         }
 
-        public override bool NeedRepaint
-        {
-            get
-            {
-                return mState.isAnimating;
-            }
-        }
+        public override bool NeedRepaint => mState.isAnimating;
 
         public string HelpURL { get; set; }
         public bool Fixed { get; set; }
@@ -436,34 +403,22 @@ namespace FluffyUnderware.DevToolsEditor
 
         public int SelectedIndex
         {
-            get
-            {
-                return Count > 0 ? Mathf.Clamp(mSelectedItem, 0, Count - 1) : -1;
-            }
-            set
-            {
-                mSelectedItem = Count > 0 ? Mathf.Clamp(value, 0, Count - 1) : -1;
-            }
+            get => Count > 0 ? Mathf.Clamp(mSelectedItem, 0, Count - 1) : -1;
+            set => mSelectedItem = Count > 0 ? Mathf.Clamp(value, 0, Count - 1) : -1;
         }
 
         public DTInspectorNode SelectedItem
         {
-            get
-            {
-                return (SelectedIndex != -1) ? Items[SelectedIndex] : null;
-            }
-            set
-            {
-                SelectedIndex = (value == null) ? -1 : value.Index;
-            }
+            get => (SelectedIndex != -1) ? Items[SelectedIndex] : null;
+            set => SelectedIndex = (value == null) ? -1 : value.Index;
         }
 
         public int MaxItemsPerRow { get; set; }
 
         #endregion
 
-        readonly AnimBool mState = new AnimBool(true);
-        int mSelectedItem = -1;
+        private readonly AnimBool mState = new AnimBool(true);
+        private int mSelectedItem = -1;
 
         public DTGroupNode(string name, SerializedProperty forProperty = null, RenderAsEnum renderAs = RenderAsEnum.Section) : base(name)
         {
@@ -508,16 +463,16 @@ namespace FluffyUnderware.DevToolsEditor
 
                         switch (condA.Action)
                         {
-                            case ConditionalAttribute.ActionEnum.Show:
+                            case ActionAttribute.ActionEnum.Show:
                                 Visible = met;
                                 break;
-                            case ConditionalAttribute.ActionEnum.Hide:
+                            case ActionAttribute.ActionEnum.Hide:
                                 Visible = !met;
                                 break;
-                            case ConditionalAttribute.ActionEnum.Enable:
+                            case ActionAttribute.ActionEnum.Enable:
                                 Disabled = !met;
                                 break;
-                            case ConditionalAttribute.ActionEnum.Disable:
+                            case ActionAttribute.ActionEnum.Disable:
                                 Disabled = met;
                                 break;
                             default:
@@ -535,7 +490,7 @@ namespace FluffyUnderware.DevToolsEditor
             }
         }
 
-        void getAdditionalGroupParams(GroupAttribute a)
+        private void getAdditionalGroupParams(GroupAttribute a)
         {
             if (a == null)
             {
@@ -644,7 +599,7 @@ namespace FluffyUnderware.DevToolsEditor
 
     public static class DTPersistentState
     {
-        static readonly Dictionary<string, bool> _states = new Dictionary<string, bool>();
+        private static readonly Dictionary<string, bool> _states = new Dictionary<string, bool>();
 
 
         public static bool GetBool(string ident, bool defaultState = true)
@@ -694,7 +649,8 @@ namespace FluffyUnderware.DevToolsEditor
                 return mHelpIcon;
             }
         }
-        static Texture mHelpIcon;
+
+        private static Texture mHelpIcon;
         public static GUIStyle BoldFoldout
         {
             get
@@ -710,7 +666,8 @@ namespace FluffyUnderware.DevToolsEditor
                 return mBoldFoldout;
             }
         }
-        static GUIStyle mBoldFoldout;
+
+        private static GUIStyle mBoldFoldout;
 
         public static GUIStyle TabbarButton
         {
@@ -736,7 +693,8 @@ namespace FluffyUnderware.DevToolsEditor
                 return mTabbarButton;
             }
         }
-        static GUIStyle mTabbarButton;
+
+        private static GUIStyle mTabbarButton;
 
         public virtual void RenderAction(DTInspectorNode node, ActionAttribute action, System.Object editorObject, System.Object targetObject)
         {
@@ -782,7 +740,11 @@ namespace FluffyUnderware.DevToolsEditor
 
 #pragma warning disable 162
 #pragma warning disable 429
-        private static readonly Color SectionHeaderBackgroundColor = new Color(1f, 1f, 1f);
+        private static readonly Color SectionHeaderBackgroundColor = new Color(
+            1f,
+            1f,
+            1f
+        );
 #pragma warning restore 429
 #pragma warning restore 162
         public static int RenderHeader(Rect controlRect, int xOffset, string helpUrl, GUIContent toggleGuiContent, ref bool toggleState)
@@ -792,7 +754,12 @@ namespace FluffyUnderware.DevToolsEditor
             controlRect = EditorGUI.IndentedRect(controlRect);
             DTGUI.PushColor(SectionHeaderBackgroundColor);
             const int additionalHeight = 4;
-            Rect boxRectangle = new Rect(controlRect.x, controlRect.y - 2, controlRect.width + xOffset + 1, controlRect.height + additionalHeight);
+            Rect boxRectangle = new Rect(
+                controlRect.x,
+                controlRect.y - 2,
+                controlRect.width + xOffset + 1,
+                controlRect.height + additionalHeight
+            );
             GUI.Box(boxRectangle, "", GUI.skin.box);
             DTHandles.DrawOutline(boxRectangle, Color.black);
             DTGUI.PopColor();

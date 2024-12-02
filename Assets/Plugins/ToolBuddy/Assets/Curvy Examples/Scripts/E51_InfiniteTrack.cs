@@ -1,22 +1,24 @@
 // =====================================================================
-// Copyright 2013-2022 ToolBuddy
+// Copyright © 2013 ToolBuddy
 // All rights reserved
 // 
 // http://www.toolbuddy.net
 // =====================================================================
 
-using UnityEngine;
+using System;
 using System.Collections;
+using FluffyUnderware.Curvy.Controllers;
 using FluffyUnderware.Curvy.Generator;
 using FluffyUnderware.Curvy.Generator.Modules;
-using FluffyUnderware.Curvy.Controllers;
 using FluffyUnderware.Curvy.Shapes;
 using FluffyUnderware.DevTools;
+using JetBrains.Annotations;
+using UnityEngine;
 using UnityEngine.UI;
+using Random = UnityEngine.Random;
 
 namespace FluffyUnderware.Curvy.Examples
 {
-
     public class E51_InfiniteTrack : MonoBehaviour
     {
         public CurvySpline TrackSpline; // empty Spline object we create the path in
@@ -26,60 +28,68 @@ namespace FluffyUnderware.Curvy.Examples
 
         [Positive]
         public float CurvationX = 10; // X-axis angle randomness
+
         [Positive]
         public float CurvationY = 10; // Y-axis angle randomness
+
         [Positive]
         public float CPStepSize = 20; // distance between CPs
+
         [Positive]
         public int HeadCP = 3; // CP's to build in front of extrusion
+
         [Positive]
         public int TailCP = 2; // CP's to keep behind extrusion
 
         [DevTools.Min(3)]
         public int Sections = 6; // # of Extrusions to use
+
         [DevTools.Min(1)]
         public int SectionCPCount = 2; // # of CP's to use for a single extrusion
 
 
-        int mInitState = 0;
-        bool mUpdateSpline;
-        int mUpdateIn;
+        private int mInitState;
+        private bool mUpdateSpline;
+        private int mUpdateIn;
 
-        CurvyGenerator[] mGenerators;
-        int mCurrentGen;
-        float lastSectionEndV;
-        Vector3 mDir;
-        readonly TimeMeasure timeSpline = new TimeMeasure(30);
-        readonly TimeMeasure timeCG = new TimeMeasure(1);
+        private CurvyGenerator[] mGenerators;
+        private int mCurrentGen;
+        private float lastSectionEndV;
+        private Vector3 mDir;
+        private readonly TimeMeasure timeSpline = new TimeMeasure(30);
+        private readonly TimeMeasure timeCG = new TimeMeasure(1);
 
 
-        void Start()
-        {
+        [UsedImplicitly]
+        private void Start() =>
             updateStats();
-        }
 
-        void FixedUpdate()
+        [UsedImplicitly]
+        private void FixedUpdate()
         {
             if (mInitState == 0)
                 StartCoroutine(nameof(setup));
 
             if (mInitState == 2 && mUpdateSpline)
                 advanceTrack();
-
         }
 
         // setup everything
-        IEnumerator setup()
+        private IEnumerator setup()
         {
             mInitState = 1;
 
             mGenerators = new CurvyGenerator[Sections];
 
             // Add the start CP to the spline
-            TrackSpline.InsertAfter(null, Vector3.zero, true);
+            TrackSpline.InsertAfter(
+                null,
+                Vector3.zero,
+                true
+            );
             mDir = Vector3.forward;
 
-            int num = TailCP + HeadCP + Sections * SectionCPCount;
+            int num = TailCP + HeadCP + (Sections * SectionCPCount);
             for (int i = 0; i < num; i++)
                 addTrackCP();
 
@@ -92,6 +102,7 @@ namespace FluffyUnderware.Curvy.Examples
                 mGenerators[i] = buildGenerator();
                 mGenerators[i].name = "Generator " + i;
             }
+
             // and wait until they're initialized
             for (int i = 0; i < Sections; i++)
                 while (!mGenerators[i].IsInitialized)
@@ -99,7 +110,11 @@ namespace FluffyUnderware.Curvy.Examples
 
             // let all generators do their extrusion
             for (int i = 0; i < Sections; i++)
-                updateSectionGenerator(mGenerators[i], i * SectionCPCount + TailCP, (i + 1) * SectionCPCount + TailCP);
+                updateSectionGenerator(
+                    mGenerators[i],
+                    (i * SectionCPCount) + TailCP,
+                    ((i + 1) * SectionCPCount) + TailCP
+                );
 
             mInitState = 2;
             mUpdateIn = SectionCPCount;
@@ -108,7 +123,7 @@ namespace FluffyUnderware.Curvy.Examples
         }
 
         // build a generator
-        CurvyGenerator buildGenerator()
+        private CurvyGenerator buildGenerator()
         {
             // Create the Curvy Generator
             CurvyGenerator gen = CurvyGenerator.Create();
@@ -135,7 +150,10 @@ namespace FluffyUnderware.Curvy.Examples
             extrude.CrossHardEdges = true;
 #pragma warning restore 618
             vol.Split = false;
-            vol.SetMaterial(0, RoadMaterial);
+            vol.SetMaterial(
+                0,
+                RoadMaterial
+            );
             vol.MaterialSettings[0].SwapUV = true;
 
             msh.Collider = CGColliderEnum.None;
@@ -143,7 +161,7 @@ namespace FluffyUnderware.Curvy.Examples
         }
 
         // advance the track
-        void advanceTrack()
+        private void advanceTrack()
         {
             timeSpline.Start();
 
@@ -152,8 +170,12 @@ namespace FluffyUnderware.Curvy.Examples
             for (int i = 0; i < SectionCPCount; i++)
             {
                 pos -= TrackSpline.ControlPointsList[0].Length; // update controller's position, so the ship won't jump
-                TrackSpline.Delete(TrackSpline.ControlPointsList[0], true);
+                TrackSpline.Delete(
+                    TrackSpline.ControlPointsList[0],
+                    true
+                );
             }
+
             // add new section's CP
             for (int i = 0; i < SectionCPCount; i++)
                 addTrackCP();
@@ -171,33 +193,45 @@ namespace FluffyUnderware.Curvy.Examples
         }
 
         // update all CGs
-        void advanceSections()
+        private void advanceSections()
         {
             // set oldest CG to render path for new section
             CurvyGenerator cur = mGenerators[mCurrentGen++];
             int num = TrackSpline.ControlPointCount - HeadCP - 1;
-            updateSectionGenerator(cur, num - SectionCPCount, num);
+            updateSectionGenerator(
+                cur,
+                num - SectionCPCount,
+                num
+            );
 
             if (mCurrentGen == Sections)
                 mCurrentGen = 0;
         }
 
-        void updateStats()
+        private void updateStats()
         {
 #if UNITY_WEBGL
-            TxtStats.text = System.String.Empty; //time measurement seems not reliable on WebGL, so I prefered deactivating it.
+            TxtStats.text = String.Empty; //time measurement seems not reliable on WebGL, so I prefered deactivating it.
 #else
-            TxtStats.text = string.Format("Spline Update: {0:0.00} ms\nGenerator Update: {1:0.00} ms", timeSpline.AverageMS, timeCG.AverageMS);
+            TxtStats.text =
+                string.Format(
+                    "Spline Update: {0:0.00} ms\nGenerator Update: {1:0.00} ms",
+                    timeSpline.AverageMS,
+                    timeCG.AverageMS
+                );
 #endif
         }
 
         // set a CG to render only a portion of a spline
-        void updateSectionGenerator(CurvyGenerator gen, int startCP, int endCP)
+        private void updateSectionGenerator(CurvyGenerator gen, int startCP, int endCP)
         {
             // Set Track segment we want to use
             InputSplinePath path = gen.FindModules<InputSplinePath>(true)[0];
 
-            path.SetRange(TrackSpline.ControlPointsList[startCP], TrackSpline.ControlPointsList[endCP]);
+            path.SetRange(
+                TrackSpline.ControlPointsList[startCP],
+                TrackSpline.ControlPointsList[endCP]
+            );
 
             // Set UV-Offset to match
             BuildVolumeMesh vol = gen.FindModules<BuildVolumeMesh>(false)[0];
@@ -206,7 +240,10 @@ namespace FluffyUnderware.Curvy.Examples
             gen.Refresh();
             timeCG.Stop();
             // fetch the ending V to be used by next section
-            CGVMesh vmesh = vol.OutVMesh.GetData<CGVMesh>();
+            if (vol.OutVMesh.Data.Length == 0)
+                throw new InvalidOperationException("No VMesh data found");
+
+            CGVMesh vmesh = (CGVMesh)vol.OutVMesh.Data[0];
             lastSectionEndV = vmesh.UVs.Array[vmesh.Count - 1].y;
         }
 
@@ -221,21 +258,29 @@ namespace FluffyUnderware.Curvy.Examples
         }
 
         // add more CP's, rotating path by random angles
-        void addTrackCP()
+        private void addTrackCP()
         {
             Vector3 p = TrackSpline.ControlPointsList[TrackSpline.ControlPointCount - 1].transform.localPosition;
-            Vector3 position = TrackSpline.transform.localToWorldMatrix.MultiplyPoint3x4(p + mDir * CPStepSize);
+            Vector3 position = TrackSpline.transform.localToWorldMatrix.MultiplyPoint3x4(p + (mDir * CPStepSize));
 
             float rndX = Random.value * CurvationX * DTUtility.RandomSign();
             float rndY = Random.value * CurvationY * DTUtility.RandomSign();
-            mDir = Quaternion.Euler(rndX, rndY, 0) * mDir;
+            mDir = Quaternion.Euler(
+                       rndX,
+                       rndY,
+                       0
+                   )
+                   * mDir;
 
-            CurvySplineSegment newControlPoint = TrackSpline.InsertAfter(null, position, true);
+            CurvySplineSegment newControlPoint = TrackSpline.InsertAfter(
+                null,
+                position,
+                true
+            );
 
             //Set the last control point of each section as an Orientation Anchor, to avoid that Control Points added beyond this point modify the dynamic orientation of previous Control Points
             if ((TrackSpline.ControlPointCount - 1 - TailCP) % SectionCPCount == 0)
                 newControlPoint.SerializedOrientationAnchor = true;
-
         }
     }
 }

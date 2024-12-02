@@ -1,5 +1,5 @@
 // =====================================================================
-// Copyright 2013-2022 ToolBuddy
+// Copyright © 2013 ToolBuddy
 // All rights reserved
 // 
 // http://www.toolbuddy.net
@@ -8,10 +8,11 @@
 #if CONTRACTS_FULL
 using System.Diagnostics.Contracts;
 #endif
-using UnityEngine;
-using UnityEditor;
-using FluffyUnderware.DevToolsEditor;
 using FluffyUnderware.Curvy;
+using FluffyUnderware.DevToolsEditor;
+using JetBrains.Annotations;
+using UnityEditor;
+using UnityEngine;
 using UnityEngine.Assertions;
 
 namespace FluffyUnderware.CurvyEditor
@@ -20,9 +21,9 @@ namespace FluffyUnderware.CurvyEditor
     [CanEditMultipleObjects]
     public class MetaCGOptionsEditor : DTEditor<MetaCGOptions>
     {
-
+        [UsedImplicitly]
         [DrawGizmo(GizmoType.Active | GizmoType.NonSelected | GizmoType.InSelectionHierarchy)]
-        static void MetaGizmoDrawer(MetaCGOptions data, GizmoType context)
+        private static void MetaGizmoDrawer(MetaCGOptions data, GizmoType context)
         {
             if (data.Spline == null)
                 return;
@@ -33,20 +34,30 @@ namespace FluffyUnderware.CurvyEditor
                 {
                     Vector3 position = data.ControlPoint.transform.position;
 #pragma warning disable CS0618
-                    CurvyGizmo.PointLabel(position, "^", OrientationAxisEnum.Down);
+                    CurvyGizmo.PointLabel(
+                        position,
+                        "^",
+                        OrientationAxisEnum.Down
+                    );
 #pragma warning restore CS0618
                 }
+
                 if (data.Spline.Dirty == false && data.MaterialID != 0)
                 {
                     Vector3 position = data.Spline.ToWorldPosition(data.ControlPoint.Interpolate(0.5f));
 #pragma warning disable CS0618
-                    CurvyGizmo.PointLabel(position, data.MaterialID.ToString(), OrientationAxisEnum.Forward);
+                    CurvyGizmo.PointLabel(
+                        position,
+                        data.MaterialID.ToString(),
+                        OrientationAxisEnum.Forward
+                    );
 #pragma warning restore CS0618
                 }
             }
         }
 
-        void CBSetFirstU()
+        [UsedImplicitly]
+        private void CBSetFirstU()
         {
 #if CONTRACTS_FULL
             Contract.Requires(Target.ControlPoint.Spline != null);
@@ -80,15 +91,14 @@ namespace FluffyUnderware.CurvyEditor
                                         break;
                                     currentCp = curvySpline.GetPreviousControlPoint(currentCp);
                                 }
+
                                 previousUWithDefinedCp = currentCp;
                             }
-
                         }
                         MetaCGOptions previousDefinedOptions = previousUWithDefinedCp.GetMetadata<MetaCGOptions>(true);
 
                         CurvySplineSegment nextCpWithDefinedU;
                         {
-
                             CurvySplineSegment currentCp = curvySpline.GetNextControlPoint(targetControlPoint);
                             if (currentCp == null || targetControlPoint == curvySpline.LastVisibleControlPoint)
                                 nextCpWithDefinedU = targetControlPoint;
@@ -109,16 +119,24 @@ namespace FluffyUnderware.CurvyEditor
                             nextCpWithDefinedU = curvySpline.GetPreviousControlPoint(nextCpWithDefinedU);
                         MetaCGOptions nextDefinedOptions = nextCpWithDefinedU.GetMetadata<MetaCGOptions>(true);
 
-                        float frag = (targetControlPoint.Distance - previousUWithDefinedCp.Distance) / (nextCpWithDefinedU.Distance - previousUWithDefinedCp.Distance);
+                        float frag = (targetControlPoint.Distance - previousUWithDefinedCp.Distance)
+                                     / (nextCpWithDefinedU.Distance - previousUWithDefinedCp.Distance);
 #if CURVY_SANITY_CHECKS
                         Assert.IsFalse(float.IsNaN(frag));
 #endif
 
-                        float startingU = (previousUWithDefinedCp == targetControlPoint) ? 0 : previousDefinedOptions.GetDefinedSecondU(0);
-                        float endingU = (nextCpWithDefinedU == targetControlPoint) ? 1 : nextDefinedOptions.GetDefinedFirstU(1);
-                        uValue = Mathf.Lerp(startingU, endingU, frag);
+                        float startingU = previousUWithDefinedCp == targetControlPoint
+                            ? 0
+                            : previousDefinedOptions.GetDefinedSecondU(0);
+                        float endingU = nextCpWithDefinedU == targetControlPoint
+                            ? 1
+                            : nextDefinedOptions.GetDefinedFirstU(1);
+                        uValue = Mathf.Lerp(
+                            startingU,
+                            endingU,
+                            frag
+                        );
                     }
-
                 }
                 else
                     uValue = 0;
@@ -130,6 +148,4 @@ namespace FluffyUnderware.CurvyEditor
             }
         }
     }
-
-
 }

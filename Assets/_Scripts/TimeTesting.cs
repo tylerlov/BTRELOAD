@@ -34,7 +34,7 @@ public class TimeTesting : MonoBehaviour
 
     private IEnumerator onMusicalHalftime()
     {
-        Debug.Log("Half time!");
+        ConditionalDebug.Log("Half time!");
         musicPlayback.EventInstance.setParameterByName("Slow", 1f);
         musicPlayback.EventInstance.setPitch(0.5f);
         Clock clock = Timekeeper.instance.Clock("Test");

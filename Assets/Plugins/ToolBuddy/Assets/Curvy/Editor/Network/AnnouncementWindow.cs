@@ -1,12 +1,13 @@
 // =====================================================================
-// Copyright 2013-2022 ToolBuddy
+// Copyright © 2013 ToolBuddy
 // All rights reserved
 // 
 // http://www.toolbuddy.net
 // =====================================================================
 
-using UnityEngine;
+using JetBrains.Annotations;
 using UnityEditor;
+using UnityEngine;
 
 namespace FluffyUnderware.CurvyEditor.Network
 {
@@ -16,7 +17,11 @@ namespace FluffyUnderware.CurvyEditor.Network
     public class AnnouncementWindow : EditorWindow
     {
         private string content;
-        private Vector2 scrollViewPosition = new Vector2(0, 0);
+
+        private Vector2 scrollViewPosition = new Vector2(
+            0,
+            0
+        );
 
         /// <summary>
         /// Opens an announcement window
@@ -38,12 +43,16 @@ namespace FluffyUnderware.CurvyEditor.Network
             }
             window.position = announcementWindowPosition;
 
-            window.minSize = new Vector2(announcementWindowPosition.width, announcementWindowPosition.height);
+            window.minSize = new Vector2(
+                announcementWindowPosition.width,
+                announcementWindowPosition.height
+            );
 
             return window;
         }
 
-        void OnGUI()
+        [UsedImplicitly]
+        private void OnGUI()
         {
             GUIStyle labelStyle = new GUIStyle(EditorStyles.label);
             labelStyle.alignment = TextAnchor.UpperLeft;
@@ -65,7 +74,10 @@ namespace FluffyUnderware.CurvyEditor.Network
             GUILayout.BeginHorizontal();
             GUILayout.Space(20);
             GUILayout.FlexibleSpace();
-            GUILayout.Label(titleContent.text, labelStyle);
+            GUILayout.Label(
+                titleContent.text,
+                labelStyle
+            );
             GUILayout.FlexibleSpace();
             GUILayout.Space(20);
             GUILayout.EndHorizontal();
@@ -79,7 +91,10 @@ namespace FluffyUnderware.CurvyEditor.Network
             GUILayout.BeginHorizontal();
             GUILayout.Space(20);
             GUILayout.FlexibleSpace();
-            GUILayout.Label(content, labelStyle);
+            GUILayout.Label(
+                content,
+                labelStyle
+            );
             float mainTextHeight = GUILayoutUtility.GetLastRect().height;
             GUILayout.FlexibleSpace();
             GUILayout.Space(20);
@@ -91,9 +106,20 @@ namespace FluffyUnderware.CurvyEditor.Network
             float recommendedHeight = 230f + mainTextHeight;
             if (recommendedHeight > position.height && Event.current.type == EventType.Repaint)
             {
-                float limitedRecommendedHeight = Mathf.Min(recommendedHeight, 600f);
-                position.Set(position.x, position.y, position.width, limitedRecommendedHeight);
-                minSize = new Vector2(position.width, limitedRecommendedHeight);
+                float limitedRecommendedHeight = Mathf.Min(
+                    recommendedHeight,
+                    600f
+                );
+                position.Set(
+                    position.x,
+                    position.y,
+                    position.width,
+                    limitedRecommendedHeight
+                );
+                minSize = new Vector2(
+                    position.width,
+                    limitedRecommendedHeight
+                );
             }
         }
     }

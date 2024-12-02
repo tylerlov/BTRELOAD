@@ -1,11 +1,12 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
-using DG.Tweening;
 using UnityEngine;
+using PrimeTween;
 
 public class LookAtCamera : MonoBehaviour
 {
     public Transform LookAtObject;
+    private Tween _lookTween;
 
     // Update is called once per frame
 
@@ -19,13 +20,20 @@ public class LookAtCamera : MonoBehaviour
 
     void FixedUpdate()
     {
-        transform.DOLookAt(
-            2 * transform.position - LookAtObject.position,
-            0,
-            AxisConstraint.None,
-            null
-        );
-        //transform.LookAt(LookAtObject);
-        //transform.LookAt(2 * transform.position - LookAtObject.position);
+        // Stop any existing look tween
+        _lookTween.Stop();
+
+        // Calculate the look-at rotation
+        Vector3 targetPosition = 2 * transform.position - LookAtObject.position;
+        Quaternion targetRotation = Quaternion.LookRotation(targetPosition - transform.position);
+
+        // Create a new tween for smooth rotation
+        _lookTween = Tween.Rotation(transform, targetRotation, 0.1f);
+    }
+
+    private void OnDisable()
+    {
+        // Clean up tween when disabled
+        _lookTween.Stop();
     }
 }

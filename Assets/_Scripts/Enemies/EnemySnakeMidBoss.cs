@@ -108,7 +108,7 @@ public class EnemySnakeMidBoss : BaseBehaviour, IDamageable, ILimbDamageReceiver
 
         if (destroyEffect == null)
         {
-            Debug.LogWarning("DestroyEffect component not found on " + gameObject.name);
+            ConditionalDebug.LogWarning("DestroyEffect component not found on " + gameObject.name);
         }
 
         if (vfxPrefab != null)
@@ -128,7 +128,7 @@ public class EnemySnakeMidBoss : BaseBehaviour, IDamageable, ILimbDamageReceiver
             hitCollider = GetComponent<Collider>();
             if (hitCollider == null)
             {
-                Debug.LogError("EnemySnakeMidBoss requires a Collider component. Please add one to the GameObject.");
+                ConditionalDebug.LogError("EnemySnakeMidBoss requires a Collider component. Please add one to the GameObject.");
             }
         }
 
@@ -238,24 +238,24 @@ public class EnemySnakeMidBoss : BaseBehaviour, IDamageable, ILimbDamageReceiver
         // Validate hitCollider
         if (hitCollider == null)
         {
-            Debug.LogWarning("Hit collider is not set for EnemySnakeMidBoss. Please assign it in the inspector.");
+            ConditionalDebug.LogWarning("Hit collider is not set for EnemySnakeMidBoss. Please assign it in the inspector.");
         }
 
         // Check and set the layer
         if (gameObject.layer != LayerMask.NameToLayer("Enemy"))
         {
-            Debug.LogWarning($"EnemySnakeMidBoss was not on the Enemy layer. Setting it now. Was on layer: {LayerMask.LayerToName(gameObject.layer)}");
+            ConditionalDebug.LogWarning($"EnemySnakeMidBoss was not on the Enemy layer. Setting it now. Was on layer: {LayerMask.LayerToName(gameObject.layer)}");
             gameObject.layer = LayerMask.NameToLayer("Enemy");
         }
 
         // Log collider information
         if (hitCollider != null)
         {
-            Debug.Log($"EnemySnakeMidBoss hitCollider: {hitCollider.GetType()}, isTrigger: {hitCollider.isTrigger}, bounds: {hitCollider.bounds}");
+            ConditionalDebug.Log($"EnemySnakeMidBoss hitCollider: {hitCollider.GetType()}, isTrigger: {hitCollider.isTrigger}, bounds: {hitCollider.bounds}");
         }
         else
         {
-            Debug.LogError("EnemySnakeMidBoss hitCollider is null!");
+            ConditionalDebug.LogError("EnemySnakeMidBoss hitCollider is null!");
         }
 
         // Initialize limbColliders if not set in inspector
@@ -274,7 +274,7 @@ public class EnemySnakeMidBoss : BaseBehaviour, IDamageable, ILimbDamageReceiver
     // This method will now be called only by ColliderHitCallback scripts
     public void DamageFromLimb(string limbName, float amount)
     {
-        Debug.Log($"EnemySnakeMidBoss received damage from limb {limbName}: {amount}. Current health: {currentHealth}");
+        ConditionalDebug.Log($"EnemySnakeMidBoss received damage from limb {limbName}: {amount}. Current health: {currentHealth}");
         HandleDamage(amount);
     }
 
@@ -282,7 +282,7 @@ public class EnemySnakeMidBoss : BaseBehaviour, IDamageable, ILimbDamageReceiver
     public void Damage(float amount)
     {
         // This method is now empty to prevent direct damage
-        Debug.LogWarning("Attempted to damage EnemySnakeMidBoss directly. Use ColliderHitCallback instead.");
+        ConditionalDebug.LogWarning("Attempted to damage EnemySnakeMidBoss directly. Use ColliderHitCallback instead.");
     }
 
     public bool IsAlive() => currentHealth > 0;
@@ -313,12 +313,12 @@ public class EnemySnakeMidBoss : BaseBehaviour, IDamageable, ILimbDamageReceiver
     {
         if (this == null || gameObject == null || hitCollider == null)
         {
-            Debug.LogWarning("EnemySnakeMidBoss, its GameObject, or hitCollider has been destroyed. Skipping damage handling.");
+            ConditionalDebug.LogWarning("EnemySnakeMidBoss, its GameObject, or hitCollider has been destroyed. Skipping damage handling.");
             return;
         }
 
         currentHealth = Mathf.Max(currentHealth - amount, 0);
-        Debug.Log($"EnemySnakeMidBoss health after damage: {currentHealth}");
+        ConditionalDebug.Log($"EnemySnakeMidBoss health after damage: {currentHealth}");
 
         // Play hit sound
         FMODUnity.RuntimeManager.PlayOneShot(hitSoundEventPath, transform.position);
@@ -375,7 +375,7 @@ public class EnemySnakeMidBoss : BaseBehaviour, IDamageable, ILimbDamageReceiver
     {
         if (ProjectileManager.Instance == null || playerTarget == null)
         {
-            Debug.LogError("ProjectileManager instance or player target not found.");
+            ConditionalDebug.LogError("ProjectileManager instance or player target not found.");
             return;
         }
 
@@ -464,7 +464,7 @@ public class EnemySnakeMidBoss : BaseBehaviour, IDamageable, ILimbDamageReceiver
         }
         else
         {
-            Debug.LogWarning("Animator is null or disabled during OnDeath for EnemySnakeMidBoss");
+            ConditionalDebug.LogWarning("Animator is null or disabled during OnDeath for EnemySnakeMidBoss");
             await Task.Delay(2000); // Wait for 2 seconds as a fallback
         }
 
@@ -475,7 +475,7 @@ public class EnemySnakeMidBoss : BaseBehaviour, IDamageable, ILimbDamageReceiver
         }
         else
         {
-            Debug.LogWarning("DestroyEffect is null, skipping effect cleanup");
+            ConditionalDebug.LogWarning("DestroyEffect is null, skipping effect cleanup");
         }
 
         // Additional cleanup or state management here, if necessary
@@ -488,7 +488,7 @@ public class EnemySnakeMidBoss : BaseBehaviour, IDamageable, ILimbDamageReceiver
     {
         if (this == null || gameObject == null)
         {
-            Debug.LogWarning(
+            ConditionalDebug.LogWarning(
                 "EnemySnakeMidBoss or its GameObject has been destroyed. Skipping cleanup."
             );
             return;
@@ -507,7 +507,7 @@ public class EnemySnakeMidBoss : BaseBehaviour, IDamageable, ILimbDamageReceiver
         }
         catch (MissingReferenceException)
         {
-            Debug.LogWarning(
+            ConditionalDebug.LogWarning(
                 "Some components were destroyed during cleanup. Continuing with available components."
             );
         }
@@ -545,7 +545,7 @@ public class EnemySnakeMidBoss : BaseBehaviour, IDamageable, ILimbDamageReceiver
 
             if (elapsedTime > timeout)
             {
-                Debug.LogWarning($"Timeout waiting for animation state: {stateName}");
+                ConditionalDebug.LogWarning($"Timeout waiting for animation state: {stateName}");
                 break;
             }
         }

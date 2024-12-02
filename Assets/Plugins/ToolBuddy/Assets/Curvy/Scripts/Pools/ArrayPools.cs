@@ -1,5 +1,5 @@
 // =====================================================================
-// Copyright 2013-2022 ToolBuddy
+// Copyright © 2013 ToolBuddy
 // All rights reserved
 // 
 // http://www.toolbuddy.net
@@ -31,22 +31,27 @@ namespace FluffyUnderware.Curvy.Pools
         /// Gets the reference to the unique <see cref="ArrayPool{T}"/> of said type
         /// </summary>
         public static ArrayPool<Vector2> Vector2 { get; }
+
         /// <summary>
         /// Gets the reference to the unique <see cref="ArrayPool{T}"/> of said type
         /// </summary>
         public static ArrayPool<Vector3> Vector3 { get; }
+
         /// <summary>
         /// Gets the reference to the unique <see cref="ArrayPool{T}"/> of said type
         /// </summary>
         public static ArrayPool<Vector4> Vector4 { get; }
+
         /// <summary>
         /// Gets the reference to the unique <see cref="ArrayPool{T}"/> of said type
         /// </summary>
         public static ArrayPool<int> Int32 { get; }
+
         /// <summary>
         /// Gets the reference to the unique <see cref="ArrayPool{T}"/> of said type
         /// </summary>
         public static ArrayPool<float> Single { get; }
+
         /// <summary>
         /// Gets the reference to the unique <see cref="ArrayPool{T}"/> of said type
         /// </summary>

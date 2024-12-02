@@ -1,84 +1,18 @@
 // =====================================================================
-// Copyright 2013-2022 ToolBuddy
+// Copyright © 2013 ToolBuddy
 // All rights reserved
 // 
 // http://www.toolbuddy.net
 // =====================================================================
 
 using System;
-using UnityEngine;
 using System.Runtime.CompilerServices;
 using FluffyUnderware.DevTools;
 using ToolBuddy.Pooling.Collections;
+using UnityEngine;
 
 namespace FluffyUnderware.Curvy.Generator.Modules
 {
-    /// <summary>
-    /// An enum indicating what type of scaling should be applied
-    /// </summary>
-    public enum ScaleMode
-    {
-        /// <summary>
-        /// Simple uniform scaling
-        /// </summary>
-        Simple,
-        /// <summary>
-        /// More complex scaling parameters (scaling curves and whatnot)
-        /// </summary>
-        Advanced
-    }
-
-    /// <summary>
-    /// A class used as a container of Scaling parameters found in <see cref="ScalingModule"/>
-    /// </summary>
-    public class ScaleParameters
-    {
-        /// <summary>
-        /// <see cref="ScalingModule.ScaleMode"/>
-        /// </summary>
-        public readonly ScaleMode ScaleMode;
-        /// <summary>
-        /// <see cref="ScalingModule.ScaleReference"/>
-        /// </summary>
-        public readonly CGReferenceMode ScaleReference;
-        /// <summary>
-        /// <see cref="ScalingModule.ScaleUniform"/>
-        /// </summary>
-        public readonly bool ScaleUniform;
-        /// <summary>
-        /// <see cref="ScalingModule.ScaleOffset"/>
-        /// </summary>
-        public readonly float ScaleOffset;
-        /// <summary>
-        /// <see cref="ScalingModule.ScaleX;"/>
-        /// </summary>
-        public readonly float ScaleX;
-        /// <summary>
-        /// <see cref="ScalingModule.ScaleY"/>
-        /// </summary>
-        public readonly float ScaleY;
-        /// <summary>
-        /// <see cref="ScalingModule.ScaleMultiplierX"/>
-        /// </summary>
-        public readonly AnimationCurve ScaleMultiplierX;
-        /// <summary>
-        /// <see cref="ScalingModule.ScaleMultiplierY"/>
-        /// </summary>
-        public readonly AnimationCurve ScaleMultiplierY;
-
-        public ScaleParameters(ScaleMode scaleMode, CGReferenceMode scaleReference, bool scaleUniform, float scaleOffset, float scaleX, float scaleY, AnimationCurve scaleMultiplierX, AnimationCurve scaleMultiplierY)
-        {
-            ScaleMode = scaleMode;
-            ScaleReference = scaleReference;
-            ScaleUniform = scaleUniform;
-            ScaleOffset = scaleOffset;
-            ScaleX = scaleX;
-            ScaleY = scaleY;
-            ScaleMultiplierX = scaleMultiplierX;
-            ScaleMultiplierY = scaleMultiplierY;
-        }
-    }
-
     /// <summary>
     /// A base class for CG modules that wish to scale objects along a path or shape
     /// </summary>
@@ -86,21 +20,32 @@ namespace FluffyUnderware.Curvy.Generator.Modules
     {
         #region ### Serialized Fields ###
 
-        [Tab("Scale", Sort = 101)]
+        [Tab(
+            "Scale",
+            Sort = 101
+        )]
         [Label("Mode")]
         [SerializeField]
         [Tooltip("What type of scaling should be applied")]
         private ScaleMode m_ScaleMode = ScaleMode.Simple;
 
-        [FieldCondition(nameof(m_ScaleMode), ScaleMode.Advanced)]
+        [FieldCondition(
+            nameof(m_ScaleMode),
+            ScaleMode.Advanced
+        )]
         [Label("Reference")]
         [SerializeField]
-        [Tooltip(@"Determines on what range the scale is applied:
+        [Tooltip(
+            @"Determines on what range the scale is applied:
 Self: the scale is applied over the Path's active range
-Source: the scale is applied over the Path's total length")]
+Source: the scale is applied over the Path's total length"
+        )]
         private CGReferenceMode m_ScaleReference = CGReferenceMode.Self;
 
-        [FieldCondition(nameof(m_ScaleMode), ScaleMode.Advanced)]
+        [FieldCondition(
+            nameof(m_ScaleMode),
+            ScaleMode.Advanced
+        )]
         [Label("Offset")]
         [SerializeField]
         [Tooltip("Scale is applied starting at this offset")]
@@ -115,22 +60,45 @@ Source: the scale is applied over the Path's total length")]
         private float m_ScaleX = 1;
 
         [SerializeField]
-        [FieldCondition(nameof(m_ScaleMode), ScaleMode.Advanced)]
+        [FieldCondition(
+            nameof(m_ScaleMode),
+            ScaleMode.Advanced
+        )]
         [AnimationCurveEx("    Multiplier")]
         [Tooltip("Defines scale multiplier, depending on the Relative Distance (between 0 and 1) of a point on the path")]
-        private AnimationCurve m_ScaleCurveX = AnimationCurve.Linear(0, 1, 1, 1);
+        private AnimationCurve m_ScaleCurveX = AnimationCurve.Linear(
+            0,
+            1,
+            1,
+            1
+        );
 
         [SerializeField]
-        [FieldCondition(nameof(m_ScaleUniform), false)]
+        [FieldCondition(
+            nameof(m_ScaleUniform),
+            false
+        )]
         [Tooltip("The (base) value of the scaling along the cross section's Y axis")]
         private float m_ScaleY = 1;
 
         [SerializeField]
-        [FieldCondition(nameof(m_ScaleUniform), false, false, ConditionalAttribute.OperatorEnum.AND, "m_ScaleMode", ScaleMode.Advanced, false)]
+        [FieldCondition(
+            nameof(m_ScaleUniform),
+            false,
+            false,
+            ConditionalAttribute.OperatorEnum.AND,
+            "m_ScaleMode",
+            ScaleMode.Advanced,
+            false
+        )]
         [AnimationCurveEx("    Multiplier")]
         [Tooltip("Defines scale multiplier, depending on the Relative Distance (between 0 and 1) of a point on the path")]
-        private AnimationCurve m_ScaleCurveY = AnimationCurve.Linear(0, 1, 1, 1);
-
+        private AnimationCurve m_ScaleCurveY = AnimationCurve.Linear(
+            0,
+            1,
+            1,
+            1
+        );
 
         #endregion
 
@@ -141,12 +109,14 @@ Source: the scale is applied over the Path's total length")]
         /// </summary>
         public ScaleMode ScaleMode
         {
-            get { return m_ScaleMode; }
+            get => m_ScaleMode;
             set
             {
                 if (m_ScaleMode != value)
+                {
                     m_ScaleMode = value;
-                Dirty = true;
+                    Dirty = true;
+                }
             }
         }
 
@@ -158,12 +128,14 @@ Source: the scale is applied over the Path's total length")]
         /// <remarks>Considered only when <see cref="ScaleMode"/> is set to <see cref="Modules.ScaleMode.Advanced"/> </remarks>
         public CGReferenceMode ScaleReference
         {
-            get { return m_ScaleReference; }
+            get => m_ScaleReference;
             set
             {
                 if (m_ScaleReference != value)
+                {
                     m_ScaleReference = value;
-                Dirty = true;
+                    Dirty = true;
+                }
             }
         }
 
@@ -172,12 +144,14 @@ Source: the scale is applied over the Path's total length")]
         /// </summary>
         public bool ScaleUniform
         {
-            get { return m_ScaleUniform; }
+            get => m_ScaleUniform;
             set
             {
                 if (m_ScaleUniform != value)
+                {
                     m_ScaleUniform = value;
-                Dirty = true;
+                    Dirty = true;
+                }
             }
         }
 
@@ -187,12 +161,14 @@ Source: the scale is applied over the Path's total length")]
         /// <remarks>Considered only when <see cref="ScaleMode"/> is set to <see cref="Modules.ScaleMode.Advanced"/> </remarks>
         public float ScaleOffset
         {
-            get { return m_ScaleOffset; }
+            get => m_ScaleOffset;
             set
             {
                 if (m_ScaleOffset != value)
+                {
                     m_ScaleOffset = value;
-                Dirty = true;
+                    Dirty = true;
+                }
             }
         }
 
@@ -201,12 +177,14 @@ Source: the scale is applied over the Path's total length")]
         /// </summary>
         public float ScaleX
         {
-            get { return m_ScaleX; }
+            get => m_ScaleX;
             set
             {
                 if (m_ScaleX != value)
+                {
                     m_ScaleX = value;
-                Dirty = true;
+                    Dirty = true;
+                }
             }
         }
 
@@ -217,12 +195,14 @@ Source: the scale is applied over the Path's total length")]
         /// <remarks>You will need to set this module's Dirty to true yourself if you modify the AnimationCurve without setting a new one</remarks>
         public AnimationCurve ScaleMultiplierX
         {
-            get { return m_ScaleCurveX; }
+            get => m_ScaleCurveX;
             set
             {
                 if (m_ScaleCurveX != value)
+                {
                     m_ScaleCurveX = value;
-                Dirty = true;
+                    Dirty = true;
+                }
             }
         }
 
@@ -231,12 +211,14 @@ Source: the scale is applied over the Path's total length")]
         /// </summary>
         public float ScaleY
         {
-            get { return m_ScaleY; }
+            get => m_ScaleY;
             set
             {
                 if (m_ScaleY != value)
+                {
                     m_ScaleY = value;
-                Dirty = true;
+                    Dirty = true;
+                }
             }
         }
 
@@ -247,35 +229,22 @@ Source: the scale is applied over the Path's total length")]
         /// <remarks>You will need to set this module's Dirty to true yourself if you modify the AnimationCurve without setting a new one</remarks>
         public AnimationCurve ScaleMultiplierY
         {
-            get { return m_ScaleCurveY; }
+            get => m_ScaleCurveY;
             set
             {
                 if (m_ScaleCurveY != value)
+                {
                     m_ScaleCurveY = value;
-                Dirty = true;
+                    Dirty = true;
+                }
             }
         }
 
         #endregion
 
         #region ### Unity Callbacks ###
-        /*! \cond UNITY */
 
-#if UNITY_EDITOR
-        protected override void OnValidate()
-        {
-            base.OnValidate();
-            //TODO OPTIM each one of the following properties setting will set Dirty to true, and trigger a lot of work. You can avoid that by Dirty to true only once per OnValidate call
-            ScaleMode = m_ScaleMode;
-            ScaleReference = m_ScaleReference;
-            ScaleUniform = m_ScaleUniform;
-            ScaleOffset = m_ScaleOffset;
-            ScaleX = m_ScaleX;
-            ScaleY = m_ScaleY;
-            ScaleMultiplierX = m_ScaleCurveX;
-            ScaleMultiplierY = m_ScaleCurveY;
-        }
-#endif
+#if DOCUMENTATION___FORCE_IGNORE___UNITY == false
 
         public override void Reset()
         {
@@ -284,17 +253,29 @@ Source: the scale is applied over the Path's total length")]
             ScaleUniform = true;
             ScaleX = 1;
             ScaleY = 1;
-            ScaleMultiplierX = AnimationCurve.Linear(0, 1, 1, 1);
-            ScaleMultiplierY = AnimationCurve.Linear(0, 1, 1, 1);
+            ScaleMultiplierX = AnimationCurve.Linear(
+                0,
+                1,
+                1,
+                1
+            );
+            ScaleMultiplierY = AnimationCurve.Linear(
+                0,
+                1,
+                1,
+                1
+            );
             ScaleReference = CGReferenceMode.Self;
             ScaleOffset = 0;
         }
 
 
-        /*! \endcond */
+#endif
+
         #endregion
 
         #region ### Public Methods ###
+
         /// <summary>
         /// Gets the scale vector of a cross section at a specific position on a path
         /// </summary>
@@ -302,9 +283,17 @@ Source: the scale is applied over the Path's total length")]
         /// A value of 0 means the start of the path, and a value of 1 means the end of it. It is defined as: (the point's distance from the path's start) / (the total length of the path)</param>
         /// <returns> The X and Y value are the scale value along those axis</returns>
         public Vector2 GetScale(float relativeDistance)
-        {
-            return GetScale(relativeDistance, ScaleMode, ScaleOffset, ScaleUniform, ScaleX, ScaleMultiplierX, ScaleY, ScaleMultiplierY);
-        }
+            => GetScale(
+                relativeDistance,
+                ScaleMode,
+                ScaleOffset,
+                ScaleUniform,
+                ScaleX,
+                ScaleMultiplierX,
+                ScaleY,
+                ScaleMultiplierY
+            );
+
         #endregion
 
         #region ### Protected ###
@@ -324,12 +313,29 @@ Source: the scale is applied over the Path's total length")]
             switch (ScaleMode)
             {
                 case ScaleMode.Advanced:
-                    float relativeDistance = GetRelativeDistance(sampleIndex, ScaleReference, relativeDistances, sourceRelativeDistances);
+                    float relativeDistance = GetRelativeDistance(
+                        sampleIndex,
+                        ScaleReference,
+                        relativeDistances,
+                        sourceRelativeDistances
+                    );
 
-                    result = GetAdvancedScale(relativeDistance, ScaleOffset, ScaleUniform, ScaleX, ScaleMultiplierX, ScaleY, ScaleMultiplierY);
+                    result = GetAdvancedScale(
+                        relativeDistance,
+                        ScaleOffset,
+                        ScaleUniform,
+                        ScaleX,
+                        ScaleMultiplierX,
+                        ScaleY,
+                        ScaleMultiplierY
+                    );
                     break;
                 case ScaleMode.Simple:
-                    result = GetSimpleScale(ScaleUniform, ScaleX, ScaleY);
+                    result = GetSimpleScale(
+                        ScaleUniform,
+                        ScaleX,
+                        ScaleY
+                    );
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
@@ -352,17 +358,30 @@ Source: the scale is applied over the Path's total length")]
         /// <param name="scaleMultiplierY"><see cref="ScaleMultiplierY"/></param>
         /// <exception cref="ArgumentOutOfRangeException">If <paramref name="mode"/>
         ///     has an invalid value</exception>
-        protected static Vector2 GetScale(float relativeDistance, ScaleMode mode, float offset, bool isUniform, float scaleX, AnimationCurve scaleMultiplierX, float scaleY, AnimationCurve scaleMultiplierY)
+        protected static Vector2 GetScale(float relativeDistance, ScaleMode mode, float offset, bool isUniform, float scaleX,
+            AnimationCurve scaleMultiplierX, float scaleY, AnimationCurve scaleMultiplierY)
         {
             Vector2 result;
 
             switch (mode)
             {
                 case ScaleMode.Advanced:
-                    result = GetAdvancedScale(relativeDistance, offset, isUniform, scaleX, scaleMultiplierX, scaleY, scaleMultiplierY);
+                    result = GetAdvancedScale(
+                        relativeDistance,
+                        offset,
+                        isUniform,
+                        scaleX,
+                        scaleMultiplierX,
+                        scaleY,
+                        scaleMultiplierY
+                    );
                     break;
                 case ScaleMode.Simple:
-                    result = GetSimpleScale(isUniform, scaleX, scaleY);
+                    result = GetSimpleScale(
+                        isUniform,
+                        scaleX,
+                        scaleY
+                    );
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
@@ -380,7 +399,8 @@ Source: the scale is applied over the Path's total length")]
         /// <param name="sourceRelativeDistances"><see cref="CGShape.SourceRelativeDistances"/></param>
         /// <returns></returns>
         /// <exception cref="ArgumentOutOfRangeException">If <paramref name="cgReferenceMode"/> has an invalid value</exception>
-        protected static float GetRelativeDistance(int sampleIndex, CGReferenceMode cgReferenceMode, SubArray<float> relativeDistances, SubArray<float> sourceRelativeDistances)
+        protected static float GetRelativeDistance(int sampleIndex, CGReferenceMode cgReferenceMode,
+            SubArray<float> relativeDistances, SubArray<float> sourceRelativeDistances)
         {
             float relativeDistance;
             {
@@ -414,17 +434,23 @@ Source: the scale is applied over the Path's total length")]
         /// <param name="scaleY"><see cref="ScaleY"/></param>
         /// <param name="scaleMultiplierY"><see cref="ScaleMultiplierY"/></param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected static Vector2 GetAdvancedScale(float relativeDistance, float scaleOffset, bool isUniform, float scaleX, AnimationCurve scaleMultiplierX, float scaleY, AnimationCurve scaleMultiplierY)
+        protected static Vector2 GetAdvancedScale(float relativeDistance, float scaleOffset, bool isUniform, float scaleX,
+            AnimationCurve scaleMultiplierX, float scaleY, AnimationCurve scaleMultiplierY)
         {
             //Optim: avoid calling unnecessarily. This means that if the curve is a constant 1, there is no need to evaluate the curve. Use AnimationCurveExt.ValueIsOne to know if this condition is true.
             //Of course, calling ValueIsOne everytime will be not worth it. You will need to cache the value of ValueIsOne at every modification of the curves
 
             Vector2 result;
-            float scaleFValue = DTMath.Repeat(relativeDistance - scaleOffset, 1);
+            float scaleFValue = DTMath.Repeat(
+                relativeDistance - scaleOffset,
+                1
+            );
             float x = scaleX * scaleMultiplierX.Evaluate(scaleFValue);
 
             result.x = x;
-            result.y = isUniform ? x : scaleY * scaleMultiplierY.Evaluate(scaleFValue);
+            result.y = isUniform
+                ? x
+                : scaleY * scaleMultiplierY.Evaluate(scaleFValue);
             return result;
         }
 
@@ -440,9 +466,12 @@ Source: the scale is applied over the Path's total length")]
         {
             Vector2 result;
             result.x = scaleX;
-            result.y = isUniform ? scaleX : scaleY;
+            result.y = isUniform
+                ? scaleX
+                : scaleY;
             return result;
         }
+
         #endregion
     }
 }

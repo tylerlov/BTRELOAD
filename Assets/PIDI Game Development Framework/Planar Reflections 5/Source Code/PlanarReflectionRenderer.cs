@@ -786,11 +786,16 @@ namespace PlanarReflections5 {
 #if UNITY_EDITOR
             !Application.isPlaying ||
 #endif
-            ( Time.realtimeSinceStartup > currentData.timer ) ) {
+            ( Time.realtimeSinceStartup > currentData.timer) ) {
 
 
-                if ( _settings.renderFog ) {
+                if ( _settings.renderFog
+#if UNITY_EDITOR
+            && !isSceneCam
+#endif
+                    ) {
                     refCamera.targetTexture = currentData._reflectionFog;
+                    refCamera.depthTextureMode = DepthTextureMode.None;
                     uData.renderPostProcessing = false;
 
                     uData.SetRenderer( _settings.fogRendererIndex );
@@ -818,7 +823,11 @@ namespace PlanarReflections5 {
                 }
 
 
-                if ( _settings.renderDepth ) {
+                if ( _settings.renderDepth
+#if UNITY_EDITOR
+            && !isSceneCam
+#endif
+                    ) {
                     refCamera.targetTexture = currentData._reflectionDepth;
                     refCamera.depthTextureMode = DepthTextureMode.Depth;
 
@@ -868,6 +877,7 @@ namespace PlanarReflections5 {
                 uData.requiresDepthOption = CameraOverrideOption.Off;
                 uData.requiresColorOption = CameraOverrideOption.Off;
 
+
                 if ( _settings.usePostFX
 #if UNITY_EDITOR
                     && !isSceneCam
@@ -875,13 +885,26 @@ namespace PlanarReflections5 {
                     ) {
                     refCamera.enabled = true;
                 }
-                else {
+                else
+                {
                     refCamera.enabled = false;
 
 #if UNITY_2023_3_OR_NEWER
                     rq.destination = refCamera.targetTexture;
+                    refCamera.depthTextureMode = DepthTextureMode.None;
                     refCamera.targetTexture = null;
+#if UNITY_EDITOR
+                    if ( isSceneCam ) {
+                        refCamera.cameraType = CameraType.Game;
+                    }
+#endif
                     UniversalRenderPipeline.SubmitRenderRequest( refCamera, rq );
+#if UNITY_EDITOR
+                    if ( isSceneCam ) {
+                        refCamera.cameraType = CameraType.SceneView;
+                    }
+#endif
+
                     refCamera.targetTexture = rq.destination;
 #else
                     UniversalRenderPipeline.RenderSingleCamera( context, refCamera );
@@ -920,7 +943,6 @@ namespace PlanarReflections5 {
         }
 
 
-#if !UNITY_2023_3_OR_NEWER
         private void LateUpdate() {
 
             for ( int i = 0; i < _allCameras.Length; i++ ) {
@@ -932,7 +954,6 @@ namespace PlanarReflections5 {
             }
 
         }
-#endif
 
 
         private Vector4 CameraSpacePlane( Camera forCamera, Vector3 planeCenter, Vector3 planeNormal ) {

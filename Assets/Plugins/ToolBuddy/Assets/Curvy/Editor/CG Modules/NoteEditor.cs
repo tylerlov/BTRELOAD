@@ -1,14 +1,12 @@
 // =====================================================================
-// Copyright 2013-2022 ToolBuddy
+// Copyright © 2013 ToolBuddy
 // All rights reserved
 // 
 // http://www.toolbuddy.net
 // =====================================================================
 
-using UnityEngine;
-using UnityEditor;
 using FluffyUnderware.Curvy.Generator.Modules;
-using System.Collections.Generic;
+using UnityEditor;
 
 namespace FluffyUnderware.CurvyEditor.Generator.Modules
 {
@@ -29,8 +27,4 @@ namespace FluffyUnderware.CurvyEditor.Generator.Modules
         }
          */
     }
-
-
-
-
 }

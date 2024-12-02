@@ -1,15 +1,14 @@
 // =====================================================================
-// Copyright 2013-2022 ToolBuddy
+// Copyright © 2013 ToolBuddy
 // All rights reserved
 // 
 // http://www.toolbuddy.net
 // =====================================================================
 
-using UnityEngine;
-using UnityEditor;
-using FluffyUnderware.Curvy.Generator.Modules;
-using System.Collections.Generic;
 using FluffyUnderware.Curvy.Generator;
+using FluffyUnderware.Curvy.Generator.Modules;
+using UnityEditor;
+using UnityEngine;
 
 namespace FluffyUnderware.CurvyEditor.Generator.Modules
 {
@@ -26,26 +25,25 @@ namespace FluffyUnderware.CurvyEditor.Generator.Modules
         public override void OnModuleSceneDebugGUI()
         {
             base.OnModuleSceneDebugGUI();
-            CGPath data = Target.OutPath.GetData<CGPath>();
-            if (data)
-            {
-                Handles.matrix = Target.Generator.transform.localToWorldMatrix;
-                CGEditorUtility.SceneGUIPlot(data.Positions.Array, data.Positions.Count, 0.1f, Color.white);
-                Handles.matrix = Matrix4x4.identity;
-            }
+            if (Target.OutPath.Data.Length == 0)
+                return;
+
+            CGPath data = (CGPath)Target.OutPath.Data[0];
+            Handles.matrix = Target.Generator.transform.localToWorldMatrix;
+            CGEditorUtility.SceneGUIPlot(
+                data.Positions.Array,
+                data.Positions.Count,
+                0.1f,
+                Color.white
+            );
+            Handles.matrix = Matrix4x4.identity;
         }
 
         public override void OnModuleDebugGUI()
         {
-            CGPath data = Target.OutPath.GetData<CGPath>();
-            if (data)
-            {
-                EditorGUILayout.LabelField("Samples: " + data.Count.ToString());
-            }
+            if (Target.OutPath.Data.Length == 0)
+                return;
+            EditorGUILayout.LabelField($"Samples: {Target.OutPath.Data[0].Count}");
         }
     }
-
-
-
-
 }

@@ -1,20 +1,20 @@
 // =====================================================================
-// Copyright 2013-2022 ToolBuddy
+// Copyright © 2013 ToolBuddy
 // All rights reserved
 // 
 // http://www.toolbuddy.net
 // =====================================================================
 
 using System;
-using UnityEngine;
-using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using FluffyUnderware.Curvy.Pools;
 using FluffyUnderware.Curvy.Utils;
-using ToolBuddy.Pooling.Pools;
 using FluffyUnderware.DevTools;
 using FluffyUnderware.DevTools.Extensions;
+using JetBrains.Annotations;
 using ToolBuddy.Pooling.Collections;
+using UnityEngine;
 using UnityEngine.Assertions;
 
 namespace FluffyUnderware.Curvy.Generator
@@ -25,6 +25,7 @@ namespace FluffyUnderware.Curvy.Generator
     public abstract class SplineInputModuleBase : CGModule
     {
         #region ### Serialized Fields ###
+
         /// <summary>
         /// Makes this module use the cached approximations of the spline's positions and tangents
         /// </summary>
@@ -32,20 +33,30 @@ namespace FluffyUnderware.Curvy.Generator
         [SerializeField]
         [Tooltip("Makes this module use the cached approximations of the spline's positions and tangents")]
         private bool m_UseCache;
-        [Tooltip("Whether to use local or global coordinates of the input's control points.\r\nUsing the global space when the input's transform is updating every frame will lead to the generator refreshing too frequently")]
+
+        [Tooltip(
+            "Whether to use local or global coordinates of the input's control points.\r\nUsing the global space when the input's transform is updating every frame will lead to the generator refreshing too frequently"
+        )]
         [SerializeField]
         private bool m_UseGlobalSpace;
 
-        /*! \cond PRIVATE */
+#if DOCUMENTATION___FORCE_IGNORE___CURVY == false
 
         [Tab("Range")]
         [SerializeField]
         protected CurvySplineSegment m_StartCP;
-        [FieldCondition(nameof(m_StartCP), null, true, Action = ActionAttribute.ActionEnum.Enable)]
+
+        [FieldCondition(
+            nameof(m_StartCP),
+            null,
+            true,
+            Action = ActionAttribute.ActionEnum.Enable
+        )]
         [SerializeField]
         protected CurvySplineSegment m_EndCP;
 
-        /*! \endcond */
+#endif
+
         #endregion
 
         #region ### Public Properties ###
@@ -55,12 +66,14 @@ namespace FluffyUnderware.Curvy.Generator
         /// </summary>
         public bool UseCache
         {
-            get { return m_UseCache; }
+            get => m_UseCache;
             set
             {
                 if (m_UseCache != value)
+                {
                     m_UseCache = value;
-                Dirty = true;
+                    Dirty = true;
+                }
             }
         }
 
@@ -70,15 +83,15 @@ namespace FluffyUnderware.Curvy.Generator
         /// <remarks>Valid values of <see cref="StartCP"/> and <see cref="EndCP"/> are such as those CPs are part of <see cref="InputSpline"/>, and <see cref="StartCP"/> is prior to <see cref="EndCP"/> in that spline</remarks>
         public CurvySplineSegment StartCP
         {
-            get { return m_StartCP; }
+            get => m_StartCP;
             set
             {
                 if (m_StartCP != value)
                 {
                     m_StartCP = value;
                     ValidateStartAndEndCps();
+                    Dirty = true;
                 }
-                Dirty = true;
             }
         }
 
@@ -88,15 +101,15 @@ namespace FluffyUnderware.Curvy.Generator
         /// <remarks>Valid values of <see cref="StartCP"/> and <see cref="EndCP"/> are such as those CPs are part of <see cref="InputSpline"/>, and <see cref="StartCP"/> is prior to <see cref="EndCP"/> in that spline</remarks>
         public CurvySplineSegment EndCP
         {
-            get { return m_EndCP; }
+            get => m_EndCP;
             set
             {
                 if (m_EndCP != value)
                 {
                     m_EndCP = value;
                     ValidateStartAndEndCps();
+                    Dirty = true;
                 }
-                Dirty = true;
             }
         }
 
@@ -106,34 +119,22 @@ namespace FluffyUnderware.Curvy.Generator
         /// </summary>
         public bool UseGlobalSpace
         {
-            get { return m_UseGlobalSpace; }
+            get => m_UseGlobalSpace;
             set
             {
-                m_UseGlobalSpace = value;
-                Dirty = true;
+                if (m_UseGlobalSpace != value)
+                {
+                    m_UseGlobalSpace = value;
+                    Dirty = true;
+                }
             }
         }
 
-        public override bool IsConfigured
-        {
-            get
-            {
-                return base.IsConfigured && InputSpline != null;
-            }
-        }
+        public override bool IsConfigured => base.IsConfigured && InputSpline != null;
 
-        public override bool IsInitialized
-        {
-            get
-            {
-                return base.IsInitialized && (InputSpline == null || InputSpline.IsInitialized);
-            }
-        }
+        public override bool IsInitialized => base.IsInitialized && (InputSpline == null || InputSpline.IsInitialized);
 
-        public bool PathIsClosed
-        {
-            get { return IsConfigured && getPathClosed(InputSpline); }
-        }
+        public bool PathIsClosed => IsConfigured && getPathClosed(InputSpline);
 
         #endregion
 
@@ -144,24 +145,29 @@ namespace FluffyUnderware.Curvy.Generator
         /// </summary>
         public void SetRange(CurvySplineSegment rangeStart, CurvySplineSegment rangeEnd)
         {
-            m_StartCP = rangeStart;
-            m_EndCP = rangeEnd;
-            ValidateStartAndEndCps();
-            Dirty = true;
+            if (StartCP != rangeStart || EndCP != rangeEnd)
+            {
+                m_StartCP = rangeStart;
+                m_EndCP = rangeEnd;
+                ValidateStartAndEndCps();
+                Dirty = true;
+            }
         }
 
         /// <summary>
         /// Clear the input range, defined by <see cref="StartCP"/> and <see cref="EndCP"/>
         /// </summary>
-        public void ClearRange()
-        {
-            SetRange(null, null);
-        }
+        public void ClearRange() =>
+            SetRange(
+                null,
+                null
+            );
 
         #endregion
 
         #region ### Unity Callbacks ###
-        /*! \cond UNITY */
+
+#if DOCUMENTATION___FORCE_IGNORE___UNITY == false
 
         protected override void OnEnable()
         {
@@ -177,20 +183,19 @@ namespace FluffyUnderware.Curvy.Generator
             if (InputSpline)
             {
                 InputSpline.OnRefresh.RemoveListener(OnSplineRefreshed);
+                InputSpline.OnInitialized.RemoveListener(OnSplineInitialized);
                 InputSpline.OnGlobalCoordinatesChanged -= OnInputSplineCoordinatesChanged;
             }
         }
 
-#if UNITY_EDITOR
         protected override void OnValidate()
         {
             base.OnValidate();
-            if (isActiveAndEnabled)
-                ValidateStartAndEndCps();
-            OnSplineAssigned();
-            Dirty = true;
+
+            ValidateStartAndEndCps();
+
+            if (IsActiveAndEnabled) OnSplineAssigned();
         }
-#endif
 
         public override void Reset()
         {
@@ -202,26 +207,42 @@ namespace FluffyUnderware.Curvy.Generator
             UseGlobalSpace = false;
         }
 
-        /*! \endcond */
+#endif
+
         #endregion
 
-        /// <summary>
-        /// Checks that StartCP and EndCp values are correct, and fix them if they are not.
-        /// </summary>
         private void OnSplineRefreshed(CurvySplineEventArgs e)
         {
-            if (!enabled || !gameObject.activeInHierarchy)
+            if (IsActiveAndEnabled == false)
                 return;
+
             if (InputSpline == e.Spline)
                 ForceRefresh();
             else
                 e.Spline.OnRefresh.RemoveListener(OnSplineRefreshed);
         }
 
+        private void OnSplineInitialized(CurvySplineEventArgs e)
+        {
+            if (IsActiveAndEnabled == false)
+                return;
+
+
+            if (InputSpline == e.Spline)
+            {
+                //Validation is ignored when spline is disabled. We do validation here in case invalid CPs were assigned while spline was disabled
+                ValidateStartAndEndCps();
+                Dirty = true;
+            }
+            else
+                e.Spline.OnInitialized.RemoveListener(OnSplineInitialized);
+        }
+
         private void OnInputSplineCoordinatesChanged(CurvySpline sender)
         {
-            if (!enabled || !gameObject.activeInHierarchy)
+            if (IsActiveAndEnabled == false)
                 return;
+
             if (InputSpline == sender)
             {
                 if (UseGlobalSpace)
@@ -251,13 +272,17 @@ namespace FluffyUnderware.Curvy.Generator
 
         #region GetSplineData
 
-        protected CGData GetSplineData(CurvySpline spline, bool fullPath /*is spline a path*/, CGDataRequestRasterization raster, CGDataRequestMetaCGOptions options)
+        [CanBeNull]
+        protected CGData GetSplineData(CurvySpline spline, bool fullPath /*is spline a path*/, CGDataRequestRasterization raster,
+            CGDataRequestMetaCGOptions options)
         {
             if (spline == null || spline.Count == 0)
                 return null;
 
             // calc start & end point (distance)
-            float pathLength = StartCP && EndCP ? EndCP.Distance - StartCP.Distance : spline.Length;
+            float pathLength = StartCP && EndCP
+                ? EndCP.Distance - StartCP.Distance
+                : spline.Length;
             float startDist;
             float endDist;
             {
@@ -275,26 +300,29 @@ namespace FluffyUnderware.Curvy.Generator
                 Assert.IsTrue(raster.RasterizedRelativeLength >= 0);
                 Assert.IsTrue(raster.RasterizedRelativeLength <= 1);
 #endif
-                endDist = startDist + pathLength * raster.RasterizedRelativeLength;
-
+                endDist = startDist + (pathLength * raster.RasterizedRelativeLength);
             }
 
             float stepDist;
             {
                 float samplingPointsPerUnit = CurvySpline.CalculateSamplingPointsPerUnit(
                     raster.Resolution,
-                    spline.MaxPointsPerUnit);
+                    spline.MaxPointsPerUnit
+                );
 
-                float sampledDistance = (endDist - startDist);
+                float sampledDistance = endDist - startDist;
                 stepDist = Mathf.Min(
                     sampledDistance / (pathLength * raster.RasterizedRelativeLength * samplingPointsPerUnit),
                     //To ensure that rasterized shapes have at least 3 vertices to generate valid meshes
-                    sampledDistance / 3f);
+                    sampledDistance / 3f
+                );
             }
 
             CGShape data;
             {
-                data = (fullPath) ? new CGPath() : new CGShape();
+                data = fullPath
+                    ? new CGPath()
+                    : new CGShape();
                 data.Length = endDist - startDist;
                 data.SourceIsManaged = IsManagedResource(spline);
                 data.Closed = spline.Closed;
@@ -311,15 +339,15 @@ namespace FluffyUnderware.Curvy.Generator
             List<ControlPointOption> controlPointsOptions;
             {
                 if (options)
-                {
-                    controlPointsOptions = CGUtility.GetControlPointsWithOptions(options,
+                    controlPointsOptions = CGUtility.GetControlPointsWithOptions(
+                        options,
                         spline,
                         startDist,
                         endDist,
                         raster.Mode == CGDataRequestRasterization.ModeEnum.Optimized,
                         out materialID,
-                        out maxStep);
-                }
+                        out maxStep
+                    );
                 else
                 {
                     controlPointsOptions = new List<ControlPointOption>();
@@ -331,7 +359,9 @@ namespace FluffyUnderware.Curvy.Generator
             // initialize with start TF
             float tf = spline.DistanceToTF(startDist);
             float startTF = tf;
-            float endTF = (endDist > spline.Length && spline.Closed) ? spline.DistanceToTF(endDist - spline.Length) + 1 : spline.DistanceToTF(endDist);
+            float endTF = endDist > spline.Length && spline.Closed
+                ? spline.DistanceToTF(endDist - spline.Length) + 1
+                : spline.DistanceToTF(endDist);
             float currentDistance = startDist;
 
             // Setup vars
@@ -342,30 +372,59 @@ namespace FluffyUnderware.Curvy.Generator
                 switch (raster.Mode)
                 {
                     case CGDataRequestRasterization.ModeEnum.Even:
-                        initialArraysLength = Mathf.Max(20, Mathf.CeilToInt(1.1f * (endDist - startDist) / stepDist));
+                        initialArraysLength = Mathf.Max(
+                            20,
+                            Mathf.CeilToInt((1.1f * (endDist - startDist)) / stepDist)
+                        );
                         break;
                     case CGDataRequestRasterization.ModeEnum.Optimized:
-                        initialArraysLength = Mathf.Max(20, Mathf.CeilToInt(0.2f * (endDist - startDist) / stepDist));
+                        initialArraysLength = Mathf.Max(
+                            20,
+                            Mathf.CeilToInt((0.2f * (endDist - startDist)) / stepDist)
+                        );
                         break;
                     default:
                         throw new ArgumentOutOfRangeException();
                 }
 
-                positions = new SubArrayList<Vector3>(initialArraysLength, ArrayPools.Vector3);
-                relativeFs = new SubArrayList<float>(initialArraysLength, ArrayPools.Single);
-                sourceFs = new SubArrayList<float>(initialArraysLength, ArrayPools.Single);
-                tangents = new SubArrayList<Vector3>(fullPath ? initialArraysLength : 0, ArrayPools.Vector3);
-                normals = new SubArrayList<Vector3>(fullPath ? initialArraysLength : 0, ArrayPools.Vector3);
+                positions = new SubArrayList<Vector3>(
+                    initialArraysLength,
+                    ArrayPools.Vector3
+                );
+                relativeFs = new SubArrayList<float>(
+                    initialArraysLength,
+                    ArrayPools.Single
+                );
+                sourceFs = new SubArrayList<float>(
+                    initialArraysLength,
+                    ArrayPools.Single
+                );
+                tangents = new SubArrayList<Vector3>(
+                    fullPath
+                        ? initialArraysLength
+                        : 0,
+                    ArrayPools.Vector3
+                );
+                normals = new SubArrayList<Vector3>(
+                    fullPath
+                        ? initialArraysLength
+                        : 0,
+                    ArrayPools.Vector3
+                );
             }
 
             List<DuplicateSamplePoint> duplicatePoints = new List<DuplicateSamplePoint>();
             List<SamplePointUData> extendedUVData = new List<SamplePointUData>();
-            bool duplicatePoint = false;//TODO BUG? why is duplicatePoint not used before assigning it in the ModeEnum.Optimized case?
+            bool
+                duplicatePoint =
+                    false; //TODO BUG? why is duplicatePoint not used before assigning it in the ModeEnum.Optimized case?
             // we have at least one Material Group
             SamplePointsMaterialGroup materialGroup = new SamplePointsMaterialGroup(materialID);
             // and at least one patch within that group
             SamplePointsPatch patch = new SamplePointsPatch(0);
-            CurvyClamping clampMode = (data.Closed) ? CurvyClamping.Loop : CurvyClamping.Clamp;
+            CurvyClamping clampMode = data.Closed
+                ? CurvyClamping.Loop
+                : CurvyClamping.Clamp;
             int dead = 2000000;
 
             //BUG? there is a lot of code that is quite the same, but not completly, between the two following cases. I sens potential bugs here
@@ -373,17 +432,27 @@ namespace FluffyUnderware.Curvy.Generator
             switch (raster.Mode)
             {
                 case CGDataRequestRasterization.ModeEnum.Even:
+
                     #region --- Even ---
+
                     {
                         // we advance the spline using a fixed distance
                         while (currentDistance <= endDist && --dead > 0)
                         {
-                            tf = spline.DistanceToTF(spline.ClampDistance(currentDistance, clampMode));
+                            tf = spline.DistanceToTF(
+                                spline.ClampDistance(
+                                    currentDistance,
+                                    clampMode
+                                )
+                            );
 
                             float currentF;
                             {
-                                currentF = (currentDistance - startDist) / data.Length;//curDist / endDist;
-                                if (Mathf.Approximately(1, currentF))
+                                currentF = (currentDistance - startDist) / data.Length; //curDist / endDist;
+                                if (Mathf.Approximately(
+                                        1,
+                                        currentF
+                                    ))
                                     currentF = 1;
                             }
 
@@ -393,26 +462,41 @@ namespace FluffyUnderware.Curvy.Generator
                             Vector3 currentUp;
                             {
                                 float localF;
-                                CurvySplineSegment segment = spline.TFToSegment(tf, out localF, CurvyClamping.Clamp);
+                                CurvySplineSegment segment = spline.TFToSegment(
+                                    tf,
+                                    out localF,
+                                    CurvyClamping.Clamp
+                                );
                                 if (fullPath) // add path values
                                 {
                                     if (UseCache)
-                                        segment.InterpolateAndGetTangentFast(localF, out currentPosition, out currentTangent);
+                                        segment.InterpolateAndGetTangentFast(
+                                            localF,
+                                            out currentPosition,
+                                            out currentTangent
+                                        );
                                     else
-                                        segment.InterpolateAndGetTangent(localF, out currentPosition, out currentTangent);
+                                        segment.InterpolateAndGetTangent(
+                                            localF,
+                                            out currentPosition,
+                                            out currentTangent
+                                        );
 
                                     //OPTIM get orientation at the same time you get position and tangent
                                     currentUp = segment.GetOrientationUpFast(localF);
                                 }
                                 else
                                 {
-                                    currentPosition = (UseCache) ? segment.InterpolateFast(localF) : segment.Interpolate(localF);
+                                    currentPosition = UseCache
+                                        ? segment.InterpolateFast(localF)
+                                        : segment.Interpolate(localF);
                                     currentTangent = Vector3.zero;
                                     currentUp = Vector3.zero;
                                 }
                             }
 
-                            AddPoint(currentDistance / spline.Length,
+                            AddPoint(
+                                currentDistance / spline.Length,
                                 currentF,
                                 fullPath,
                                 currentPosition,
@@ -422,11 +506,13 @@ namespace FluffyUnderware.Curvy.Generator
                                 ref relativeFs,
                                 ref positions,
                                 ref tangents,
-                                ref normals);
+                                ref normals
+                            );
 
                             if (duplicatePoint) // HardEdge, IncludeCP, MaterialID changes etc. need an extra vertex
                             {
-                                AddPoint(currentDistance / spline.Length,
+                                AddPoint(
+                                    currentDistance / spline.Length,
                                     currentF,
                                     fullPath,
                                     currentPosition,
@@ -436,7 +522,8 @@ namespace FluffyUnderware.Curvy.Generator
                                     ref relativeFs,
                                     ref positions,
                                     ref tangents,
-                                    ref normals);
+                                    ref normals
+                                );
                                 duplicatePoint = false;
                             }
 
@@ -448,7 +535,17 @@ namespace FluffyUnderware.Curvy.Generator
                             {
                                 ControlPointOption cpOptions = controlPointsOptions[0];
 
-                                ProcessControlPointOptions(cpOptions, positions.Count, data.MaterialGroups, extendedUVData, duplicatePoints, ref materialGroup, ref patch, out currentDistance, out duplicatePoint);
+                                ProcessControlPointOptions(
+                                    cpOptions,
+                                    positions.Count,
+                                    data.MaterialGroups,
+                                    extendedUVData,
+                                    duplicatePoints,
+                                    ref materialGroup,
+                                    ref patch,
+                                    out currentDistance,
+                                    out duplicatePoint
+                                );
 
                                 // and remove the CP from the options
                                 controlPointsOptions.RemoveAt(0);
@@ -458,8 +555,11 @@ namespace FluffyUnderware.Curvy.Generator
                             if (currentDistance > endDist && currentF < 1) // next loop curF will be 1
                                 currentDistance = endDist;
                         }
+
                         if (dead <= 0)
-                            Debug.LogError("[Curvy] He's dead, Jim! Deadloop in SplineInputModuleBase.GetSplineData (Even)! Please send a bug report.");
+                            Debug.LogError(
+                                "[Curvy] He's dead, Jim! Deadloop in SplineInputModuleBase.GetSplineData (Even)! Please send a bug report."
+                            );
                         // store the last open patch
                         patch.End = positions.Count - 1;
                         materialGroup.Patches.Add(patch);
@@ -468,9 +568,16 @@ namespace FluffyUnderware.Curvy.Generator
                         //    extendedUVData.Add(new SamplePointUData(pos.Count - 1, optionsSegs[0].UVEdge, optionsSegs[0].FirstU, optionsSegs[0].SecondU));
                         // if path is closed and no hard edges involved, we need to smooth first normal
                         if (data.Closed)
-                            duplicatePoints.Add(new DuplicateSamplePoint(positions.Count - 1, 0, spline[0].GetMetadata<MetaCGOptions>(true).CorrectedHardEdge));
+                            duplicatePoints.Add(
+                                new DuplicateSamplePoint(
+                                    positions.Count - 1,
+                                    0,
+                                    spline[0].GetMetadata<MetaCGOptions>(true).CorrectedHardEdge
+                                )
+                            );
 
-                        FillData(data,
+                        FillData(
+                            data,
                             materialGroup,
                             sourceFs,
                             relativeFs,
@@ -480,13 +587,17 @@ namespace FluffyUnderware.Curvy.Generator
                             normals,
                             UseGlobalSpace,
                             spline.transform,
-                            Generator.transform);
-
+                            Generator.transform
+                        );
                     }
+
                     #endregion
+
                     break;
                 case CGDataRequestRasterization.ModeEnum.Optimized:
+
                     #region --- Optimized ---
+
                     {
                         float stepSizeTF = stepDist / spline.Length;
                         float maxAngle = raster.AngleThreshold;
@@ -495,14 +606,23 @@ namespace FluffyUnderware.Curvy.Generator
                         Vector3 currentTangent;
                         {
                             if (UseCache)
-                                spline.InterpolateAndGetTangentFast(tf, out currentPosition, out currentTangent);
+                                spline.InterpolateAndGetTangentFast(
+                                    tf,
+                                    out currentPosition,
+                                    out currentTangent
+                                );
                             else
-                                spline.InterpolateAndGetTangent(tf, out currentPosition, out currentTangent);
+                                spline.InterpolateAndGetTangent(
+                                    tf,
+                                    out currentPosition,
+                                    out currentTangent
+                                );
                         }
 
                         while (tf < endTF && dead-- > 0)
                         {
-                            AddPoint(currentDistance / spline.Length,
+                            AddPoint(
+                                currentDistance / spline.Length,
                                 (currentDistance - startDist) / data.Length,
                                 fullPath,
                                 currentPosition,
@@ -512,11 +632,15 @@ namespace FluffyUnderware.Curvy.Generator
                                 ref relativeFs,
                                 ref positions,
                                 ref tangents,
-                                ref normals);
+                                ref normals
+                            );
                             // Advance
-                            float stopAt = (controlPointsOptions.Count > 0) ? controlPointsOptions[0].TF : endTF;
+                            float stopAt = controlPointsOptions.Count > 0
+                                ? controlPointsOptions[0].TF
+                                : endTF;
 
-                            bool atStopPoint = MoveByAngleExt(spline,
+                            bool atStopPoint = MoveByAngleExt(
+                                spline,
                                 UseCache,
                                 ref tf,
                                 maxStep,
@@ -525,27 +649,51 @@ namespace FluffyUnderware.Curvy.Generator
                                 out currentTangent,
                                 stopAt,
                                 data.Closed,
-                                stepSizeTF);
+                                stepSizeTF
+                            );
 
-                            currentDistance = spline.TFToDistance(tf, clampMode);
+                            currentDistance = spline.TFToDistance(
+                                tf,
+                                clampMode
+                            );
                             if (currentDistance < startDist)
                                 currentDistance += spline.Length;
 
-                            if (Mathf.Approximately(tf, endTF) || tf > endTF)
+                            if (Mathf.Approximately(
+                                    tf,
+                                    endTF
+                                )
+                                || tf > endTF)
                             {
                                 currentDistance = endDist;
-                                endTF = (data.Closed) ? DTMath.Repeat(endTF, 1) : Mathf.Clamp01(endTF);
+                                endTF = data.Closed
+                                    ? DTMath.Repeat(
+                                        endTF,
+                                        1
+                                    )
+                                    : Mathf.Clamp01(endTF);
                                 if (fullPath)
                                 {
                                     if (UseCache)
-                                        spline.InterpolateAndGetTangentFast(endTF, out currentPosition, out currentTangent);
+                                        spline.InterpolateAndGetTangentFast(
+                                            endTF,
+                                            out currentPosition,
+                                            out currentTangent
+                                        );
                                     else
-                                        spline.InterpolateAndGetTangent(endTF, out currentPosition, out currentTangent);
+                                        spline.InterpolateAndGetTangent(
+                                            endTF,
+                                            out currentPosition,
+                                            out currentTangent
+                                        );
                                 }
                                 else
-                                    currentPosition = (UseCache) ? spline.InterpolateFast(endTF) : spline.Interpolate(endTF);
+                                    currentPosition = UseCache
+                                        ? spline.InterpolateFast(endTF)
+                                        : spline.Interpolate(endTF);
 
-                                AddPoint(currentDistance / spline.Length,
+                                AddPoint(
+                                    currentDistance / spline.Length,
                                     (currentDistance - startDist) / data.Length,
                                     fullPath,
                                     currentPosition,
@@ -555,22 +703,34 @@ namespace FluffyUnderware.Curvy.Generator
                                     ref relativeFs,
                                     ref positions,
                                     ref tangents,
-                                    ref normals);
+                                    ref normals
+                                );
                                 break;
                             }
+
                             if (atStopPoint)
                             {
                                 if (controlPointsOptions.Count > 0)
                                 {
                                     ControlPointOption cpOptions = controlPointsOptions[0];
-                                    ProcessControlPointOptions(cpOptions, positions.Count, data.MaterialGroups, extendedUVData,
-                                        duplicatePoints, ref materialGroup, ref patch, out currentDistance, out duplicatePoint);
+                                    ProcessControlPointOptions(
+                                        cpOptions,
+                                        positions.Count,
+                                        data.MaterialGroups,
+                                        extendedUVData,
+                                        duplicatePoints,
+                                        ref materialGroup,
+                                        ref patch,
+                                        out currentDistance,
+                                        out duplicatePoint
+                                    );
                                     // and remove the CP from the options
                                     controlPointsOptions.RemoveAt(0);
 
-                                    maxStep = (cpOptions.MaxStepDistance);
+                                    maxStep = cpOptions.MaxStepDistance;
                                     if (duplicatePoint)
-                                        AddPoint(currentDistance / spline.Length,
+                                        AddPoint(
+                                            currentDistance / spline.Length,
                                             (currentDistance - startDist) / data.Length,
                                             fullPath,
                                             currentPosition,
@@ -580,12 +740,13 @@ namespace FluffyUnderware.Curvy.Generator
                                             ref relativeFs,
                                             ref positions,
                                             ref tangents,
-                                            ref normals);
-
+                                            ref normals
+                                        );
                                 }
                                 else
                                 {
-                                    AddPoint(currentDistance / spline.Length,
+                                    AddPoint(
+                                        currentDistance / spline.Length,
                                         (currentDistance - startDist) / data.Length,
                                         fullPath,
                                         currentPosition,
@@ -595,26 +756,41 @@ namespace FluffyUnderware.Curvy.Generator
                                         ref relativeFs,
                                         ref positions,
                                         ref tangents,
-                                        ref normals);
+                                        ref normals
+                                    );
                                     break;
                                 }
                             }
-
                         }
+
                         if (dead <= 0)
-                            Debug.LogError("[Curvy] He's dead, Jim! Deadloop in SplineInputModuleBase.GetSplineData (Optimized)! Please send a bug report.");
+                            Debug.LogError(
+                                "[Curvy] He's dead, Jim! Deadloop in SplineInputModuleBase.GetSplineData (Optimized)! Please send a bug report."
+                            );
                         // store the last open patch
                         patch.End = positions.Count - 1;
                         materialGroup.Patches.Add(patch);
                         // ExplicitU on last Vertex?
                         if (controlPointsOptions.Count > 0 && controlPointsOptions[0].UVShift)
-                            extendedUVData.Add(new SamplePointUData(positions.Count - 1, controlPointsOptions[0]));
+                            extendedUVData.Add(
+                                new SamplePointUData(
+                                    positions.Count - 1,
+                                    controlPointsOptions[0]
+                                )
+                            );
 
                         // if path is closed and no hard edges involved, we need to smooth first normal
                         if (data.Closed)
-                            duplicatePoints.Add(new DuplicateSamplePoint(positions.Count - 1, 0, spline[0].GetMetadata<MetaCGOptions>(true).CorrectedHardEdge));
+                            duplicatePoints.Add(
+                                new DuplicateSamplePoint(
+                                    positions.Count - 1,
+                                    0,
+                                    spline[0].GetMetadata<MetaCGOptions>(true).CorrectedHardEdge
+                                )
+                            );
 
-                        FillData(data,
+                        FillData(
+                            data,
                             materialGroup,
                             sourceFs,
                             relativeFs,
@@ -624,9 +800,12 @@ namespace FluffyUnderware.Curvy.Generator
                             normals,
                             UseGlobalSpace,
                             spline.transform,
-                            Generator.transform);
+                            Generator.transform
+                        );
                     }
+
                     #endregion
+
                     break;
             }
 
@@ -638,9 +817,17 @@ namespace FluffyUnderware.Curvy.Generator
                 data.RecalculateNormals();
                 if (extendedUVData.Count > 0)
                 {
-                    CalculateExtendedUV(spline, startTF, endTF, extendedUVData, data);
+                    CalculateExtendedUV(
+                        spline,
+                        startTF,
+                        endTF,
+                        extendedUVData,
+                        data
+                    );
                     if (spline.Closed)
-                        UIMessages.Add("Extended UV features (UV Edge, Explicit U) are used in the Meta CG Options of a closed spline. Those features are supported only for open splines");
+                        UIMessages.Add(
+                            "Extended UV features (UV Edge, Explicit U) are used in the Meta CG Options of a closed spline. Those features are supported only for open splines"
+                        );
                 }
             }
 
@@ -658,7 +845,12 @@ namespace FluffyUnderware.Curvy.Generator
             out bool duplicatePoint)
         {
             if (options.UVEdge || options.UVShift)
-                extendedUVData.Add(new SamplePointUData(positionsCount, options));
+                extendedUVData.Add(
+                    new SamplePointUData(
+                        positionsCount,
+                        options
+                    )
+                );
 
             // clamp point at CP and maybe duplicate the next sample point
             currentDistance = options.Distance;
@@ -666,7 +858,13 @@ namespace FluffyUnderware.Curvy.Generator
             // end the current patch...
             if (duplicatePoint)
             {
-                duplicatePoints.Add(new DuplicateSamplePoint(positionsCount, positionsCount + 1, options.HardEdge));
+                duplicatePoints.Add(
+                    new DuplicateSamplePoint(
+                        positionsCount,
+                        positionsCount + 1,
+                        options.HardEdge
+                    )
+                );
 
                 currentPatch.End = positionsCount;
                 currentMaterialGroup.Patches.Add(currentPatch);
@@ -681,7 +879,12 @@ namespace FluffyUnderware.Curvy.Generator
                 currentPatch = new SamplePointsPatch(positionsCount + 1);
                 // Extended UV
                 if (options.UVEdge || options.UVShift)
-                    extendedUVData.Add(new SamplePointUData(positionsCount + 1, options));
+                    extendedUVData.Add(
+                        new SamplePointUData(
+                            positionsCount + 1,
+                            options
+                        )
+                    );
             }
         }
 
@@ -702,16 +905,19 @@ namespace FluffyUnderware.Curvy.Generator
                 //OPTIM do not do the transform if the spline and generator transforms are the same
                 Vector3[] positionsArray = positions.Array;
                 for (int i = 0; i < positions.Count; i++)
-                    positionsArray[i] = generatorTransform.InverseTransformPoint(splineTransform.TransformPoint(positionsArray[i]));
+                    positionsArray[i] =
+                        generatorTransform.InverseTransformPoint(splineTransform.TransformPoint(positionsArray[i]));
 
                 if (isFullPath)
                 {
                     Vector3[] normalsArray = normals.Array;
                     Vector3[] tangentsArray = tangents.Array;
                     for (int i = 0; i < tangents.Count; i++)
-                        tangentsArray[i] = generatorTransform.InverseTransformDirection(splineTransform.TransformDirection(tangentsArray[i]));
+                        tangentsArray[i] =
+                            generatorTransform.InverseTransformDirection(splineTransform.TransformDirection(tangentsArray[i]));
                     for (int i = 0; i < normals.Count; i++)
-                        normalsArray[i] = generatorTransform.InverseTransformDirection(splineTransform.TransformDirection(normalsArray[i]));
+                        normalsArray[i] =
+                            generatorTransform.InverseTransformDirection(splineTransform.TransformDirection(normalsArray[i]));
                 }
             }
 
@@ -729,7 +935,7 @@ namespace FluffyUnderware.Curvy.Generator
             }
         }
 
-        static private void AddPoint(float sourceF,
+        private static void AddPoint(float sourceF,
             float relativeF,
             bool isFullPath,
             Vector3 position,
@@ -741,7 +947,9 @@ namespace FluffyUnderware.Curvy.Generator
             ref SubArrayList<Vector3> tangentList,
             ref SubArrayList<Vector3> upList)
         {
-            sourceF = sourceF.Approximately(1f) ? 1f : (sourceF % 1);
+            sourceF = sourceF.Approximately(1f)
+                ? 1f
+                : sourceF % 1;
 
 #if CURVY_SANITY_CHECKS
             if (relativeF < 0 || relativeF > 1)
@@ -779,15 +987,29 @@ namespace FluffyUnderware.Curvy.Generator
 
             if (!loop)
                 tf = Mathf.Clamp01(tf);
-            float tn = (loop) ? tf % 1 : tf;
+            float tn = loop
+                ? tf % 1
+                : tf;
             float localF;
             CurvySplineSegment segment;
 
-            segment = spline.TFToSegment(tn, out localF, CurvyClamping.Clamp);
+            segment = spline.TFToSegment(
+                tn,
+                out localF,
+                CurvyClamping.Clamp
+            );
             if (useCache)
-                segment.InterpolateAndGetTangentFast(localF, out pos, out tan);
+                segment.InterpolateAndGetTangentFast(
+                    localF,
+                    out pos,
+                    out tan
+                );
             else
-                segment.InterpolateAndGetTangent(localF, out pos, out tan);
+                segment.InterpolateAndGetTangent(
+                    localF,
+                    out pos,
+                    out tan
+                );
             Vector3 lastPos = pos;
             Vector3 lastTan = tan;
 
@@ -800,14 +1022,31 @@ namespace FluffyUnderware.Curvy.Generator
             bool earlyExitConditionMet = false;
             while (tf < stopTF && earlyExitConditionMet == false)
             {
-                tf = Mathf.Min(stopTF, tf + stepDist);
-                tn = (loop) ? tf % 1 : tf;
+                tf = Mathf.Min(
+                    stopTF,
+                    tf + stepDist
+                );
+                tn = loop
+                    ? tf % 1
+                    : tf;
 
-                segment = spline.TFToSegment(tn, out localF, CurvyClamping.Clamp);
+                segment = spline.TFToSegment(
+                    tn,
+                    out localF,
+                    CurvyClamping.Clamp
+                );
                 if (useCache)
-                    segment.InterpolateAndGetTangentFast(localF, out pos, out tan);
+                    segment.InterpolateAndGetTangentFast(
+                        localF,
+                        out pos,
+                        out tan
+                    );
                 else
-                    segment.InterpolateAndGetTangent(localF, out pos, out tan);
+                    segment.InterpolateAndGetTangent(
+                        localF,
+                        out pos,
+                        out tan
+                    );
 
                 Vector3 movement;
                 {
@@ -818,13 +1057,16 @@ namespace FluffyUnderware.Curvy.Generator
                 }
                 movedDistance += movement.magnitude;
 
-                float tangentsAngle = Vector3.Angle(lastTan, tan);
+                float tangentsAngle = Vector3.Angle(
+                    lastTan,
+                    tan
+                );
                 angleAccumulator += tangentsAngle;
 
                 // Check if conditions are met
                 if (movedDistance >= maxDistance // max distance reached
                     || angleAccumulator >= maxAngle // max angle reached
-                    || (tangentsAngle == 0 && angleAccumulator > 0))// current step is linear while the whole movement is not.
+                    || (tangentsAngle == 0 && angleAccumulator > 0)) // current step is linear while the whole movement is not.
                     earlyExitConditionMet = true;
                 else
                 {
@@ -833,18 +1075,25 @@ namespace FluffyUnderware.Curvy.Generator
                 }
             }
 
-            return Mathf.Approximately(tf, stopTF);
+            return Mathf.Approximately(
+                tf,
+                stopTF
+            );
         }
 
         #region CalculateExtendedUV
 
-        private static void CalculateExtendedUV(CurvySpline spline, float startTF, float endTF, List<SamplePointUData> ext, CGShape data)
+        private static void CalculateExtendedUV(CurvySpline spline, float startTF, float endTF, List<SamplePointUData> ext,
+            CGShape data)
         {
 #if CURVY_SANITY_CHECKS
             Assert.IsTrue(ext.Count > 0);
             Assert.IsTrue(startTF.IsBetween0And1());
             if (spline.Closed)
-                DTLog.LogWarning($"[Curvy] Extended UV is supported only on open splines. Spline name: {spline.name}", spline);
+                DTLog.LogWarning(
+                    $"[Curvy] Extended UV is supported only on open splines. Spline name: {spline.name}",
+                    spline
+                );
 #endif
 
             // we have a list of data, either UV Edge (double then) or Explicit
@@ -855,8 +1104,16 @@ namespace FluffyUnderware.Curvy.Generator
                 CurvySplineSegment previousReferenceCP, nextReferenceCP;
                 MetaCGOptions previousReferenceCPOptions, nextReferenceCPOptions;
                 {
-                    previousReferenceCPOptions = findPreviousReferenceCPOptions(spline, startTF, out previousReferenceCP);
-                    nextReferenceCPOptions = findNextReferenceCPOptions(spline, startTF, out nextReferenceCP);
+                    previousReferenceCPOptions = findPreviousReferenceCPOptions(
+                        spline,
+                        startTF,
+                        out previousReferenceCP
+                    );
+                    nextReferenceCPOptions = findNextReferenceCPOptions(
+                        spline,
+                        startTF,
+                        out nextReferenceCP
+                    );
                 }
 
                 // we now know the U range the first vertex is in, so let's calculate it's actual U value
@@ -875,20 +1132,29 @@ namespace FluffyUnderware.Curvy.Generator
                     else
                         nextReferenceCPDistance = nextReferenceCP.Distance;
 
-                    frag = ((data.SourceRelativeDistances.Array[0] * spline.Length) - previousReferenceCP.Distance) / (nextReferenceCPDistance - previousReferenceCP.Distance);
+                    frag = ((data.SourceRelativeDistances.Array[0] * spline.Length) - previousReferenceCP.Distance)
+                           / (nextReferenceCPDistance - previousReferenceCP.Distance);
                 }
 
 
-                float firstU = Mathf.LerpUnclamped(previousReferenceCPOptions.GetDefinedFirstU(0), nextReferenceCPOptions.GetDefinedFirstU(0), frag);
+                float firstU = Mathf.LerpUnclamped(
+                    previousReferenceCPOptions.GetDefinedFirstU(0),
+                    nextReferenceCPOptions.GetDefinedFirstU(0),
+                    frag
+                );
 
                 float secondU = previousReferenceCPOptions.GetDefinedSecondU(0);
 
-                ext.Insert(0,
-                    new SamplePointUData(0,
-                        (startTF == 0 && previousReferenceCPOptions.CorrectedUVEdge),
-                        (startTF == 0 && previousReferenceCPOptions.CorrectedUVEdge),
+                ext.Insert(
+                    0,
+                    new SamplePointUData(
+                        0,
+                        startTF == 0 && previousReferenceCPOptions.CorrectedUVEdge,
+                        startTF == 0 && previousReferenceCPOptions.CorrectedUVEdge,
                         firstU,
-                        secondU));
+                        secondU
+                    )
+                );
             }
 
             // Do the same for the last vertex, find the reference CP and calculate starting U (first vertex never has matching Udata, even if it's over a reference CP!!!)
@@ -897,8 +1163,16 @@ namespace FluffyUnderware.Curvy.Generator
                 CurvySplineSegment previousReferenceCP, nextReferenceCP;
                 MetaCGOptions previousReferenceCPOptions, nextReferenceCPOptions;
                 {
-                    previousReferenceCPOptions = findPreviousReferenceCPOptions(spline, endTF, out previousReferenceCP);
-                    nextReferenceCPOptions = findNextReferenceCPOptions(spline, endTF, out nextReferenceCP);
+                    previousReferenceCPOptions = findPreviousReferenceCPOptions(
+                        spline,
+                        endTF,
+                        out previousReferenceCP
+                    );
+                    nextReferenceCPOptions = findNextReferenceCPOptions(
+                        spline,
+                        endTF,
+                        out nextReferenceCP
+                    );
                 }
 
                 float nextReferenceCPU;
@@ -909,37 +1183,54 @@ namespace FluffyUnderware.Curvy.Generator
 #if CURVY_SANITY_CHECKS
                     Assert.IsTrue(spline.Closed);
 #endif
-                    frag = ((data.SourceRelativeDistances.Array[data.Count - 1] * spline.Length) - previousReferenceCP.Distance) / (spline.Length - previousReferenceCP.Distance);
+                    frag = ((data.SourceRelativeDistances.Array[data.Count - 1] * spline.Length) - previousReferenceCP.Distance)
+                           / (spline.Length - previousReferenceCP.Distance);
                     // either take the ending U from 2nd U of first CP or raise last U to next int
                     if (nextReferenceCPOptions.CorrectedUVEdge)
                         nextReferenceCPU = nextReferenceCPOptions.FirstU;
                     else if (ext.Count > 1)
-                        nextReferenceCPU = Mathf.FloorToInt((ext[ext.Count - 1].UVEdge) ? ext[ext.Count - 1].SecondU : ext[ext.Count - 1].FirstU) + 1;
+                        nextReferenceCPU = Mathf.FloorToInt(
+                                               ext[ext.Count - 1].UVEdge
+                                                   ? ext[ext.Count - 1].SecondU
+                                                   : ext[ext.Count - 1].FirstU
+                                           )
+                                           + 1;
                     else
                         nextReferenceCPU = 1;
                 }
                 else
                 {
-                    frag = ((data.SourceRelativeDistances.Array[data.Count - 1] * spline.Length) - previousReferenceCP.Distance) / (nextReferenceCP.Distance - previousReferenceCP.Distance);
+                    frag = ((data.SourceRelativeDistances.Array[data.Count - 1] * spline.Length) - previousReferenceCP.Distance)
+                           / (nextReferenceCP.Distance - previousReferenceCP.Distance);
                     nextReferenceCPU = nextReferenceCPOptions.GetDefinedFirstU(1);
                 }
 
-                ext.Add(new SamplePointUData(data.Count - 1,
-                    false,
-                    false,
-                    Mathf.LerpUnclamped(previousReferenceCPOptions.GetDefinedSecondU(0), nextReferenceCPU, frag),
-                    0));
+                ext.Add(
+                    new SamplePointUData(
+                        data.Count - 1,
+                        false,
+                        false,
+                        Mathf.LerpUnclamped(
+                            previousReferenceCPOptions.GetDefinedSecondU(0),
+                            nextReferenceCPU,
+                            frag
+                        ),
+                        0
+                    )
+                );
             }
 
             float startF = 0;
-            float lowerBoundU = (ext[0].UVEdge) ? ext[0].SecondU : ext[0].FirstU;
+            float lowerBoundU = ext[0].UVEdge
+                ? ext[0].SecondU
+                : ext[0].FirstU;
             float upperBoundU = ext[1].FirstU;
             float length = data.RelativeDistances.Array[ext[1].Vertex] - data.RelativeDistances.Array[ext[0].Vertex];
             int current = 1;
             for (int vertexIndex = 0; vertexIndex < data.Count - 1; vertexIndex++)
             {
                 float curF = (data.RelativeDistances.Array[vertexIndex] - startF) / length;
-                data.CustomValues.Array[vertexIndex] = (upperBoundU - lowerBoundU) * curF + lowerBoundU;
+                data.CustomValues.Array[vertexIndex] = ((upperBoundU - lowerBoundU) * curF) + lowerBoundU;
 
                 if (ext[current].Vertex == vertexIndex
                     //reached last iteration, so no need to update data that will not get used, especially that
@@ -954,7 +1245,9 @@ namespace FluffyUnderware.Curvy.Generator
 
                     if (isDuplicatedVertex)
                     {
-                        lowerBoundU = (ext[current].UVEdge) ? ext[current].SecondU : ext[current].FirstU;
+                        lowerBoundU = ext[current].UVEdge
+                            ? ext[current].SecondU
+                            : ext[current].FirstU;
                         current++;
                         //update distances
                         currentDistance = nextDistance;
@@ -969,6 +1262,7 @@ namespace FluffyUnderware.Curvy.Generator
                     current++;
                 }
             }
+
             data.CustomValues.Array[data.Count - 1] = ext[ext.Count - 1].FirstU;
         }
 
@@ -982,15 +1276,18 @@ namespace FluffyUnderware.Curvy.Generator
                 if (spline.FirstVisibleControlPoint == cp)
                     return options;
                 cp = spline.GetPreviousSegment(cp);
-            }
-            while (cp && !options.CorrectedUVEdge && !options.ExplicitU);
+            } while (cp && !options.CorrectedUVEdge && !options.ExplicitU);
+
             return options;
         }
 
         private static MetaCGOptions findNextReferenceCPOptions(CurvySpline spline, float tf, out CurvySplineSegment cp)
         {
             MetaCGOptions options;
-            cp = spline.TFToSegment(tf, out _);
+            cp = spline.TFToSegment(
+                tf,
+                out _
+            );
 
             do
             {
@@ -998,27 +1295,30 @@ namespace FluffyUnderware.Curvy.Generator
                 options = cp.GetMetadata<MetaCGOptions>(true);
                 if (!spline.Closed && spline.LastVisibleControlPoint == cp)
                     return options;
-            }
-            while (!options.CorrectedUVEdge && !options.ExplicitU && !(spline.FirstSegment == cp));
+            } while (!options.CorrectedUVEdge && !options.ExplicitU && !(spline.FirstSegment == cp));
+
             return options;
         }
+
         #endregion
 
         #endregion
 
         #region Protected members
 
-        protected abstract CurvySpline InputSpline
-        {
-            get;
-            set;
-        }
+        protected abstract CurvySpline InputSpline { get; set; }
 
         protected virtual void OnSplineAssigned()
         {
+            //todo why does this class has nothing similar to SplineProcessor's UnbindEvents?
             if (InputSpline)
             {
                 InputSpline.OnRefresh.AddListenerOnce(OnSplineRefreshed);
+                InputSpline.OnInitialized.AddListenerOnce(OnSplineInitialized);
+
+                //OnSplineAssigned can be called multiple times, in OnValidate for example. This line is to avoid setting OnInputSplineCoordinatesChanged as a listener multiple times
+                InputSpline.OnGlobalCoordinatesChanged -= OnInputSplineCoordinatesChanged;
+
                 InputSpline.OnGlobalCoordinatesChanged += OnInputSplineCoordinatesChanged;
             }
         }
@@ -1027,23 +1327,51 @@ namespace FluffyUnderware.Curvy.Generator
         {
             if (InputSpline == null)
                 return;
+            if (InputSpline.IsInitialized == false)
+                return;
 
             if (m_StartCP && m_StartCP.Spline != InputSpline)
             {
-                DTLog.LogError(string.Format(System.Globalization.CultureInfo.InvariantCulture, "[Curvy] Input module {0}: StartCP is not part of the input spline ({1})", name, InputSpline.name), this);
+                DTLog.LogError(
+                    string.Format(
+                        CultureInfo.InvariantCulture,
+                        "[Curvy] Input module {0}: StartCP is not part of the input spline ({1})",
+                        name,
+                        InputSpline.name
+                    ),
+                    this
+                );
                 m_StartCP = null;
             }
 
             if (m_EndCP && m_EndCP.Spline != InputSpline)
             {
-                DTLog.LogError(string.Format(System.Globalization.CultureInfo.InvariantCulture, "[Curvy] Input module {0}: EndCP is not part of the input spline ({1})", name, InputSpline.name), this);
+                DTLog.LogError(
+                    string.Format(
+                        CultureInfo.InvariantCulture,
+                        "[Curvy] Input module {0}: EndCP is not part of the input spline ({1})",
+                        name,
+                        InputSpline.name
+                    ),
+                    this
+                );
                 m_EndCP = null;
             }
 
-            if (InputSpline.IsInitialized && m_EndCP != null && m_StartCP != null
+            if (m_EndCP != null
+                && m_StartCP != null
                 && InputSpline.GetControlPointIndex(m_EndCP) <= InputSpline.GetControlPointIndex(m_StartCP))
             {
-                DTLog.LogError(string.Format(System.Globalization.CultureInfo.InvariantCulture, "[Curvy] Input module {0}: EndCP has an index ({1}) less or equal than StartCP ({2})", name, InputSpline.GetControlPointIndex(m_EndCP), InputSpline.GetControlPointIndex(m_StartCP)), this);
+                DTLog.LogError(
+                    string.Format(
+                        CultureInfo.InvariantCulture,
+                        "[Curvy] Input module {0}: EndCP has an index ({1}) less or equal than StartCP ({2})",
+                        name,
+                        InputSpline.GetControlPointIndex(m_EndCP),
+                        InputSpline.GetControlPointIndex(m_StartCP)
+                    ),
+                    this
+                );
                 m_EndCP = null;
             }
         }

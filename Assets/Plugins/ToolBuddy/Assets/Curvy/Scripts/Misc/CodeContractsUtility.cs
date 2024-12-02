@@ -1,12 +1,11 @@
 // =====================================================================
-// Copyright 2013-2022 ToolBuddy
+// Copyright © 2013 ToolBuddy
 // All rights reserved
 // 
 // http://www.toolbuddy.net
 // =====================================================================
 
 #if CONTRACTS_FULL
-
 using System;
 using System.Diagnostics.Contracts;
 using UnityEngine;
@@ -16,9 +15,7 @@ namespace FluffyUnderware.Curvy
     public static class CodeContractsUtility
     {
         [Pure]
-        public static void AssumeInvariant<T>(T assumptionTarget)
-        {
-        }
+        public static void AssumeInvariant<T>(T assumptionTarget) { }
 
         [Pure]
         public static bool IsPercentage(this float number)
@@ -161,7 +158,10 @@ namespace FluffyUnderware.Curvy
         [Pure]
         public static bool IsNormalized(this Vector3 vector)
         {
-            return Approximately(vector.magnitude, 1f);
+            return Approximately(
+                vector.magnitude,
+                1f
+            );
         }
 
         [Pure]
@@ -169,7 +169,9 @@ namespace FluffyUnderware.Curvy
         {
             return Approximately(
                 (float)Math.Sqrt(q.w * q.w + q.x * q.x + q.y * q.y + q.z * q.z)
-                , 1f);
+                ,
+                1f
+            );
         }
 
         [Pure]
@@ -182,18 +184,24 @@ namespace FluffyUnderware.Curvy
         public static bool ContainsInfinity(this Vector3 vector)
         {
             return float.IsInfinity(vector.x) || float.IsInfinity(vector.y) || float.IsInfinity(vector.z);
-
         }
+
         [Pure]
         public static float PureDot(this Vector3 vector1, Vector3 vector2)
         {
-            return Vector3.Dot(vector1, vector2);
+            return Vector3.Dot(
+                vector1,
+                vector2
+            );
         }
 
         [Pure]
         public static Vector3 PureCross(this Vector3 vector1, Vector3 vector2)
         {
-            return Vector3.Cross(vector1, vector2);
+            return Vector3.Cross(
+                vector1,
+                vector2
+            );
         }
 
         [Pure]
@@ -205,7 +213,10 @@ namespace FluffyUnderware.Curvy
         [Pure]
         public static bool Approximately(this float a, float b)
         {
-            return Mathf.Approximately(a, b);
+            return Mathf.Approximately(
+                a,
+                b
+            );
         }
 
         [Pure]
@@ -218,8 +229,8 @@ namespace FluffyUnderware.Curvy
         public static bool Approximately(this Vector3 a, Vector3 b)
         {
             return a.x.Approximately(b.x)
-                && a.y.Approximately(b.y)
-                && a.z.Approximately(b.z);
+                   && a.y.Approximately(b.y)
+                   && a.z.Approximately(b.z);
         }
 
         [Pure]
@@ -268,10 +279,10 @@ namespace FluffyUnderware.Curvy
         public static bool AreBarycentricCoordinatesOfPointInTriangle(this Vector3 barycentricCoordinates)
         {
             return
-                barycentricCoordinates.x >= 0 &&
-                barycentricCoordinates.y >= 0 &&
-                barycentricCoordinates.z >= 0 &&
-                1f.Approximately(barycentricCoordinates.x + barycentricCoordinates.y + barycentricCoordinates.z);
+                barycentricCoordinates.x >= 0
+                && barycentricCoordinates.y >= 0
+                && barycentricCoordinates.z >= 0
+                && 1f.Approximately(barycentricCoordinates.x + barycentricCoordinates.y + barycentricCoordinates.z);
         }
 
         [Pure]
@@ -279,7 +290,10 @@ namespace FluffyUnderware.Curvy
         {
             Contract.Ensures(Contract.Result<float>() <= a);
             Contract.Ensures(Contract.Result<float>() <= b);
-            return Mathf.Min(a, b);
+            return Mathf.Min(
+                a,
+                b
+            );
         }
 
         [Pure]
@@ -287,7 +301,10 @@ namespace FluffyUnderware.Curvy
         {
             Contract.Ensures(Contract.Result<float>() >= a);
             Contract.Ensures(Contract.Result<float>() >= b);
-            return Mathf.Max(a, b);
+            return Mathf.Max(
+                a,
+                b
+            );
         }
 
         [Pure]

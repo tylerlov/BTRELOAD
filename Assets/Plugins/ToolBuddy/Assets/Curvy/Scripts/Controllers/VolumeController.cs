@@ -1,19 +1,17 @@
 // =====================================================================
-// Copyright 2013-2022 ToolBuddy
+// Copyright © 2013 ToolBuddy
 // All rights reserved
 // 
 // http://www.toolbuddy.net
 // =====================================================================
 
 using System;
-using UnityEngine;
-using System.Collections;
 using FluffyUnderware.Curvy.Generator;
-using FluffyUnderware.DevTools;
 using FluffyUnderware.Curvy.Utils;
+using FluffyUnderware.DevTools;
+using JetBrains.Annotations;
+using UnityEngine;
 using UnityEngine.Assertions;
-using UnityEngine.Serialization;
-
 
 namespace FluffyUnderware.Curvy.Controllers
 {
@@ -21,7 +19,7 @@ namespace FluffyUnderware.Curvy.Controllers
     /// Controller using a Curvy Generator Volume
     /// </summary>
     [AddComponentMenu("Curvy/Controllers/CG Volume Controller")]
-    [HelpURL(CurvySpline.DOCLINK + "volumecontroller")]
+    [HelpURL(AssetInformation.DocsRedirectionBaseUrl + "volumecontroller")]
     public class VolumeController : CurvyController
     {
         private const float CrossPositionRangeMin = -0.5f;
@@ -30,20 +28,39 @@ namespace FluffyUnderware.Curvy.Controllers
         #region ### Serialized Fields ###
 
         [Section("General")]
-        [CGDataReferenceSelector(typeof(CGVolume), Label = "Volume/Slot")]
+        [CGDataReferenceSelector(
+            typeof(CGVolume),
+            Label = "Volume/Slot"
+        )]
         [SerializeField]
         private CGDataReference m_Volume = new CGDataReference();
 
-        [Section("Cross Position", Sort = 1, HelpURL = CurvySpline.DOCLINK + "volumecontroller_crossposition")]
+        [Section(
+            "Cross Position",
+            Sort = 1,
+            HelpURL = AssetInformation.DocsRedirectionBaseUrl + "volumecontroller_crossposition"
+        )]
         [SerializeField]
-        [FloatRegion(UseSlider = true, Precision = 4, RegionOptionsPropertyName = nameof(CrossRangeOptions), Options = AttributeOptionsFlags.Full)]
-        private FloatRegion m_CrossRange = new FloatRegion(CrossPositionRangeMin, CrossPositionRangeMax);
+        [FloatRegion(
+            UseSlider = true,
+            Precision = 4,
+            RegionOptionsPropertyName = nameof(CrossRangeOptions),
+            Options = AttributeOptionsFlags.Full
+        )]
+        private FloatRegion m_CrossRange = new FloatRegion(
+            CrossPositionRangeMin,
+            CrossPositionRangeMax
+        );
 
-        [RangeEx(nameof(MinCrossRelativePosition), nameof(MaxCrossRelativePosition))]
+        [RangeEx(
+            nameof(MinCrossRelativePosition),
+            nameof(MaxCrossRelativePosition)
+        )]
         [SerializeField]
         private float crossRelativePosition;
 
-        [SerializeField] private CurvyClamping m_CrossClamping;
+        [SerializeField]
+        private CurvyClamping m_CrossClamping;
 
         #endregion
 
@@ -54,37 +71,39 @@ namespace FluffyUnderware.Curvy.Controllers
         /// </summary>
         public CGDataReference Volume
         {
-            get { return m_Volume; }
-            set { m_Volume = value; }
+            get => m_Volume;
+            set => m_Volume = value;
         }
 
         /// <summary>
         /// Gets the actual volume data
         /// </summary>
-        public CGVolume VolumeData
-        {
-            get
-            {
-                return (Volume.HasValue) ? Volume.GetData<CGVolume>() : null;
-            }
-        }
+        [CanBeNull]
+        public CGVolume VolumeData => Volume.HasValue
+            ? Volume.GetData<CGVolume>()
+            : null;
 
         public float CrossFrom
         {
-            get { return m_CrossRange.From; }
-            set { m_CrossRange.From = Mathf.Clamp(value, CrossPositionRangeMin, CrossPositionRangeMax); }
+            get => m_CrossRange.From;
+            set => m_CrossRange.From = Mathf.Clamp(
+                value,
+                CrossPositionRangeMin,
+                CrossPositionRangeMax
+            );
         }
 
         public float CrossTo
         {
-            get { return m_CrossRange.To; }
-            set { m_CrossRange.To = Mathf.Clamp(value, CrossFrom, CrossPositionRangeMax); }
+            get => m_CrossRange.To;
+            set => m_CrossRange.To = Mathf.Clamp(
+                value,
+                CrossFrom,
+                CrossPositionRangeMax
+            );
         }
 
-        public float CrossLength
-        {
-            get { return m_CrossRange.Length; }
-        }
+        public float CrossLength => m_CrossRange.Length;
 
 
         /// <summary>
@@ -92,11 +111,8 @@ namespace FluffyUnderware.Curvy.Controllers
         /// </summary>
         public CurvyClamping CrossClamping
         {
-            get { return m_CrossClamping; }
-            set
-            {
-                m_CrossClamping = value;
-            }
+            get => m_CrossClamping;
+            set => m_CrossClamping = value;
         }
 
         /// <summary>
@@ -104,8 +120,8 @@ namespace FluffyUnderware.Curvy.Controllers
         /// </summary>
         public float CrossRelativePosition
         {
-            get { return GetClampedCrossPosition(crossRelativePosition); }
-            set { crossRelativePosition = GetClampedCrossPosition(value); }
+            get => GetClampedCrossPosition(crossRelativePosition);
+            set => crossRelativePosition = GetClampedCrossPosition(value);
         }
 
         /// <summary>
@@ -116,18 +132,17 @@ namespace FluffyUnderware.Curvy.Controllers
             get
             {
 #if CURVY_SANITY_CHECKS
-                Assert.IsTrue(IsReady, ControllerNotReadyMessage);
+                Assert.IsTrue(
+                    IsReady,
+                    ControllerNotReadyMessage
+                );
 #endif
-                return (VolumeData != null) ? VolumeData.Length : 0;
+                return VolumeData != null
+                    ? VolumeData.Length
+                    : 0;
             }
         }
 
-        #endregion
-
-        #region ### Unity Callbacks ###
-        /*! \cond UNITY */
-
-        /*! \endcond */
         #endregion
 
         #region ### Public Methods ###
@@ -140,9 +155,18 @@ namespace FluffyUnderware.Curvy.Controllers
         public float CrossRelativeToAbsolute(float relativeDistance)
         {
 #if CURVY_SANITY_CHECKS
-            Assert.IsTrue(IsReady, ControllerNotReadyMessage);
+            Assert.IsTrue(
+                IsReady,
+                ControllerNotReadyMessage
+            );
 #endif
-            return (VolumeData != null) ? VolumeData.CrossFToDistance(RelativePosition, relativeDistance, CrossClamping) : 0;
+            return VolumeData != null
+                ? VolumeData.CrossFToDistance(
+                    RelativePosition,
+                    relativeDistance,
+                    CrossClamping
+                )
+                : 0;
         }
 
         /// <summary>
@@ -153,22 +177,25 @@ namespace FluffyUnderware.Curvy.Controllers
         public float CrossAbsoluteToRelative(float worldUnitDistance)
         {
 #if CURVY_SANITY_CHECKS
-            Assert.IsTrue(IsReady, ControllerNotReadyMessage);
+            Assert.IsTrue(
+                IsReady,
+                ControllerNotReadyMessage
+            );
 #endif
-            return (VolumeData != null) ? VolumeData.CrossDistanceToF(RelativePosition, worldUnitDistance, CrossClamping) : 0;
+            return VolumeData != null
+                ? VolumeData.CrossDistanceToF(
+                    RelativePosition,
+                    worldUnitDistance,
+                    CrossClamping
+                )
+                : 0;
         }
 
         #endregion
 
         #region ### Protected Methods ###
 
-        override public bool IsReady
-        {
-            get
-            {
-                return Volume != null && !Volume.IsEmpty && Volume.HasValue;
-            }
-        }
+        public override bool IsReady => Volume != null && !Volume.IsEmpty && Volume.HasValue;
 
         /// <summary>
         /// Converts distance on source from relative to absolute position.
@@ -178,10 +205,25 @@ namespace FluffyUnderware.Curvy.Controllers
         protected override float RelativeToAbsolute(float relativeDistance)
         {
 #if CURVY_SANITY_CHECKS
-            Assert.IsTrue(IsReady, ControllerNotReadyMessage);
-            Assert.IsTrue(CurvyUtility.Approximately(relativeDistance, GetClampedPosition(relativeDistance, CurvyPositionMode.Relative, Clamping, Length)));
+            Assert.IsTrue(
+                IsReady,
+                ControllerNotReadyMessage
+            );
+            Assert.IsTrue(
+                CurvyUtility.Approximately(
+                    relativeDistance,
+                    GetClampedPosition(
+                        relativeDistance,
+                        CurvyPositionMode.Relative,
+                        Clamping,
+                        Length
+                    )
+                )
+            );
 #endif
-            return (VolumeData != null) ? VolumeData.FToDistance(relativeDistance) : 0;
+            return VolumeData != null
+                ? VolumeData.FToDistance(relativeDistance)
+                : 0;
         }
 
         /// <summary>
@@ -192,26 +234,59 @@ namespace FluffyUnderware.Curvy.Controllers
         protected override float AbsoluteToRelative(float worldUnitDistance)
         {
 #if CURVY_SANITY_CHECKS
-            Assert.IsTrue(IsReady, ControllerNotReadyMessage);
-            Assert.IsTrue(CurvyUtility.Approximately(worldUnitDistance, GetClampedPosition(worldUnitDistance, CurvyPositionMode.WorldUnits, Clamping, Length)));
+            Assert.IsTrue(
+                IsReady,
+                ControllerNotReadyMessage
+            );
+            Assert.IsTrue(
+                CurvyUtility.Approximately(
+                    worldUnitDistance,
+                    GetClampedPosition(
+                        worldUnitDistance,
+                        CurvyPositionMode.WorldUnits,
+                        Clamping,
+                        Length
+                    )
+                )
+            );
 #endif
-            return (VolumeData != null) ? VolumeData.DistanceToF(worldUnitDistance) : 0;
+            return VolumeData != null
+                ? VolumeData.DistanceToF(worldUnitDistance)
+                : 0;
         }
 
         protected override Vector3 GetInterpolatedSourcePosition(float tf)
         {
 #if CURVY_SANITY_CHECKS
-            Assert.IsTrue(IsReady, ControllerNotReadyMessage);
+            Assert.IsTrue(
+                IsReady,
+                ControllerNotReadyMessage
+            );
 #endif
-            return Volume.Module.Generator.transform.TransformPoint(VolumeData.InterpolateVolumePosition(tf, CrossRelativePosition));
+            return Volume.Module.Generator.transform.TransformPoint(
+                VolumeData.InterpolateVolumePosition(
+                    tf,
+                    CrossRelativePosition
+                )
+            );
         }
 
-        protected override void GetInterpolatedSourcePosition(float tf, out Vector3 interpolatedPosition, out Vector3 tangent, out Vector3 up)
+        protected override void GetInterpolatedSourcePosition(float tf, out Vector3 interpolatedPosition, out Vector3 tangent,
+            out Vector3 up)
         {
 #if CURVY_SANITY_CHECKS
-            Assert.IsTrue(IsReady, ControllerNotReadyMessage);
+            Assert.IsTrue(
+                IsReady,
+                ControllerNotReadyMessage
+            );
 #endif
-            VolumeData.InterpolateVolume(tf, CrossRelativePosition, out interpolatedPosition, out tangent, out up);
+            VolumeData.InterpolateVolume(
+                tf,
+                CrossRelativePosition,
+                out interpolatedPosition,
+                out tangent,
+                out up
+            );
             Transform generatorTransform = Volume.Module.Generator.transform;
             interpolatedPosition = generatorTransform.TransformPoint(interpolatedPosition);
             tangent = generatorTransform.TransformDirection(tangent);
@@ -222,18 +297,34 @@ namespace FluffyUnderware.Curvy.Controllers
         protected override Vector3 GetTangent(float tf)
         {
 #if CURVY_SANITY_CHECKS
-            Assert.IsTrue(IsReady, ControllerNotReadyMessage);
+            Assert.IsTrue(
+                IsReady,
+                ControllerNotReadyMessage
+            );
 #endif
-            return Volume.Module.Generator.transform.TransformDirection(VolumeData.InterpolateVolumeDirection(tf, CrossRelativePosition));
+            return Volume.Module.Generator.transform.TransformDirection(
+                VolumeData.InterpolateVolumeDirection(
+                    tf,
+                    CrossRelativePosition
+                )
+            );
         }
 
 
         protected override Vector3 GetOrientation(float tf)
         {
 #if CURVY_SANITY_CHECKS
-            Assert.IsTrue(IsReady, ControllerNotReadyMessage);
+            Assert.IsTrue(
+                IsReady,
+                ControllerNotReadyMessage
+            );
 #endif
-            return Volume.Module.Generator.transform.TransformDirection(VolumeData.InterpolateVolumeUp(tf, CrossRelativePosition));
+            return Volume.Module.Generator.transform.TransformDirection(
+                VolumeData.InterpolateVolumeUp(
+                    tf,
+                    CrossRelativePosition
+                )
+            );
         }
 
         protected override void Advance(float speed, float deltaTime)
@@ -241,77 +332,83 @@ namespace FluffyUnderware.Curvy.Controllers
             float tf = RelativePosition;
             MovementDirection direction = MovementDirection;
 
-            SimulateAdvance(ref tf, ref direction, speed, deltaTime);
+            SimulateAdvance(
+                ref tf,
+                ref direction,
+                speed,
+                deltaTime
+            );
 
             MovementDirection = direction;
             RelativePosition = tf;
         }
 
-        override protected void SimulateAdvance(ref float tf, ref MovementDirection curyDirection, float speed, float deltaTime)
+        protected override void SimulateAdvance(ref float tf, ref MovementDirection direction, float speed, float deltaTime)
         {
 #if CURVY_SANITY_CHECKS
-            Assert.IsTrue(IsReady, ControllerNotReadyMessage);
+            Assert.IsTrue(
+                IsReady,
+                ControllerNotReadyMessage
+            );
 #endif
-            int directionInt = curyDirection.ToInt();
+            int directionInt = direction.ToInt();
 
             switch (MoveMode)
             {
                 case MoveModeEnum.Relative:
-                    VolumeData.Move(ref tf, ref directionInt, speed * deltaTime, Clamping);
+                    VolumeData.Move(
+                        ref tf,
+                        ref directionInt,
+                        speed * deltaTime,
+                        Clamping
+                    );
                     break;
                 case MoveModeEnum.AbsolutePrecise:
-                    VolumeData.MoveBy(ref tf, ref directionInt, speed * deltaTime, Clamping);
+                    VolumeData.MoveBy(
+                        ref tf,
+                        ref directionInt,
+                        speed * deltaTime,
+                        Clamping
+                    );
                     break;
                 default:
                     throw new NotSupportedException();
             }
-            curyDirection = MovementDirectionMethods.FromInt(directionInt);
+
+            direction = MovementDirectionMethods.FromInt(directionInt);
         }
 
         #endregion
 
         #region ### Privates & Internals ###
-        /*! \cond PRIVATE */
 
-        private RegionOptions<float> CrossRangeOptions
-        {
-            get
-            {
-                return RegionOptions<float>.MinMax(CrossPositionRangeMin, CrossPositionRangeMax);
-            }
-        }
+        private RegionOptions<float> CrossRangeOptions => RegionOptions<float>.MinMax(
+            CrossPositionRangeMin,
+            CrossPositionRangeMax
+        );
 
-        private float MinCrossRelativePosition
-        {
-            get
-            {
-                return m_CrossRange.From;
-            }
-        }
+        private float MinCrossRelativePosition => m_CrossRange.From;
 
-        private float MaxCrossRelativePosition
-        {
-            get
-            {
-                return m_CrossRange.To;
-            }
-        }
+        private float MaxCrossRelativePosition => m_CrossRange.To;
 
         private float GetClampedCrossPosition(float position)
-        {
-            return CurvyUtility.ClampValue(position, CrossClamping, CrossFrom, CrossTo);
-        }
+            => CurvyUtility.ClampValue(
+                position,
+                CrossClamping,
+                CrossFrom,
+                CrossTo
+            );
 
-        /*! \endcond */
         #endregion
 
         #region RetroCompatibility code
 
         [SerializeField, HideInInspector]
+        [UsedImplicitly]
         [Obsolete("Use crossRelativePosition instead. This field is kept for retro compatibility reasons")]
         private float m_CrossInitialPosition;
 
-        /*! \cond PRIVATE */
+#if DOCUMENTATION___FORCE_IGNORE___CURVY == false
         public override void OnAfterDeserialize()
         {
             base.OnAfterDeserialize();
@@ -320,13 +417,20 @@ namespace FluffyUnderware.Curvy.Controllers
             {
 #pragma warning disable 612
                 //Converts from the obsolete way of representing cross relative position to the usual one.
-                crossRelativePosition = DTMath.MapValue(CrossFrom, CrossTo, m_CrossInitialPosition, CrossPositionRangeMin, CrossPositionRangeMax);
+                crossRelativePosition = DTMath.MapValue(
+                    CrossFrom,
+                    CrossTo,
+                    m_CrossInitialPosition,
+                    CrossPositionRangeMin,
+                    CrossPositionRangeMax
+                );
 #pragma warning restore 612
                 m_CrossInitialPosition = Single.NaN;
             }
 #pragma warning restore 618
         }
-        /*! \endcond */
+#endif
+
         #endregion
     }
 }

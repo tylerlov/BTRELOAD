@@ -26,11 +26,11 @@ public class RadarAdjuster : MonoBehaviour
             hudNavSystem.radarMinScale = radarMinScale;
             hudNavSystem.radarFadeDistance = radarFadeDistance;
 
-            Debug.Log("Radar properties adjusted successfully.");
+            ConditionalDebug.Log("Radar properties adjusted successfully.");
         }
         else
         {
-            Debug.LogError("HUDNavigationSystem not found in the scene!");
+            ConditionalDebug.LogError("HUDNavigationSystem not found in the scene!");
         }
     }
 }

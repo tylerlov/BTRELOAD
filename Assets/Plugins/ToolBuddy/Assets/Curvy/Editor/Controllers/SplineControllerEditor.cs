@@ -1,29 +1,33 @@
 // =====================================================================
-// Copyright 2013-2022 ToolBuddy
+// Copyright © 2013 ToolBuddy
 // All rights reserved
 // 
 // http://www.toolbuddy.net
 // =====================================================================
 
 using System;
-using UnityEngine;
-using UnityEditor;
-using System.Collections;
 using FluffyUnderware.Curvy;
-using FluffyUnderware.CurvyEditor;
 using FluffyUnderware.Curvy.Controllers;
 using FluffyUnderware.DevTools;
 using FluffyUnderware.DevToolsEditor;
+using UnityEditor;
+using UnityEngine;
 
 namespace FluffyUnderware.CurvyEditor.Controllers
 {
     [CanEditMultipleObjects]
-    [CustomEditor(typeof(SplineController), true)]
+    [CustomEditor(
+        typeof(SplineController),
+        true
+    )]
     public class SplineControllerEditor : CurvyControllerEditor<SplineController>
     {
         protected override void SetupArrayEx(DTFieldNode node, ArrayExAttribute attribute)
         {
-            base.SetupArrayEx(node, attribute);
+            base.SetupArrayEx(
+                node,
+                attribute
+            );
 
             float ArrayExElementHeightCallback(int index)
             {
@@ -33,7 +37,8 @@ namespace FluffyUnderware.CurvyEditor.Controllers
 
                 return OnPositionReachedSettingsDrawer.GetPropertyHeight(
                     node.serializedProperty.GetArrayElementAtIndex(index),
-                    ((SplineController)target).OnPositionReachedList[index]);
+                    ((SplineController)target).OnPositionReachedList[index]
+                );
             }
 
             node.ArrayEx.elementHeightCallback = ArrayExElementHeightCallback;
@@ -46,7 +51,6 @@ namespace FluffyUnderware.CurvyEditor.Controllers
             CurvySpline spline;
 
             if (Target != null && (spline = Target.Spline) != null)
-            {
                 for (int index = 0; index < Target.OnPositionReachedList.Count; index++)
                 {
                     OnPositionReachedSettings settings = Target.OnPositionReachedList[index];
@@ -57,10 +61,16 @@ namespace FluffyUnderware.CurvyEditor.Controllers
                         switch (settings.PositionMode)
                         {
                             case CurvyPositionMode.Relative:
-                                position = spline.Interpolate(settings.Position, Space.World);
+                                position = spline.Interpolate(
+                                    settings.Position,
+                                    Space.World
+                                );
                                 break;
                             case CurvyPositionMode.WorldUnits:
-                                position = spline.InterpolateByDistance(settings.Position, Space.World);
+                                position = spline.InterpolateByDistance(
+                                    settings.Position,
+                                    Space.World
+                                );
                                 break;
                             default:
                                 throw new ArgumentOutOfRangeException();
@@ -70,18 +80,27 @@ namespace FluffyUnderware.CurvyEditor.Controllers
                     EditorGUI.BeginChangeCheck();
 
                     float handleSize = HandleUtility.GetHandleSize(position) * .2f;
-                    Vector3 newPosition = Handles.FreeMoveHandle(position,
+                    Vector3 newPosition = Handles.FreeMoveHandle(
+                        position,
 #if UNITY_2022_1_OR_NEWER == false
                         Quaternion.identity,
 #endif
                         handleSize,
-                        Vector3.one * 0.5f, //couldn't figure out what value to put here. I put the same value as the example in the documentation
-                        Handles.SphereHandleCap);
+                        Vector3.one
+                        * 0.5f, //couldn't figure out what value to put here. I put the same value as the example in the documentation
+                        Handles.SphereHandleCap
+                    );
 
                     if (EditorGUI.EndChangeCheck())
                     {
-                        Undo.RecordObject(Target, "Modify Custom Event Position");
-                        float nearestTf = spline.GetNearestPointTF(newPosition, Space.World);
+                        Undo.RecordObject(
+                            Target,
+                            "Modify Custom Event Position"
+                        );
+                        float nearestTf = spline.GetNearestPointTF(
+                            newPosition,
+                            Space.World
+                        );
                         switch (settings.PositionMode)
                         {
                             case CurvyPositionMode.Relative:
@@ -101,7 +120,8 @@ namespace FluffyUnderware.CurvyEditor.Controllers
                             settings.GizmoColor.r * 0.2f,
                             settings.GizmoColor.g * 0.2f,
                             settings.GizmoColor.b * 0.2f,
-                            1);
+                            1
+                        );
 
                         GUIStyle guiStyle = CurvyStyles.ControllerCustomEventStyle;
                         lock (guiStyle)
@@ -121,25 +141,56 @@ namespace FluffyUnderware.CurvyEditor.Controllers
                             labelPosition += Camera.current.transform.up * (handleSize * 4) * 0.1f;
                             labelPosition += Camera.current.transform.up * (handleSize * 4) * 0.3f;
 
-                            Handles.Label(labelPosition, label, guiStyle);
+                            Handles.Label(
+                                labelPosition,
+                                label,
+                                guiStyle
+                            );
                         }
                     }
 
                     //direction handles
                     {
                         //optim if needed
-                        float tf = settings.PositionMode == CurvyPositionMode.Relative ? settings.Position : spline.DistanceToTF(settings.Position);
-                        Vector3 forward = spline.GetTangent(tf, Space.World);
-                        Vector3 backward = -spline.GetTangent(tf * (1f - 0.001f), Space.World); //todo not the best way to compute the backward tangent, but it is a decent one for now. Enhance this if needed once you rework tangents computing code
+                        float tf = settings.PositionMode == CurvyPositionMode.Relative
+                            ? settings.Position
+                            : spline.DistanceToTF(settings.Position);
+                        Vector3 forward = spline.GetTangent(
+                            tf,
+                            Space.World
+                        );
+                        Vector3 backward = -spline.GetTangent(
+                            tf * (1f - 0.001f),
+                            Space.World
+                        ); //todo not the best way to compute the backward tangent, but it is a decent one for now. Enhance this if needed once you rework tangents computing code
 
                         if (settings.TriggeringDirections != TriggeringDirections.Backward)
-                            DTHandles.ArrowCap(newPosition, forward, Camera.current.transform.forward, settings.GizmoColor, .7f, .1f, .3f, .4f, handleSize * 2);
+                            DTHandles.ArrowCap(
+                                newPosition,
+                                forward,
+                                Camera.current.transform.forward,
+                                settings.GizmoColor,
+                                .7f,
+                                .1f,
+                                .3f,
+                                .4f,
+                                handleSize * 2
+                            );
                         if (settings.TriggeringDirections != TriggeringDirections.Forward)
-                            DTHandles.ArrowCap(newPosition, backward, Camera.current.transform.forward, settings.GizmoColor, .7f, .1f, .3f, .4f, handleSize * 2);
+                            DTHandles.ArrowCap(
+                                newPosition,
+                                backward,
+                                Camera.current.transform.forward,
+                                settings.GizmoColor,
+                                .7f,
+                                .1f,
+                                .3f,
+                                .4f,
+                                handleSize * 2
+                            );
                     }
                     DTHandles.PopHandlesColor();
                 }
-            }
         }
     }
 }

@@ -1,22 +1,19 @@
 // =====================================================================
-// Copyright 2013-2022 ToolBuddy
+// Copyright © 2013 ToolBuddy
 // All rights reserved
 // 
 // http://www.toolbuddy.net
 // =====================================================================
 
 using System;
-using UnityEngine;
-using UnityEditor;
-using FluffyUnderware.Curvy;
 using FluffyUnderware.Curvy.Controllers;
+using FluffyUnderware.DevTools.Extensions;
 using FluffyUnderware.DevToolsEditor;
-using FluffyUnderware.DevTools;
-using UnityEngine.Assertions;
+using UnityEditor;
+using UnityEngine;
 
 namespace FluffyUnderware.CurvyEditor.Controllers
 {
-
     public class CurvyControllerEditor<T> : CurvyEditorBase<T> where T : CurvyController
     {
         protected override void OnEnable()
@@ -31,24 +28,24 @@ namespace FluffyUnderware.CurvyEditor.Controllers
             base.OnDisable();
             if (Application.isPlaying == false)
                 if (Target)
-                Target.Stop();
+                    Target.Stop();
         }
 
-        void OnPlayModeStateChanged(PlayModeStateChange state)
-        {
+        private void OnPlayModeStateChanged(PlayModeStateChange state) =>
             OnStateChanged();
-        }
 
-        void OnStateChanged()
+        private void OnStateChanged()
         {
             if (Application.isPlaying == false)
                 Target.Stop();
-
         }
 
         protected override void OnReadNodes()
         {
-            DTGroupNode node = Node.AddSection("Preview", ShowPreviewButtons);
+            DTGroupNode node = Node.AddSection(
+                "Preview",
+                ShowPreviewButtons
+            );
             node.Expanded = false;
             node.SortOrder = 5000;
         }
@@ -57,36 +54,47 @@ namespace FluffyUnderware.CurvyEditor.Controllers
         /// <summary>
         /// Show the preview buttons
         /// </summary>
-        protected void ShowPreviewButtons(DTInspectorNode node)
-        {
-            GUILayout.BeginHorizontal();
-            GUI.enabled = !Application.isPlaying;
-
-            bool isPlayingOrPaused = Target.PlayState == CurvyController.CurvyControllerState.Playing || Target.PlayState == CurvyController.CurvyControllerState.Paused;
-
-            //TODO it would be nice to have two different icons, one for Play and one for Pause
-            if (GUILayout.Toggle(isPlayingOrPaused, new GUIContent(CurvyStyles.TexPlay, "Play/Pause in Editor"), GUI.skin.button) != isPlayingOrPaused)
-            {
-
-                switch (Target.PlayState)
+        protected void ShowPreviewButtons(DTInspectorNode node) =>
+            GUILayoutExtension.Horizontal(
+                () =>
                 {
-                    case CurvyController.CurvyControllerState.Paused:
-                    case CurvyController.CurvyControllerState.Stopped:
-                        Target.Play();
-                        break;
-                    case CurvyController.CurvyControllerState.Playing:
-                        Target.Pause();
-                        break;
-                    default:
-                        throw new ArgumentOutOfRangeException();
+                    GUI.enabled = !Application.isPlaying;
+
+                    bool isPlayingOrPaused = Target.PlayState == CurvyController.CurvyControllerState.Playing
+                                             || Target.PlayState == CurvyController.CurvyControllerState.Paused;
+
+                    //TODO it would be nice to have two different icons, one for Play and one for Pause
+                    if (GUILayout.Toggle(
+                            isPlayingOrPaused,
+                            new GUIContent(
+                                CurvyStyles.TexPlay,
+                                "Play/Pause in Editor"
+                            ),
+                            GUI.skin.button
+                        )
+                        != isPlayingOrPaused)
+                        switch (Target.PlayState)
+                        {
+                            case CurvyController.CurvyControllerState.Paused:
+                            case CurvyController.CurvyControllerState.Stopped:
+                                Target.Play();
+                                break;
+                            case CurvyController.CurvyControllerState.Playing:
+                                Target.Pause();
+                                break;
+                            default:
+                                throw new ArgumentOutOfRangeException();
+                        }
+
+                    if (GUILayout.Button(
+                            new GUIContent(
+                                CurvyStyles.TexStop,
+                                "Stop/Reset"
+                            )
+                        ))
+                        Target.Stop();
+                    GUI.enabled = true;
                 }
-            }
-            if (GUILayout.Button(new GUIContent(CurvyStyles.TexStop, "Stop/Reset")))
-            {
-                Target.Stop();
-            }
-            GUI.enabled = true;
-            GUILayout.EndHorizontal();
-        }
+            );
     }
 }

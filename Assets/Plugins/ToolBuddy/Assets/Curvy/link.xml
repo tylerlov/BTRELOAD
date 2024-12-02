@@ -8,6 +8,9 @@
   <assembly fullname="Assembly-CSharp" ignoreIfMissing="1">
    <type fullname="FluffyUnderware.*" preserve="all" />
   </assembly>
+  <assembly fullname="Assembly-CSharp-firstpass" ignoreIfMissing="1">
+   <type fullname="FluffyUnderware.*" preserve="all" />
+  </assembly>
   <assembly fullname="ToolBuddy.Curvy" ignoreIfMissing="1">
    <type fullname="FluffyUnderware.*" preserve="all" />
   </assembly>

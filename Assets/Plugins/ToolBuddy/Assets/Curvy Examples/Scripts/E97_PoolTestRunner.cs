@@ -1,13 +1,14 @@
 // =====================================================================
-// Copyright 2013-2022 ToolBuddy
+// Copyright © 2013 ToolBuddy
 // All rights reserved
 // 
 // http://www.toolbuddy.net
 // =====================================================================
 
-using UnityEngine;
 using FluffyUnderware.Curvy.Components;
 using FluffyUnderware.DevTools.Extensions;
+using JetBrains.Annotations;
+using UnityEngine;
 using UnityEngine.UI;
 
 namespace FluffyUnderware.Curvy.Examples
@@ -17,19 +18,20 @@ namespace FluffyUnderware.Curvy.Examples
         public CurvySpline Spline;
         public Text PoolCountInfo;
 
-        void Start()
-        {
+        [UsedImplicitly]
+        private void Start() =>
             checkForSpline();
-        }
 
-        void Update()
+        [UsedImplicitly]
+        private void Update()
         {
-
-
-            PoolCountInfo.text = string.Format("Control Points in Pool: {0}", CurvyGlobalManager.Instance.ControlPointPool.Count);
+            CurvyGlobalManager curvyGlobalManager = CurvyGlobalManager.Instance;
+            PoolCountInfo.text = curvyGlobalManager != null
+                ? $"Control Points in Pool: {curvyGlobalManager.ControlPointPool.Count}"
+                : "CurvyGlobalManager not found";
         }
 
-        void checkForSpline()
+        private void checkForSpline()
         {
             if (Spline == null)
             {
@@ -51,8 +53,11 @@ namespace FluffyUnderware.Curvy.Examples
         {
             if (Spline && Spline.ControlPointCount > 0)
             {
-                int idx = Random.Range(0, Spline.ControlPointCount - 1);
-                Spline.Delete(Spline.ControlPointsList[idx], false);
+                int idx = Random.Range(
+                    0,
+                    Spline.ControlPointCount - 1
+                );
+                Spline.Delete(Spline.ControlPointsList[idx]);
             }
         }
 
@@ -65,7 +70,10 @@ namespace FluffyUnderware.Curvy.Examples
         public void DeleteSpline()
         {
             if (Spline)
-                Spline.gameObject.Destroy(false, true);
+                Spline.gameObject.Destroy(
+                    false,
+                    true
+                );
         }
     }
 }

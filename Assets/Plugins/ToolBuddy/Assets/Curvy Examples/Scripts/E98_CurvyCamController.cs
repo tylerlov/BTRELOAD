@@ -1,14 +1,13 @@
 // =====================================================================
-// Copyright 2013-2022 ToolBuddy
+// Copyright © 2013 ToolBuddy
 // All rights reserved
 // 
 // http://www.toolbuddy.net
 // =====================================================================
 
-using UnityEngine;
-using System.Collections;
 using FluffyUnderware.Curvy.Controllers;
 using FluffyUnderware.DevTools;
+using UnityEngine;
 
 namespace FluffyUnderware.Curvy.Examples
 {
@@ -16,6 +15,7 @@ namespace FluffyUnderware.Curvy.Examples
     {
         [Section("Curvy Cam")]
         public float MinSpeed;
+
         public float MaxSpeed;
         public float Mass;
         public float Down;
@@ -31,7 +31,10 @@ namespace FluffyUnderware.Curvy.Examples
 
         protected override void Advance(float speed, float deltaTime)
         {
-            base.Advance(speed, deltaTime);
+            base.Advance(
+                speed,
+                deltaTime
+            );
             // Get directional vector    
             Vector3 tan = GetTangent(RelativePosition);
             float acc;
@@ -42,12 +45,14 @@ namespace FluffyUnderware.Curvy.Examples
                 acc = Up * -tan.y * Fric;
 
             // alter speed
-            Speed = Mathf.Clamp(Speed + Mass * acc * deltaTime, MinSpeed, MaxSpeed);
+            Speed = Mathf.Clamp(
+                Speed + (Mass * acc * deltaTime),
+                MinSpeed,
+                MaxSpeed
+            );
             // stop at spline's end
             if (RelativePosition == 1)
                 Speed = 0;
         }
-
-
     }
 }

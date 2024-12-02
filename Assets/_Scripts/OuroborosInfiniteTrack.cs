@@ -64,23 +64,16 @@ namespace FluffyUnderware.Curvy.Controllers
         private bool enablePrefabGeneration = true;
 
         [Header("Pooling Settings")]
-        [SerializeField]
-        private Typooling.Pooler prefabPooler;
-
-        [SerializeField]
-        private int prefabsPerSection = 5;
-
-        [SerializeField]
-        private float prefabScale = 1f;
-
-        [SerializeField]
-        private int maxActivePrefabs = 50;
+        [SerializeField] private Typooling.Pooler prefabPooler;
+        [SerializeField] private int prefabsPerSection = 5;
+        [SerializeField] private float prefabScale = 1f;
+        [SerializeField] private int maxActivePrefabs = 50;
         private List<GameObject> activePrefabs;
         private List<List<GameObject>> prefabsBySection;
         private List<GameObject> despawnedPrefabs;
-
-        [SerializeField]
-        private List<GameObject> despawnedPrefabsList = new List<GameObject>();
+        private Dictionary<int, Transform> cachedTransforms = new Dictionary<int, Transform>();
+        private Transform cachedTransform;
+        private Dictionary<int, CurvyGenerator> generatorPool;
 
         [Header("Prefab Rotation Adjustments")]
         [SerializeField]
@@ -105,7 +98,30 @@ namespace FluffyUnderware.Curvy.Controllers
         [SerializeField]
         private GameObject deformerPrefab;
         private List<Deformer> cachedDeformers;
-        private bool useDeformers = false; // New flag to check if deformers should be used
+        private bool useDeformers = false; 
+
+        [Header("Performance Settings")]
+        [SerializeField] private int updateInterval = 2; 
+        [SerializeField] private bool batchOperations = true;
+        private int frameCounter = 0;
+        private Queue<System.Action> deferredOperations = new Queue<System.Action>();
+        private bool isProcessingOperations = false;
+
+        [Header("Generator Management")]
+        [SerializeField] private bool useGeneratorPooling = true;
+        [SerializeField] private int preWarmGeneratorCount = 10;
+        private Dictionary<CurvyGenerator, GeneratorModules> cachedModules = new Dictionary<CurvyGenerator, GeneratorModules>();
+        private Queue<CurvyGenerator> inactiveGenerators = new Queue<CurvyGenerator>();
+
+        private class GeneratorModules
+        {
+            public InputSplinePath Path;
+            public InputSplineShape Shape;
+            public BuildShapeExtrusion Extrude;
+            public BuildVolumeMesh Volume;
+            public CreateMesh Mesh;
+            public CSEllipse EllipseShape;
+        }
 
         private int mInitState = 0;
         private bool mUpdateSpline;
@@ -119,13 +135,13 @@ namespace FluffyUnderware.Curvy.Controllers
 
         [Header("Controller Placement Settings")]
         [Tooltip("Determines the offset for the player controller placement point.")]
-        public int ControllerPlacementOffset = 6; // Default value is 6
+        public int ControllerPlacementOffset = 6; 
 
         private bool isSplineReady = false;
 
         [Header("Player Movement")]
         [SerializeField]
-        private MonoBehaviour playerMovement; // Add this field
+        private MonoBehaviour playerMovement; 
 
         public void OnSplineReady()
         {
@@ -143,17 +159,49 @@ namespace FluffyUnderware.Curvy.Controllers
 
         private void Awake()
         {
+            // Cache transform component
+            cachedTransform = transform;
+            
             // Pre-allocate lists with capacity to avoid resizing
             activePrefabs = new List<GameObject>(maxActivePrefabs);
             prefabsBySection = new List<List<GameObject>>(Sections);
             despawnedPrefabs = new List<GameObject>(maxActivePrefabs);
-            cachedDeformers = new List<Deformer>(Sections);
+            cachedTransforms = new Dictionary<int, Transform>(maxActivePrefabs);
+            generatorPool = new Dictionary<int, CurvyGenerator>(Sections);
 
             // Initialize section lists
             for (int i = 0; i < Sections; i++)
             {
                 prefabsBySection.Add(new List<GameObject>(prefabsPerSection));
             }
+
+            SetupGeneratorPool();
+        }
+
+        private void CacheTransformIfNeeded(GameObject obj)
+        {
+            if (obj != null)
+            {
+                int instanceId = obj.GetInstanceID();
+                if (!cachedTransforms.ContainsKey(instanceId))
+                {
+                    cachedTransforms[instanceId] = obj.transform;
+                }
+            }
+        }
+
+        private Transform GetCachedTransform(GameObject obj)
+        {
+            if (obj == null) return null;
+            
+            int instanceId = obj.GetInstanceID();
+            Transform cachedTransform;
+            if (!cachedTransforms.TryGetValue(instanceId, out cachedTransform))
+            {
+                cachedTransform = obj.transform;
+                cachedTransforms[instanceId] = cachedTransform;
+            }
+            return cachedTransform;
         }
 
         void Start()
@@ -163,7 +211,6 @@ namespace FluffyUnderware.Curvy.Controllers
 
         private IEnumerator InitializeAsync()
         {
-            // Split initialization across multiple frames
             if (useDeformers)
             {
                 yield return StartCoroutine(CacheDeformersAsync());
@@ -175,7 +222,6 @@ namespace FluffyUnderware.Curvy.Controllers
             OnSplineReady();
         }
 
-        // Progressive setup broken down into smaller operations
         private IEnumerator ProgressiveSetup()
         {
             mInitState = 1;
@@ -190,21 +236,17 @@ namespace FluffyUnderware.Curvy.Controllers
                 }
             }
 
-            // Initialize generators array
             mGenerators = new CurvyGenerator[Sections];
             
-            // 1. Initial spline setup - do this in one batch
             TrackSpline.InsertAfter(null, Vector3.zero, true);
             mDir = Vector3.forward;
             
-            // Add initial aligned points
             int initialAlignedPoints = 5;
             for (int i = 0; i < initialAlignedPoints; i++)
             {
                 addAlignedTrackCP();
             }
             
-            // Add remaining points
             int remainingPoints = TailCP + HeadCP + Sections * SectionCPCount - initialAlignedPoints;
             for (int i = 0; i < remainingPoints; i++)
             {
@@ -214,16 +256,13 @@ namespace FluffyUnderware.Curvy.Controllers
             TrackSpline.Refresh();
             yield return null;
             
-            // 2. Initialize section lists
             for (int i = 0; i < Sections; i++)
             {
                 prefabsBySection.Add(new List<GameObject>());
             }
             
-            // 3. Build and initialize generators
             yield return StartCoroutine(BuildGeneratorsProgressivelyAsync());
             
-            // 4. Final setup
             if (useDeformers)
             {
                 AddDeformableComponents();
@@ -234,20 +273,17 @@ namespace FluffyUnderware.Curvy.Controllers
             mInitState = 2;
             mUpdateIn = SectionCPCount;
             
-            // Place controller
             Controller.AbsolutePosition = TrackSpline.ControlPointsList[TailCP + ControllerPlacementOffset].Distance;
         }
 
         private IEnumerator BuildGeneratorsProgressivelyAsync()
         {
-            // Build all generators at once since splitting them causes more overhead
             for (int i = 0; i < Sections; i++)
             {
                 mGenerators[i] = buildGenerator();
                 mGenerators[i].name = "Generator " + i;
             }
             
-            // Wait for all generators to initialize in one batch
             yield return new WaitUntil(() => {
                 for (int i = 0; i < Sections; i++)
                 {
@@ -256,95 +292,51 @@ namespace FluffyUnderware.Curvy.Controllers
                 return true;
             });
             
-            // Update all generators at once
             for (int i = 0; i < Sections; i++)
             {
-                StartCoroutine(updateSectionGenerator(
-                    mGenerators[i],
-                    i * SectionCPCount + TailCP,
-                    (i + 1) * SectionCPCount + TailCP
-                ));
+                StartCoroutine(
+                    UpdateGeneratorCoroutine(
+                        mGenerators[i],
+                        i * SectionCPCount + TailCP,
+                        (i + 1) * SectionCPCount + TailCP
+                    )
+                );
             }
             
-            // Wait one frame for generators to start updating
             yield return null;
         }
 
-        private IEnumerator UpdateSectionGeneratorsProgressivelyAsync()
+        private IEnumerator UpdateGeneratorCoroutine(CurvyGenerator gen, int startCP, int endCP)
         {
-            // Since we're already handling generator updates in BuildGeneratorsProgressivelyAsync
-            yield break;
-        }
+            if (gen == null || !cachedModules.TryGetValue(gen, out var modules)) yield break;
 
-        private IEnumerator InitializeSplineAsync()
-        {
-            // Add the start CP to the spline
-            TrackSpline.InsertAfter(null, Vector3.zero, true);
-            mDir = Vector3.forward;
-            
-            const int pointsPerFrame = 3;
-            int processedPoints = 0;
-            
-            // Add initial aligned points
-            int initialAlignedPoints = 5;
-            while (processedPoints < initialAlignedPoints)
+            try
             {
-                int pointsThisFrame = Mathf.Min(pointsPerFrame, initialAlignedPoints - processedPoints);
-                for (int i = 0; i < pointsThisFrame; i++)
+                modules.Path.SetRange(
+                    TrackSpline.ControlPointsList[startCP],
+                    TrackSpline.ControlPointsList[endCP]
+                );
+
+                modules.Volume.MaterialSettings[0].UVOffset.y = lastSectionEndV % 1;
+                
+                gen.Refresh();
+                yield return new WaitUntil(() => gen.IsInitialized);
+
+                var vmesh = modules.Volume.OutVMesh.GetData<CGVMesh>();
+                if (vmesh != null && vmesh.UVs != null && vmesh.Count > 0)
                 {
-                    addAlignedTrackCP();
-                    processedPoints++;
+                    lastSectionEndV = vmesh.UVs.Array[vmesh.Count - 1].y;
                 }
-                yield return null;
+
+                PlacePrefabsOnSectionSurface(TrackSpline, mCurrentGen);
             }
-            
-            // Add remaining points
-            int remainingPoints = TailCP + HeadCP + Sections * SectionCPCount - initialAlignedPoints;
-            while (processedPoints < initialAlignedPoints + remainingPoints)
+            finally
             {
-                int pointsThisFrame = Mathf.Min(pointsPerFrame, (initialAlignedPoints + remainingPoints) - processedPoints);
-                for (int i = 0; i < pointsThisFrame; i++)
+                if (useDeformers)
                 {
-                    addTrackCP();
-                    processedPoints++;
+                    AddDeformableComponentsToGenerator(gen);
                 }
-                yield return null;
             }
-            
-            TrackSpline.Refresh();
-            yield return null;
-        }
-
-        private IEnumerator InitializeSectionListsAsync()
-        {
-            const int sectionsPerFrame = 5;
-            for (int i = 0; i < Sections; i += sectionsPerFrame)
-            {
-                int count = Mathf.Min(sectionsPerFrame, Sections - i);
-                for (int j = 0; j < count; j++)
-                {
-                    prefabsBySection.Add(new List<GameObject>());
-                }
-                yield return null;
-            }
-        }
-
-        private IEnumerator FinalizeSetupAsync()
-        {
-            if (useDeformers)
-            {
-                AddDeformableComponents();
-                yield return null;
-            }
-
-            AlignSplineWithWorldUp();
-            yield return null;
-
-            mInitState = 2;
-            mUpdateIn = SectionCPCount;
-            
-            // Place controller
-            Controller.AbsolutePosition = TrackSpline.ControlPointsList[TailCP + ControllerPlacementOffset].Distance;
         }
 
         void FindAndAssignController()
@@ -355,7 +347,6 @@ namespace FluffyUnderware.Curvy.Controllers
                 Controller = playerPlane.GetComponent<SplineController>();
                 if (Controller != null)
                 {
-                    // Register the OnControlPointReached event
                     Controller.OnControlPointReached.AddListener(Track_OnControlPointReached);
                 }
                 else
@@ -377,7 +368,7 @@ namespace FluffyUnderware.Curvy.Controllers
         {
             if (deformerPrefab == null) yield break;
 
-            const int batchSize = 5; // Process 5 deformers per frame
+            const int batchSize = 5; 
             int processed = 0;
 
             while (processed < Sections)
@@ -391,239 +382,249 @@ namespace FluffyUnderware.Curvy.Controllers
                     }
                     processed++;
                 }
-                yield return null; // Wait for next frame
+                yield return null; 
             }
+        }
+
+        private void SetupGeneratorPool()
+        {
+            if (!useGeneratorPooling) return;
+
+            for (int i = 0; i < preWarmGeneratorCount; i++)
+            {
+                var gen = CreateGenerator();
+                if (gen != null)
+                {
+                    gen.gameObject.SetActive(false);
+                    inactiveGenerators.Enqueue(gen);
+                }
+            }
+        }
+
+        private CurvyGenerator GetOrCreateGenerator()
+        {
+            if (useGeneratorPooling && inactiveGenerators.Count > 0)
+            {
+                var gen = inactiveGenerators.Dequeue();
+                gen.gameObject.SetActive(true);
+                return gen;
+            }
+
+            return CreateGenerator();
+        }
+
+        private void ReturnGeneratorToPool(CurvyGenerator gen)
+        {
+            if (!useGeneratorPooling || gen == null) return;
+
+            gen.gameObject.SetActive(false);
+            inactiveGenerators.Enqueue(gen);
+        }
+
+        private CurvyGenerator CreateGenerator()
+        {
+            var gen = CurvyGenerator.Create();
+            gen.AutoRefresh = false;
+            gen.transform.SetParent(cachedTransform, false);
+
+            var modules = new GeneratorModules
+            {
+                Path = gen.AddModule<InputSplinePath>(),
+                Shape = gen.AddModule<InputSplineShape>(),
+                Extrude = gen.AddModule<BuildShapeExtrusion>(),
+                Volume = gen.AddModule<BuildVolumeMesh>(),
+                Mesh = gen.AddModule<CreateMesh>()
+            };
+
+            // Setup module links
+            modules.Path.OutputByName["Path"].LinkTo(modules.Extrude.InputByName["Path"]);
+            modules.Shape.OutputByName["Shape"].LinkTo(modules.Extrude.InputByName["Cross"]);
+            modules.Extrude.OutputByName["Volume"].LinkTo(modules.Volume.InputByName["Volume"]);
+            modules.Volume.OutputByName["VMesh"].LinkTo(modules.Mesh.InputByName["VMesh"]);
+
+            // Configure base settings
+            modules.Path.UseCache = true;
+            modules.EllipseShape = modules.Shape.SetManagedShape<CSEllipse>();
+            modules.Extrude.Optimize = false;
+            modules.Volume.Split = false;
+            modules.Mesh.Collider = CGColliderEnum.Mesh;
+            modules.Mesh.Layer = LayerMask.NameToLayer("Ground");
+            gen.gameObject.layer = LayerMask.NameToLayer("Ground");
+
+            cachedModules[gen] = modules;
+            return gen;
+        }
+
+        CurvyGenerator buildGenerator()
+        {
+            var gen = GetOrCreateGenerator();
+            if (gen == null) return null;
+
+            GeneratorModules modules;
+            if (!cachedModules.TryGetValue(gen, out modules))
+            {
+                ConditionalDebug.LogError("Generator modules not found in cache");
+                return gen;
+            }
+
+            // Configure modules with current settings
+            modules.Path.Spline = TrackSpline;
+            modules.EllipseShape.RadiusX = ellipseRadiusX;
+            modules.EllipseShape.RadiusY = ellipseRadiusY;
+            modules.EllipseShape.YOffset = YOffset;
+
+            modules.Volume.SetMaterial(0, RoadMaterial);
+            modules.Volume.MaterialSettings[0].SwapUV = true;
+
+            return gen;
         }
 
         void FixedUpdate()
         {
             if (mInitState == 0)
-                StartCoroutine(nameof(setup));
+            {
+                StartCoroutine(InitializeAsync());
+                return;
+            }
+
+            frameCounter++;
+            if (frameCounter % updateInterval != 0) return;
+            frameCounter = 0;
 
             if (mInitState == 2 && mUpdateSpline)
-                advanceTrack();
+            {
+                if (batchOperations)
+                {
+                    advanceTrack();
+                }
+                else
+                {
+                    advanceTrack();
+                }
+            }
 
-            // Only add Deformable components if deformers are being used
             if (useDeformers)
             {
                 AddDeformableComponents();
             }
 
-            // Check if the number of active prefabs exceeds the limit
             if (activePrefabs.Count > maxActivePrefabs)
             {
                 DespawnOldestPrefabs();
             }
+
+            ProcessDeferredOperations();
         }
 
-        // setup everything
-        IEnumerator setup()
+        private void ProcessDeferredOperations()
         {
-            mInitState = 1;
+            if (isProcessingOperations || deferredOperations.Count == 0) return;
 
-            if (Controller == null)
+            isProcessingOperations = true;
+
+            try
             {
-                FindAndAssignController();
-                if (Controller == null)
+                while (deferredOperations.Count > 0)
                 {
-                    ConditionalDebug.LogError(
-                        "Failed to find and assign the SplineController. Setup cannot continue."
-                    );
-                    yield break;
+                    var operation = deferredOperations.Dequeue();
+                    operation?.Invoke();
                 }
             }
-
-            mGenerators = new CurvyGenerator[Sections];
-
-            // Add the start CP to the spline
-            TrackSpline.InsertAfter(null, Vector3.zero, true);
-            mDir = Vector3.forward;
-
-            // Ensure the first few control points are aligned with world up
-            int initialAlignedPoints = 5; // Adjust this number as needed
-            for (int i = 0; i < initialAlignedPoints; i++)
+            finally
             {
-                addAlignedTrackCP();
+                isProcessingOperations = false;
             }
-
-            // Continue with the rest of the control points
-            int remainingPoints = TailCP + HeadCP + Sections * SectionCPCount - initialAlignedPoints;
-            for (int i = 0; i < remainingPoints; i++)
-                addTrackCP();
-
-            TrackSpline.Refresh();
-
-            for (int i = 0; i < Sections; i++)
-            {
-                prefabsBySection.Add(new List<GameObject>());
-            }
-
-            // build Curvy Generators
-            for (int i = 0; i < Sections; i++)
-            {
-                mGenerators[i] = buildGenerator();
-                mGenerators[i].name = "Generator " + i;
-            }
-            // and wait until they're initialized
-            for (int i = 0; i < Sections; i++)
-                yield return new WaitUntil(() => mGenerators[i].IsInitialized);
-
-            // let all generators do their extrusion
-            for (int i = 0; i < Sections; i++)
-                StartCoroutine(
-                    updateSectionGenerator(
-                        mGenerators[i],
-                        i * SectionCPCount + TailCP,
-                        (i + 1) * SectionCPCount + TailCP
-                    )
-                );
-
-            AddDeformableComponents();
-
-            // Align spline with world up after setup
-            AlignSplineWithWorldUp();
-
-            mInitState = 2;
-            mUpdateIn = SectionCPCount;
-            
-            // Placement of the controller
-            Controller.AbsolutePosition = TrackSpline
-                .ControlPointsList[TailCP + ControllerPlacementOffset]
-                .Distance;
         }
 
-        // build a generator
-        CurvyGenerator buildGenerator()
+        private void EnqueueOperation(System.Action operation)
         {
-            // Create the Curvy Generator
-            CurvyGenerator gen = CurvyGenerator.Create();
-            gen.AutoRefresh = false;
-
-            // Set the parent of the generator to this GameObject
-            gen.transform.SetParent(this.transform, false);
-
-            // Create Modules
-            InputSplinePath path = gen.AddModule<InputSplinePath>();
-            InputSplineShape shape = gen.AddModule<InputSplineShape>();
-            BuildShapeExtrusion extrude = gen.AddModule<BuildShapeExtrusion>();
-            BuildVolumeMesh vol = gen.AddModule<BuildVolumeMesh>();
-            CreateMesh msh = gen.AddModule<CreateMesh>();
-            // Create Links between modules
-            path.OutputByName["Path"].LinkTo(extrude.InputByName["Path"]);
-            shape.OutputByName["Shape"].LinkTo(extrude.InputByName["Cross"]);
-            extrude.OutputByName["Volume"].LinkTo(vol.InputByName["Volume"]);
-            vol.OutputByName["VMesh"].LinkTo(msh.InputByName["VMesh"]);
-            // Set module properties
-            path.Spline = TrackSpline;
-            path.UseCache = true;
-            // Assuming CSEllipse exists and can be used similarly to CSRectangle
-            CSEllipse ellipseShape = shape.SetManagedShape<CSEllipse>();
-            ellipseShape.RadiusX = ellipseRadiusX; // Use the field value
-            ellipseShape.RadiusY = ellipseRadiusY; // Use the field value
-            ellipseShape.YOffset = YOffset; // Use the YOffset defined in the inspector
-            extrude.Optimize = false;
-#pragma warning disable 618
-            extrude.CrossHardEdges = true; // You might want to set this to false for a smoother snake body
-#pragma warning restore 618
-            vol.Split = false;
-            vol.SetMaterial(0, RoadMaterial); // Ensure your RoadMaterial has a snake-like texture
-            vol.MaterialSettings[0].SwapUV = true;
-
-            msh.Collider = CGColliderEnum.Mesh;
-            msh.Layer = LayerMask.NameToLayer("Ground"); // Add this line to set the layer of the generated mesh to 'Ground'
-            gen.gameObject.layer = LayerMask.NameToLayer("Ground"); // Set the generator's GameObject layer to 'Ground' as well
-
-            return gen;
+            if (batchOperations)
+            {
+                deferredOperations.Enqueue(operation);
+            }
+            else
+            {
+                operation?.Invoke();
+            }
         }
 
-        // advance the track
         void advanceTrack()
         {
+            if (!TrackSpline || !Controller) return;
+
             timeSpline.Start();
-
             float pos = Controller.AbsolutePosition;
-            // Remove oldest section's CP
-            for (int i = 0; i < SectionCPCount; i++)
+
+            try
             {
-                pos -= TrackSpline.ControlPointsList[0].Length; // Update controller's position, so the ship won't jump
-                TrackSpline.Delete(TrackSpline.ControlPointsList[0], true);
+                // Remove oldest section's CP
+                for (int i = 0; i < SectionCPCount; i++)
+                {
+                    if (TrackSpline.ControlPointCount <= 0) break;
+                    pos -= TrackSpline.ControlPointsList[0].Length;
+                    TrackSpline.Delete(TrackSpline.ControlPointsList[0], false);
+                }
+
+                // Add new section's CP
+                for (int i = 0; i < SectionCPCount; i++)
+                {
+                    addTrackCP(false);
+                }
+
+                TrackSpline.Refresh();
             }
-            // Add new section's CP
-            for (int i = 0; i < SectionCPCount; i++)
-                addTrackCP();
-            // Refresh the spline, so orientation will be auto-calculated
-            TrackSpline.Refresh();
-
-            // Set the controller to the old position
-            Controller.AbsolutePosition = pos;
-            mUpdateSpline = false;
-            timeSpline.Stop();
-
-            // Despawn prefabs from the first section
-            foreach (GameObject prefab in prefabsBySection[0])
+            finally
             {
-                Instance instanceComponent = prefab.GetComponent<Instance>();
-                if (instanceComponent != null)
-                {
-                    instanceComponent.Despawn();
-                    despawnedPrefabs.Add(prefab);
-                }
-                else
-                {
-                    ConditionalDebug.LogWarning(
-                        "Prefab does not have an Instance component, cannot despawn: " + prefab.name
-                    );
-                }
+                Controller.AbsolutePosition = pos;
+                mUpdateSpline = false;
+                timeSpline.Stop();
             }
 
-            prefabsBySection[0].Clear(); // Clear the list after despawning
+            // Handle prefab cleanup in a deferred manner
+            StartCoroutine(DeferredPrefabCleanup());
+        }
+
+        private IEnumerator DeferredPrefabCleanup()
+        {
+            if (prefabsBySection.Count > 0 && prefabsBySection[0] != null)
+            {
+                var prefabsToClean = new List<GameObject>(prefabsBySection[0]);
+                int batchSize = 10;
+                
+                for (int i = 0; i < prefabsToClean.Count; i += batchSize)
+                {
+                    int currentBatchSize = Mathf.Min(batchSize, prefabsToClean.Count - i);
+                    for (int j = 0; j < currentBatchSize; j++)
+                    {
+                        var prefab = prefabsToClean[i + j];
+                        if (prefab != null)
+                        {
+                            if (prefab.TryGetComponent<Instance>(out var instanceComponent))
+                            {
+                                instanceComponent.Despawn();
+                                despawnedPrefabs.Add(prefab);
+                            }
+                        }
+                    }
+                    yield return null;
+                }
+
+                prefabsBySection[0].Clear();
+            }
 
             advanceSections();
         }
 
-        // update all CGs
         void advanceSections()
         {
-            // set oldest CG to render path for new section
             CurvyGenerator cur = mGenerators[mCurrentGen++];
             int num = TrackSpline.ControlPointCount - HeadCP - 1;
-            StartCoroutine(updateSectionGenerator(cur, num - SectionCPCount, num));
+            StartCoroutine(UpdateGeneratorCoroutine(cur, num - SectionCPCount, num));
 
             if (mCurrentGen == Sections)
                 mCurrentGen = 0;
         }
 
-        // set a CG to render only a portion of a spline
-        IEnumerator updateSectionGenerator(CurvyGenerator gen, int startCP, int endCP)
-        {
-            // Set Track segment we want to use
-            InputSplinePath path = gen.FindModules<InputSplinePath>(true)[0];
-
-            path.SetRange(
-                TrackSpline.ControlPointsList[startCP],
-                TrackSpline.ControlPointsList[endCP]
-            );
-
-            // Set UV-Offset to match
-            BuildVolumeMesh vol = gen.FindModules<BuildVolumeMesh>(false)[0];
-            vol.MaterialSettings[0].UVOffset.y = lastSectionEndV % 1;
-            timeCG.Start();
-            gen.Refresh();
-            yield return new WaitUntil(() => gen.IsInitialized); // Wait for the generator to be fully initialized
-
-            // fetch the ending V to be used by next section
-            CGVMesh vmesh = vol.OutVMesh.GetData<CGVMesh>();
-            lastSectionEndV = vmesh.UVs.Array[vmesh.Count - 1].y;
-
-            // After generator refresh, place prefabs on the surface
-            PlacePrefabsOnSectionSurface(TrackSpline, mCurrentGen); // Assuming mCurrentGen is the current section index
-            timeCG.Stop();
-
-            // Add this line to add Deformable components after the generator is refreshed
-            AddDeformableComponentsToGenerator(gen);
-        }
-
-        // while we travel past CP's, we update the track
         public void Track_OnControlPointReached(CurvySplineMoveEventArgs e)
         {
             if (--mUpdateIn == 0)
@@ -633,51 +634,21 @@ namespace FluffyUnderware.Curvy.Controllers
             }
         }
 
-        // add more CP's, rotating path by random angles
-        void addTrackCP()
-        {
-            Vector3 p = TrackSpline.ControlPointsList[TrackSpline.ControlPointCount - 1].transform.localPosition;
-            Vector3 position = TrackSpline.transform.localToWorldMatrix.MultiplyPoint3x4(p + mDir * CPStepSize);
-
-            float rndX = Random.value * CurvationX * DTUtility.RandomSign();
-            float rndY = Random.value * CurvationY * DTUtility.RandomSign();
-            
-            // Calculate new direction while maintaining world up
-            Vector3 newDir = Vector3.ProjectOnPlane(
-                Quaternion.Euler(rndX, rndY, 0) * mDir,
-                Vector3.up
-            ).normalized;
-            mDir = newDir;
-
-            CurvySplineSegment newControlPoint = TrackSpline.InsertAfter(null, position, true);
-            
-            // Set rotation ensuring up vector alignment
-            Quaternion targetRotation = Quaternion.LookRotation(mDir, Vector3.up);
-            newControlPoint.transform.rotation = targetRotation;
-
-            TrackSpline.Refresh();
-
-            if ((TrackSpline.ControlPointCount - 1 - TailCP) % SectionCPCount == 0)
-                newControlPoint.SerializedOrientationAnchor = true;
-        }
-
         void PlacePrefabsOnSectionSurface(CurvySpline spline, int sectionIndex)
         {
-            if (!enablePrefabGeneration)
+            if (!enablePrefabGeneration || prefabPooler == null)
             {
                 return;
             }
 
             if (sectionIndex < 0 || sectionIndex >= prefabsBySection.Count)
             {
-                ConditionalDebug.LogError(
-                    $"Section index {sectionIndex} is out of range. Prefabs cannot be placed."
-                );
+                ConditionalDebug.LogError($"Section index {sectionIndex} is out of range. Prefabs cannot be placed.");
                 return;
             }
 
-            List<float> placedPositions = new List<float>();
-            float minDistanceApart = 3f;
+            var placedPositions = new List<float>(prefabsPerSection);
+            const float minDistanceApart = 3f;
             float sectionStartT = (float)sectionIndex / Sections;
             float sectionEndT = (float)(sectionIndex + 1) / Sections;
 
@@ -691,51 +662,41 @@ namespace FluffyUnderware.Curvy.Controllers
                     float t = Mathf.Lerp(sectionStartT, sectionEndT, Random.value);
                     Vector3 potentialPosition = spline.Interpolate(t);
 
-                    bool tooClose = placedPositions.Any(p =>
-                        Vector3.Distance(spline.Interpolate(p), potentialPosition)
-                        < minDistanceApart
-                    );
+                    bool tooClose = false;
+                    for (int j = 0; j < placedPositions.Count; j++)
+                    {
+                        if (Vector3.Distance(spline.Interpolate(placedPositions[j]), potentialPosition) < minDistanceApart)
+                        {
+                            tooClose = true;
+                            break;
+                        }
+                    }
 
                     if (!tooClose)
                     {
-                        Quaternion rotation = spline.GetOrientationFast(t);
-
-                        float randomXRotationSubtract = Random.Range(
-                            minRandomXRotationSubtract,
-                            maxRandomXRotationSubtract
-                        );
-                        float randomYRotation = Random.Range(
-                            minRandomYRotation,
-                            maxRandomYRotation
-                        );
-                        float randomZRotation = Random.Range(
-                            minRandomZRotation,
-                            maxRandomZRotation
-                        );
-                        Quaternion rotationAdjustment = Quaternion.Euler(
-                            -randomXRotationSubtract,
-                            randomYRotation,
-                            randomZRotation
-                        );
-                        rotation *= rotationAdjustment;
-
-                        Vector3 sideDirection =
-                            (Random.value > 0.5f) ? Vector3.right : Vector3.left;
-                        Vector3 offsetDirection = rotation * sideDirection;
-
-                        float sideOffset = Random.Range(7f, 12f) * ((Random.value > 0.5f) ? 1 : -1);
-                        Vector3 finalPosition = potentialPosition + offsetDirection * sideOffset;
-
                         GameObject prefabInstance = prefabPooler.GetFromPool();
-                        prefabInstance.transform.position = finalPosition;
-                        prefabInstance.transform.rotation = rotation;
-                        prefabInstance.transform.localScale = Vector3.one * prefabScale;
+                        if (prefabInstance == null) continue;
 
-                        prefabInstance.transform.SetParent(this.transform, true);
+                        Transform prefabTransform = GetCachedTransform(prefabInstance);
+                        if (prefabTransform == null) continue;
+
+                        Quaternion rotation = spline.GetOrientationFast(t);
+                        float randomXRotationSubtract = Random.Range(minRandomXRotationSubtract, maxRandomXRotationSubtract);
+                        float randomYRotation = Random.Range(minRandomYRotation, maxRandomYRotation);
+                        float randomZRotation = Random.Range(minRandomZRotation, maxRandomZRotation);
+                        rotation *= Quaternion.Euler(-randomXRotationSubtract, randomYRotation, randomZRotation);
+
+                        Vector3 sideDirection = (Random.value > 0.5f) ? Vector3.right : Vector3.left;
+                        Vector3 offsetDirection = rotation * sideDirection;
+                        float sideOffset = Random.Range(7f, 12f) * ((Random.value > 0.5f) ? 1 : -1);
+                        
+                        prefabTransform.position = potentialPosition + offsetDirection * sideOffset;
+                        prefabTransform.rotation = rotation;
+                        prefabTransform.localScale = Vector3.one * prefabScale;
+                        prefabTransform.SetParent(cachedTransform, true);
 
                         prefabsBySection[sectionIndex].Add(prefabInstance);
                         activePrefabs.Add(prefabInstance);
-
                         placedPositions.Add(t);
                         placed = true;
                     }
@@ -751,19 +712,17 @@ namespace FluffyUnderware.Curvy.Controllers
                 Instance instanceComponent = oldestPrefab.GetComponent<Instance>();
                 if (instanceComponent != null)
                 {
-                    instanceComponent.Despawn(); // Despawn using the Instance component
-                    activePrefabs.RemoveAt(0); // Remove the despawned prefab from the list
+                    instanceComponent.Despawn(); 
+                    activePrefabs.RemoveAt(0); 
                 }
                 else
                 {
-                    // Fallback in case the prefab doesn't have an Instance component
                     Destroy(oldestPrefab);
-                    activePrefabs.RemoveAt(0); // Remove the destroyed prefab from the list
+                    activePrefabs.RemoveAt(0); 
                 }
             }
         }
 
-        // Ensure there's a way to clear the list when necessary, for example, at the start of the game or level.
         public void ClearDespawnedPrefabsList()
         {
             despawnedPrefabs.Clear();
@@ -771,14 +730,24 @@ namespace FluffyUnderware.Curvy.Controllers
 
         void OnDisable()
         {
-            // Unregister the event when the script is disabled or destroyed
             if (Controller != null)
             {
                 Controller.OnControlPointReached.RemoveListener(Track_OnControlPointReached);
             }
+
+            // Clean up generator pool
+            foreach (var gen in inactiveGenerators)
+            {
+                if (gen != null)
+                {
+                    Destroy(gen.gameObject);
+                }
+            }
+            inactiveGenerators.Clear();
+            cachedModules.Clear();
         }
 
-        private void AddDeformableComponents()
+        void AddDeformableComponents()
         {
             if (!useDeformers) return;
 
@@ -788,7 +757,7 @@ namespace FluffyUnderware.Curvy.Controllers
             }
         }
 
-        private void AddDeformableComponentsToGenerator(CurvyGenerator generator)
+        void AddDeformableComponentsToGenerator(CurvyGenerator generator)
         {
             if (!useDeformers) return;
 
@@ -808,7 +777,6 @@ namespace FluffyUnderware.Curvy.Controllers
                             deformable.NormalsRecalculation = NormalsRecalculation.Auto;
                             deformable.BoundsRecalculation = BoundsRecalculation.Auto;
 
-                            // Add the cached Deformers to the Deformable component
                             if (deformerPrefab != null)
                             {
                                 foreach (var deformer in cachedDeformers)
@@ -818,7 +786,7 @@ namespace FluffyUnderware.Curvy.Controllers
                             }
                             else
                             {
-                                Debug.LogWarning(
+                                ConditionalDebug.LogWarning(
                                     "Deformer prefab is not assigned in the inspector."
                                 );
                             }
@@ -828,33 +796,6 @@ namespace FluffyUnderware.Curvy.Controllers
             }
         }
 
-        private void CacheDeformers()
-        {
-            if (deformerPrefab != null)
-            {
-                cachedDeformers.Clear();
-                cachedDeformers.AddRange(deformerPrefab.GetComponents<Deformer>());
-
-                if (cachedDeformers.Count == 0)
-                {
-                    Debug.LogWarning("No Deformer components found on the assigned prefab.");
-                    useDeformers = false;
-                }
-                else
-                {
-                    useDeformers = true;
-                }
-            }
-            else
-            {
-                Debug.LogWarning("Deformer prefab is not assigned in the inspector. Deformers will not be used.");
-                useDeformers = false;
-            }
-        }
-
-        /// <summary>
-        /// Ensures that all control points align with the world up direction.
-        /// </summary>
         void AlignSplineWithWorldUp()
         {
             bool anyMisaligned = false;
@@ -869,12 +810,11 @@ namespace FluffyUnderware.Curvy.Controllers
             
             if (anyMisaligned)
             {
-                Debug.LogWarning("Some control points required up vector alignment");
+                ConditionalDebug.LogWarning("Some control points required up vector alignment");
                 TrackSpline.Refresh();
             }
         }
 
-        // New method to add aligned control points
         void addAlignedTrackCP()
         {
             Vector3 p = TrackSpline.ControlPointsList[TrackSpline.ControlPointCount - 1].transform.localPosition;
@@ -882,14 +822,42 @@ namespace FluffyUnderware.Curvy.Controllers
 
             CurvySplineSegment newControlPoint = TrackSpline.InsertAfter(null, position, true);
 
-            // Ensure the control point is aligned with world up
             newControlPoint.transform.rotation = Quaternion.LookRotation(Vector3.forward, Vector3.up);
 
-            // Force the spline to recalculate
             TrackSpline.Refresh();
 
             if ((TrackSpline.ControlPointCount - 1 - TailCP) % SectionCPCount == 0)
                 newControlPoint.SerializedOrientationAnchor = true;
+        }
+
+        void addTrackCP(bool refresh = true)
+        {
+            Vector3 p = TrackSpline.ControlPointsList[TrackSpline.ControlPointCount - 1].transform.localPosition;
+            Vector3 position = TrackSpline.transform.localToWorldMatrix.MultiplyPoint3x4(p + mDir * CPStepSize);
+
+            float rndX = Random.value * CurvationX * DTUtility.RandomSign();
+            float rndY = Random.value * CurvationY * DTUtility.RandomSign();
+            
+            Vector3 newDir = Vector3.ProjectOnPlane(
+                Quaternion.Euler(rndX, rndY, 0) * mDir,
+                Vector3.up
+            ).normalized;
+            mDir = newDir;
+
+            CurvySplineSegment newControlPoint = TrackSpline.InsertAfter(null, position, refresh);
+            
+            Quaternion targetRotation = Quaternion.LookRotation(mDir, Vector3.up);
+            newControlPoint.transform.rotation = targetRotation;
+
+            if (refresh)
+            {
+                TrackSpline.Refresh();
+            }
+
+            if ((TrackSpline.ControlPointCount - 1 - TailCP) % SectionCPCount == 0)
+            {
+                newControlPoint.SerializedOrientationAnchor = true;
+            }
         }
     }
 }

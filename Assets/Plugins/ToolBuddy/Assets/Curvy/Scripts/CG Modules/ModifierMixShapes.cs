@@ -1,35 +1,47 @@
 // =====================================================================
-// Copyright 2013-2022 ToolBuddy
+// Copyright © 2013 ToolBuddy
 // All rights reserved
 // 
 // http://www.toolbuddy.net
 // =====================================================================
 
 using System;
-using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
 using FluffyUnderware.Curvy.Pools;
-using ToolBuddy.Pooling.Pools;
 using FluffyUnderware.DevTools;
 using JetBrains.Annotations;
 using ToolBuddy.Pooling.Collections;
+using UnityEngine;
 using UnityEngine.Assertions;
 
 namespace FluffyUnderware.Curvy.Generator.Modules
 {
-    [ModuleInfo("Modifier/Mix Shapes", ModuleName = "Mix Shapes", Description = "Interpolates between two shapes")]
-    [HelpURL(CurvySpline.DOCLINK + "cgmixshapes")]
+    [ModuleInfo(
+        "Modifier/Mix Shapes",
+        ModuleName = "Mix Shapes",
+        Description = "Interpolates between two shapes"
+    )]
+    [HelpURL(AssetInformation.DocsRedirectionBaseUrl + "cgmixshapes")]
 #pragma warning disable 618
     public class ModifierMixShapes : CGModule, IOnRequestProcessing, IPathProvider
 #pragma warning restore 618
     {
+        private const int MixMinValue = -1;
+        private const int MixMaxValue = 1;
+
         [HideInInspector]
-        [InputSlotInfo(typeof(CGShape), Name = "Shape A")]
+        [InputSlotInfo(
+            typeof(CGShape),
+            Name = "Shape A"
+        )]
         public CGModuleInputSlot InShapeA = new CGModuleInputSlot();
 
         [HideInInspector]
-        [InputSlotInfo(typeof(CGShape), Name = "Shape B")]
+        [InputSlotInfo(
+            typeof(CGShape),
+            Name = "Shape B"
+        )]
         public CGModuleInputSlot InShapeB = new CGModuleInputSlot();
 
         [HideInInspector]
@@ -38,7 +50,11 @@ namespace FluffyUnderware.Curvy.Generator.Modules
 
         #region ### Serialized Fields ###
 
-        [SerializeField, RangeEx(-1, 1, Tooltip = "Mix between the shapes. Values between -1 for Shape A and 1 for Shape B")]
+        [SerializeField, RangeEx(
+             MixMinValue,
+             MixMaxValue,
+             Tooltip = "Mix between the shapes. Values between -1 for Shape A and 1 for Shape B"
+         )]
         private float m_Mix;
 
         #endregion
@@ -50,28 +66,31 @@ namespace FluffyUnderware.Curvy.Generator.Modules
         /// </summary>
         public float Mix
         {
-            get { return m_Mix; }
+            get => m_Mix;
             set
             {
-                if (m_Mix != value)
-                    m_Mix = value;
-                Dirty = true;
+                float validatedValue = Mathf.Clamp(
+                    value,
+                    MixMinValue,
+                    MixMaxValue
+                );
+                if (m_Mix != validatedValue)
+                {
+                    m_Mix = validatedValue;
+                    Dirty = true;
+                }
             }
         }
 
-        public bool PathIsClosed
-        {
-            get
-            {
-                return (IsConfigured) && InShapeA.SourceSlot().PathProvider.PathIsClosed &&
-                                        InShapeB.SourceSlot().PathProvider.PathIsClosed;
-            }
-        }
+        public bool PathIsClosed => IsConfigured
+                                    && InShapeA.SourceSlot().PathProvider.PathIsClosed
+                                    && InShapeB.SourceSlot().PathProvider.PathIsClosed;
 
         #endregion
 
         #region ### Unity Callbacks ###
-        /*! \cond UNITY */
+
+#if DOCUMENTATION___FORCE_IGNORE___UNITY == false
 
         protected override void OnEnable()
         {
@@ -80,40 +99,48 @@ namespace FluffyUnderware.Curvy.Generator.Modules
             Properties.LabelWidth = 50;
         }
 
-#if UNITY_EDITOR
-        protected override void OnValidate()
-        {
-            base.OnValidate();
-            Mix = m_Mix;
-        }
-#endif
-
         public override void Reset()
         {
             base.Reset();
             Mix = 0;
         }
 
-        /*! \endcond */
+#endif
+
         #endregion
 
         #region ### IOnRequestProcessing ###
-        public CGData[] OnSlotDataRequest(CGModuleInputSlot requestedBy, CGModuleOutputSlot requestedSlot, params CGDataRequestParameter[] requests)
+
+        public CGData[] OnSlotDataRequest(CGModuleInputSlot requestedBy, CGModuleOutputSlot requestedSlot,
+            params CGDataRequestParameter[] requests)
         {
             CGDataRequestRasterization raster = GetRequestParameter<CGDataRequestRasterization>(ref requests);
             if (!raster)
-                return null;
+                return Array.Empty<CGData>();
 
-            CGShape DataA = InShapeA.GetData<CGShape>(out bool isADisposable, requests);
-            CGShape DataB = InShapeB.GetData<CGShape>(out bool isBDisposable, requests);
-            CGShape data = MixShapes(DataA, DataB, Mix, UIMessages);
-            
-            if(isADisposable)
+            CGShape DataA = InShapeA.GetData<CGShape>(
+                out bool isADisposable,
+                requests
+            );
+            CGShape DataB = InShapeB.GetData<CGShape>(
+                out bool isBDisposable,
+                requests
+            );
+            CGShape data = MixShapes(
+                DataA,
+                DataB,
+                Mix,
+                UIMessages
+            );
+
+            if (isADisposable)
                 DataA.Dispose();
-            if(isBDisposable)
+            if (isBDisposable)
                 DataB.Dispose();
-            
-            return new CGData[1] { data };
+
+            return data == null
+                ? Array.Empty<CGData>()
+                : new CGData[] { data };
         }
 
         #endregion
@@ -129,7 +156,9 @@ namespace FluffyUnderware.Curvy.Generator.Modules
         /// <param name="warningsContainer">Is filled with warnings raised by the mixing logic</param>
         /// <param name="ignoreWarnings"> If true, warningsContainer will not be filled with warnings</param>
         /// <returns> The mixed shape</returns>
-        public static CGShape MixShapes(CGShape shapeA, CGShape shapeB, float mix, [NotNull] List<string> warningsContainer, bool ignoreWarnings = false)
+        [CanBeNull]
+        public static CGShape MixShapes([CanBeNull] CGShape shapeA, [CanBeNull] CGShape shapeB, float mix,
+            [NotNull] List<string> warningsContainer, bool ignoreWarnings = false)
         {
             if (shapeA == null)
                 return shapeB;
@@ -138,7 +167,14 @@ namespace FluffyUnderware.Curvy.Generator.Modules
                 return shapeA;
 
             CGShape data = new CGShape();
-            InterpolateShape(data, shapeA, shapeB, mix, warningsContainer, ignoreWarnings);
+            InterpolateShape(
+                data,
+                shapeA,
+                shapeB,
+                mix,
+                warningsContainer,
+                ignoreWarnings
+            );
             return data;
         }
 
@@ -152,14 +188,18 @@ namespace FluffyUnderware.Curvy.Generator.Modules
         /// <param name="warningsContainer">Is filled with warnings raised by the mixing logic</param>
         /// <param name="ignoreWarnings"> If true, warningsContainer will not be filled with warnings</param>
         /// <returns> The mixed shape</returns>
-        public static void InterpolateShape([NotNull] CGShape resultShape, CGShape shapeA, CGShape shapeB, float mix, [NotNull] List<string> warningsContainer, bool ignoreWarnings = false)
+        public static void InterpolateShape([NotNull] CGShape resultShape, CGShape shapeA, CGShape shapeB, float mix,
+            [NotNull] List<string> warningsContainer, bool ignoreWarnings = false)
         {
             float interpolationTime = (mix + 1) * 0.5f;
 #if CURVY_SANITY_CHECKS
             Assert.IsTrue(interpolationTime >= 0);
             Assert.IsTrue(interpolationTime <= 1);
 #endif
-            int shapeVertexCount = Mathf.Max(shapeA.Count, shapeB.Count);
+            int shapeVertexCount = Mathf.Max(
+                shapeA.Count,
+                shapeB.Count
+            );
             CGShape shapeWithMostVertices = shapeA.Count == shapeVertexCount
                 ? shapeA
                 : shapeB;
@@ -167,52 +207,83 @@ namespace FluffyUnderware.Curvy.Generator.Modules
             SubArray<Vector3> positions = ArrayPools.Vector3.Allocate(shapeVertexCount);
             SubArray<Vector3> normals = ArrayPools.Vector3.Allocate(shapeVertexCount);
 
-            var shapeBPositionsList = shapeB.Positions.Array;
-            var shapeAPositionsList = shapeA.Positions.Array;
+            Vector3[] shapeBPositionsList = shapeB.Positions.Array;
+            Vector3[] shapeAPositionsList = shapeA.Positions.Array;
             Vector3[] positionsArray = positions.Array;
-            var shapeANormalsList = shapeA.Normals.Array;
-            var shapeBNormalsList = shapeB.Normals.Array;
+            Vector3[] shapeANormalsList = shapeA.Normals.Array;
+            Vector3[] shapeBNormalsList = shapeB.Normals.Array;
 
             if (shapeWithMostVertices == shapeA)
                 for (int i = 0; i < shapeVertexCount; i++)
                 {
                     float frag;
-                    int idx = shapeB.GetFIndex(shapeA.RelativeDistances.Array[i], out frag);
+                    int idx = shapeB.GetFIndex(
+                        shapeA.RelativeDistances.Array[i],
+                        out frag
+                    );
 
                     Vector3 bPosition;
                     {
-                        bPosition.x = shapeBPositionsList[idx].x + (shapeBPositionsList[idx + 1].x - shapeBPositionsList[idx].x) * frag;
-                        bPosition.y = shapeBPositionsList[idx].y + (shapeBPositionsList[idx + 1].y - shapeBPositionsList[idx].y) * frag;
-                        bPosition.z = shapeBPositionsList[idx].z + (shapeBPositionsList[idx + 1].z - shapeBPositionsList[idx].z) * frag;
+                        bPosition.x = shapeBPositionsList[idx].x
+                                      + ((shapeBPositionsList[idx + 1].x - shapeBPositionsList[idx].x) * frag);
+                        bPosition.y = shapeBPositionsList[idx].y
+                                      + ((shapeBPositionsList[idx + 1].y - shapeBPositionsList[idx].y) * frag);
+                        bPosition.z = shapeBPositionsList[idx].z
+                                      + ((shapeBPositionsList[idx + 1].z - shapeBPositionsList[idx].z) * frag);
                     }
 
-                    positionsArray[i].x = shapeAPositionsList[i].x + (bPosition.x - shapeAPositionsList[i].x) * interpolationTime;
-                    positionsArray[i].y = shapeAPositionsList[i].y + (bPosition.y - shapeAPositionsList[i].y) * interpolationTime;
-                    positionsArray[i].z = shapeAPositionsList[i].z + (bPosition.z - shapeAPositionsList[i].z) * interpolationTime;
+                    positionsArray[i].x =
+                        shapeAPositionsList[i].x + ((bPosition.x - shapeAPositionsList[i].x) * interpolationTime);
+                    positionsArray[i].y =
+                        shapeAPositionsList[i].y + ((bPosition.y - shapeAPositionsList[i].y) * interpolationTime);
+                    positionsArray[i].z =
+                        shapeAPositionsList[i].z + ((bPosition.z - shapeAPositionsList[i].z) * interpolationTime);
 
 
-                    Vector3 bNormal = Vector3.SlerpUnclamped(shapeBNormalsList[idx], shapeBNormalsList[idx + 1], frag);
-                    normals.Array[i] = Vector3.SlerpUnclamped(shapeANormalsList[i], bNormal, interpolationTime);
+                    Vector3 bNormal = Vector3.SlerpUnclamped(
+                        shapeBNormalsList[idx],
+                        shapeBNormalsList[idx + 1],
+                        frag
+                    );
+                    normals.Array[i] = Vector3.SlerpUnclamped(
+                        shapeANormalsList[i],
+                        bNormal,
+                        interpolationTime
+                    );
                 }
             else
                 for (int i = 0; i < shapeVertexCount; i++)
                 {
                     float frag;
-                    int idx = shapeA.GetFIndex(shapeB.RelativeDistances.Array[i], out frag);
+                    int idx = shapeA.GetFIndex(
+                        shapeB.RelativeDistances.Array[i],
+                        out frag
+                    );
 
                     Vector3 aPosition;
                     {
-                        aPosition.x = shapeAPositionsList[idx].x + (shapeAPositionsList[idx + 1].x - shapeAPositionsList[idx].x) * frag;
-                        aPosition.y = shapeAPositionsList[idx].y + (shapeAPositionsList[idx + 1].y - shapeAPositionsList[idx].y) * frag;
-                        aPosition.z = shapeAPositionsList[idx].z + (shapeAPositionsList[idx + 1].z - shapeAPositionsList[idx].z) * frag;
+                        aPosition.x = shapeAPositionsList[idx].x
+                                      + ((shapeAPositionsList[idx + 1].x - shapeAPositionsList[idx].x) * frag);
+                        aPosition.y = shapeAPositionsList[idx].y
+                                      + ((shapeAPositionsList[idx + 1].y - shapeAPositionsList[idx].y) * frag);
+                        aPosition.z = shapeAPositionsList[idx].z
+                                      + ((shapeAPositionsList[idx + 1].z - shapeAPositionsList[idx].z) * frag);
                     }
 
-                    positionsArray[i].x = aPosition.x + (shapeBPositionsList[i].x - aPosition.x) * interpolationTime;
-                    positionsArray[i].y = aPosition.y + (shapeBPositionsList[i].y - aPosition.y) * interpolationTime;
-                    positionsArray[i].z = aPosition.z + (shapeBPositionsList[i].z - aPosition.z) * interpolationTime;
+                    positionsArray[i].x = aPosition.x + ((shapeBPositionsList[i].x - aPosition.x) * interpolationTime);
+                    positionsArray[i].y = aPosition.y + ((shapeBPositionsList[i].y - aPosition.y) * interpolationTime);
+                    positionsArray[i].z = aPosition.z + ((shapeBPositionsList[i].z - aPosition.z) * interpolationTime);
 
-                    Vector3 aNormal = Vector3.SlerpUnclamped(shapeANormalsList[idx], shapeANormalsList[idx + 1], frag);
-                    normals.Array[i] = Vector3.SlerpUnclamped(aNormal, shapeBNormalsList[i], interpolationTime);
+                    Vector3 aNormal = Vector3.SlerpUnclamped(
+                        shapeANormalsList[idx],
+                        shapeANormalsList[idx + 1],
+                        frag
+                    );
+                    normals.Array[i] = Vector3.SlerpUnclamped(
+                        aNormal,
+                        shapeBNormalsList[i],
+                        interpolationTime
+                    );
                 }
 
             resultShape.Positions = positions;
@@ -240,6 +311,7 @@ namespace FluffyUnderware.Curvy.Generator.Modules
                 if (shapeA.SourceIsManaged != shapeB.SourceIsManaged)
                     warningsContainer.Add("Mixing inputs with different SourceIsManaged values is not supported");
             }
+
             resultShape.Closed = shapeA.Closed;
             resultShape.Seamless = shapeA.Seamless;
             resultShape.SourceIsManaged = shapeA.SourceIsManaged;

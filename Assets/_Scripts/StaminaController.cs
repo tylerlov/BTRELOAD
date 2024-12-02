@@ -54,15 +54,15 @@ public class StaminaController : MonoBehaviour
 
     public bool TryUseStamina()
     {
-        Debug.Log($"Attempting to use stamina. Current: {currentStamina}, Cost: {staminaCostPerRicochet}");
+        ConditionalDebug.Log($"Attempting to use stamina. Current: {currentStamina}, Cost: {staminaCostPerRicochet}");
         if (currentStamina >= staminaCostPerRicochet)
         {
             currentStamina -= staminaCostPerRicochet;
             OnStaminaChanged?.Invoke(currentStamina / maxStamina);
-            Debug.Log("Stamina used successfully");
+            ConditionalDebug.Log("Stamina used successfully");
             return true;
         }
-        Debug.Log("Not enough stamina");
+        ConditionalDebug.Log("Not enough stamina");
         return false;
     }
 
@@ -81,16 +81,16 @@ public class StaminaController : MonoBehaviour
 
     public bool TryUseDodgeStamina()
     {
-        Debug.Log($"Attempting to use dodge stamina. Current: {currentStamina}, Cost: {staminaCostPerDodge}"); // New debug log
+        ConditionalDebug.Log($"Attempting to use dodge stamina. Current: {currentStamina}, Cost: {staminaCostPerDodge}");
         if (currentStamina >= staminaCostPerDodge)
         {
             currentStamina -= staminaCostPerDodge;
             OnStaminaChanged?.Invoke(currentStamina / maxStamina);
             gameManager.UpdateStaminaUI(currentStamina / maxStamina);
-            Debug.Log("Dodge stamina used successfully"); // New debug log
+            ConditionalDebug.Log("Dodge stamina used successfully");
             return true;
         }
-        Debug.Log("Not enough stamina for dodge"); // New debug log
+        ConditionalDebug.Log("Not enough stamina for dodge");
         return false;
     }
 }

@@ -6,7 +6,6 @@
 // =====================================================================
 
 using UnityEngine;
-using System.Collections;
 
 namespace FluffyUnderware.DevTools
 {
@@ -144,9 +143,8 @@ namespace FluffyUnderware.DevTools
         /// <param name="c">Delta value</param>
         /// <returns>tweened value</returns>
         public static float Linear(float t, float b, float c)
-        {
-            return c * Mathf.Clamp01(t) + b;
-        }
+            => c * Mathf.Clamp01(t) + b;
+
         /// <summary>
         /// Linear tween
         /// </summary>
@@ -156,9 +154,8 @@ namespace FluffyUnderware.DevTools
         /// <param name="d">Duration</param>
         /// <returns>tweened value</returns>
         public static float Linear(float t, float b, float c, float d)
-        {
-            return c * t / d + b;
-        }
+            => c * t / d + b;
+
         #endregion
 
         #region ### Exponential ###
@@ -183,9 +180,7 @@ namespace FluffyUnderware.DevTools
         /// <param name="d">Duration</param>
         /// <returns>tweened value</returns>
         public static float ExpoOut(float t, float b, float c, float d)
-        {
-            return (t == d) ? b + c : c * (-Mathf.Pow(2, -10 * t / d) + 1) + b;
-        }
+            => (t == d) ? b + c : c * (-Mathf.Pow(2, -10 * t / d) + 1) + b;
 
         /// <summary>
         /// Exponential tween with t clamped to 0..1
@@ -208,9 +203,7 @@ namespace FluffyUnderware.DevTools
         /// <param name="d">Duration</param>
         /// <returns>tweened value</returns>
         public static float ExpoIn(float t, float b, float c, float d)
-        {
-            return (t == 0) ? b : c * Mathf.Pow(2, 10 * (t / d - 1)) + b;
-        }
+            => (t == 0) ? b : c * Mathf.Pow(2, 10 * (t / d - 1)) + b;
 
         /// <summary>
         /// Exponential tween with t clamped to 0..1
@@ -310,9 +303,7 @@ namespace FluffyUnderware.DevTools
         /// <param name="d">Duration</param>
         /// <returns>tweened value</returns>
         public static float CircOut(float t, float b, float c, float d)
-        {
-            return c * Mathf.Sqrt(1 - (t = t / d - 1) * t) + b;
-        }
+            => c * Mathf.Sqrt(1 - (t = t / d - 1) * t) + b;
 
         /// <summary>
         /// Circular tween with t clamped to 0..1
@@ -335,9 +326,7 @@ namespace FluffyUnderware.DevTools
         /// <param name="d">Duration</param>
         /// <returns>tweened value</returns>
         public static float CircIn(float t, float b, float c, float d)
-        {
-            return -c * (Mathf.Sqrt(1 - (t /= d) * t) - 1) + b;
-        }
+            => -c * (Mathf.Sqrt(1 - (t /= d) * t) - 1) + b;
 
         /// <summary>
         /// Circular tween with t clamped to 0..1
@@ -425,9 +414,7 @@ namespace FluffyUnderware.DevTools
         /// <param name="d">Duration</param>
         /// <returns>tweened value</returns>
         public static float QuadOut(float t, float b, float c, float d)
-        {
-            return -c * (t /= d) * (t - 2) + b;
-        }
+            => -c * (t /= d) * (t - 2) + b;
 
         /// <summary>
         /// Quadratic tween with t clamped to 0..1
@@ -450,9 +437,7 @@ namespace FluffyUnderware.DevTools
         /// <param name="d">Duration</param>
         /// <returns>tweened value</returns>
         public static float QuadIn(float t, float b, float c, float d)
-        {
-            return c * (t /= d) * t + b;
-        }
+            => c * (t /= d) * t + b;
 
         /// <summary>
         /// Quadratic tween with t clamped to 0..1
@@ -465,9 +450,9 @@ namespace FluffyUnderware.DevTools
         {
             t = Mathf.Clamp01(t);
             if ((t /= .5f) < 1)
-                return -c / 2 * (Mathf.Sqrt(1 - t * t) - 1) + b;
+                return c / 2 * t * t + b;
 
-            return c / 2 * (Mathf.Sqrt(1 - (t -= 2) * t) + 1) + b;
+            return -c / 2 * ((--t) * (t - 2) - 1) + b;
         }
         /// <summary>
         /// Quadratic tween
@@ -480,9 +465,9 @@ namespace FluffyUnderware.DevTools
         public static float QuadInOut(float t, float b, float c, float d)
         {
             if ((t /= d / 2) < 1)
-                return -c / 2 * (Mathf.Sqrt(1 - t * t) - 1) + b;
+                return c / 2 * t * t + b;
 
-            return c / 2 * (Mathf.Sqrt(1 - (t -= 2) * t) + 1) + b;
+            return -c / 2 * ((--t) * (t - 2) - 1) + b;
         }
 
         /// <summary>
@@ -528,9 +513,8 @@ namespace FluffyUnderware.DevTools
         /// <param name="c">Delta value</param>
         /// <returns>tweened value</returns>
         public static float SineOut(float t, float b, float c)
-        {
-            return c * Mathf.Sin(Mathf.Clamp01(t) * (Mathf.PI / 2)) + b;
-        }
+            => c * Mathf.Sin(Mathf.Clamp01(t) * (Mathf.PI / 2)) + b;
+
         /// <summary>
         /// Sinusoidal tween
         /// </summary>
@@ -540,9 +524,7 @@ namespace FluffyUnderware.DevTools
         /// <param name="d">Duration</param>
         /// <returns>tweened value</returns>
         public static float SineOut(float t, float b, float c, float d)
-        {
-            return c * Mathf.Sin(t / d * (Mathf.PI / 2)) + b;
-        }
+            => c * Mathf.Sin(t / d * (Mathf.PI / 2)) + b;
 
         /// <summary>
         /// Sinusoidal tween with t clamped to 0..1
@@ -552,9 +534,8 @@ namespace FluffyUnderware.DevTools
         /// <param name="c">Delta value</param>
         /// <returns>tweened value</returns>
         public static float SineIn(float t, float b, float c)
-        {
-            return -c * Mathf.Cos(Mathf.Clamp01(t) * (Mathf.PI / 2)) + c + b;
-        }
+            => -c * Mathf.Cos(Mathf.Clamp01(t) * (Mathf.PI / 2)) + c + b;
+
         /// <summary>
         /// Sinusoidal tween
         /// </summary>
@@ -564,9 +545,7 @@ namespace FluffyUnderware.DevTools
         /// <param name="d">Duration</param>
         /// <returns>tweened value</returns>
         public static float SineIn(float t, float b, float c, float d)
-        {
-            return -c * Mathf.Cos(t / d * (Mathf.PI / 2)) + c + b;
-        }
+            => -c * Mathf.Cos(t / d * (Mathf.PI / 2)) + c + b;
 
         /// <summary>
         /// Sinusoidal tween with t clamped to 0..1
@@ -657,9 +636,7 @@ namespace FluffyUnderware.DevTools
         /// <param name="d">Duration</param>
         /// <returns>tweened value</returns>
         public static float CubicOut(float t, float b, float c, float d)
-        {
-            return c * ((t = t / d - 1) * t * t + 1) + b;
-        }
+            => c * ((t = t / d - 1) * t * t + 1) + b;
 
         /// <summary>
         /// Cubic tween with t clamped to 0..1
@@ -682,9 +659,7 @@ namespace FluffyUnderware.DevTools
         /// <param name="d">Duration</param>
         /// <returns>tweened value</returns>
         public static float CubicIn(float t, float b, float c, float d)
-        {
-            return c * (t /= d) * t * t + b;
-        }
+            => c * (t /= d) * t * t + b;
 
         /// <summary>
         /// Cubic tween with t clamped to 0..1
@@ -775,9 +750,7 @@ namespace FluffyUnderware.DevTools
         /// <param name="d">Duration</param>
         /// <returns>tweened value</returns>
         public static float QuartOut(float t, float b, float c, float d)
-        {
-            return -c * ((t = t / d - 1) * t * t * t - 1) + b;
-        }
+            => -c * ((t = t / d - 1) * t * t * t - 1) + b;
 
         /// <summary>
         /// Quartic tween with t clamped to 0..1
@@ -800,9 +773,7 @@ namespace FluffyUnderware.DevTools
         /// <param name="d">Duration</param>
         /// <returns>tweened value</returns>
         public static float QuartIn(float t, float b, float c, float d)
-        {
-            return c * (t /= d) * t * t * t + b;
-        }
+            => c * (t /= d) * t * t * t + b;
 
         /// <summary>
         /// Quartic tween with t clamped to 0..1
@@ -893,9 +864,7 @@ namespace FluffyUnderware.DevTools
         /// <param name="d">Duration</param>
         /// <returns>tweened value</returns>
         public static float QuintOut(float t, float b, float c, float d)
-        {
-            return c * ((t = t / d - 1) * t * t * t * t + 1) + b;
-        }
+            => c * ((t = t / d - 1) * t * t * t * t + 1) + b;
 
         /// <summary>
         /// Quintic tween with t clamped to 0..1
@@ -918,9 +887,7 @@ namespace FluffyUnderware.DevTools
         /// <param name="d">Duration</param>
         /// <returns>tweened value</returns>
         public static float QuintIn(float t, float b, float c, float d)
-        {
-            return c * (t /= d) * t * t * t * t + b;
-        }
+            => c * (t /= d) * t * t * t * t + b;
 
         /// <summary>
         /// Quintic tween with t clamped to 0..1

@@ -1,6 +1,9 @@
 using UnityEngine;
-using System.Linq;
+using UnityEngine.Rendering;
 using System.Collections.Generic;
+using System.Linq;
+using TMPro;
+using Michsky.UI.Reach;
 
 namespace Michsky.UI.Reach
 {
@@ -56,7 +59,7 @@ namespace Michsky.UI.Reach
                 // If no resolutions are available, use the current screen resolution
                 CurrentResolution = Screen.currentResolution;
                 CurrentResolutionIndex = -1;
-                Debug.Log("No compatible resolutions found. Using current screen resolution.");
+                ConditionalDebug.Log("No compatible resolutions found. Using current screen resolution.");
             }
 
             if (CurrentResolutionIndex == -1)
@@ -65,7 +68,7 @@ namespace Michsky.UI.Reach
                 CurrentResolutionIndex = System.Array.IndexOf(resolutions, CurrentResolution);
             }
 
-            Debug.Log($"Initialized {resolutions.Length} resolutions. Current index: {CurrentResolutionIndex}");
+            ConditionalDebug.Log($"Initialized {resolutions.Length} resolutions. Current index: {CurrentResolutionIndex}");
         }
 
         private void InitializeWindowModes()
@@ -87,7 +90,7 @@ namespace Michsky.UI.Reach
                 CurrentWindowModeIndex = availableWindowModes.IndexOf(CurrentWindowMode);
             }
 
-            Debug.Log($"Initialized {availableWindowModes.Count} window modes. Current index: {CurrentWindowModeIndex}");
+            ConditionalDebug.Log($"Initialized {availableWindowModes.Count} window modes. Current index: {CurrentWindowModeIndex}");
         }
 
         public void SetResolution(int resolutionIndex, bool applyImmediately = true)
@@ -103,7 +106,7 @@ namespace Michsky.UI.Reach
             }
             else
             {
-                Debug.Log($"Invalid resolution index: {resolutionIndex}");
+                ConditionalDebug.Log($"Invalid resolution index: {resolutionIndex}");
             }
         }
 
@@ -120,14 +123,14 @@ namespace Michsky.UI.Reach
             }
             else
             {
-                Debug.Log("Couldn't find optimal resolution in available resolutions.");
+                ConditionalDebug.Log("Couldn't find optimal resolution in available resolutions.");
             }
         }
 
         private void ApplyResolution()
         {
             Screen.SetResolution(CurrentResolution.width, CurrentResolution.height, Screen.fullScreenMode);
-            Debug.Log($"Applied resolution: {CurrentResolution.width}x{CurrentResolution.height} @ {CurrentResolution.refreshRate}Hz");
+            ConditionalDebug.Log($"Applied resolution: {CurrentResolution.width}x{CurrentResolution.height} @ {CurrentResolution.refreshRate}Hz");
         }
 
         public Resolution[] GetResolutions()
@@ -139,21 +142,21 @@ namespace Michsky.UI.Reach
         {
             CurrentTextureQuality = option;
             QualitySettings.globalTextureMipmapLimit = (int)option;
-            Debug.Log($"Set texture quality to: {option}");
+            ConditionalDebug.Log($"Set texture quality to: {option}");
         }
 
         public void SetAnisotropicFiltering(AnisotropicOption option)
         {
             CurrentAnisotropicFiltering = option;
             QualitySettings.anisotropicFiltering = (AnisotropicFiltering)option;
-            Debug.Log($"Set anisotropic filtering to: {option}");
+            ConditionalDebug.Log($"Set anisotropic filtering to: {option}");
         }
 
         public void SetVSync(bool enabled)
         {
             vSyncEnabled = enabled;
             QualitySettings.vSyncCount = enabled ? 1 : 0;
-            Debug.Log($"VSync set to: {enabled}");
+            ConditionalDebug.Log($"VSync set to: {enabled}");
         }
 
         public void SetFrameRate(int targetFrameRate)
@@ -161,12 +164,12 @@ namespace Michsky.UI.Reach
             if (targetFrameRate <= 0)
             {
                 Application.targetFrameRate = -1; // Set to unlimited
-                Debug.Log("Target frame rate set to unlimited");
+                ConditionalDebug.Log("Target frame rate set to unlimited");
             }
             else
             {
                 Application.targetFrameRate = targetFrameRate;
-                Debug.Log($"Target frame rate set to: {targetFrameRate}");
+                ConditionalDebug.Log($"Target frame rate set to: {targetFrameRate}");
             }
         }
 
@@ -185,14 +188,14 @@ namespace Michsky.UI.Reach
             }
             else
             {
-                Debug.Log($"Invalid window mode index: {windowModeIndex}");
+                ConditionalDebug.Log($"Invalid window mode index: {windowModeIndex}");
             }
         }
 
         private void ApplyWindowMode()
         {
             Screen.fullScreenMode = CurrentWindowMode;
-            Debug.Log($"Applied window mode: {CurrentWindowMode}");
+            ConditionalDebug.Log($"Applied window mode: {CurrentWindowMode}");
         }
 
         public void SetWindowFullscreen()
@@ -213,7 +216,7 @@ namespace Michsky.UI.Reach
         public void SetFullScreenMode(FullScreenMode mode)
         {
             Screen.fullScreenMode = mode;
-            Debug.Log($"Set full screen mode to: {mode}");
+            ConditionalDebug.Log($"Set full screen mode to: {mode}");
         }
 
         public void SetTAA(bool enabled)
@@ -239,17 +242,17 @@ namespace Michsky.UI.Reach
                 }
                 else
                 {
-                    Debug.Log("FSR3_URP component not found on main camera");
+                    ConditionalDebug.Log("FSR3_URP component not found on main camera");
                 }
 #else
-                Debug.Log("FSR is not available in this build");
+                ConditionalDebug.Log("FSR is not available in this build");
 #endif
             }
             else
             {
-                Debug.Log("Main camera not found");
+                ConditionalDebug.Log("Main camera not found");
             }
-            Debug.Log($"TAA set to: {enabled}");
+            ConditionalDebug.Log($"TAA set to: {enabled}");
         }
 
         public bool IsTAAEnabled()

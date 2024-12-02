@@ -1,11 +1,12 @@
 // =====================================================================
-// Copyright 2013-2022 ToolBuddy
+// Copyright © 2013 ToolBuddy
 // All rights reserved
 // 
 // http://www.toolbuddy.net
 // =====================================================================
 
 using FluffyUnderware.Curvy.Generator.Modules;
+using JetBrains.Annotations;
 using UnityEngine;
 
 namespace FluffyUnderware.Curvy.Examples
@@ -17,7 +18,8 @@ namespace FluffyUnderware.Curvy.Examples
     {
         public ModifierVariableMixShapes VariableMixShapes;
 
-        void Update()
+        [UsedImplicitly]
+        private void Update()
         {
             Keyframe[] mixCurveKeys = VariableMixShapes.MixCurve.keys;
             mixCurveKeys[1].value = Mathf.Sin(Time.time);

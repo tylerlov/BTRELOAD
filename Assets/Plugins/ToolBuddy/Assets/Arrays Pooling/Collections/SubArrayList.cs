@@ -1,5 +1,5 @@
 // =====================================================================
-// Copyright 2013-2022 ToolBuddy
+// Copyright © 2020 ToolBuddy
 // All rights reserved
 // 
 // http://www.toolbuddy.net
@@ -36,7 +36,10 @@ namespace ToolBuddy.Pooling.Collections
         public SubArrayList(int initialCapacity, ArrayPool<T> typePool)
         {
             this.typePool = typePool;
-            subArray = typePool.Allocate(initialCapacity, false);
+            subArray = typePool.Allocate(
+                initialCapacity,
+                false
+            );
             Count = 0;
         }
 
@@ -47,8 +50,14 @@ namespace ToolBuddy.Pooling.Collections
         {
             if (Count == subArray.Count)
             {
-                int newSize = subArray.Count == 0 ? 4 : subArray.Count * 2;
-                typePool.Resize(ref subArray, newSize, false);
+                int newSize = subArray.Count == 0
+                    ? 4
+                    : subArray.Count * 2;
+                typePool.Resize(
+                    ref subArray,
+                    newSize,
+                    false
+                );
             }
 
             subArray.Array[Count] = element;
@@ -59,20 +68,17 @@ namespace ToolBuddy.Pooling.Collections
         /// Returns a <see cref="SubArray{T}"/> instance that will have <see cref="Array"/> as an array (not a copy of it), and <see cref="Count"/> as its <see cref="SubArray{T}.Count"/>
         /// </summary>
         /// <returns></returns>
-        public SubArray<T> ToSubArray()
-        {
-            return new SubArray<T>(subArray.Array, Count);
-        }
+        public SubArray<T> ToSubArray() =>
+            new SubArray<T>(
+                subArray.Array,
+                Count
+            );
 
         public bool Equals(SubArrayList<T> other)
-        {
-            return subArray.Equals(other.subArray) && Count == other.Count;
-        }
+            => subArray.Equals(other.subArray) && Count == other.Count;
 
         public override bool Equals(object obj)
-        {
-            return obj is SubArrayList<T> other && Equals(other);
-        }
+            => obj is SubArrayList<T> other && Equals(other);
 
         public override int GetHashCode()
         {
@@ -83,13 +89,9 @@ namespace ToolBuddy.Pooling.Collections
         }
 
         public static bool operator ==(SubArrayList<T> a, SubArrayList<T> b)
-        {
-            return a.Equals(b);
-        }
+            => a.Equals(b);
 
         public static bool operator !=(SubArrayList<T> a, SubArrayList<T> b)
-        {
-            return !(a == b);
-        }
+            => !(a == b);
     }
 }

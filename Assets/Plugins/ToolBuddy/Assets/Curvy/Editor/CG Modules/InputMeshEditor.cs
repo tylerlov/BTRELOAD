@@ -1,17 +1,17 @@
 // =====================================================================
-// Copyright 2013-2022 ToolBuddy
+// Copyright © 2013 ToolBuddy
 // All rights reserved
 // 
 // http://www.toolbuddy.net
 // =====================================================================
 
-using UnityEngine;
-using UnityEditor;
-using System.Collections.Generic;
 using FluffyUnderware.Curvy.Generator;
 using FluffyUnderware.Curvy.Generator.Modules;
+using FluffyUnderware.DevTools;
 using FluffyUnderware.DevToolsEditor;
+using UnityEditor;
 using UnityEditorInternal;
+using UnityEngine;
 
 namespace FluffyUnderware.CurvyEditor.Generator.Modules
 {
@@ -19,55 +19,109 @@ namespace FluffyUnderware.CurvyEditor.Generator.Modules
     [CustomEditor(typeof(InputMesh))]
     public class InputMeshEditor : CGModuleEditor<InputMesh>
     {
-        int selectedIndex;
+        private int selectedIndex;
 
-        protected override void SetupArrayEx(DTFieldNode node, DevTools.ArrayExAttribute attribute)
+        protected override void SetupArrayEx(DTFieldNode node, ArrayExAttribute attribute)
         {
+            base.SetupArrayEx(
+                node,
+                attribute
+            );
             node.ArrayEx.drawElementCallback = OnMeshGUI;
-            node.ArrayEx.onSelectCallback = (ReorderableList l) => { selectedIndex = l.index; };
-            node.ArrayEx.onAddCallback = (ReorderableList l) =>
+            node.ArrayEx.onSelectCallback = l => { selectedIndex = l.index; };
+            node.ArrayEx.onAddCallback = l =>
             {
-                Target.Meshes.Insert(Mathf.Clamp(l.index + 1, 0, Target.Meshes.Count), new CGMeshProperties());
+                Target.Meshes.Insert(
+                    Mathf.Clamp(
+                        l.index + 1,
+                        0,
+                        Target.Meshes.Count
+                    ),
+                    new CGMeshProperties()
+                );
                 EditorUtility.SetDirty(Target);
+                Target.Dirty = true;
             };
         }
 
 
-
-        void OnMeshGUI(Rect rect, int index, bool isActive, bool isFocused)
+        private void OnMeshGUI(Rect rect, int index, bool isActive, bool isFocused)
         {
-            SerializedProperty prop = serializedObject.FindProperty(string.Format("m_Meshes.Array.data[{0}]", index));
+            SerializedProperty prop = serializedObject.FindProperty(
+                string.Format(
+                    "m_Meshes.Array.data[{0}]",
+                    index
+                )
+            );
             if (prop != null)
             {
                 rect.height = EditorGUIUtility.singleLineHeight;
                 rect.y += 1;
                 rect.width -= 100;
                 SerializedProperty mshProp = prop.FindPropertyRelative("m_Mesh");
-                mshProp.objectReferenceValue = EditorGUI.ObjectField(rect, mshProp.objectReferenceValue, typeof(Mesh), false);
+                mshProp.objectReferenceValue = EditorGUI.ObjectField(
+                    rect,
+                    mshProp.objectReferenceValue,
+                    typeof(Mesh),
+                    false
+                );
 
                 rect.x += rect.width;
-                EditorGUI.LabelField(rect, getFormattedMeshInfo(mshProp.objectReferenceValue as Mesh), DTStyles.HtmlLabel);
+                EditorGUI.LabelField(
+                    rect,
+                    getFormattedMeshInfo(mshProp.objectReferenceValue as Mesh),
+                    DTStyles.HtmlLabel
+                );
             }
         }
 
-        void OnPropertiesGUI()
+        private void OnPropertiesGUI()
         {
-            SerializedProperty prop = serializedObject.FindProperty(string.Format("m_Meshes.Array.data[{0}]", selectedIndex));
+            SerializedProperty prop = serializedObject.FindProperty(
+                string.Format(
+                    "m_Meshes.Array.data[{0}]",
+                    selectedIndex
+                )
+            );
             if (prop != null)
             {
                 SerializedProperty matProp = prop.FindPropertyRelative("m_Material");
                 if (matProp != null)
                 {
-                    ReorderableList l = new ReorderableList(serializedObject, matProp, true, true, false, false);
-                    l.drawHeaderCallback = (Rect rect) => { GUI.Label(rect, "Materials for " + Target.Meshes[selectedIndex].Mesh.name); };
-                    l.drawElementCallback = (Rect rect, int index, bool isActive, bool isFocused) =>
+                    ReorderableList l = new ReorderableList(
+                        serializedObject,
+                        matProp,
+                        true,
+                        true,
+                        false,
+                        false
+                    );
+                    l.drawHeaderCallback = rect =>
+                    {
+                        GUI.Label(
+                            rect,
+                            "Materials for " + Target.Meshes[selectedIndex].Mesh.name
+                        );
+                    };
+                    l.drawElementCallback = (rect, index, isActive, isFocused) =>
                     {
                         rect.height = EditorGUIUtility.singleLineHeight;
-                        SerializedProperty pMat = prop.FindPropertyRelative(string.Format("m_Material.Array.data[{0}]", index));
-                        pMat.objectReferenceValue = EditorGUI.ObjectField(rect, pMat.objectReferenceValue, typeof(Material), false);
+                        SerializedProperty pMat = prop.FindPropertyRelative(
+                            string.Format(
+                                "m_Material.Array.data[{0}]",
+                                index
+                            )
+                        );
+                        pMat.objectReferenceValue = EditorGUI.ObjectField(
+                            rect,
+                            pMat.objectReferenceValue,
+                            typeof(Material),
+                            false
+                        );
                     };
                     l.DoLayoutList();
                 }
+
                 EditorGUILayout.PropertyField(prop.FindPropertyRelative("m_Translation"));
                 EditorGUILayout.PropertyField(prop.FindPropertyRelative("m_Rotation"));
                 EditorGUILayout.PropertyField(prop.FindPropertyRelative("m_Scale"));
@@ -81,12 +135,15 @@ namespace FluffyUnderware.CurvyEditor.Generator.Modules
             {
                 GUILayout.Space(5);
                 bool open = true;
-                CurvyGUI.Foldout(ref open, "Properties");
+                CurvyGUI.Foldout(
+                    ref open,
+                    "Properties"
+                );
                 OnPropertiesGUI();
             }
         }
 
-        string getFormattedMeshInfo(Mesh mesh)
+        private string getFormattedMeshInfo(Mesh mesh)
         {
             if (mesh)
             {
@@ -94,14 +151,29 @@ namespace FluffyUnderware.CurvyEditor.Generator.Modules
                 string hasnt = "<color=#800000>";
                 string close = "</color>";
                 //OPTIM this code calls mesh's properties, just to get their length. Those properties do copy an array, every frame! A solution might be to store their length (or the boolean) in CGMeshProperties
-                string norm = (mesh.normals.Length > 0) ? has : hasnt;
-                string tan = (mesh.tangents.Length > 0) ? has : hasnt;
-                string uv = (mesh.uv.Length > 0) ? has : hasnt;
-                string uv2 = (mesh.uv2.Length > 0) ? has : hasnt;
-                return string.Format("{1}Nor{0} {2}Tan{0} {3}UV{0} {4}UV2{0}", close, norm, tan, uv, uv2);
+                string norm = mesh.normals.Length > 0
+                    ? has
+                    : hasnt;
+                string tan = mesh.tangents.Length > 0
+                    ? has
+                    : hasnt;
+                string uv = mesh.uv.Length > 0
+                    ? has
+                    : hasnt;
+                string uv2 = mesh.uv2.Length > 0
+                    ? has
+                    : hasnt;
+                return string.Format(
+                    "{1}Nor{0} {2}Tan{0} {3}UV{0} {4}UV2{0}",
+                    close,
+                    norm,
+                    tan,
+                    uv,
+                    uv2
+                );
             }
-            else return "";
+
+            return "";
         }
     }
-
 }

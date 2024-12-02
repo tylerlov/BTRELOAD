@@ -63,7 +63,7 @@ public class PlayerShotState : ProjectileState
                 : _lastKnownTargetPosition;
         float distanceToTarget = Vector3.Distance(_projectile.transform.position, targetPosition);
 
-        Debug.Log($"Projectile {_projectile.GetInstanceID()} - Position: {_projectile.transform.position}, Target: {targetPosition}, Distance: {distanceToTarget}, Velocity: {_projectile.rb.linearVelocity}");
+        ConditionalDebug.Log($"Projectile {_projectile.GetInstanceID()} - Position: {_projectile.transform.position}, Target: {targetPosition}, Distance: {distanceToTarget}, Velocity: {_projectile.rb.linearVelocity}");
 
         if (distanceToTarget <= CLOSE_PROXIMITY_THRESHOLD)
         {
@@ -152,7 +152,7 @@ public class PlayerShotState : ProjectileState
         }
         else
         {
-            Debug.Log($"Projectile hit non-enemy object: {hitObject.name}");
+            ConditionalDebug.Log($"Projectile hit non-enemy object: {hitObject.name}");
             //_projectile.gameObject.SetActive(false); // Deactivate the projectile
             //ProjectilePool.Instance.ReturnProjectileToPool(_projectile); // Return it to the pool
         }
@@ -165,14 +165,14 @@ public class PlayerShotState : ProjectileState
 
     private void HandleCollision(GameObject hitObject)
     {
-        Debug.Log($"PlayerShotState projectile collided with: {hitObject.name}, Tag: {hitObject.tag}");
+        ConditionalDebug.Log($"PlayerShotState projectile collided with: {hitObject.name}, Tag: {hitObject.tag}");
         
         if (hitObject.CompareTag("Enemy"))
         {
             IDamageable damageable = hitObject.GetComponent<IDamageable>();
             if (damageable != null)
             {
-                Debug.Log($"Applying damage to: {hitObject.name}");
+                ConditionalDebug.Log($"Applying damage to: {hitObject.name}");
                 _projectile.ApplyDamage(damageable);
                 _projectile.hasHitTarget = true;
                 
@@ -184,14 +184,14 @@ public class PlayerShotState : ProjectileState
             }
             else
             {
-                Debug.LogWarning($"Enemy does not implement IDamageable interface: {hitObject.name}");
+                ConditionalDebug.LogWarning($"Enemy does not implement IDamageable interface: {hitObject.name}");
             }
 
             GameManager.Instance.LogProjectileHit(_projectile.isPlayerShot, damageable != null, hitObject.tag);
         }
         else
         {
-            Debug.Log($"Projectile hit non-enemy object: {hitObject.name}");
+            ConditionalDebug.Log($"Projectile hit non-enemy object: {hitObject.name}");
         }
     }
 

@@ -50,7 +50,7 @@ public class RotateRing : MonoBehaviour
         if (clock != null && !clock.enabled)
         {
             clock.enabled = true;
-            Debug.Log("Re-enabled clock on " + gameObject.name);
+            ConditionalDebug.Log("Re-enabled clock on " + gameObject.name);
         }
     }
 

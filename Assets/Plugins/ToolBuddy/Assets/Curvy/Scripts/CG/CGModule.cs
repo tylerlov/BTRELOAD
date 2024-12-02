@@ -1,27 +1,19 @@
 // =====================================================================
-// Copyright 2013-2022 ToolBuddy
+// Copyright © 2013 ToolBuddy
 // All rights reserved
 // 
 // http://www.toolbuddy.net
 // =====================================================================
 
 using System;
-using UnityEngine;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
-using FluffyUnderware.DevTools.Extensions;
-
-using System.Collections;
-using System.Globalization;
 using FluffyUnderware.DevTools;
+using FluffyUnderware.DevTools.Extensions;
 using JetBrains.Annotations;
+using UnityEngine;
 using Random = UnityEngine.Random;
-#if UNITY_EDITOR
-using UnityEditor;
-using UnityEditor.AnimatedValues;
-#endif
-
-
 
 
 namespace FluffyUnderware.Curvy.Generator
@@ -30,43 +22,36 @@ namespace FluffyUnderware.Curvy.Generator
     /// Curvy Generator module base class
     /// </summary>
     [ExecuteAlways]
-    public abstract class CGModule : DTVersionedMonoBehaviour
+    public abstract partial class CGModule : DTVersionedMonoBehaviour
     {
         #region ### Events ###
 
-        /*! \cond PRIVATE */
+#if DOCUMENTATION___FORCE_IGNORE___CURVY == false
 
-        [Group("Events", Expanded = false, Sort = 1000)]
+        [Group(
+            "Events",
+            Expanded = false,
+            Sort = 1000
+        )]
         [SerializeField]
         protected CurvyCGEvent m_OnBeforeRefresh = new CurvyCGEvent();
+
         [Group("Events")]
         [SerializeField]
         protected CurvyCGEvent m_OnRefresh = new CurvyCGEvent();
 
-        /*! \endcond */
+#endif
 
         public CurvyCGEvent OnBeforeRefresh
         {
-            get { return m_OnBeforeRefresh; }
-            set
-            {
-                if (m_OnBeforeRefresh != value)
-                    m_OnBeforeRefresh = value;
-
-            }
-
+            get => m_OnBeforeRefresh;
+            set => m_OnBeforeRefresh = value;
         }
 
         public CurvyCGEvent OnRefresh
         {
-            get { return m_OnRefresh; }
-            set
-            {
-                if (m_OnRefresh != value)
-                    m_OnRefresh = value;
-
-            }
-
+            get => m_OnRefresh;
+            set => m_OnRefresh = value;
         }
 
         protected CurvyCGEventArgs OnBeforeRefreshEvent(CurvyCGEventArgs e)
@@ -85,25 +70,62 @@ namespace FluffyUnderware.Curvy.Generator
 
         #endregion
 
-        #region ### Public Fields & Properties ###
 
-        #region --- Fields ---
+        #region --- Private Fields ---
 
-        [SerializeField, HideInInspector] private string m_ModuleName;
-        [SerializeField, HideInInspector] private bool m_Active = true;
+        #region --- Serialized Fields ---
 
-        [Group("Seed Options", Expanded = false, Sort = 1001)]
-        [GroupCondition(nameof(usesRandom))]
-        [FieldAction("CBSeedOptions", ShowBelowProperty = true)]
+        [SerializeField, HideInInspector]
+        private string m_ModuleName;
+
+        [SerializeField, HideInInspector]
+        private bool m_Active = true;
+
+        [Group(
+            "Seed Options",
+            Expanded = false,
+            Sort = 1001
+        )]
+        [GroupCondition(nameof(UsesRandom))]
+        [FieldAction(
+            "CBSeedOptions",
+            ShowBelowProperty = true
+        )]
         [SerializeField]
-        private bool m_RandomizeSeed = false;
+        private bool m_RandomizeSeed;
 
-        [SerializeField, HideInInspector] private int m_Seed = unchecked((int)System.DateTime.Now.Ticks);
+        [SerializeField, HideInInspector]
+        private int m_Seed = unchecked((int)DateTime.Now.Ticks);
+
+        [SerializeField, HideInInspector]
+        private int m_UniqueID;
 
         #endregion
 
+        private CurvyGenerator generator;
+        private bool isInitialized;
 
-        #region --- API Accessors ---
+        [NotNull]
+        private readonly ResourceNamer resourceNamer;
+
+        [NotNull]
+        private readonly InformationProvider informationProvider;
+
+        [NotNull]
+        private readonly DirtinessManager dirtinessManager;
+
+        [NotNull]
+        private readonly Slots slots;
+
+        [NotNull]
+        private readonly Identifier identifier;
+
+        [NotNull]
+        private readonly List<(Component ResourceManager, string ResourceName)> resourceManagers;
+
+        #endregion
+
+        #region ### Public Fields & Properties ###
 
         public string ModuleName
         {
@@ -113,14 +135,17 @@ namespace FluffyUnderware.Curvy.Generator
                 if (name != value)
                 {
                     name = value;
+                    resourceNamer.ClearCache();
+#pragma warning disable CS0612
                     renameManagedResourcesINTERNAL();
+#pragma warning restore CS0612
                 }
             }
         }
 
         public bool Active
         {
-            get { return m_Active; }
+            get => m_Active;
             set
             {
                 if (m_Active != value)
@@ -139,12 +164,14 @@ namespace FluffyUnderware.Curvy.Generator
         /// </summary>
         public int Seed
         {
-            get { return m_Seed; }
+            get => m_Seed;
             set
             {
                 if (m_Seed != value)
+                {
                     m_Seed = value;
-                Dirty = true;
+                    Dirty = true;
+                }
             }
         }
 
@@ -154,271 +181,15 @@ namespace FluffyUnderware.Curvy.Generator
         /// </summary>
         public bool RandomizeSeed
         {
-            get { return m_RandomizeSeed; }
-            set
-            {
-                if (m_RandomizeSeed != value)
-                    m_RandomizeSeed = value;
-            }
+            get => m_RandomizeSeed;
+            set => m_RandomizeSeed = value;
         }
-
-        #endregion
-
-
-
-        [System.NonSerialized]
-        public List<string> UIMessages = new List<string>();
-
-        public CurvyGenerator Generator
-        {
-            get { return mGenerator; }
-        }
-
-        private CurvyGenerator mGenerator;
-
-
-
-        #endregion
-
-        #region ### Graph Related ###
-
-
-        #region UniqueID
-
-        [SerializeField, HideInInspector] private int m_UniqueID;
-
-        public int UniqueID
-        {
-            get { return m_UniqueID; }
-        }
-
-        // In order to reduce per frame allocations, we cache the string version
-        private string m_UniqueIDString = null;
-        private string UniqueIDString
-        {
-            get
-            {
-                if (m_UniqueIDString == null)
-                    m_UniqueIDString = m_UniqueID.ToString(System.Globalization.CultureInfo.InvariantCulture);
-                return m_UniqueIDString;
-            }
-        }
-
-        #endregion
-
-
-        /// <summary>
-        /// Whether this module has circular reference errors
-        /// </summary>
-        public bool CircularReferenceError { get; set; }
-
-        /// <summary>
-        /// Helper for topology sorting
-        /// </summary>
-        //DESIGN inline this in doSortModules()
-        internal int SortAncestors;
-
-
-        [HideInInspector]
-        public CGModuleProperties Properties = new CGModuleProperties();
-        [HideInInspector]
-        public List<CGModuleLink> InputLinks = new List<CGModuleLink>();
-        [HideInInspector]
-        public List<CGModuleLink> OutputLinks = new List<CGModuleLink>();
-
-        // These will be filled by reflection in OnEnable()
-        public Dictionary<string, CGModuleInputSlot> InputByName { get; private set; }
-        public Dictionary<string, CGModuleOutputSlot> OutputByName { get; private set; }
-        public List<CGModuleInputSlot> Input { get; private set; }
-        public List<CGModuleOutputSlot> Output { get; private set; }
-
-        public ModuleInfoAttribute Info
-        {
-            get
-            {
-                if (mInfo == null)
-                    mInfo = getInfo();
-                return mInfo;
-            }
-        }
-
-        private ModuleInfoAttribute mInfo;
-
-        //-----
 
         public bool Dirty
         {
-            get { return mDirty; }
-            set
-            {
-                if (mDirty != value)
-                    mDirty = value;
-
-
-                if (mDirty)
-                {
-                    bool isConfigured = IsConfigured;
-                    if (mLastIsConfiguredState != isConfigured)
-                        mStateChangeDirty = true;
-                    mLastIsConfiguredState = isConfigured;
-                    if (Output != null)
-                    {
-                        for (int i = 0; i < Output.Count; i++)
-                        {
-                            if (Output[i].IsLinked)
-                            {
-                                List<CGModule> modules = Output[i].GetLinkedModules();
-                                for (int m = 0; m < modules.Count; m++)
-                                    //BUG? does the || modules[m].CircularReferenceError create infinite dirtying logique?
-                                    if (modules[m] != this || modules[m].CircularReferenceError) // prevent circular reference
-                                        modules[m].Dirty = true;
-                            }
-                        }
-                    }
-                }
-
-                if (this is IOnRequestProcessing || this is INoProcessing)
-                {
-                    mDirty = false;
-                    if (Output != null)
-                        for (int i = 0; i < Output.Count; i++)
-                            Output[i].LastRequestParameters = null;
-                }
-
-            }
+            get => dirtinessManager.IsDirty;
+            set => dirtinessManager.IsDirty = value;
         }
-
-        private bool mDirty = true;
-        private bool mInitialized = false;
-
-        private bool mStateChangeDirty;
-        private bool mLastIsConfiguredState;
-
-
-        #endregion
-
-        #region ### Debugging ###
-#if UNITY_EDITOR || CURVY_DEBUG
-        public System.DateTime DEBUG_LastUpdateTime;
-        public TimeMeasure DEBUG_ExecutionTime = new TimeMeasure(5);
-#endif
-
-        #endregion
-
-        #region ### Unity Callbacks (Virtual) ###
-
-        protected virtual void Awake()
-        {
-            mGenerator = RetrieveGenerator();
-        }
-
-        protected virtual void OnEnable()
-        {
-            if (mGenerator)
-            {
-                Initialize();
-                Generator.sortModulesINTERNAL();
-            }
-        }
-
-        public void Initialize()
-        {
-            if (!mGenerator)
-                mGenerator = RetrieveGenerator();
-            if (!mGenerator)
-                Invoke(nameof(Delete), 0);
-            else
-            {
-                mInfo = getInfo();
-
-                if (string.IsNullOrEmpty(ModuleName))
-                    if (string.IsNullOrEmpty(Info.ModuleName))
-                        ModuleName = Generator.getUniqueModuleNameINTERNAL(Info.MenuName.Substring(Info.MenuName.LastIndexOf("/", StringComparison.Ordinal) + 1));
-                    else
-                        ModuleName = Generator.getUniqueModuleNameINTERNAL(Info.ModuleName);
-
-                loadSlots();
-                mInitialized = true;
-            }
-        }
-
-        protected virtual void OnDisable()
-        {
-        }
-
-        protected virtual void OnDestroy()
-        {
-            bool realDestroy = true;
-#if UNITY_EDITOR
-            if (EditorApplication.isPlayingOrWillChangePlaymode && !EditorApplication.isPlaying)
-                realDestroy = false;
-#endif
-            setTreeDirtyStateChange();
-            List<Component> res;
-            List<string> resNames;
-            // Resources
-            if (realDestroy)
-            {
-                if (GetManagedResources(out res, out resNames))
-                {
-                    for (int i = res.Count - 1; i >= 0; i--)
-                        DeleteManagedResource(resNames[i], res[i], string.Empty, true);
-                }
-            }
-
-            // Links
-
-            List<CGModuleInputSlot> inSlots = GetInputSlots();
-            foreach (CGModuleInputSlot slot in inSlots)
-            {
-                List<CGModule> linkedModules = slot.GetLinkedModules();
-                foreach (CGModule module in linkedModules)
-                    if (module != null)
-                        module.ReInitializeLinkedSlots();
-            }
-
-            List<CGModuleOutputSlot> outSlots = GetOutputSlots();
-            foreach (CGModuleOutputSlot slot in outSlots)
-            {
-                List<CGModule> linkedModules = slot.GetLinkedModules();
-                foreach (CGModule module in linkedModules)
-                    if (module != null)
-                        module.ReInitializeLinkedSlots();
-            }
-
-            if (Generator)
-            {
-                // Delete module
-                Generator.ModulesByID.Remove(UniqueID);
-                Generator.Modules.Remove(this);
-                Generator.sortModulesINTERNAL();
-            }
-            mInitialized = false;
-        }
-
-#if UNITY_EDITOR
-        /*DESIGN:simplify the CGModules' OnValidate and properties by:
-        - Make properties set dirty only if the value has changed
-        - Set dirty to true in CGModule.OnValidate
-        - avoid calling SomeProperty = m_SomeProperty in the OnValidate of all CGModules. You have of course to handle any work done by SomeProperty, that is not dirtying, in the OnValidate of these modules.*/
-        protected virtual void OnValidate()
-        {
-        }
-
-        private void Update()
-        {
-            if (!Application.isPlaying)
-                renameManagedResourcesINTERNAL();
-        }
-#endif
-        private void OnDidApplyAnimationProperties()
-        {
-            Dirty = true;
-        }
-
-        #endregion
-
-        #region ### Virtual Methods & Properties ###
 
         /// <summary>
         /// Gets whether the module is properly configured i.e. has everything to work like intended
@@ -427,50 +198,204 @@ namespace FluffyUnderware.Curvy.Generator
         {
             get
             {
-                if (!IsInitialized || CircularReferenceError || !Active)
+                if (!IsInitialized || Generator.HasCircularReference(this) || !Active)
                     return false;
 
-                int validTotalLinks = 0;
-                for (int i = 0; i < Input.Count; i++)
-                {
-                    InputSlotInfo myInfo = Input[i].InputInfo;
-                    if (Input[i].IsLinked)
-                    {
-                        for (int link = 0; link < Input[i].Count; link++)
-                            if (Input[i].SourceSlot(link) != null)
-                            {
-                                if (Input[i].SourceSlot(link).Module.IsConfigured)
-                                    validTotalLinks++;
-                                else if (!myInfo.Optional)
-                                    return false;
-                            }
-                    }
-                    else
-                        if (myInfo == null || !myInfo.Optional)
-                        return false;
-                }
-
-                return validTotalLinks > 0 || Input.Count == 0;
+                return slots.IsConfigured;
             }
         }
 
         /// <summary>
         /// Gets whether the module and all its dependencies are fully initialized
         /// </summary>
-        public virtual bool IsInitialized { get { return mInitialized; } }
+        public virtual bool IsInitialized => isInitialized;
 
-        /// <summary>
-        /// Add Module processing code in here
-        /// </summary>
-        public virtual void Refresh()
+        public CurvyGenerator Generator
         {
-            //            Debug.Log(name + ".Refresh()");
-            UIMessages.Clear();
+            get
+            {
+                if (!generator)
+                    generator = transform.parent != null
+                        ? transform.parent.GetComponent<CurvyGenerator>()
+                        : null;
+
+                return generator;
+            }
         }
 
-        public virtual void Reset()
+        /// <summary>
+        /// Unique identifier to identify the module in the generator
+        /// </summary>
+        public int UniqueID
         {
-            ModuleName = string.IsNullOrEmpty(Info.ModuleName) ? GetType().Name : Info.ModuleName;
+            get => identifier.ID;
+            set
+            {
+                if (identifier.ID != value)
+                {
+                    identifier.ID = value;
+                    resourceNamer.ClearCache();
+#pragma warning disable CS0612
+                    renameManagedResourcesINTERNAL();
+#pragma warning restore CS0612
+                }
+            }
+        }
+
+        [NonSerialized]
+        public List<string> UIMessages = new List<string>();
+
+        #endregion
+
+        #region ### Graph Related ###
+
+        /// <summary>
+        /// Whether this module has circular reference errors
+        /// </summary>
+        [UsedImplicitly]
+        [Obsolete("Use Generator.HasCircularReference instead")]
+        public bool CircularReferenceError
+        {
+            get => Generator.HasCircularReference(this);
+            set => throw new NotSupportedException(" CircularReferenceError is read-only");
+        }
+
+        [HideInInspector]
+        public CGModuleProperties Properties = new CGModuleProperties();
+
+        /// <summary>
+        /// List of links between this module's input slots and other modules' output slots. Do not manipulate this list directly. To add/remove links, use the link manipulating methods of the slots in <see cref="Input"/> and <see cref="Output"/> properties.
+        /// </summary>
+        /// <seealso cref="CGModuleInputSlot"/>
+        /// <seealso cref="CGModuleOutputSlot"/>
+        [HideInInspector]
+        public List<CGModuleLink> InputLinks = new List<CGModuleLink>();
+
+        /// <summary>
+        /// List of links between this module's output slots and other modules' input slots. Do not manipulate this list directly. To add/remove links, use the link manipulating methods of the slots in <see cref="Input"/> and <see cref="Output"/> properties.
+        /// </summary>
+        /// <seealso cref="CGModuleInputSlot"/>
+        /// <seealso cref="CGModuleOutputSlot"/>
+        [HideInInspector]
+        public List<CGModuleLink> OutputLinks = new List<CGModuleLink>();
+
+        /// <summary>
+        /// Input slots mapped by their slot name
+        /// </summary>
+        /// <seealso cref="Output"/>
+        /// <seealso cref="CGModuleSlot.Info"/>
+        /// <seealso cref="SlotInfo.Name"/>
+        [NotNull]
+        public Dictionary<string, CGModuleInputSlot> InputByName => slots.InputSlotsByName;
+
+        /// <summary>
+        /// Output slots mapped by their slot name
+        /// </summary>
+        /// <seealso cref="Output"/>
+        /// <seealso cref="CGModuleSlot.Info"/>
+        /// <seealso cref="SlotInfo.Name"/>
+        [NotNull]
+        public Dictionary<string, CGModuleOutputSlot> OutputByName => slots.OutputSlotsByName;
+
+        /// <summary>
+        /// The input slots of the module
+        /// </summary>
+        [NotNull]
+        public List<CGModuleInputSlot> Input => slots.InputSlots;
+
+        /// <summary>
+        /// The output slots of the module
+        /// </summary>
+        [NotNull]
+        public List<CGModuleOutputSlot> Output => slots.OutputSlots;
+
+        //-----
+
+        #endregion
+
+        #region ### Debugging ###
+
+#if UNITY_EDITOR || CURVY_DEBUG
+        public DateTime DEBUG_LastUpdateTime; //todo rework variable so it is no more a debug variable, since it is used in non debug features
+        public TimeMeasure DEBUG_ExecutionTime = new TimeMeasure(5);
+#endif
+
+        #endregion
+
+        #region ### Unity Callbacks (Virtual) ###
+
+#if DOCUMENTATION___FORCE_IGNORE___UNITY == false
+
+        protected virtual void Awake() { }
+
+        protected override void OnEnable()
+        {
+            base.OnEnable();
+            if (Generator)
+                Initialize();
+        }
+
+        protected virtual void OnDestroy()
+        {
+            dirtinessManager.OnDestroy();
+            List<Component> res;
+            List<string> resNames;
+            // Resources
+            if (GetManagedResources(
+                    out res,
+                    out resNames
+                ))
+                for (int i = res.Count - 1; i >= 0; i--)
+                    DeleteManagedResource(
+                        resNames[i],
+                        res[i],
+                        string.Empty,
+                        true
+                    );
+
+            slots.ReinitializeLinkedModulesLinkedSlots();
+
+            if (Generator)
+                Generator.RemoveModule(this);
+
+            isInitialized = false;
+        }
+
+        protected override void OnValidate()
+        {
+            base.OnValidate();
+            Dirty = true;
+            resourceNamer.ClearCache();
+#pragma warning disable CS0612
+            renameManagedResourcesINTERNAL();
+#pragma warning restore CS0612
+        }
+
+        [UsedImplicitly]
+        private void Update()
+        {
+#if UNITY_EDITOR
+
+            if (!Application.isPlaying)
+#pragma warning disable CS0612
+                renameManagedResourcesINTERNAL();
+#pragma warning restore CS0612
+#endif
+        }
+
+        /// <summary>
+        /// Used both as the Reset method of Monobehaviour, and the method called when clicking on the Reset entry in the right click menu of modules.
+        /// </summary>
+        public new virtual void Reset()
+        {
+#pragma warning disable CS0612
+            ModuleName = string.IsNullOrEmpty(Info.ModuleName)
+                ? GetType().Name
+                : Info.ModuleName;
+#pragma warning restore CS0612
+
+            if (Generator && Generator.Modules.Any(m => m != this && m.UniqueID == UniqueID))
+                UniqueID = Generator.GetModuleUniqueID(this);
 
             //Remove all non-persisent (ie created from script) listeners from the events. Might help with garbage collection
             if (OnBeforeRefresh != null)
@@ -482,26 +407,33 @@ namespace FluffyUnderware.Curvy.Generator
             OnRefresh = new CurvyCGEvent();
 
             DeleteAllOutputManagedResources();
+
+            base.Reset();
         }
 
-        public void ReInitializeLinkedSlots()
+#endif
+
+        #endregion
+
+        #region ### Virtual Methods & Properties ###
+
+        /// <summary>
+        /// Add Module processing code in here
+        /// </summary>
+        public virtual void Refresh()
         {
-            List<CGModuleInputSlot> ins = GetInputSlots();
-            List<CGModuleOutputSlot> ous = GetOutputSlots();
-            for (int i = 0; i < ins.Count; i++)
-                ins[i].ReInitializeLinkedSlots();
-            for (int i = 0; i < ous.Count; i++)
-                ous[i].ReInitializeLinkedSlots();
+            //OPTIM? remove this check, or make its compilation conditional
+            slots.CheckInputModulesNotDirty();
+            //Debug.Log(name + ".Refresh()");
+            UIMessages.Clear();
         }
 
         /// <summary>
         /// Delete all the managed resources acting as an output. One example of this are the generated meshes by the <see cref="FluffyUnderware.Curvy.Generator.Modules.CreateMesh"/> module
         /// </summary>
         /// <returns>True if there were deleted resources</returns>
-        virtual public bool DeleteAllOutputManagedResources()
-        {
-            return false;
-        }
+        public virtual bool DeleteAllOutputManagedResources()
+            => false;
 
         /// <summary>
         /// Called when a module's state changes (Link added/removed, Active toggles etc..)
@@ -511,27 +443,8 @@ namespace FluffyUnderware.Curvy.Generator
             //            Debug.Log(name + ".OSC, configured="+IsConfigured);
             Dirty = true;
 
-            if (Output != null)
-            {
-                for (int i = 0; i < Output.Count; i++)
-                {
-                    Output[i].ClearData();
-                    /*
-                    if (Output[i].IsLinked)
-                    {
-                        var modules = Output[i].GetLinkedModules();
-                        for (int m = 0; m < modules.Count; m++)
-                            if (modules[m] != this || modules[m].CircularReferenceError) // prevent circular reference
-                                modules[m].CheckAndRaiseOnStateChangedINTERNAL();
-                    }
-                     */
-                }
-            }
-#if UNITY_EDITOR
-            if (Input != null)
-                for (int i = 0; i < Input.Count; i++)
-                    Input[i].LastDataCountINTERNAL = 0;
-#endif
+            slots.ClearOutputData();
+            slots.ResetInputSlotsLastDataCount();
             if (!IsConfigured)
                 DeleteAllOutputManagedResources();
         }
@@ -540,10 +453,8 @@ namespace FluffyUnderware.Curvy.Generator
         /// Called after a module was copied to a template
         /// </summary>
         /// <remarks>Use this handle references that can't be templated etc...</remarks>
-        public virtual void OnTemplateCreated()
-        {
+        public virtual void OnTemplateCreated() =>
             DeleteAllOutputManagedResources();
-        }
 
         #endregion
 
@@ -555,7 +466,7 @@ namespace FluffyUnderware.Curvy.Generator
         /// <typeparam name="T">Type derived from PCGDataRequestParameter</typeparam>
         /// <param name="requests">reference to the list of request parameters</param>
         /// <returns>the wanted request parameter or null</returns>
-        static protected T GetRequestParameter<T>(ref CGDataRequestParameter[] requests) where T : CGDataRequestParameter
+        protected static T GetRequestParameter<T>(ref CGDataRequestParameter[] requests) where T : CGDataRequestParameter
         {
             for (int i = 0; i < requests.Length; i++)
                 if (requests[i] is T)
@@ -569,7 +480,7 @@ namespace FluffyUnderware.Curvy.Generator
         /// </summary>
         /// <param name="requests">reference to the requests array</param>
         /// <param name="request">the request to remove</param>
-        static protected void RemoveRequestParameter(ref CGDataRequestParameter[] requests, CGDataRequestParameter request)
+        protected static void RemoveRequestParameter(ref CGDataRequestParameter[] requests, CGDataRequestParameter request)
         {
             for (int i = 0; i < requests.Length; i++)
                 if (requests[i] == request)
@@ -577,136 +488,162 @@ namespace FluffyUnderware.Curvy.Generator
                     requests = requests.RemoveAt(i);
                     return;
                 }
-
         }
 
         #endregion
 
         #region ### Public Methods ###
 
-
-        public CGModuleLink GetOutputLink(CGModuleOutputSlot outSlot, CGModuleInputSlot inSlot)
+        public CGModule()
         {
-            return GetLink(OutputLinks, outSlot, inSlot);
+            resourceNamer = new ResourceNamer(this);
+            dirtinessManager = new DirtinessManager(this);
+            identifier = new Identifier(this);
+            informationProvider = new InformationProvider(this);
+            slots = new Slots(this);
+#pragma warning disable CS0618
+            resourceManagers = GetResourceManagers();
+#pragma warning restore CS0618
         }
 
-        public List<CGModuleLink> GetOutputLinks(CGModuleOutputSlot outSlot)
+        public void Initialize()
         {
-            return GetLinks(OutputLinks, outSlot);
+            if (!Generator)
+                Invoke(
+                    nameof(Delete),
+                    0
+                );
+            else
+            {
+                if (string.IsNullOrEmpty(ModuleName))
+                    SetModuleName();
+                slots.ReInitializeLinkedSlots();
+                isInitialized = true;
+            }
         }
 
-        public CGModuleLink GetInputLink(CGModuleInputSlot inSlot, CGModuleOutputSlot outSlot)
-        {
-            return GetLink(InputLinks, inSlot, outSlot);
-        }
+        /// <summary>
+        /// Get the first link, if any, between this module's outputSlot and another module's inputSlot
+        /// </summary>
+        [CanBeNull]
+        public CGModuleLink GetOutputLink(CGModuleOutputSlot outputSlot, CGModuleInputSlot inputSlot)
+            => GetLink(
+                OutputLinks,
+                outputSlot,
+                inputSlot
+            );
 
-        public List<CGModuleLink> GetInputLinks(CGModuleInputSlot inSlot)
-        {
-            return GetLinks(InputLinks, inSlot);
-        }
+        /// <summary>
+        /// Get all the links between this module's outputSlot and other modules' inputSlots
+        /// </summary>
+        [NotNull]
+        public List<CGModuleLink> GetOutputLinks(CGModuleOutputSlot outputSlot)
+            => GetLinks(
+                OutputLinks,
+                outputSlot
+            );
 
+        /// <summary>
+        /// Get the first link, if any, between this module's inputSlot and another module's outputSlot
+        /// </summary>
+        [CanBeNull]
+        public CGModuleLink GetInputLink(CGModuleInputSlot inputSlot, CGModuleOutputSlot outputSlot)
+            => GetLink(
+                InputLinks,
+                inputSlot,
+                outputSlot
+            );
 
+        /// <summary>
+        /// Get all the links between this module's inputSlot and other modules' outputSlots
+        /// </summary>
+        [NotNull]
+        public List<CGModuleLink> GetInputLinks(CGModuleInputSlot inputSlot)
+            => GetLinks(
+                InputLinks,
+                inputSlot
+            );
+
+        [UsedImplicitly]
+        [Obsolete(
+            "Use ComponentExt.DuplicateGameObject and CurvyGenerator.AddModule to duplicate the module then add it to the generator "
+        )]
         public CGModule CopyTo(CurvyGenerator targetGenerator)
         {
             if (this == null)
-                throw new InvalidOperationException($"[Curvy] Trying to copy the already deleted module {this.name}");
+                throw new InvalidOperationException("[Curvy] Trying to copy an already deleted module");
 
-            CGModule newModule = this.DuplicateGameObject<CGModule>(targetGenerator.transform, false);
-            newModule.mGenerator = targetGenerator;
-            newModule.Initialize();
-            newModule.ModuleName = ModuleName;
-            newModule.ModuleName = targetGenerator.getUniqueModuleNameINTERNAL(newModule.ModuleName);
-            newModule.SetUniqueIdINTERNAL();
-            newModule.renameManagedResourcesINTERNAL();
+            CGModule newModule = this.DuplicateGameObject<CGModule>(targetGenerator.transform);
+            newModule.name = name;
+            targetGenerator.AddModule(newModule);
             return newModule;
         }
 
-        public Component AddManagedResource(string resourceName, string context = "", int index = -1)
+        public Component AddManagedResource([NotNull] string resourceName, string context = "", int index = -1)
         {
-            Component res = CGResourceHandler.CreateResource(this, resourceName, context);
-            if (res == null)
-                throw new InvalidOperationException(String.Format("[Curvy] Could not create managed resource of type '{0}'. In some cases this is due to not enough elements in a resources Pool", resourceName));
-            res.name = GetResourceName(
-                context == "" ? resourceName : (resourceName + context),
-                index);
+            Component res = CGResourceHandler.CreateResource(
+                this,
+                resourceName,
+                context
+            );
+            RenameResource(
+                context == ""
+                    ? resourceName
+                    : resourceName + context,
+                res,
+                index
+            );
             res.transform.SetParent(transform);
             return res;
         }
 
 
-        public void DeleteManagedResource(string resourceName, Component res, [NotNull] string context = "", bool dontUsePool = false)
+        public void DeleteManagedResource(string resourceName, Component res, [NotNull] string context = "",
+            bool dontUsePool = false)
         {
             if (res)
-                CGResourceHandler.DestroyResource(this, resourceName, res, context, dontUsePool);
+                CGResourceHandler.DestroyResource(
+                    this,
+                    resourceName,
+                    res,
+                    context,
+                    dontUsePool
+                );
         }
 
         public bool IsManagedResource(Component res)
-        {
-            return (res && res.transform.parent == transform);//res.gameObject.GetComponentInParent<CurvyGenerator>() == Generator);RetrieveGenerator
-        }
+            => res
+               && res.transform.parent
+               == transform; //res.gameObject.GetComponentInParent<CurvyGenerator>() == Generator);RetrieveGenerator
 
 
         public List<IPool> GetAllPrefabPools()
-        {
-            return Generator.PoolManager.FindPools(UniqueIDString + "_");
-        }
+            => Generator.PoolManager.FindPools(identifier.StringID + "_");
 
-        public void DeleteAllPrefabPools()
-        {
-            Generator.PoolManager.DeletePools(UniqueIDString + "_");
-        }
+        public void DeleteAllPrefabPools() =>
+            Generator.PoolManager.DeletePools(identifier.StringID + "_");
 
         public void Delete()
         {
             OnStateChange();
-            gameObject.Destroy(true, true);
+            gameObject.Destroy(
+                true,
+                true
+            );
         }
 
-        public CGModuleInputSlot GetInputSlot(string name)
-        {
-            return (InputByName != null && InputByName.ContainsKey(name)) ? InputByName[name] : null;
-        }
+        public CGModuleInputSlot GetInputSlot(string name) => slots.GetInputSlot(name);
 
-        public List<CGModuleInputSlot> GetInputSlots(System.Type filterType = null)
-        {
-            if (filterType == null)
-                return new List<CGModuleInputSlot>(Input);
-            else
-            {
-                List<CGModuleInputSlot> res = new List<CGModuleInputSlot>();
-                for (int i = 0; i < Output.Count; i++)
-                    if (Output[i].Info.DataTypes[0] == filterType || Output[i].Info.DataTypes[0].IsSubclassOf(filterType))
-                        res.Add(Input[i]);
-
-                return res;
-            }
-        }
-
-        public CGModuleOutputSlot GetOutputSlot(string name)
-        {
-            return (OutputByName != null && OutputByName.ContainsKey(name)) ? OutputByName[name] : null;
-        }
-
-        public List<CGModuleOutputSlot> GetOutputSlots(System.Type filterType = null)
-        {
-            if (filterType == null)
-                return new List<CGModuleOutputSlot>(Output);
-            else
-            {
-                List<CGModuleOutputSlot> res = new List<CGModuleOutputSlot>();
-                for (int i = 0; i < Output.Count; i++)
-                    if (Output[i].Info.DataTypes[0] == filterType || Output[i].Info.DataTypes[0].IsSubclassOf(filterType))
-                        res.Add(Output[i]);
-
-                return res;
-            }
-        }
+        public CGModuleOutputSlot GetOutputSlot(string name) => slots.GetOutputSlot(name);
 
         public bool GetManagedResources(out List<Component> components, out List<string> resourceNames)
         {
             components = new List<Component>();
             resourceNames = new List<string>();
-            FieldInfo[] fields = GetType().GetAllFields(false, true);
+            FieldInfo[] fields = GetType().GetAllFields(
+                false,
+                true
+            );
             foreach (FieldInfo f in fields)
             {
                 CGResourceManagerAttribute at = f.GetCustomAttribute<CGResourceManagerAttribute>();
@@ -719,14 +656,12 @@ namespace FluffyUnderware.Curvy.Generator
                         {
                             Component[] items = col.ItemsArray;
                             foreach (Component component in items)
-                            {
                                 //component can be null if for example the user delete from the hierarchy a CGMeshResource game object
                                 if (component && component.transform.parent == transform)
                                 {
                                     components.Add(component);
                                     resourceNames.Add(at.ResourceName);
                                 }
-                            }
                         }
                     }
                     else
@@ -741,84 +676,65 @@ namespace FluffyUnderware.Curvy.Generator
                 }
             }
 
-            return (components.Count > 0);
+            return components.Count > 0;
         }
-
-
 
         #endregion
 
         #region ### Privates, Protected and Internals ###
-        /*! \cond PRIVATE */
-        /*! @name Internal Public
-         *  Don't use them unless you know what you're doing!
-         */
-        //@{
 
-        /*
-        public void CheckAndRaiseOnStateChangedINTERNAL()
+#if DOCUMENTATION___FORCE_IGNORE___CURVY == false
+
+        #region Naming
+
+        private void SetModuleName()
         {
-            
-            bool b = mLastIsConfiguredState;
-            Debug.Log(name + " check ="+b+":"+IsConfigured);
-            if (IsConfigured != b)
-                OnStateChange();
-            
-        }
-         */
-
-        private readonly Dictionary<string, Dictionary<int, string>> resourcesNameCache = new Dictionary<string, Dictionary<int, string>>();
-
-        private string GetResourceName(string resourceName, int index)
-        {
-            string newName = null;
-            bool found;
-            if (found = resourcesNameCache.TryGetValue(resourceName, out var dictionary))
-                found = dictionary.TryGetValue(index, out newName);
-            else
-                resourcesNameCache[resourceName] = new Dictionary<int, string>();
-
-            if (found == false)
-            {
-                newName = index > -1
-                    ? string.Format(CultureInfo.InvariantCulture, "{0}_{1}_{2}{3:000}", ModuleName, UniqueIDString, resourceName, index)
-                    : string.Format(CultureInfo.InvariantCulture, "{0}_{1}_{2}", ModuleName, UniqueIDString, resourceName);
-                resourcesNameCache[resourceName][index] = newName;
-            }
-
-            return newName;
+#pragma warning disable CS0612
+            string infoModuleName = Info.ModuleName;
+            string moduleName = string.IsNullOrEmpty(infoModuleName)
+                ? Info.MenuName.Substring(
+                    Info.MenuName.LastIndexOf(
+                        "/",
+                        StringComparison.Ordinal
+                    )
+                    + 1
+                )
+                : infoModuleName;
+            ModuleName = moduleName;
+            ModuleName = Generator.GetModuleUniqueName(this);
+#pragma warning restore CS0612
         }
 
-        protected void RenameResource(string resourceName, Component resource, int index = -1)
-        {
-            string newName = GetResourceName(resourceName, index);
-            //This check is necessary because when CurvyGenerator.ForceFrequentUpdates is true, this bug happens
-            //[FIXED] When a scene has input spline path or input spline shape module, renaming objects from the hierarchy or though the F2 shortcut does not work
-            if (resource.name != newName)
-                resource.name = newName;
-        }
+        protected void RenameResource([NotNull] string resourceName, Component resource, int index = -1)
+            => resourceNamer.Rename(
+                resourceName,
+                resource,
+                index
+            );
 
+        #endregion
+
+        [CanBeNull]
         private static CGModuleLink GetLink(List<CGModuleLink> lst, CGModuleSlot source, CGModuleSlot target)
-        {
-            for (int i = 0; i < lst.Count; i++)
-                if (lst[i].IsSame(source, target))
-                    return lst[i];
-            return null;
-        }
+            => lst
+                .FirstOrDefault(
+                    t => t.IsSame(
+                        source,
+                        target
+                    )
+                );
 
+        [NotNull]
         private static List<CGModuleLink> GetLinks(List<CGModuleLink> lst, CGModuleSlot source)
-        {
-            List<CGModuleLink> res = new List<CGModuleLink>();
-            for (int i = 0; i < lst.Count; i++)
-                if (lst[i].IsFrom(source))
-                    res.Add(lst[i]);
-            return res;
-        }
+            => lst
+                .Where(t => t.IsFrom(source))
+                .ToList();
 
         protected PrefabPool GetPrefabPool(GameObject prefab)
-        {
-            return Generator.PoolManager.GetPrefabPool(UniqueIDString + "_" + prefab.name, prefab);
-        }
+            => Generator.PoolManager.GetPrefabPool(
+                identifier.StringID + "_" + prefab.name,
+                prefab
+            );
 
         protected bool TryDeleteChildrenFromAssociatedPrefab()
         {
@@ -829,7 +745,11 @@ namespace FluffyUnderware.Curvy.Generator
                 for (int i = 0; i < childCount; i++)
                 {
                     Transform item = transform.GetChild(i);
-                    if (DTUtility.DoesPrefabStatusAllowDeletion(item.gameObject, out _) == false)
+                    if (DTUtility.DoesPrefabStatusAllowDeletion(
+                            item.gameObject,
+                            out _
+                        )
+                        == false)
                     {
                         Generator.DeleteAllOutputManagedResourcesFromAssociatedPrefab();
                         return true;
@@ -841,249 +761,118 @@ namespace FluffyUnderware.Curvy.Generator
         }
 
 
-        public int SetUniqueIdINTERNAL()
-        {
-            m_UniqueID = ++Generator.m_LastModuleID;
-            m_UniqueIDString = null; //invalidate cache
-            return m_UniqueID;
-        }
-
-        /// <summary>
-        /// Initializes SortAncestor with number of connected Input links
-        /// </summary>
-        //DESIGN inline this in doSortModules()
-        internal void initializeSort()
-        {
-            SortAncestors = 0;
-            CircularReferenceError = false;
-            //if (Active)
-            //{
-            for (int i = 0; i < Input.Count; i++)
-                if (Input[i].IsLinked)
-                    SortAncestors += Input[i].LinkedSlots.Count;
-            //}
-        }
-        /// <summary>
-        /// Decrement SortAncestor of linked modules and return a list of childs where SortAncestor==0
-        /// </summary>
-        /// <returns></returns>
-        //DESIGN inline this in doSortModules()
-        internal List<CGModule> decrementChilds()
-        {
-            List<CGModule> noAncestors = new List<CGModule>();
-            for (int s = 0; s < Output.Count; s++)
-                for (int l = 0; l < Output[s].LinkedSlots.Count; l++)
-                {
-                    if (--Output[s].LinkedSlots[l].Module.SortAncestors == 0)
-                        noAncestors.Add(Output[s].LinkedSlots[l].Module);
-                }
-
-            return noAncestors;
-        }
-
         internal void doRefresh()
         {
 #if UNITY_EDITOR || CURVY_DEBUG
-            DEBUG_LastUpdateTime = System.DateTime.Now;
+            DEBUG_LastUpdateTime = DateTime.Now;
             DEBUG_ExecutionTime.Start();
 #endif
 
             if (RandomizeSeed)
-                Random.InitState(unchecked((int)System.DateTime.Now.Ticks));
+                Random.InitState(unchecked((int)DateTime.Now.Ticks));
             else
                 Random.InitState(Seed);
             OnBeforeRefreshEvent(new CurvyCGEventArgs(this));
             Refresh();
-            Random.InitState(unchecked((int)System.DateTime.Now.Ticks));
+            Random.InitState(unchecked((int)DateTime.Now.Ticks));
 
 #if UNITY_EDITOR || CURVY_DEBUG
             DEBUG_ExecutionTime.Stop();
 #endif
             OnRefreshEvent(new CurvyCGEventArgs(this));
 
-            mDirty = false;
+            dirtinessManager.UnsetDirtyFlag();
         }
 
-        internal ModuleInfoAttribute getInfo()
-        {
-            object[] inf = GetType().GetCustomAttributes(typeof(ModuleInfoAttribute), true);
-            return (inf.Length > 0) ? (ModuleInfoAttribute)inf[0] : null;
-        }
+        public void checkOnStateChangedINTERNAL() => dirtinessManager.CheckOnStateChanged();
 
-        private bool usesRandom()
+        [NotNull]
+        [UsedImplicitly]
+        [Obsolete("This does not return all resource managers. Read todo inside and fix it first")]
+        private List<(Component ResourceManager, string ResourceName)> GetResourceManagers()
         {
-            return (Info != null && Info.UsesRandom);
-        }
-
-        private void loadSlots()
-        {
-            // Get list of Slots
-            InputByName = new Dictionary<string, CGModuleInputSlot>();
-            OutputByName = new Dictionary<string, CGModuleOutputSlot>();
-            Input = new List<CGModuleInputSlot>();
-            Output = new List<CGModuleOutputSlot>();
-            FieldInfo[] fields = GetType().GetAllFields();
-            //Debug.Log(name + ".loadSlots()");
-            foreach (FieldInfo f in fields)
+            List<(Component ResourceManager, string ResourceName)> managers =
+                new List<(Component ResourceManager, string ResourceName)>();
+            FieldInfo[] fields = GetType().GetAllFields(
+                false,
+                true
+            );
+            foreach (FieldInfo field in fields)
             {
-                if (f.FieldType == typeof(CGModuleInputSlot))
-                {
-                    CGModuleInputSlot s = (CGModuleInputSlot)f.GetValue(this);
-                    s.Module = this;
-                    s.Info = getSlotInfo(f);
-                    s.ReInitializeLinkedSlots();
-                    InputByName.Add(s.Info.Name, s);
-                    Input.Add(s);
-                }
-                else if (f.FieldType == typeof(CGModuleOutputSlot))
-                {
-                    CGModuleOutputSlot s = (CGModuleOutputSlot)f.GetValue(this);
-                    s.Module = this;
-                    s.Info = getSlotInfo(f);
-                    s.ReInitializeLinkedSlots();
-                    OutputByName.Add(s.Info.Name, s);
-                    Output.Add(s);
-                }
+                CGResourceManagerAttribute resourceManagerAttribute = field.GetCustomAttribute<CGResourceManagerAttribute>();
+                if (resourceManagerAttribute == null)
+                    continue;
+                //by restricting resource managers to Components, we ignore fields like CreateMesh.m_MeshResources which are annotated with instances of ICGResourceCollection. Todo fix this
+                Component component = field.GetValue(this) as Component;
+                if (ReferenceEquals(
+                        component,
+                        null
+                    )
+                    == false)
+                    managers.Add((component, resourceManagerAttribute.ResourceName));
             }
-        }
 
-        private SlotInfo getSlotInfo(FieldInfo f)
-        {
-            SlotInfo si = f.GetCustomAttribute<SlotInfo>();
-            if (si != null)
-            {
-                if (string.IsNullOrEmpty(si.Name))
-                    si.Name = f.Name.TrimStart("In").TrimStart("Out");
-                for (int x = 0; x < si.DataTypes.Length; x++)
-                    if (!si.DataTypes[x].IsSubclassOf(typeof(CGData)))
-                        Debug.LogError(string.Format(System.Globalization.CultureInfo.InvariantCulture, "{0}, Slot '{1}': Data type needs to be subclass of CGData!", GetType().Name, si.DisplayName));
-                return si;
-            }
-            Debug.LogError("The Slot '" + f.Name + "' of type '" + f.DeclaringType.Name + "' needs a SlotInfo attribute!");
-            return null;
-        }
-
-        private void setTreeDirtyStateChange()
-        {
-            mStateChangeDirty = true;
-            if (Output != null)
-            {
-                for (int i = 0; i < Output.Count; i++)
-                {
-                    if (Output[i].IsLinked)
-                    {
-                        List<CGModule> modules = Output[i].GetLinkedModules();
-                        for (int m = 0; m < modules.Count; m++)
-                            //BUG? does the || modules[m].CircularReferenceError create infinite dirtying logique?
-                            if (modules[m] != this || modules[m].CircularReferenceError) // prevent circular reference
-                                modules[m].setTreeDirtyStateChange();
-                    }
-                }
-            }
-        }
-
-        private CurvyGenerator RetrieveGenerator()
-        {
-            //return GetComponentInParent<CurvyGenerator>();
-            return transform.parent != null
-                ? transform.parent.GetComponent<CurvyGenerator>()
-                : null;
-        }
-
-        public void checkOnStateChangedINTERNAL()
-        {
-            //            Debug.Log(ModuleName+".Check: " + mStateChangeDirty);
-            if (mStateChangeDirty)
-                OnStateChange();
-            mStateChangeDirty = false;
+            return managers;
         }
 
 
-        public void renameManagedResourcesINTERNAL()
+        protected override void ResetOnEnable()
         {
-            FieldInfo[] fields = GetType().GetAllFields(false, true);
-            foreach (FieldInfo f in fields)
-            {
-                CGResourceManagerAttribute at = f.GetCustomAttribute<CGResourceManagerAttribute>();
-                if (at != null)
-                {
-                    Component cmp = f.GetValue(this) as Component;
-                    if (cmp && cmp.transform.parent == this.transform)
-                        RenameResource(at.ResourceName, cmp);
-                }
-            }
+            base.ResetOnEnable();
+            identifier.Reset();
+            dirtinessManager.Reset();
+            UIMessages.Clear();
+            resourceNamer.ClearCache();
         }
 
 
         //@}
-        /*! \endcond */
+#endif
+        private bool UsesRandom()
+        {
+#pragma warning disable CS0612
+            return Info != null && Info.UsesRandom;
+#pragma warning restore CS0612
+        }
+
         #endregion
 
-
-    }
-
-    /// <summary>
-    /// Attribute defining basic module properties
-    /// </summary>
-    [System.AttributeUsage(System.AttributeTargets.Class)]
-    public sealed class ModuleInfoAttribute : System.Attribute, System.IComparable
-    {
-        /// <summary>
-        /// Menu-Name of the module (without '/')
-        /// </summary>
-        public readonly string MenuName;
-        /// <summary>
-        /// Default Module name
-        /// </summary>
-        public string ModuleName;
-        /// <summary>
-        /// Tooltip Info
-        /// </summary>
-        public string Description;
+        #region Obsolete sorting members
 
         /// <summary>
-        /// Whether the module uses Random, i.e. should show Seed options
+        /// Helper for topology sorting
         /// </summary>
-        public bool UsesRandom;
+        [UsedImplicitly]
+        [Obsolete]
+        internal int SortAncestors;
 
-        public ModuleInfoAttribute(string name)
+        /// <summary>
+        /// Initializes SortAncestor with number of connected Input links
+        /// </summary>
+        [UsedImplicitly]
+        [Obsolete]
+        internal void initializeSort() =>
+            SortAncestors = slots.InputSlots.Where(t => t.IsLinked).Sum(t => t.LinkedSlots.Count);
+
+        /// <summary>
+        /// Decrement SortAncestor of linked modules and return a list of childs where SortAncestor==0
+        /// </summary>
+        /// <returns></returns>
+        [UsedImplicitly]
+        [Obsolete]
+        internal List<CGModule> decrementChilds()
         {
-            MenuName = name;
+            IEnumerable<CGModuleSlot> outputLinkedSlots = slots.OutputSlots.SelectMany(outputSlot => outputSlot.LinkedSlots);
+            foreach (CGModuleSlot linkedSlot in outputLinkedSlots)
+                --linkedSlot.Module.SortAncestors;
+
+            List<CGModule> orphanModules = new List<CGModule>();
+            foreach (CGModuleOutputSlot slot in slots.OutputSlots)
+                orphanModules.AddRange(from t in slot.LinkedSlots where t.Module.SortAncestors == 0 select t.Module);
+
+            return orphanModules;
         }
 
-        public int CompareTo(object obj)
-        {
-            return String.Compare(MenuName, ((ModuleInfoAttribute)obj).MenuName, StringComparison.Ordinal);
-        }
-
-
-
-        //TODO code analysis (CA1036) says that Equal, !=, <, == and > should be defined since IComparable is implemented
+        #endregion
     }
-
-
-    /// <summary>
-    /// CGModule helper class
-    /// </summary>
-    [System.Serializable]
-    public class CGModuleProperties
-    {
-        public Rect Dimensions;
-#if UNITY_EDITOR
-        public AnimBool Expanded;
-#endif
-        public float MinWidth = 250;
-        public float LabelWidth;
-        public Color BackgroundColor = Color.black;
-
-        public CGModuleProperties()
-        {
-#if UNITY_EDITOR
-            Expanded = new AnimBool(true);
-            Expanded.speed = 3;
-#endif
-        }
-    }
-
-
 }

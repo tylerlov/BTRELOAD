@@ -1,17 +1,12 @@
 // =====================================================================
-// Copyright 2013-2022 ToolBuddy
+// Copyright © 2013 ToolBuddy
 // All rights reserved
 // 
 // http://www.toolbuddy.net
 // =====================================================================
 
-using UnityEngine;
-using UnityEditor;
 using FluffyUnderware.Curvy;
-using FluffyUnderware.Curvy.Utils;
-using FluffyUnderware.DevTools.Extensions;
-using FluffyUnderware.DevToolsEditor;
-using FluffyUnderware.DevTools;
+using UnityEditor;
 
 namespace FluffyUnderware.CurvyEditor
 {

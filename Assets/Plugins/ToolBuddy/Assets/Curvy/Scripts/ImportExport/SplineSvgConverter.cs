@@ -1,5 +1,5 @@
 // =====================================================================
-// Copyright 2013-2022 ToolBuddy
+// Copyright © 2013 ToolBuddy
 // All rights reserved
 // 
 // http://www.toolbuddy.net
@@ -9,13 +9,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using FluffyUnderware.Curvy.Utils;
 using FluffyUnderware.DevTools;
-using FluffyUnderware.DevTools.Extensions;
 using JetBrains.Annotations;
-using UnityEngine;
 using ToolBuddy.ThirdParty.VectorGraphics;
-
 
 namespace FluffyUnderware.Curvy.ImportExport
 {
@@ -29,7 +25,8 @@ namespace FluffyUnderware.Curvy.ImportExport
         /// </summary>
         /// <param name="svg">The SVG to deserialize</param>
         /// <param name="coordinatesSpace">How to interpret the coordinates in the SVG: local ones or global ones?</param>
-        public static CurvySpline[] SvgToSplines(string svg, CurvySerializationSpace coordinatesSpace = CurvySerializationSpace.Global)
+        public static CurvySpline[] SvgToSplines(string svg,
+            CurvySerializationSpace coordinatesSpace = CurvySerializationSpace.Global)
         {
             List<SerializedCurvySpline> serializedSplines = SvgToSerializedSplines(svg);
 
@@ -39,7 +36,10 @@ namespace FluffyUnderware.Curvy.ImportExport
             {
                 SerializedCurvySpline spline = serializedSplines[index];
                 CurvySpline deserializedSpline = result[index] = CurvySpline.Create();
-                spline.WriteIntoSpline(deserializedSpline, coordinatesSpace);
+                spline.WriteIntoSpline(
+                    deserializedSpline,
+                    coordinatesSpace
+                );
             }
 
             return result;
@@ -50,10 +50,12 @@ namespace FluffyUnderware.Curvy.ImportExport
         /// </summary>
         /// <param name="svg">The SVG to deserialize</param>
         /// <param name="coordinatesSpace">How to interpret the coordinates in the SVG: local ones or global ones?</param>
-        public static CurvySpline SvgToSpline(string svg, CurvySerializationSpace coordinatesSpace = CurvySerializationSpace.Global)
-        {
-            return SvgToSplines(svg, coordinatesSpace).Single();
-        }
+        public static CurvySpline SvgToSpline(string svg,
+            CurvySerializationSpace coordinatesSpace = CurvySerializationSpace.Global)
+            => SvgToSplines(
+                svg,
+                coordinatesSpace
+            ).Single();
 
         /// <summary>
         /// Converts an SVG string to an array of instances of <see cref="SerializedCurvySpline"/>
@@ -65,16 +67,26 @@ namespace FluffyUnderware.Curvy.ImportExport
             if (svg == null)
                 throw new ArgumentNullException(nameof(svg));
             if (string.IsNullOrWhiteSpace(svg))
-                throw new ArgumentException("Value cannot be null or whitespace.", nameof(svg));
+                throw new ArgumentException(
+                    "Value cannot be null or whitespace.",
+                    nameof(svg)
+                );
             if (string.IsNullOrEmpty(svg))
-                throw new ArgumentException("Value cannot be null or empty.", nameof(svg));
+                throw new ArgumentException(
+                    "Value cannot be null or empty.",
+                    nameof(svg)
+                );
 
             List<SerializedCurvySpline> serializedSplines = new List<SerializedCurvySpline>();
 
             using (StringReader stringReader = new StringReader(svg))
             {
                 SVGParser.SceneInfo sceneInfo = SVGParser.ImportSVG(stringReader);
-                DrawNode(sceneInfo.Scene.Root, sceneInfo.Scene.Root.Transform, serializedSplines);
+                DrawNode(
+                    sceneInfo.Scene.Root,
+                    sceneInfo.Scene.Root.Transform,
+                    serializedSplines
+                );
             }
 
             if (invertY)
@@ -94,9 +106,7 @@ namespace FluffyUnderware.Curvy.ImportExport
         private static void DrawNode(SceneNode node, Matrix2D rootTransform, List<SerializedCurvySpline> splines)
         {
             if (node.Clipper != null)
-            {
                 DTLog.LogWarning("[Curvy] SVG Import: A clipper was encountered. Clippers are not supported.");
-            }
 
             if (node.Shapes != null)
             {
@@ -107,14 +117,17 @@ namespace FluffyUnderware.Curvy.ImportExport
                     foreach (BezierContour bezierContour in shape.Contours)
                     {
                         BezierPathSegment[] segments = bezierContour.Segments;
-                        List<SerializedCurvySplineSegment> controlPoints = new List<SerializedCurvySplineSegment>(segments.Length);
+                        List<SerializedCurvySplineSegment>
+                            controlPoints = new List<SerializedCurvySplineSegment>(segments.Length);
 
                         if (segments.Length == 0)
                             continue;
 
                         if (segments.Length == 1)
                         {
-                            DTLog.LogError("[Curvy] SVG Import: A segments array had only one element. This is unexpected. That contour was ignored. Please raise a bug report.");
+                            DTLog.LogError(
+                                "[Curvy] SVG Import: A segments array had only one element. This is unexpected. That contour was ignored. Please raise a bug report."
+                            );
                             continue;
                         }
 
@@ -155,8 +168,11 @@ namespace FluffyUnderware.Curvy.ImportExport
 
             if (node.Children != null)
                 foreach (SceneNode childNode in node.Children)
-                    DrawNode(childNode, rootTransform * childNode.Transform, splines);
+                    DrawNode(
+                        childNode,
+                        rootTransform * childNode.Transform,
+                        splines
+                    );
         }
-
     }
 }

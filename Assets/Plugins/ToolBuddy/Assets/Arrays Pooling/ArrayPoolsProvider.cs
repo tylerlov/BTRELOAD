@@ -1,5 +1,5 @@
 // =====================================================================
-// Copyright 2013-2022 ToolBuddy
+// Copyright © 2020 ToolBuddy
 // All rights reserved
 // 
 // http://www.toolbuddy.net
@@ -28,14 +28,20 @@ namespace ToolBuddy.Pooling
         {
             Type type = typeof(T);
             object pool;
-            if (arrayPools.TryGetValue(type, out pool) == false)
-            {
+            if (arrayPools.TryGetValue(
+                    type,
+                    out pool
+                )
+                == false)
                 lock (lockObject)
                 {
-                    if (arrayPools.TryGetValue(type, out pool) == false)
+                    if (arrayPools.TryGetValue(
+                            type,
+                            out pool
+                        )
+                        == false)
                         arrayPools[type] = pool = new ArrayPool<T>(1_000_000);
                 }
-            }
 
             return (ArrayPool<T>)pool;
         }

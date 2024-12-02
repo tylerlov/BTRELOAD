@@ -23,7 +23,7 @@ public class LogManager : MonoBehaviour
     #if UNITY_EDITOR || DEVELOPMENT_BUILD
       Debug.unityLogger.logEnabled = true;
       Debug.unityLogger.filterLogType = LogType.Log | LogType.Warning | LogType.Error;
-      Debug.Log("Logging Initialized - Development Mode");
+      ConditionalDebug.Log("Logging Initialized - Development Mode");
     #else
       // Completely disable all logging in release
       Debug.unityLogger.logEnabled = false;
@@ -34,4 +34,4 @@ public class LogManager : MonoBehaviour
       Application.SetStackTraceLogType(LogType.Assert, StackTraceLogType.None);
     #endif
   }
-} 
+}

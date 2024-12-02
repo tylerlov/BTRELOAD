@@ -5,35 +5,18 @@
 // http://www.fluffyunderware.com
 // =====================================================================
 
-using UnityEngine;
-using UnityEditor;
-using System.Collections.Generic;
 using System;
+using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using FluffyUnderware.DevTools.Extensions;
+using UnityEditor;
+using UnityEngine;
 
 namespace FluffyUnderware.DevToolsEditor
 {
     public static class DTToolbar
     {
-        const int ITEMSPACE = 10;
-        const int PROJECTSPACE = 20;
-
-        public static bool RecalcItemSize = true;
-        public static bool MouseOverToolbarElement { get; private set; }
-
-        static Vector2[] _MaxItemDimension = new Vector2[4]; // each Orientation has it's own max. Dimension
-        /// <summary>
-        /// Starting position for each side
-        /// </summary>
-        static Rect[] _InitialRects;
-        /// <summary>
-        /// Last item position for each side
-        /// </summary>
-        static Rect[] _ItemRect;
-
-        static Event _handleEvent;
+        private static Event _handleEvent;
 
         internal static void Initialize()
         {
@@ -42,29 +25,29 @@ namespace FluffyUnderware.DevToolsEditor
             loadItems();
             DTSelection.OnSelectionChange -= OnSelectionChange;
             DTSelection.OnSelectionChange += OnSelectionChange;
-            SceneView.duringSceneGui -= Render;
-            SceneView.duringSceneGui += Render;
+            SceneView.duringSceneGui -= RenderToolbar;
+            SceneView.duringSceneGui += RenderToolbar;
             EditorApplication.hierarchyWindowItemOnGUI -= onHierarchy;
             EditorApplication.hierarchyWindowItemOnGUI += onHierarchy;
             EditorApplication.update -= onUpdate;
             EditorApplication.update += onUpdate;
-
         }
 
 
-        static void loadItems()
+        private static void loadItems()
         {
             foreach (DTProject prj in DT.Projects)
                 prj.ToolbarItems.Clear();
 
             TypeCache.TypeCollection toolbarItemTypes = TypeCache.GetTypesDerivedFrom(typeof(DTToolbarItem));
-            toolbarItemTypes.Intersect(TypeCache.GetTypesWithAttribute<ToolbarItemAttribute>()).ForEach(type => Activator.CreateInstance(type));
+            toolbarItemTypes.Intersect(TypeCache.GetTypesWithAttribute<ToolbarItemAttribute>())
+                .ForEach(type => Activator.CreateInstance(type));
 
             foreach (DTProject prj in DT.Projects)
                 prj.ToolbarItems.Sort();
         }
 
-        static void OnSelectionChange()
+        private static void OnSelectionChange()
         {
             foreach (DTProject project in DT.Projects)
                 foreach (DTToolbarItem item in project.ToolbarItems)
@@ -73,13 +56,15 @@ namespace FluffyUnderware.DevToolsEditor
             RecalcItemSize = true;
         }
 
-        static void onHierarchy(int instanceID, Rect selectionRect)
+        private static void onHierarchy(
+            int instanceID,
+            Rect selectionRect)
         {
             if (Selection.instanceIDs.Contains(instanceID))
                 _handleEvent = new Event(Event.current);
         }
 
-        static void onUpdate()
+        private static void onUpdate()
         {
             if (Event.current != null || _handleEvent != null)
             {
@@ -92,309 +77,484 @@ namespace FluffyUnderware.DevToolsEditor
                         if (Event.current != null && item.Visible && item.Enabled)
                             item.HandleEvents(Event.current);
                     }
+
                 DTSelection.MuteEvents = false;
             }
+
             _handleEvent = null;
         }
 
 
-        static Rect getStatusBarRect()
+        #region Rendering
+
+        private static void RenderToolbar(
+            SceneView view)
+        {
+            List<DTProject> projects = DT.Projects;
+            projects.Sort();
+            if (projects.Count != 1)
+                throw new NotSupportedException("Multiple projects, or no projects, are no more supported");
+
+            DTProject project = projects[0];
+            List<DTToolbarItem> items = project.ToolbarItems;
+            if (!items.Any(item => item.Visible))
+                return;
+
+            DTToolbarOrientation toolbarOrientation = project.ToolbarOrientation;
+            DTToolbarMargins margins = project.ToolbarMargins;
+ 
+            UpdateItemSize();
+
+            Event ev = Event.current;
+
+            Handles.BeginGUI();
+            GUI.skin = null; // to ensure light-skin is used if set in preferences (or not Pro)
+
+            Vector2 itemsDrawingAreaSize = GetItemsDrawingAreaSize(view);
+
+            DTSelection.MuteEvents = true;
+
+            Rect lastDrawnItemRectangle = RenderItems(
+                items,
+                itemsDrawingAreaSize,
+                toolbarOrientation,
+                margins,
+                ev
+            );
+
+            DTSelection.MuteEvents = false;
+
+            DTToolbarItem hoveredItem = items.Where(item => item.Visible && item.Enabled).FirstOrDefault(
+                item => item.mItemRect.Contains(DTGUI.MousePosition)
+            );
+
+            RenderItemsClientArea(
+                items,
+                lastDrawnItemRectangle,
+                ev
+            );
+
+            SetStatusBarText(hoveredItem);
+
+            RenderStatusBar(
+                toolbarOrientation,
+                itemsDrawingAreaSize,
+                lastDrawnItemRectangle.y
+            );
+
+            if (project.ShowMargins)
+                ShowMarginsUI(margins,
+                    itemsDrawingAreaSize
+                );
+            Handles.EndGUI();
+        }
+
+        #region Items
+
+        public static bool RecalcItemSize = true;
+        private static Vector2 itemSize;
+
+        private static void UpdateItemSize()
+        {
+            // Get largest item for each side
+            if (RecalcItemSize)
+            {
+                itemSize = GetMaxItemDimension();
+                RecalcItemSize = false;
+            }
+        }
+
+        private static Vector2 GetItemsDrawingAreaSize(
+            SceneView view)
+        {
+            Vector2 drawingAreaSize;
+            {
+#if UNITY_2022_3_OR_NEWER
+                drawingAreaSize = view.cameraViewport.size;
+#else
+                drawingAreaSize = view.position.size;
+                drawingAreaSize.y -= 20; // Unity's toolbar height
+#endif
+            }
+            return drawingAreaSize;
+        }
+
+        private static Rect RenderItems(
+            List<DTToolbarItem> items,
+            Vector2 drawingAreaSize,
+            DTToolbarOrientation toolbarOrientation,
+            DTToolbarMargins toolbarMargins,
+            Event ev)
+        {
+            Vector2 currentPosition = new Vector2();
+            Rect lastDrawnItemRectangle = new Rect();
+
+            for (int i = 0; i < items.Count; i++)
+            {
+                if (items[i].Visible == false)
+                    continue;
+
+                currentPosition = GetItemPosition(
+                    items,
+                    i,
+                    currentPosition,
+                    drawingAreaSize,
+                    toolbarOrientation,
+                    toolbarMargins
+                );
+
+                lastDrawnItemRectangle = items[i].mItemRect = new Rect
+                {
+                    x = currentPosition.x,
+                    y = currentPosition.y,
+                    width = itemSize.x,
+                    height = itemSize.y
+                };
+
+
+                if (items[i].Enabled)
+                {
+                    Handles.EndGUI();
+                    EditorKeyBinding.BindingsEnabled = false;
+                    items[i].OnSceneGUI();
+                    EditorKeyBinding.BindingsEnabled = true;
+                    Handles.BeginGUI();
+                }
+
+                GUI.enabled = items[i].Enabled;
+                items[i].Render(items[i].mItemRect);
+                GUI.enabled = true;
+
+                if (ev != null
+                    && items[i].Enabled
+                    && (DTToolbarItem.FocusedItem == null || DTToolbarItem.FocusedItem == items[i]))
+                    items[i].HandleEvents(ev);
+            }
+
+            return lastDrawnItemRectangle;
+        }
+
+        private static Vector2 GetItemPosition(
+            List<DTToolbarItem> items,
+            int itemIndex,
+            Vector2 currentPosition,
+            Vector2 drawingAreaSize,
+            DTToolbarOrientation toolbarOrientation,
+            DTToolbarMargins toolbarMargins)
+        {
+            currentPosition = itemIndex == 0
+                ? GetInitialItemPosition(
+                    drawingAreaSize,
+                    toolbarOrientation,
+                    toolbarMargins
+                )
+                : GetNextPosition(
+                    currentPosition,
+                    toolbarOrientation,
+                    toolbarMargins,
+                    items[itemIndex].Order - items[itemIndex - 1].Order >= 10
+                );
+
+            if (itemIndex != 0 || toolbarMargins.StartSpacing > 0)
+                currentPosition = GetWrappedPositionIfNeeded(
+                    currentPosition,
+                    drawingAreaSize,
+                    toolbarOrientation,
+                    toolbarMargins
+                );
+            return currentPosition;
+        }
+
+        private static Vector2 GetInitialItemPosition(
+            Vector2 itemsDrawingAreaSize,
+            DTToolbarOrientation toolbarOrientation,
+            DTToolbarMargins toolbarMargins)
+        {
+            Vector2 initialPosition;
+            switch (toolbarOrientation)
+            {
+                case DTToolbarOrientation.Left:
+                    initialPosition.x = toolbarMargins.LeftMargin;
+                    initialPosition.y = toolbarMargins.TopMargin + toolbarMargins.StartSpacing;
+                    break;
+                case DTToolbarOrientation.Right:
+                    initialPosition.x = itemsDrawingAreaSize.x - toolbarMargins.RightMargin - itemSize.x;
+                    initialPosition.y = toolbarMargins.TopMargin + toolbarMargins.StartSpacing;
+                    break;
+                case DTToolbarOrientation.Top:
+                    initialPosition.x = toolbarMargins.LeftMargin + toolbarMargins.StartSpacing;
+                    initialPosition.y = toolbarMargins.TopMargin;
+                    break;
+                case DTToolbarOrientation.Bottom:
+                    initialPosition.x = toolbarMargins.LeftMargin + toolbarMargins.StartSpacing;
+                    initialPosition.y = itemsDrawingAreaSize.y - toolbarMargins.BottomMargin - itemSize.y;
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+
+            return initialPosition;
+        }
+
+        private static Vector2 GetNextPosition(
+            Vector2 previousPosition,
+            DTToolbarOrientation toolbarOrientation,
+            DTToolbarMargins toolbarMargins,
+            bool isStartingNewGroup)
+        {
+            float interGroupSpace = isStartingNewGroup
+                ? toolbarMargins.GroupSpacing
+                : 0;
+
+            Vector2 nextPosition = new Vector2();
+
+            switch (toolbarOrientation)
+            {
+                case DTToolbarOrientation.Left:
+                case DTToolbarOrientation.Right:
+                    nextPosition.x = previousPosition.x;
+                    nextPosition.y = previousPosition.y + itemSize.y + toolbarMargins.ButtonSpacing + interGroupSpace;
+                    break;
+                case DTToolbarOrientation.Top:
+                case DTToolbarOrientation.Bottom:
+                    nextPosition.x = previousPosition.x + itemSize.x + toolbarMargins.ButtonSpacing + interGroupSpace;
+                    nextPosition.y = previousPosition.y;
+                    break;
+            }
+
+            return nextPosition;
+        }
+
+        private static Vector2 GetWrappedPositionIfNeeded(
+            Vector2 preWrapPosition,
+            Vector2 drawingAreaSize,
+            DTToolbarOrientation toolbarOrientation,
+            DTToolbarMargins toolbarMargins)
+        {
+            Vector2 nextPosition = new Vector2();
+
+            switch (toolbarOrientation)
+            {
+                case DTToolbarOrientation.Left:
+                case DTToolbarOrientation.Right:
+                    if (preWrapPosition.y + itemSize.y
+                        > drawingAreaSize.y - toolbarMargins.BottomMargin)
+                    {
+                        float xMovement = itemSize.x + toolbarMargins.WrapSpacing;
+
+                        nextPosition.x = toolbarOrientation == DTToolbarOrientation.Left
+                            ? preWrapPosition.x + xMovement
+                            : preWrapPosition.x - xMovement;
+
+                        nextPosition.y = toolbarMargins.TopMargin;
+                    }
+                    else
+                        nextPosition = preWrapPosition;
+
+                    break;
+                case DTToolbarOrientation.Top:
+                case DTToolbarOrientation.Bottom:
+                    if (preWrapPosition.x + itemSize.x
+                        > drawingAreaSize.x - toolbarMargins.RightMargin) //if should wrap
+                    {
+                        nextPosition.x = toolbarMargins.LeftMargin;
+
+                        float yMovement = itemSize.y + toolbarMargins.WrapSpacing;
+
+                        nextPosition.y = toolbarOrientation == DTToolbarOrientation.Top
+                            ? preWrapPosition.y + yMovement
+                            : preWrapPosition.y - yMovement;
+                    }
+                    else
+                        nextPosition = preWrapPosition;
+
+                    break;
+            }
+
+            return nextPosition;
+        }
+
+        /// <summary>
+        /// For each toolbar orientation, find the item with the largest dimensions
+        /// </summary>
+        private static Vector2 GetMaxItemDimension()
+        {
+            Vector2 result = new Vector2();
+            DTProject prj = DT.Projects[0];
+            foreach (DTToolbarItem item in prj.ToolbarItems)
+                if (item.Visible)
+                    result = Vector2.Max(
+                        result,
+                        item.GetItemSize()
+                    );
+            return result;
+        }
+
+        private static void ShowMarginsUI(
+            DTToolbarMargins margins,
+            Vector2 itemsDrawingAreaSize)
+        {
+            EditorGUI.DrawRect(
+                new Rect(
+                    margins.LeftMargin,
+                    margins.TopMargin,
+                    itemsDrawingAreaSize.x - margins.LeftMargin - margins.RightMargin,
+                    itemsDrawingAreaSize.y - margins.TopMargin - margins.BottomMargin
+                ),
+                new Color(0, 1, 0, 0.2f));
+
+            EditorGUI.DrawRect(
+                new Rect(
+                    0,
+                    0,
+                    itemsDrawingAreaSize.x,
+                    itemsDrawingAreaSize.y
+                ),
+                new Color(.5f, 0, 0, 0.2f));
+        }
+
+        #endregion
+
+        #region Client Area
+
+        private static Rect GetClientAreaRectangle(
+            DTToolbarItem item,
+            Rect lastDrawnItem)
+        {
+            DTToolbarMargins toolbarMargins = item.Project.ToolbarMargins;
+            DTToolbarOrientation toolbarOrientation = item.Project.ToolbarOrientation;
+            int areaMargin = toolbarMargins.ItemClientAreaSpacing;
+            int interColumnRowSpace = toolbarMargins.WrapSpacing;
+
+            Rect clientRect = new Rect();
+            //the client area is next to the button, or further away if there are other buttons in the way (row/column wrapping)
+            switch (toolbarOrientation)
+            {
+                case DTToolbarOrientation.Left:
+                    clientRect.x = lastDrawnItem.y + itemSize.y > item.mItemRect.y
+                        ? lastDrawnItem.x + itemSize.x + areaMargin
+                        : (lastDrawnItem.x + itemSize.x + areaMargin) - (itemSize.x + interColumnRowSpace);
+                    clientRect.y = item.mItemRect.y;
+                    break;
+                case DTToolbarOrientation.Right:
+                    clientRect.x = lastDrawnItem.y + itemSize.y > item.mItemRect.y
+                        ? lastDrawnItem.x - areaMargin
+                        : (lastDrawnItem.x - areaMargin) + (itemSize.x + interColumnRowSpace);
+                    clientRect.y = item.mItemRect.y;
+                    break;
+                case DTToolbarOrientation.Top:
+                    clientRect.x = item.mItemRect.x;
+                    clientRect.y = lastDrawnItem.x + itemSize.x > item.mItemRect.x
+                        ? lastDrawnItem.y + itemSize.y + areaMargin
+                        : (lastDrawnItem.y + itemSize.y + areaMargin) - (itemSize.y + interColumnRowSpace);
+                    break;
+                case DTToolbarOrientation.Bottom:
+                    clientRect.x = item.mItemRect.x;
+                    clientRect.y = lastDrawnItem.x + itemSize.x > item.mItemRect.x
+                        ? lastDrawnItem.y - areaMargin
+                        : (lastDrawnItem.y - areaMargin) + (itemSize.y + interColumnRowSpace);
+                    break;
+            }
+
+            clientRect.width = item.mItemRect.width;
+            clientRect.height = item.mItemRect.height;
+            return clientRect;
+        }
+
+        private static void RenderItemsClientArea(
+            List<DTToolbarItem> items,
+            Rect lastDrawnItemRectangle,
+            Event ev)
+        {
+            for (int i = 0; i < items.Count; i++)
+            {
+                DTToolbarItem item = items[i];
+
+                if (!item.Visible || !item.ShowClientArea)
+                    continue;
+
+                Rect clientAreaRectangle = GetClientAreaRectangle(
+                    item,
+                    lastDrawnItemRectangle
+                );
+
+                if (!(clientAreaRectangle.width > 0) || !(clientAreaRectangle.height > 0))
+                    continue;
+
+                item.mBackgroundRects.Clear();
+                EditorKeyBinding.BindingsEnabled = false;
+                item.RenderClientArea(clientAreaRectangle);
+                EditorKeyBinding.BindingsEnabled = true;
+                if (DTGUI.IsClick)
+                    foreach (Rect background in item.mBackgroundRects)
+                        if (background.Contains(ev.mousePosition))
+                            DTGUI.UseEvent(
+                                item.GetHashCode(),
+                                ev
+                            );
+            }
+        }
+
+        #endregion
+
+        #region Status bar
+
+        private static Rect GetStatusBarRect(
+            DTToolbarOrientation toolbarOrientation,
+            float drawingAreaBottom,
+            float lastDrawnItemY)
         {
             Vector2 v = GUIUtility.GUIToScreenPoint(Vector2.zero);
             Rect r = SceneView.currentDrawingSceneView.position;
             // If SceneView is on another monitor, r.x doesn't start at 0, but GUIToScreenPoint gives the offset
             r.x -= v.x;
-            r.y = _ItemRect[(int)DTToolbarOrientation.Bottom].y - 25;
+            r.y = toolbarOrientation == DTToolbarOrientation.Bottom
+                ? lastDrawnItemY - 25
+                : drawingAreaBottom - 25;
             r.height = 20;
 
             return r;
         }
 
-        public static bool detailOpen;
-
-        static void Render(SceneView view)
+        private static void RenderStatusBar(
+            DTToolbarOrientation toolbarOrientation,
+            Vector2 itemsDrawingAreaSize,
+            float lastDrawnItemY)
         {
-            Event ev = Event.current;
-            MouseOverToolbarElement = false;
-            // Only let certain hotkeys pass
-            if (!EditorGUIUtility.editingTextField)
-            {
-                GUIUtility.keyboardControl = GUIUtility.GetControlID(FocusType.Passive);
-            }
+            Rect statusBarRect = GetStatusBarRect(
+                toolbarOrientation,
+                itemsDrawingAreaSize.y,
+                lastDrawnItemY
+            );
 
-            List<DTProject> projects = DT.Projects;
-            projects.Sort();
+            DTToolbarItem._StatusBar.Render(
+                statusBarRect,
+                null,
+                true
+            );
+        }
 
-            Handles.BeginGUI();
-            GUI.skin = null; // to ensure light-skin is used if set in preferences (or not Pro)
-            // Get largest item for each side
-            if (RecalcItemSize)
-                calcMaxItemDimension();
-
-            // Get starting position for each side
-            _InitialRects = getInitialItemRect();
-            _ItemRect = new Rect[4];
-            _InitialRects.CopyTo(_ItemRect, 0);
-
-            DTToolbarItem lastItem = null;
-            DTSelection.MuteEvents = true;
-
-            DTToolbarItem hovering = null;
-
-            foreach (DTProject project in projects)
-            {
-                int side = (int)project.ToolbarOrientation;
-                if (lastItem && lastItem.Project.ToolbarOrientation != project.ToolbarOrientation)
-                    lastItem = null;
-                List<DTToolbarItem> items = project.ToolbarItems;
-
-                // Render items
-                for (int i = 0; i < items.Count; i++)
-                {
-                    if (items[i].Visible)
-                    {
-                        Vector2 itemSize = items[i].GetItemSize(); // size of current item
-                        _ItemRect[side] = advanceItemRect(lastItem, items[i], itemSize); // advance by using the last itemRect and the new(current) size
-
-                        items[i].mItemRect = _ItemRect[side]; // Store current item rect
-
-
-                        if (items[i].Enabled)
-                        {
-                            Handles.EndGUI();
-                            EditorKeyBinding.BindingsEnabled = false;
-                            if (items[i].mItemRect.Contains(DTGUI.MousePosition))
-                            {
-                                hovering = items[i];
-                                MouseOverToolbarElement = true;
-                            }
-                            items[i].OnSceneGUI();
-
-                            EditorKeyBinding.BindingsEnabled = true;
-                            Handles.BeginGUI();
-                        }
-                        GUI.enabled = items[i].Enabled;
-                        items[i].Render(_ItemRect[side]);
-
-                        GUI.enabled = true;
-                        if (ev != null && items[i].Enabled && (DTToolbarItem.FocusedItem == null || DTToolbarItem.FocusedItem == items[i]))
-                            items[i].HandleEvents(ev);
-
-                        lastItem = items[i];
-                    }
-                }
-            }
-            DTSelection.MuteEvents = false;
-            detailOpen = false;
-            // Render items client area (Note: itemRect contains the last rendered item, a.k.a. a way to get the number of rows/cols needed
-            foreach (DTProject project in projects)
-            {
-                List<DTToolbarItem> items = project.ToolbarItems;
-                for (int i = 0; i < items.Count; i++)
-                {
-                    if (items[i].Visible && items[i].ShowClientArea)
-                    {
-                        detailOpen = true;
-                        Rect clientRect = items[i].mItemRect;
-                        int side = (int)project.ToolbarOrientation;
-                        switch (project.ToolbarOrientation)
-                        {
-                            case DTToolbarOrientation.Left:
-                                clientRect.x = _ItemRect[side].x + _MaxItemDimension[side].x + 5;
-                                break;
-                            case DTToolbarOrientation.Right:
-                                clientRect.x = _ItemRect[side].x - 5;
-                                break;
-                            case DTToolbarOrientation.Top:
-                                clientRect.y = _ItemRect[side].y + _MaxItemDimension[side].y + 5;
-                                break;
-                            case DTToolbarOrientation.Bottom:
-                                clientRect.y = _ItemRect[side].y - 5;
-                                break;
-                        }
-                        if (clientRect.width > 0 && clientRect.height > 0)
-                        {
-                            items[i].mBackgroundRects.Clear();
-                            MouseOverToolbarElement = MouseOverToolbarElement || clientRect.Contains(DTGUI.MousePosition);
-                            EditorKeyBinding.BindingsEnabled = false;
-                            items[i].RenderClientArea(clientRect);
-                            EditorKeyBinding.BindingsEnabled = true;
-                            if (DTGUI.IsClick)
-                                foreach (Rect r in items[i].mBackgroundRects)
-                                    if (r.Contains(ev.mousePosition))
-                                        DTGUI.UseEvent(items[i].GetHashCode(), ev);
-                        }
-                    }
-                }
-            }
-
-            // Handle statusbar info when hovering over an item
+        private static void SetStatusBarText(
+            DTToolbarItem hovering)
+        {
+            // Handle status bar info when hovering over an item
             if (hovering != null)
-                DTToolbarItem._StatusBar.Set(hovering.StatusBarInfo, "Info");
+                DTToolbarItem._StatusBar.Set(
+                    hovering.StatusBarInfo,
+                    "Info"
+                );
             else
                 DTToolbarItem._StatusBar.Clear("Info");
-
-            // Render Statusbar
-            DTToolbarItem._StatusBar.Render(getStatusBarRect(), null, true);
-
-            Handles.EndGUI();
-
         }
 
-        static Rect[] getInitialItemRect()
-        {
-            Rect[] res = new Rect[4];
-            for (int side = 0; side < 4; side++)
-            {
-                Rect r = new Rect();
-                switch (side)
-                {
-                    case (int)DTToolbarOrientation.Left:
-                        r.x = 5; r.y = 10;
-                        break;
-                    case (int)DTToolbarOrientation.Right:
-                        r.x = SceneView.currentDrawingSceneView.position.width - 10 - _MaxItemDimension[side].x;
-                        r.y = 115;
-                        break;
-                    case (int)DTToolbarOrientation.Top:
-                        float lft = _MaxItemDimension[(int)DTToolbarOrientation.Left].x;
-                        r.x = 5; r.y = 10;
-                        if (lft > 0)
-                            r.x += 10 + lft;
-                        break;
-                    default: // Bottom
-                        lft = _MaxItemDimension[(int)DTToolbarOrientation.Left].x;
-                        r.x = 5; r.y = SceneView.currentDrawingSceneView.position.height - _MaxItemDimension[side].y - 30;
-                        if (lft > 0)
-                            r.x += 10 + lft;
-                        break;
-                }
-                res[side] = r;
-            }
+        #endregion
 
-            return res;
-        }
+        #endregion
 
-        static Rect advanceItemRect(DTToolbarItem lastItem, DTToolbarItem newItem, Vector2 newItemSize)
-        {
-            Rect itemRect;
-            float space = 0;
-            int side = (int)newItem.Project.ToolbarOrientation;
-
-            if (lastItem != null)
-            {
-                itemRect = lastItem.mItemRect;
-                if (lastItem.Project != newItem.Project)
-                    space = PROJECTSPACE;
-                else
-                    space = (newItem.Order - lastItem.Order >= 10) ? ITEMSPACE : 0;
-            }
-            else
-                itemRect = _InitialRects[side];
-
-            switch (newItem.Project.ToolbarOrientation)
-            {
-                case DTToolbarOrientation.Left:
-                    itemRect.y += itemRect.height + 3 + space;
-                    if (itemRect.y + newItemSize.y > SceneView.currentDrawingSceneView.position.height - 30)
-                    {
-                        itemRect.y = 10;
-                        itemRect.x += _MaxItemDimension[(int)DTToolbarOrientation.Left].x + 5;
-                    }
-                    itemRect.width = _MaxItemDimension[(int)DTToolbarOrientation.Left].x;
-                    itemRect.height = newItemSize.y;
-                    break;
-                case DTToolbarOrientation.Right:
-                    itemRect.y += itemRect.height + 3 + space;
-                    if (itemRect.y + newItemSize.y > SceneView.currentDrawingSceneView.position.height - 30)
-                    {
-                        itemRect.y = 10;
-                        itemRect.x -= _MaxItemDimension[(int)DTToolbarOrientation.Right].x + 5;
-                    }
-                    itemRect.width = _MaxItemDimension[(int)DTToolbarOrientation.Right].x;
-                    itemRect.height = newItemSize.y;
-                    break;
-                case DTToolbarOrientation.Top:
-                    itemRect.x += 3 + itemRect.width + space;
-                    if (itemRect.x + newItemSize.x > SceneView.currentDrawingSceneView.position.width - _MaxItemDimension[(int)DTToolbarOrientation.Left].x - _MaxItemDimension[(int)DTToolbarOrientation.Right].x)
-                    {
-                        itemRect.x = _InitialRects[(int)DTToolbarOrientation.Top].x;
-                        itemRect.y += _MaxItemDimension[(int)DTToolbarOrientation.Top].y + 5;
-                    }
-                    itemRect.width = _MaxItemDimension[(int)DTToolbarOrientation.Top].x;
-                    itemRect.height = newItemSize.y;
-                    break;
-                case DTToolbarOrientation.Bottom:
-                    itemRect.x += 3 + itemRect.width + space;
-                    if (itemRect.x + newItemSize.x > SceneView.currentDrawingSceneView.position.width - _MaxItemDimension[(int)DTToolbarOrientation.Left].x - _MaxItemDimension[(int)DTToolbarOrientation.Right].x)
-                    {
-                        itemRect.x = _InitialRects[(int)DTToolbarOrientation.Top].x;
-                        itemRect.y -= _MaxItemDimension[(int)DTToolbarOrientation.Bottom].y + 5;
-                    }
-                    itemRect.width = _MaxItemDimension[(int)DTToolbarOrientation.Bottom].x;
-                    itemRect.height = newItemSize.y;
-                    break;
-
-            }
-            return itemRect;
-        }
-
-        /// <summary>
-        /// For each side, find the item with the largest dimensions
-        /// </summary>
-        static void calcMaxItemDimension()
-        {
-            RecalcItemSize = false;
-            _MaxItemDimension = new Vector2[4];
-            int side;
-            foreach (DTProject prj in DT.Projects)
-            {
-                side = (int)prj.ToolbarOrientation;
-                foreach (DTToolbarItem item in prj.ToolbarItems)
-                    if (item.Visible)
-                        _MaxItemDimension[side] = Vector2.Max(_MaxItemDimension[side], item.GetItemSize());
-            }
-        }
-
-
-        internal static void SetRadioGroupState(DTToolbarRadioButton active)
+        internal static void SetRadioGroupState(
+            DTToolbarRadioButton active)
         {
             active.Project.SetRadioGroupState(active);
-        }
-    }
-
-    public enum DTToolbarMode : int
-    {
-        Text = 1,
-        Icon = 2,
-        Full = 15,
-    }
-
-    public enum DTToolbarOrientation : int
-    {
-        Left = 0,
-        Right = 1,
-        Top = 2,
-        Bottom = 3
-    }
-
-    public class DTToolbarStatus : DTStatusbar
-    {
-
-        protected override void GetColors()
-        {
-            GUI.contentColor = new Color(0, 0, 0, 0.75f);
-        }
-        protected override GUIStyle GetStyle()
-        {
-            GUIStyle style = base.GetStyle();
-            style.alignment = TextAnchor.MiddleCenter;
-            Texture2D bgTex = new Texture2D(1, 1);
-            bgTex.SetPixel(0, 0, new Color(1, 1, 1, 0.5f));
-            bgTex.Apply();
-            bgTex.hideFlags = HideFlags.DontSave;
-            style.normal.background = bgTex;
-            return style;
         }
     }
 }

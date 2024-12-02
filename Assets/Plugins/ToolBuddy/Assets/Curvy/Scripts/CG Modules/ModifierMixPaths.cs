@@ -1,35 +1,46 @@
 // =====================================================================
-// Copyright 2013-2022 ToolBuddy
+// Copyright © 2013 ToolBuddy
 // All rights reserved
 // 
 // http://www.toolbuddy.net
 // =====================================================================
 
 using System;
-using UnityEngine;
-using System.Collections;
 using System.Collections.Generic;
 using FluffyUnderware.Curvy.Pools;
-using ToolBuddy.Pooling.Pools;
 using FluffyUnderware.DevTools;
 using JetBrains.Annotations;
 using ToolBuddy.Pooling.Collections;
+using UnityEngine;
 using UnityEngine.Assertions;
 
 namespace FluffyUnderware.Curvy.Generator.Modules
 {
-    [ModuleInfo("Modifier/Mix Paths", ModuleName = "Mix Paths", Description = "Interpolates between two paths")]
-    [HelpURL(CurvySpline.DOCLINK + "cgmixpaths")]
+    [ModuleInfo(
+        "Modifier/Mix Paths",
+        ModuleName = "Mix Paths",
+        Description = "Interpolates between two paths"
+    )]
+    [HelpURL(AssetInformation.DocsRedirectionBaseUrl + "cgmixpaths")]
 #pragma warning disable 618
     public class ModifierMixPaths : CGModule, IOnRequestProcessing, IPathProvider
 #pragma warning restore 618
     {
+        private const int MixMinValue = -1;
+        private const int MixMaxValue = 1;
+
         [HideInInspector]
-        [InputSlotInfo(typeof(CGPath), Name = "Path A")]
+        [InputSlotInfo(
+            typeof(CGPath),
+            Name = "Path A"
+        )]
         public CGModuleInputSlot InPathA = new CGModuleInputSlot();
 
         [HideInInspector]
-        [InputSlotInfo(typeof(CGPath), Name = "Path B")]
+        [InputSlotInfo(
+            typeof(CGPath),
+            Name = "Path B"
+        )]
         public CGModuleInputSlot InPathB = new CGModuleInputSlot();
 
         [HideInInspector]
@@ -38,7 +49,11 @@ namespace FluffyUnderware.Curvy.Generator.Modules
 
         #region ### Serialized Fields ###
 
-        [SerializeField, RangeEx(-1, 1, Tooltip = "Mix between the paths. Values between -1 for Path A and 1 for Path B")]
+        [SerializeField, RangeEx(
+             MixMinValue,
+             MixMaxValue,
+             Tooltip = "Mix between the paths. Values between -1 for Path A and 1 for Path B"
+         )]
         private float m_Mix;
 
         #endregion
@@ -50,28 +65,31 @@ namespace FluffyUnderware.Curvy.Generator.Modules
         /// </summary>
         public float Mix
         {
-            get { return m_Mix; }
+            get => m_Mix;
             set
             {
-                if (m_Mix != value)
-                    m_Mix = value;
-                Dirty = true;
+                float validatedValue = Mathf.Clamp(
+                    value,
+                    MixMinValue,
+                    MixMaxValue
+                );
+                if (m_Mix != validatedValue)
+                {
+                    m_Mix = validatedValue;
+                    Dirty = true;
+                }
             }
         }
 
-        public bool PathIsClosed
-        {
-            get
-            {
-                return (IsConfigured) && InPathA.SourceSlot().PathProvider.PathIsClosed &&
-                                        InPathB.SourceSlot().PathProvider.PathIsClosed;
-            }
-        }
+        public bool PathIsClosed => IsConfigured
+                                    && InPathA.SourceSlot().PathProvider.PathIsClosed
+                                    && InPathB.SourceSlot().PathProvider.PathIsClosed;
 
         #endregion
 
         #region ### Unity Callbacks ###
-        /*! \cond UNITY */
+
+#if DOCUMENTATION___FORCE_IGNORE___UNITY == false
 
         protected override void OnEnable()
         {
@@ -80,42 +98,51 @@ namespace FluffyUnderware.Curvy.Generator.Modules
             Properties.LabelWidth = 50;
         }
 
-#if UNITY_EDITOR
-        protected override void OnValidate()
-        {
-            base.OnValidate();
-            Mix = m_Mix;
-        }
-#endif
         public override void Reset()
         {
             base.Reset();
             Mix = 0;
         }
 
-        /*! \endcond */
+#endif
+
         #endregion
 
         #region ### IOnRequestProcessing ###
-        public CGData[] OnSlotDataRequest(CGModuleInputSlot requestedBy, CGModuleOutputSlot requestedSlot, params CGDataRequestParameter[] requests)
-        {
 
+        public CGData[] OnSlotDataRequest(CGModuleInputSlot requestedBy, CGModuleOutputSlot requestedSlot,
+            params CGDataRequestParameter[] requests)
+        {
             CGDataRequestRasterization raster = GetRequestParameter<CGDataRequestRasterization>(ref requests);
             if (!raster)
-                return null;
+                return Array.Empty<CGData>();
 
-            CGPath DataA = InPathA.GetData<CGPath>(out bool isADisposable, requests);
-            CGPath DataB = InPathB.GetData<CGPath>(out bool isBDisposable, requests);
+            CGPath DataA = InPathA.GetData<CGPath>(
+                out bool isADisposable,
+                requests
+            );
+            CGPath DataB = InPathB.GetData<CGPath>(
+                out bool isBDisposable,
+                requests
+            );
 
-            CGPath data = MixPath(DataA, DataB, Mix, UIMessages);
+            CGPath data = MixPath(
+                DataA,
+                DataB,
+                Mix,
+                UIMessages
+            );
 
             if (isADisposable)
                 DataA.Dispose();
             if (isBDisposable)
                 DataB.Dispose();
 
-            return new CGData[1] { data };
+            return data == null
+                ? Array.Empty<CGData>()
+                : new CGData[] { data };
         }
+
         #endregion
 
         #region ### Public Static Methods ###
@@ -128,7 +155,9 @@ namespace FluffyUnderware.Curvy.Generator.Modules
         /// <param name="mix"> A value between -1 and 1. -1 will select the path with the most points. 1 will select the other </param>
         /// <param name="warningsContainer">Is filled with warnings raised by the mixing logic</param>
         /// <returns>The mixed path</returns>
-        public static CGPath MixPath(CGPath pathA, CGPath pathB, float mix, [NotNull] List<string> warningsContainer)
+        [CanBeNull]
+        public static CGPath MixPath([CanBeNull] CGPath pathA, [CanBeNull] CGPath pathB, float mix,
+            [NotNull] List<string> warningsContainer)
         {
             if (pathA == null)
                 return pathB;
@@ -136,10 +165,19 @@ namespace FluffyUnderware.Curvy.Generator.Modules
             if (pathB == null)
                 return pathA;
 
-            int pathVertexCount = Mathf.Max(pathA.Count, pathB.Count);
+            int pathVertexCount = Mathf.Max(
+                pathA.Count,
+                pathB.Count
+            );
 
             CGPath data = new CGPath();
-            ModifierMixShapes.InterpolateShape(data, pathA, pathB, mix, warningsContainer);
+            ModifierMixShapes.InterpolateShape(
+                data,
+                pathA,
+                pathB,
+                mix,
+                warningsContainer
+            );
 
             float interpolationTime = (mix + 1) * 0.5f;
             Assert.IsTrue(interpolationTime >= 0);
@@ -154,12 +192,22 @@ namespace FluffyUnderware.Curvy.Generator.Modules
                     Vector3 bDirection;
                     {
                         float frag;
-                        int idx = pathB.GetFIndex(pathA.RelativeDistances.Array[i], out frag);
-                        bDirection = Vector3.SlerpUnclamped(pathB.Directions.Array[idx], pathB.Directions.Array[idx + 1], frag);
+                        int idx = pathB.GetFIndex(
+                            pathA.RelativeDistances.Array[i],
+                            out frag
+                        );
+                        bDirection = Vector3.SlerpUnclamped(
+                            pathB.Directions.Array[idx],
+                            pathB.Directions.Array[idx + 1],
+                            frag
+                        );
                     }
 
-                    directions.Array[i] = Vector3.SlerpUnclamped(pathA.Directions.Array[i], bDirection, interpolationTime);
-
+                    directions.Array[i] = Vector3.SlerpUnclamped(
+                        pathA.Directions.Array[i],
+                        bDirection,
+                        interpolationTime
+                    );
                 }
             else
                 for (int i = 0; i < pathVertexCount; i++)
@@ -167,11 +215,22 @@ namespace FluffyUnderware.Curvy.Generator.Modules
                     Vector3 aDirection;
                     {
                         float frag;
-                        int idx = pathA.GetFIndex(pathB.RelativeDistances.Array[i], out frag);
-                        aDirection = Vector3.SlerpUnclamped(pathA.Directions.Array[idx], pathA.Directions.Array[idx + 1], frag);
+                        int idx = pathA.GetFIndex(
+                            pathB.RelativeDistances.Array[i],
+                            out frag
+                        );
+                        aDirection = Vector3.SlerpUnclamped(
+                            pathA.Directions.Array[idx],
+                            pathA.Directions.Array[idx + 1],
+                            frag
+                        );
                     }
 
-                    directions.Array[i] = Vector3.SlerpUnclamped(aDirection, pathB.Directions.Array[i], interpolationTime);
+                    directions.Array[i] = Vector3.SlerpUnclamped(
+                        aDirection,
+                        pathB.Directions.Array[i],
+                        interpolationTime
+                    );
                 }
 
             data.Directions = directions;

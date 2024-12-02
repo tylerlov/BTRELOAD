@@ -45,7 +45,7 @@ namespace Typooling
         public GameObject GetFromPool()
         {
             var instance = GetNextAvailableInstance();
-            Debug.Log($"[Pooler] GetFromPool: Activated instance {instance.GetObject().name}");
+            ConditionalDebug.Log($"[Pooler] GetFromPool: Activated instance {instance.GetObject().name}");
             return instance.ActivateAndGetInstance();
         }
 
@@ -73,13 +73,13 @@ namespace Typooling
             var objectInstance = pool.FirstOrDefault(oi => oi.GetInstance() == instance);
             if (objectInstance != null)
             {
-                Debug.Log($"[Pooler] ReturnToPool: Deactivated instance {objectInstance.GetObject().name}");
+                ConditionalDebug.Log($"[Pooler] ReturnToPool: Deactivated instance {objectInstance.GetObject().name}");
                 objectInstance.SetInactive(storagePosition);
                 pool.Enqueue(objectInstance);
             }
             else
             {
-                Debug.LogWarning($"[Pooler] ReturnToPool: Instance not found in pool");
+                ConditionalDebug.LogWarning($"[Pooler] ReturnToPool: Instance not found in pool");
             }
         }
 
@@ -87,7 +87,7 @@ namespace Typooling
         {
             if(objectToPool != cachedObjectReference)
             {
-                Debug.LogError("The object registered to this pooler has been changed since initialization. It is recommended that you avoid changing pooler objects during runtime.");
+                ConditionalDebug.LogError("The object registered to this pooler has been changed since initialization. It is recommended that you avoid changing pooler objects during runtime.");
             }
 
             return new ObjectInstance(this, i);
@@ -302,12 +302,12 @@ namespace Typooling
                     }
 
                     yield return new WaitForSeconds(longestDuration);
-                    Debug.Log($"[Pooler] AutoReturnWhenFinished: Particle system finished for {instancedObject.name} after {longestDuration} seconds");
+                    ConditionalDebug.Log($"[Pooler] AutoReturnWhenFinished: Particle system finished for {instancedObject.name} after {longestDuration} seconds");
                 }
                 else
                 {
                     yield return new WaitForSeconds(origin.autoReturnDelay);
-                    Debug.Log($"[Pooler] AutoReturnWhenFinished: Auto-return delay finished for {instancedObject.name}");
+                    ConditionalDebug.Log($"[Pooler] AutoReturnWhenFinished: Auto-return delay finished for {instancedObject.name}");
                 }
                 
                 if (instancedObject != null)
@@ -317,7 +317,7 @@ namespace Typooling
                     
                     if (IsActive())
                     {
-                        Debug.Log($"[Pooler] AutoReturnWhenFinished: Returning {instancedObject.name} to pool");
+                        ConditionalDebug.Log($"[Pooler] AutoReturnWhenFinished: Returning {instancedObject.name} to pool");
                         origin.ReturnToPool(instance);
                     }
                 }

@@ -1,52 +1,63 @@
 // =====================================================================
-// Copyright 2013-2022 ToolBuddy
+// Copyright © 2013 ToolBuddy
 // All rights reserved
 // 
 // http://www.toolbuddy.net
 // =====================================================================
 
-using UnityEngine;
-using UnityEditor;
 using FluffyUnderware.Curvy;
 using FluffyUnderware.DevToolsEditor;
+using UnityEditor;
+using UnityEngine;
 
 namespace FluffyUnderware.CurvyEditor
 {
     [CanEditMultipleObjects]
-    [CustomEditor(typeof(CurvyShape), true)]
+    [CustomEditor(
+        typeof(CurvyShape),
+        true
+    )]
     public class CurvyShapeEditor : CurvyEditorBase<CurvyShape>
     {
-
-        int mSelection;
+        private int mSelection;
         public bool ShowOnly2DShapes = false;
         public bool ShowPersistent;
 
-        protected override void OnEnable()
-        {
+        protected override void OnEnable() =>
             base.OnEnable();
-        }
 
         protected override void OnReadNodes()
         {
-
             DTFieldNode node;
-            if (Node.FindNodeAt("m_Plane", out node))
+            if (Node.FindNodeAt(
+                    "m_Plane",
+                    out node
+                ))
                 node.SortOrder = 0;
         }
 
-        bool ShowShapeSelector()
+        private bool ShowShapeSelector()
         {
             EditorGUI.BeginChangeCheck();
-            string[] menuNames = CurvyShape.GetShapesMenuNames(Target.GetType(), out mSelection, ShowOnly2DShapes).ToArray();
+            string[] menuNames = CurvyShape.GetShapesMenuNames(
+                Target.GetType(),
+                out mSelection,
+                ShowOnly2DShapes
+            ).ToArray();
 
-            mSelection = EditorGUILayout.Popup("Shape Type", mSelection, menuNames);
+            mSelection = EditorGUILayout.Popup(
+                "Shape Type",
+                mSelection,
+                menuNames
+            );
             if (EditorGUI.EndChangeCheck())
             {
                 Target.Replace(menuNames[mSelection]);
                 GUIUtility.ExitGUI();
                 return true;
             }
-            else return false;
+
+            return false;
         }
 
         /// <summary>
@@ -69,6 +80,5 @@ namespace FluffyUnderware.CurvyEditor
             base.OnInspectorGUI();
             //HideFields();
         }
-
     }
 }

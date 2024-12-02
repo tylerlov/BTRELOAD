@@ -69,9 +69,7 @@ namespace FluffyUnderware.Curvy.ThirdParty.LibTessDotNet
         public object Data;
 
         public override string ToString()
-        {
-            return string.Format("{0}, {1}", Position, Data);
-        }
+            => string.Format("{0}, {1}", Position, Data);
     }
 
     public delegate object CombineCallback(Vec3 position, object[] data, Real[] weights);
@@ -101,7 +99,9 @@ namespace FluffyUnderware.Curvy.ThirdParty.LibTessDotNet
         private SubArray<int>? elementsList;
         private int _elementCount;
 
-        public Vec3 Normal { get { return _normal; } set { _normal = value; } }
+        public Vec3 Normal { get => _normal;
+            set => _normal = value;
+        }
 
         public Real SUnitX = 1;
         public Real SUnitY = 0;
@@ -117,8 +117,8 @@ namespace FluffyUnderware.Curvy.ThirdParty.LibTessDotNet
         /// </summary>
         public bool UsePooling = false;
 
-        public ContourVertex[] Vertices { get { return _vertices; } }
-        public int VertexCount { get { return _vertexCount; } }
+        public ContourVertex[] Vertices => _vertices;
+        public int VertexCount => _vertexCount;
 
 
         /// <summary>
@@ -126,34 +126,22 @@ namespace FluffyUnderware.Curvy.ThirdParty.LibTessDotNet
         /// </summary>
         /// <remarks>This getter returns a copy of the actual array. For performance reasons, use the equivalent getter returning a <see cref="SubArray{T}"/> instance, which allows you to directly access and modify the underlying array</remarks>
         [Obsolete("Use ElementsArray instead")]
-        public int[] Elements
-        {
-            get { return elementsList?.CopyToArray(ArrayPoolsProvider.GetPool<int>()); }
-        }
+        public int[] Elements => elementsList?.CopyToArray(ArrayPoolsProvider.GetPool<int>());
 
         /// <summary>
         /// The elements list
         /// </summary>
         /// <remarks>This getter returns a copy of the actual array. For performance reasons, use the equivalent getter returning a <see cref="SubArray{T}"/> instance, which allows you to directly access and modify the underlying array</remarks>
         [Obsolete("Use ElementsArray instead")]
-        public IList<int> ElementsList
-        {
-            get { return Elements; }
-        }
+        public IList<int> ElementsList => Elements;
 
         /// <summary>
         /// The elements list
         /// </summary>
         /// <remarks>Setting a new <see cref="SubArray{T}"/> will <see cref="ArrayPool{T}.Free(ToolBuddy.Pooling.Collections.SubArray{T})"/> the current <see cref="SubArray{T}"/>  instance</remarks>
-        public SubArray<int>? ElementsArray
-        {
-            get { return elementsList; }
-        }
+        public SubArray<int>? ElementsArray => elementsList;
 
-        public int ElementCount
-        {
-            get { return _elementCount; }
-        }
+        public int ElementCount => _elementCount;
 
         public Tess()
         {

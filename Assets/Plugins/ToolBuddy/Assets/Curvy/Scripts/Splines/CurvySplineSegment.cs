@@ -1,29 +1,25 @@
 // =====================================================================
-// Copyright 2013-2022 ToolBuddy
+// Copyright © 2013 ToolBuddy
 // All rights reserved
 // 
 // http://www.toolbuddy.net
 // =====================================================================
 
-using UnityEngine;
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
-using FluffyUnderware.DevTools.Extensions;
-using FluffyUnderware.Curvy;
-using FluffyUnderware.Curvy.Utils;
-using System.Collections.Generic;
-using FluffyUnderware.DevTools;
-using UnityEngine.Serialization;
-using System.Reflection;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Runtime.CompilerServices;
+using FluffyUnderware.Curvy.Utils;
+using FluffyUnderware.DevTools;
+using FluffyUnderware.DevTools.Extensions;
+using JetBrains.Annotations;
+using ToolBuddy.Pooling.Collections;
+using UnityEngine;
+using UnityEngine.Assertions;
 #if CONTRACTS_FULL
 using System.Diagnostics.Contracts;
 #endif
-using JetBrains.Annotations;
-using UnityEngine.Assertions;
 
 
 namespace FluffyUnderware.Curvy
@@ -32,43 +28,19 @@ namespace FluffyUnderware.Curvy
     /// Class covering a Curvy Spline Segment / ControlPoint
     /// </summary>
     [ExecuteAlways]
-    [HelpURL(CurvySpline.DOCLINK + "curvysplinesegment")]
+    [HelpURL(AssetInformation.DocsRedirectionBaseUrl + "curvysplinesegment")]
     public partial class CurvySplineSegment : DTVersionedMonoBehaviour, IPoolable
     {
         /// <summary>
         /// The color used in Gizmos to draw a segment's tangents
         /// </summary>
-        public static readonly Color GizmoTangentColor = new Color(0, 0.7f, 0);
+        public static readonly Color GizmoTangentColor = new Color(
+            0,
+            0.7f,
+            0
+        );
 
         #region ### Public Properties ###
-
-        /// <summary>
-        /// List of precalculated interpolations
-        /// </summary>
-        /// <remarks>Based on Spline's CacheDensity</remarks>
-        [NonSerialized]
-        public Vector3[] Approximation = new Vector3[0];
-
-        /// <summary>
-        /// List of precalculated distances
-        /// </summary>
-        /// <remarks>Based on Spline's CacheDensity</remarks>
-        [NonSerialized]
-        public float[] ApproximationDistances = new float[0];
-
-        /// <summary>
-        /// List of precalculated Up-Vectors
-        /// </summary>
-        /// <remarks>Based on Spline's CacheDensity</remarks>
-        [NonSerialized]
-        public Vector3[] ApproximationUp = new Vector3[0];
-
-        /// <summary>
-        /// List of precalculated Tangent-Normals
-        /// </summary>
-        /// <remarks>Based on Spline's CacheDensity</remarks>
-        [NonSerialized]
-        public Vector3[] ApproximationT = new Vector3[0];
 
         /// <summary>
         /// If set, Control Point's rotation will be set to the calculated Up-Vector3
@@ -76,29 +48,29 @@ namespace FluffyUnderware.Curvy
         /// <remarks>This is particularly useful when connecting splines</remarks>
         public bool AutoBakeOrientation
         {
-            get { return m_AutoBakeOrientation; }
-            set
-            {
-                if (m_AutoBakeOrientation != value)
-                {
-                    m_AutoBakeOrientation = value;
-                }
-            }
+            get => m_AutoBakeOrientation;
+            set => m_AutoBakeOrientation = value;
         }
 
         /// <summary>
-        /// The serialized value of OrientationAnchor. This value is ignored in some cases (invisible control points, first and last visible control points). Use <see cref="CurvySpline.IsControlPointAnOrientationAnchor"/> to get the correct value.
+        /// The serialized value of OrientationAnchor. This value is ignored in some cases (invisible control points, first and last visible control points). Use <see cref="CurvySpline.IsControlPointAnOrientationAnchor(CurvySplineSegment)"/> to get the correct value.
         /// </summary>
         public bool SerializedOrientationAnchor
         {
-            get { return m_OrientationAnchor; }
+            get => m_OrientationAnchor;
             set
             {
                 if (m_OrientationAnchor != value)
                 {
                     m_OrientationAnchor = value;
-                    Spline.SetDirty(this, SplineDirtyingType.OrientationOnly);
-                    Spline.InvalidateControlPointsRelationshipCacheINTERNAL();
+
+                    if (CanTouchItsSpline)
+                        Spline.SetDirty(
+                            this,
+                            SplineDirtyingType.OrientationOnly
+                        );
+
+                    ForceHierarchyDrawing();
                 }
             }
         }
@@ -108,13 +80,17 @@ namespace FluffyUnderware.Curvy
         /// </summary>
         public CurvyOrientationSwirl Swirl
         {
-            get { return m_Swirl; }
+            get => m_Swirl;
             set
             {
                 if (m_Swirl != value)
                 {
                     m_Swirl = value;
-                    Spline.SetDirty(this, SplineDirtyingType.OrientationOnly);
+                    if (CanTouchItsSpline)
+                        Spline.SetDirty(
+                            this,
+                            SplineDirtyingType.OrientationOnly
+                        );
                 }
             }
         }
@@ -124,18 +100,23 @@ namespace FluffyUnderware.Curvy
         /// </summary>
         public float SwirlTurns
         {
-            get { return m_SwirlTurns; }
+            get => m_SwirlTurns;
             set
             {
                 if (m_SwirlTurns != value)
                 {
                     m_SwirlTurns = value;
-                    Spline.SetDirty(this, SplineDirtyingType.OrientationOnly);
+                    if (CanTouchItsSpline)
+                        Spline.SetDirty(
+                            this,
+                            SplineDirtyingType.OrientationOnly
+                        );
                 }
             }
         }
 
         #region --- Bezier ---
+
         //TODO Make sure that every place in the code setting Handles respects the constraints of Sync length, Sync direction and Sync connections
 
         /// <summary>
@@ -143,14 +124,17 @@ namespace FluffyUnderware.Curvy
         /// </summary>
         public Vector3 HandleIn
         {
-            get
-            { return m_HandleIn; }
+            get => m_HandleIn;
             set
             {
                 if (m_HandleIn != value)
                 {
                     m_HandleIn = value;
-                    Spline.SetDirty(this, SplineDirtyingType.Everything);
+                    if (CanTouchItsSpline)
+                        Spline.SetDirty(
+                            this,
+                            SplineDirtyingType.Everything
+                        );
                 }
             }
         }
@@ -160,13 +144,17 @@ namespace FluffyUnderware.Curvy
         /// </summary>
         public Vector3 HandleOut
         {
-            get { return m_HandleOut; }
+            get => m_HandleOut;
             set
             {
                 if (m_HandleOut != value)
                 {
                     m_HandleOut = value;
-                    Spline.SetDirty(this, SplineDirtyingType.Everything);
+                    if (CanTouchItsSpline)
+                        Spline.SetDirty(
+                            this,
+                            SplineDirtyingType.Everything
+                        );
                 }
             }
         }
@@ -177,14 +165,8 @@ namespace FluffyUnderware.Curvy
         /// </summary>
         public Vector3 HandleInPosition
         {
-            get
-            {
-                return cachedTransform.position + Spline.transform.rotation * HandleIn;
-            }
-            set
-            {
-                HandleIn = Spline.transform.InverseTransformDirection(value - cachedTransform.position);
-            }
+            get => cachedTransform.position + (Spline.transform.rotation * HandleIn);
+            set => HandleIn = Spline.transform.InverseTransformDirection(value - cachedTransform.position);
         }
 
         /// <summary>
@@ -192,31 +174,31 @@ namespace FluffyUnderware.Curvy
         /// </summary>
         public Vector3 HandleOutPosition
         {
-            get
-            {
-                return cachedTransform.position + Spline.transform.rotation * HandleOut;
-            }
-            set
-            {
-                HandleOut = Spline.transform.InverseTransformDirection(value - cachedTransform.position);
-            }
+            get => cachedTransform.position + (Spline.transform.rotation * HandleOut);
+            set => HandleOut = Spline.transform.InverseTransformDirection(value - cachedTransform.position);
         }
+
         /// <summary>
         /// Gets or Sets Auto Handles. When setting it the value of connected control points is also updated
         /// </summary>
         public bool AutoHandles
         {
-            get { return m_AutoHandles; }
+            get => m_AutoHandles;
             set
             {
+                //bug? the Autohandles property changes also the connected CPs. I don’t believe this is a wanted behaviour
                 if (SetAutoHandles(value))
-                    Spline.SetDirty(this, SplineDirtyingType.Everything);
+                    if (CanTouchItsSpline)
+                        Spline.SetDirty(
+                            this,
+                            SplineDirtyingType.Everything
+                        );
             }
         }
 
         public float AutoHandleDistance
         {
-            get { return m_AutoHandleDistance; }
+            get => m_AutoHandleDistance;
             set
             {
                 if (m_AutoHandleDistance != value)
@@ -225,7 +207,11 @@ namespace FluffyUnderware.Curvy
                     if (m_AutoHandleDistance != clampedDistance)
                     {
                         m_AutoHandleDistance = clampedDistance;
-                        Spline.SetDirty(this, SplineDirtyingType.Everything);
+                        if (CanTouchItsSpline)
+                            Spline.SetDirty(
+                                this,
+                                SplineDirtyingType.Everything
+                            );
                     }
                 }
             }
@@ -241,172 +227,238 @@ namespace FluffyUnderware.Curvy
         /// <remarks>Applies only to TCB Interpolation</remarks>
         public bool SynchronizeTCB
         {
-            get { return m_SynchronizeTCB; }
+            get => m_SynchronizeTCB;
             set
             {
                 if (m_SynchronizeTCB != value)
                 {
                     m_SynchronizeTCB = value;
-                    Spline.SetDirty(this, SplineDirtyingType.Everything);
+                    if (CanTouchItsSpline)
+                        Spline.SetDirty(
+                            this,
+                            SplineDirtyingType.Everything
+                        );
                 }
             }
         }
 
         /// <summary>
-        /// Whether local Tension should be used
+        /// Whether local <see cref="StartTension"/> and <see cref="EndTension"/> should be used. Otherwise the global values are used. See <see cref="CurvySpline.Tension"/>
         /// </summary>
-        /// <remarks>This only applies to interpolation methods using Tension</remarks>
+        /// <remarks>This only applies to splines using <see cref="CurvyInterpolation.TCB"/></remarks>
         public bool OverrideGlobalTension
         {
-            get { return m_OverrideGlobalTension; }
+            get => m_OverrideGlobalTension;
             set
             {
                 if (m_OverrideGlobalTension != value)
                 {
                     m_OverrideGlobalTension = value;
-                    Spline.SetDirty(this, SplineDirtyingType.Everything);
+                    if (CanTouchItsSpline)
+                        Spline.SetDirty(
+                            this,
+                            SplineDirtyingType.Everything
+                        );
                 }
             }
         }
 
         /// <summary>
-        /// Whether local Continuity should be used
+        /// Whether local <see cref="StartContinuity"/> and <see cref="EndContinuity"/> should be used. Otherwise the global values are used. See <see cref="CurvySpline.Continuity"/>
         /// </summary>
-        /// <remarks>This only applies to interpolation methods using Continuity</remarks>
+        /// <remarks>This only applies to splines using <see cref="CurvyInterpolation.TCB"/></remarks>
         public bool OverrideGlobalContinuity
         {
-            get { return m_OverrideGlobalContinuity; }
+            get => m_OverrideGlobalContinuity;
             set
             {
                 if (m_OverrideGlobalContinuity != value)
                 {
                     m_OverrideGlobalContinuity = value;
-                    Spline.SetDirty(this, SplineDirtyingType.Everything);
+                    if (CanTouchItsSpline)
+                        Spline.SetDirty(
+                            this,
+                            SplineDirtyingType.Everything
+                        );
                 }
             }
         }
 
         /// <summary>
-        /// Whether local Bias should be used
+        /// Whether local <see cref="StartBias"/> and <see cref="EndBias"/> should be used. Otherwise the global values are used. See <see cref="CurvySpline.Bias"/>
         /// </summary>
-        /// <remarks>This only applies to interpolation methods using Bias</remarks>
+        /// <remarks>This only applies to splines using <see cref="CurvyInterpolation.TCB"/></remarks>
         public bool OverrideGlobalBias
         {
-            get { return m_OverrideGlobalBias; }
+            get => m_OverrideGlobalBias;
             set
             {
                 if (m_OverrideGlobalBias != value)
                 {
                     m_OverrideGlobalBias = value;
-                    Spline.SetDirty(this, SplineDirtyingType.Everything);
+                    if (CanTouchItsSpline)
+                        Spline.SetDirty(
+                            this,
+                            SplineDirtyingType.Everything
+                        );
                 }
             }
         }
 
         /// <summary>
-        /// Start Tension
+        /// Local Tension at segment start. Is used only if <see cref="OverrideGlobalTension"/> is true
         /// </summary>
-        /// <remarks>This only applies to interpolation methods using Tension</remarks>
+        /// <remarks>This only applies to splines using <see cref="CurvyInterpolation.TCB"/></remarks>
         public float StartTension
         {
-            get { return m_StartTension; }
+            get => m_StartTension;
             set
             {
                 if (m_StartTension != value)
                 {
                     m_StartTension = value;
-                    Spline.SetDirty(this, SplineDirtyingType.Everything);
+                    if (CanTouchItsSpline)
+                        Spline.SetDirty(
+                            this,
+                            SplineDirtyingType.Everything
+                        );
                 }
             }
         }
 
         /// <summary>
-        /// Start Continuity
+        /// Local Continuity at segment start. Is used only if <see cref="OverrideGlobalContinuity"/> is true
         /// </summary>
-        /// <remarks>This only applies to interpolation methods using Continuity</remarks>
+        /// <remarks>This only applies to splines using <see cref="CurvyInterpolation.TCB"/></remarks>
         public float StartContinuity
         {
-            get { return m_StartContinuity; }
+            get => m_StartContinuity;
             set
             {
                 if (m_StartContinuity != value)
                 {
                     m_StartContinuity = value;
-                    Spline.SetDirty(this, SplineDirtyingType.Everything);
+                    if (CanTouchItsSpline)
+                        Spline.SetDirty(
+                            this,
+                            SplineDirtyingType.Everything
+                        );
                 }
             }
         }
 
         /// <summary>
-        /// Start Bias
+        /// Local Bias at segment start. Is used only if <see cref="OverrideGlobalBias"/> is true
         /// </summary>
-        /// <remarks>This only applies to interpolation methods using Bias</remarks>
+        /// <remarks>This only applies to splines using <see cref="CurvyInterpolation.TCB"/></remarks>
         public float StartBias
         {
-            get { return m_StartBias; }
+            get => m_StartBias;
             set
             {
                 if (m_StartBias != value)
                 {
                     m_StartBias = value;
-                    Spline.SetDirty(this, SplineDirtyingType.Everything);
+                    if (CanTouchItsSpline)
+                        Spline.SetDirty(
+                            this,
+                            SplineDirtyingType.Everything
+                        );
                 }
             }
         }
 
         /// <summary>
-        /// End Tension
+        /// Local Tension at segment end. Is used only if <see cref="OverrideGlobalTension"/> is true
         /// </summary>
-        /// <remarks>This only applies to interpolation methods using Tension</remarks>
+        /// <remarks>This only applies to splines using <see cref="CurvyInterpolation.TCB"/></remarks>
         public float EndTension
         {
-            get { return m_EndTension; }
+            get => m_EndTension;
             set
             {
                 if (m_EndTension != value)
                 {
                     m_EndTension = value;
-                    Spline.SetDirty(this, SplineDirtyingType.Everything);
+                    if (CanTouchItsSpline)
+                        Spline.SetDirty(
+                            this,
+                            SplineDirtyingType.Everything
+                        );
                 }
             }
         }
 
         /// <summary>
-        /// End Continuity
+        /// Local Continuity at segment end. Is used only if <see cref="OverrideGlobalContinuity"/> is true
         /// </summary>
-        /// <remarks>This only applies to interpolation methods using Continuity</remarks>
+        /// <remarks>This only applies to splines using <see cref="CurvyInterpolation.TCB"/></remarks>
         public float EndContinuity
         {
-            get { return m_EndContinuity; }
+            get => m_EndContinuity;
             set
             {
                 if (m_EndContinuity != value)
                 {
                     m_EndContinuity = value;
-                    Spline.SetDirty(this, SplineDirtyingType.Everything);
+                    if (CanTouchItsSpline)
+                        Spline.SetDirty(
+                            this,
+                            SplineDirtyingType.Everything
+                        );
                 }
             }
         }
 
         /// <summary>
-        /// End Bias
+        /// Local Bias at segment end. Is used only if <see cref="OverrideGlobalBias"/> is true
         /// </summary>
-        ///<remarks>This only applies to interpolation methods using Bias</remarks>
+        /// <remarks>This only applies to splines using <see cref="CurvyInterpolation.TCB"/></remarks>
         public float EndBias
         {
-            get { return m_EndBias; }
+            get => m_EndBias;
             set
             {
                 if (m_EndBias != value)
                 {
                     m_EndBias = value;
-                    Spline.SetDirty(this, SplineDirtyingType.Everything);
+                    if (CanTouchItsSpline)
+                        Spline.SetDirty(
+                            this,
+                            SplineDirtyingType.Everything
+                        );
                 }
             }
         }
 
+        /// <summary>
+        /// Returns the actual <see cref="TcbParameters"/> for this segment, considering global and local settings.
+        /// </summary>
+        /// <seealso cref="OverrideGlobalBias"/>
+        /// <seealso cref="OverrideGlobalTension"/>
+        /// <seealso cref="OverrideGlobalContinuity"/>
+        public TcbParameters EffectiveTcbParameters
+        {
+            get
+            {
+                CurvySpline spline = Spline;
+                TcbParameters result = new TcbParameters();
+                (result.StartTension, result.EndTension) = OverrideGlobalTension
+                    ? (StartTension, EndTension)
+                    : (spline.Tension, spline.Tension);
+                (result.StartContinuity, result.EndContinuity) = OverrideGlobalContinuity
+                    ? (StartContinuity, EndContinuity)
+                    : (spline.Continuity, spline.Continuity);
+                (result.StartBias, result.EndBias) = OverrideGlobalBias
+                    ? (StartBias, EndBias)
+                    : (spline.Bias, spline.Bias);
+
+                return result;
+            }
+        }
 
         #endregion
+
         /*
 #region --- CG ---
 
@@ -456,10 +508,15 @@ namespace FluffyUnderware.Curvy
 
 #endregion
         */
+
         #region --- Connections ---
+
+        //todo design: shouldn't most settings in this region be part of the CurvyConnection?
+
         /// <summary>
         /// Gets the connected Control Point that is set as "Head To"
         /// </summary>
+        [CanBeNull]
         public CurvySplineSegment FollowUp
         {
             get
@@ -472,14 +529,21 @@ namespace FluffyUnderware.Curvy
             }
             private set
             {
-                if (m_FollowUp != value)
+                if (ReferenceEquals(
+                        m_FollowUp,
+                        value
+                    )
+                    == false)
                 {
                     m_FollowUp = value;
 #if CURVY_SANITY_CHECKS
                     Assert.IsTrue(m_FollowUp == null || m_FollowUp.Connection == Connection);
 #endif
-                    if (mSpline != null)
-                        mSpline.SetDirty(this, SplineDirtyingType.Everything);
+                    if (CanTouchItsSpline)
+                        Spline.SetDirty(
+                            this,
+                            SplineDirtyingType.Everything
+                        );
                 }
             }
         }
@@ -491,19 +555,25 @@ namespace FluffyUnderware.Curvy
         //Remark Set/Get value is validated through GetValidateConnectionHeading
         public ConnectionHeadingEnum FollowUpHeading
         {
-            get
-            {
-                return GetValidateConnectionHeading(m_FollowUpHeading, FollowUp);
-            }
+            get => GetValidateConnectionHeading(
+                m_FollowUpHeading,
+                FollowUp
+            );
             set
             {
-                value = GetValidateConnectionHeading(value, FollowUp);
+                value = GetValidateConnectionHeading(
+                    value,
+                    FollowUp
+                );
 
                 if (m_FollowUpHeading != value)
                 {
                     m_FollowUpHeading = value;
-                    if (mSpline != null)
-                        mSpline.SetDirty(this, SplineDirtyingType.Everything);
+                    if (CanTouchItsSpline)
+                        Spline.SetDirty(
+                            this,
+                            SplineDirtyingType.Everything
+                        );
                 }
             }
         }
@@ -514,15 +584,9 @@ namespace FluffyUnderware.Curvy
         /// </summary>
         public bool ConnectionSyncPosition
         {
-            get { return m_ConnectionSyncPosition; }
-            set
-            {
-                if (m_ConnectionSyncPosition != value)
-                {
-                    m_ConnectionSyncPosition = value;
-                    //DESIGN think about removing the code that handles ConnectionSyncPosition and ConnectionSyncRotation, and replace it with a code that always runs in Refresh, and make that code happen by calling SetDirty() here;
-                }
-            }
+            get => m_ConnectionSyncPosition;
+            set => m_ConnectionSyncPosition = value;
+            //DESIGN think about removing the code that handles ConnectionSyncPosition and ConnectionSyncRotation, and replace it with a code that always runs in Refresh, and make that code happen by calling SetDirty() here;
         }
 
         /// <summary>
@@ -531,34 +595,102 @@ namespace FluffyUnderware.Curvy
         /// </summary>
         public bool ConnectionSyncRotation
         {
-            get { return m_ConnectionSyncRotation; }
-            set
-            {
-                if (m_ConnectionSyncRotation != value)
-                {
-                    m_ConnectionSyncRotation = value;
-                    //DESIGN think about removing the code that handles ConnectionSyncPosition and ConnectionSyncRotation, and replace it with a code that always runs in Refresh, and make that code happen by calling SetDirty() here;
-                }
-            }
+            get => m_ConnectionSyncRotation;
+            set => m_ConnectionSyncRotation = value;
+            //DESIGN think about removing the code that handles ConnectionSyncPosition and ConnectionSyncRotation, and replace it with a code that always runs in Refresh, and make that code happen by calling SetDirty() here;
         }
 
         /// <summary>
         /// Gets/Sets the connection handler this Control Point is using (if any)
         /// </summary>
         /// <remarks>If set to null, FollowUp wil be set to null to</remarks>
+        [CanBeNull]
         public CurvyConnection Connection
         {
-            get { return m_Connection; }
+            get => m_Connection;
             internal set
             {
                 if (SetConnection(value))
-                    if (mSpline != null)
-                        mSpline.SetDirty(this, SplineDirtyingType.Everything);
+                    if (CanTouchItsSpline)
+                        Spline.SetDirty(
+                            this,
+                            SplineDirtyingType.Everything
+                        );
             }
         }
 
         #endregion
 
+        #region Approximations
+
+        /// <summary>
+        /// List of points approximating the segments's shape.
+        /// Approximations are a set of precomputed properties of points sampled along the spline.
+        /// Approximations are computed and stored for fast access to an approximation of the spline.
+        /// The fidelity of the approximation depends on the spline's <see cref="CurvySpline.CacheDensity"/> and <see cref="CurvySpline.MaxPointsPerUnit"/> properties.
+        /// Approximations are computed when the spline is refreshed. Spline refreshing is done automatically when needed (see <see cref="CurvySpline.UpdateIn"/>), but you can also force it by calling <see cref="CurvySpline.Refresh()"/>.
+        /// 
+        /// </summary>
+        /// <seealso cref="CacheSize"/>
+        /// <seealso cref="CurvySpline.CacheDensity"/>
+        /// <seealso cref="CurvySpline.MaxPointsPerUnit"/>
+        public SubArray<Vector3> PositionsApproximation
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => approximations.Positions;
+        }
+
+        /// <summary>
+        /// List of tangents approximating the segments's shape
+        /// Approximations are a set of precomputed properties of points sampled along the spline.
+        /// Approximations are computed and stored for fast access to an approximation of the spline.
+        /// The fidelity of the approximation depends on the spline's <see cref="CurvySpline.CacheDensity"/> and <see cref="CurvySpline.MaxPointsPerUnit"/> properties.
+        /// Approximations are computed when the spline is refreshed. Spline refreshing is done automatically when needed (see <see cref="CurvySpline.UpdateIn"/>), but you can also force it by calling <see cref="CurvySpline.Refresh()"/>.
+        /// </summary>
+        /// <seealso cref="CacheSize"/>
+        /// <seealso cref="CurvySpline.CacheDensity"/>
+        /// <seealso cref="CurvySpline.MaxPointsPerUnit"/>
+        public SubArray<Vector3> TangentsApproximation
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => approximations.Tangents;
+        }
+
+        /// <summary>
+        /// List of directions approximating the segments's orientation
+        /// Approximations are a set of precomputed properties of points sampled along the spline.
+        /// Approximations are computed and stored for fast access to an approximation of the spline.
+        /// The fidelity of the approximation depends on the spline's <see cref="CurvySpline.CacheDensity"/> and <see cref="CurvySpline.MaxPointsPerUnit"/> properties.
+        /// Approximations are computed when the spline is refreshed. Spline refreshing is done automatically when needed (see <see cref="CurvySpline.UpdateIn"/>), but you can also force it by calling <see cref="CurvySpline.Refresh()"/>.
+        /// </summary>
+        /// <seealso cref="CacheSize"/>
+        /// <seealso cref="CurvySpline.CacheDensity"/>
+        /// <seealso cref="CurvySpline.MaxPointsPerUnit"/>
+        public SubArray<Vector3> UpsApproximation
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => approximations.Ups;
+        }
+
+        /// <summary>
+        /// List of distances approximating the segments's length
+        /// Approximations are a set of precomputed properties of points sampled along the spline.
+        /// Approximations are computed and stored for fast access to an approximation of the spline.
+        /// The fidelity of the approximation depends on the spline's <see cref="CurvySpline.CacheDensity"/> and <see cref="CurvySpline.MaxPointsPerUnit"/> properties.
+        /// Approximations are computed when the spline is refreshed. Spline refreshing is done automatically when needed (see <see cref="CurvySpline.UpdateIn"/>), but you can also force it by calling <see cref="CurvySpline.Refresh()"/>.
+        /// </summary>
+        /// <seealso cref="CacheSize"/>
+        /// <seealso cref="CurvySpline.CacheDensity"/>
+        /// <seealso cref="CurvySpline.MaxPointsPerUnit"/>
+        public SubArray<float> DistancesApproximation
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get
+            {
+                DoSanityChecks();
+                return approximations.Distances;
+            }
+        }
 
         /// <summary>
         /// Gets the number of individual cache points of this segment
@@ -569,12 +701,16 @@ namespace FluffyUnderware.Curvy
             get
             {
 #if CURVY_SANITY_CHECKS
-                Assert.IsTrue(Approximation.Length > 0, "[Curvy] CurvySplineSegment has uninitialized cache");
+                Assert.IsTrue(
+                    PositionsApproximation.Count > 0,
+                    "[Curvy] CurvySplineSegment has uninitialized cache"
+                );
 #endif
-                return Approximation.Length - 1;
+                return PositionsApproximation.Count - 1;
             }
-
         }
+
+        #endregion
 
         /// <summary>
         /// Gets this segment's bounds in world space
@@ -586,19 +722,28 @@ namespace FluffyUnderware.Curvy
                 if (!mBounds.HasValue)
                 {
                     Bounds result;
-                    if (Approximation.Length == 0)
-                        result = new Bounds(cachedTransform.position, Vector3.zero);
+                    int positionsCount = PositionsApproximation.Count;
+                    if (positionsCount == 0)
+                        result = new Bounds(
+                            cachedTransform.position,
+                            Vector3.zero
+                        );
                     else
                     {
+                        Vector3[] positions = PositionsApproximation.Array;
+
                         Matrix4x4 mat = Spline.transform.localToWorldMatrix;
-                        result = new Bounds(mat.MultiplyPoint3x4(Approximation[0]), Vector3.zero);
-                        int u = Approximation.Length;
-                        for (int i = 1; i < u; i++)
-                            result.Encapsulate(mat.MultiplyPoint3x4(Approximation[i]));
+                        result = new Bounds(
+                            mat.MultiplyPoint3x4(positions[0]),
+                            Vector3.zero
+                        );
+                        for (int i = 1; i < positionsCount; i++)
+                            result.Encapsulate(mat.MultiplyPoint3x4(positions[i]));
                     }
 
                     mBounds = result;
                 }
+
                 return mBounds.Value;
             }
         }
@@ -606,12 +751,38 @@ namespace FluffyUnderware.Curvy
         /// <summary>
         /// Gets the length of this spline segment
         /// </summary>
-        public float Length { get; private set; }
+        public float Length
+        {
+            get
+            {
+#if CURVY_SANITY_CHECKS
+                Assert.IsTrue(
+                    length >= 0,
+                    "[Curvy] CurvySplineSegment has uninitialized length"
+                );
+#endif
+                return length;
+            }
+            private set => length = value;
+        }
 
         /// <summary>
-        /// Gets the distance from spline start to the first control point (localF=0) 
+        /// Gets the distance from spline start to the start of this segment (localF=0) 
         /// </summary>
-        public float Distance { get; internal set; }
+        public float Distance
+        {
+            get
+            {
+#if CURVY_SANITY_CHECKS
+                Assert.IsTrue(
+                    distance >= 0,
+                    "[Curvy] CurvySplineSegment has uninitialized distance"
+                );
+#endif
+                return distance;
+            }
+            internal set => distance = value;
+        }
 
         /// <summary>
         /// Gets the TF of this Control Point
@@ -624,9 +795,11 @@ namespace FluffyUnderware.Curvy
         {
             get
             {
+                DoSanityChecks();
                 return mSpline.SegmentToTF(this);
             }
 #if UNITY_2020_3_OR_NEWER
+            [UsedImplicitly]
             [Obsolete("Setting a TF value is not allowed anymore")]
 #endif
             internal set => Debug.LogError("[Curvy] CurvySplineSegment.TF: Setting a TF value is not allowed");
@@ -639,7 +812,8 @@ namespace FluffyUnderware.Curvy
         {
             get
             {
-                return (Spline.GetControlPointIndex(this) == 0);
+                DoSanityChecks();
+                return Spline.GetControlPointIndex(this) == 0;
             }
         }
 
@@ -650,46 +824,55 @@ namespace FluffyUnderware.Curvy
         {
             get
             {
-                return (Spline.GetControlPointIndex(this) == Spline.ControlPointCount - 1);
+                DoSanityChecks();
+                return Spline.GetControlPointIndex(this) == Spline.ControlPointCount - 1;
             }
         }
 
         /// <summary>
         /// The Metadata components added to this GameObject
         /// </summary>
-        public HashSet<CurvyMetadataBase> Metadata
-        {
-            get
-            {
-                return mMetadata;
-            }
-        }
+        public HashSet<CurvyMetadataBase> Metadata => mMetadata;
 
         /// <summary>
         /// Gets the parent spline
         /// </summary>
-        public CurvySpline Spline
-        {
-            get
-            {
-                return mSpline;
-            }
-        }
+        [CanBeNull]
+        public CurvySpline Spline =>
+            //TODO get rid of mSpline and just return transform.parent.GetComponent<CurvySpline>()?
+            //this would simplify the code a lot (no for Lint and Unlink methods, for a performance loss, but maybe that performance is worth it?
+            mSpline;
 
 
         /// <summary>
         /// Returns true if the local position is different than the last one used in the segment approximations cache computation
         /// </summary>
-        public bool HasUnprocessedLocalPosition { get { return cachedTransform.localPosition.Approximately(lastProcessedLocalPosition) == false; } }
+        public bool HasUnprocessedLocalPosition =>
+            lastProcessedLocalPosition.HasValue == false
+            || cachedTransform.localPosition.Approximately(lastProcessedLocalPosition.Value) == false;
+
         /// <summary>
         /// Returns true if the local orientation is different than the last one used in the segment approximations cache computation
         /// </summary>
-        public bool HasUnprocessedLocalOrientation { get { return cachedTransform.localRotation.DifferentOrientation(lastProcessedLocalRotation); } }
+        public bool HasUnprocessedLocalOrientation =>
+            lastProcessedLocalRotation.HasValue == false
+            || cachedTransform.localRotation.DifferentOrientation(lastProcessedLocalRotation.Value);
+
         /// <summary>
         /// Returns wheter the orientation of this Control Point influences the orientation of its containing spline's approximation points.
         /// Returns false if control point is not part of a spline
         /// </summary>
-        public bool OrientatinInfluencesSpline { get { return mSpline != null && (mSpline.Orientation == CurvyOrientation.Static || mSpline.IsControlPointAnOrientationAnchor(this)); } }
+        [UsedImplicitly]
+        [Obsolete("Use OrientationInfluencesSpline instead")]
+        public bool OrientatinInfluencesSpline => OrientationInfluencesSpline;
+
+        /// <summary>
+        /// Returns wheter the orientation of this Control Point influences the orientation of its containing spline's approximation points.
+        /// Returns false if control point is not part of a spline
+        /// </summary>
+        public bool OrientationInfluencesSpline => mSpline != null
+                                                   && (mSpline.Orientation == CurvyOrientation.Static
+                                                       || mSpline.IsControlPointAnOrientationAnchor(this));
 
         #endregion
 
@@ -701,7 +884,8 @@ namespace FluffyUnderware.Curvy
         /// <param name="position">HandleIn position</param>
         /// <param name="space">The space (spline's local space or the world space) in which the <paramref name="position"/> is expressed</param>
         /// <param name="mode">Handle synchronization mode</param>
-        public void SetBezierHandleIn(Vector3 position, Space space = Space.Self, CurvyBezierModeEnum mode = CurvyBezierModeEnum.None)
+        public void SetBezierHandleIn(Vector3 position, Space space = Space.Self,
+            CurvyBezierModeEnum mode = CurvyBezierModeEnum.None)
         {
             if (space == Space.Self)
                 HandleIn = position;
@@ -715,7 +899,10 @@ namespace FluffyUnderware.Curvy
             if (syncDirections)
                 HandleOut = HandleOut.magnitude * (HandleIn.normalized * -1);
             if (syncLengths)
-                HandleOut = HandleIn.magnitude * ((HandleOut == Vector3.zero) ? HandleIn.normalized * -1 : HandleOut.normalized);
+                HandleOut = HandleIn.magnitude
+                            * (HandleOut == Vector3.zero
+                                ? HandleIn.normalized * -1
+                                : HandleOut.normalized);
             if (Connection && syncConnectedCPs && (syncDirections || syncLengths))
             {
                 ReadOnlyCollection<CurvySplineSegment> connectionControlPoints = Connection.ControlPointsList;
@@ -729,9 +916,24 @@ namespace FluffyUnderware.Curvy
                         connectedCp.HandleIn = HandleIn;
 
                     if (syncDirections)
-                        connectedCp.SetBezierHandleIn(connectedCp.HandleIn.magnitude * HandleIn.normalized * Mathf.Sign(Vector3.Dot(HandleIn, connectedCp.HandleIn)), Space.Self, CurvyBezierModeEnum.Direction);
+                        connectedCp.SetBezierHandleIn(
+                            connectedCp.HandleIn.magnitude
+                            * HandleIn.normalized
+                            * Mathf.Sign(
+                                Vector3.Dot(
+                                    HandleIn,
+                                    connectedCp.HandleIn
+                                )
+                            ),
+                            Space.Self,
+                            CurvyBezierModeEnum.Direction
+                        );
                     if (syncLengths)
-                        connectedCp.SetBezierHandleIn(connectedCp.HandleIn.normalized * HandleIn.magnitude, Space.Self, CurvyBezierModeEnum.Length);
+                        connectedCp.SetBezierHandleIn(
+                            connectedCp.HandleIn.normalized * HandleIn.magnitude,
+                            Space.Self,
+                            CurvyBezierModeEnum.Length
+                        );
                 }
             }
         }
@@ -742,7 +944,8 @@ namespace FluffyUnderware.Curvy
         /// <param name="position">HandleOut position</param>
         /// <param name="space">The space (spline's local space or the world space) in which the <paramref name="position"/> is expressed</param>
         /// <param name="mode">Handle synchronization mode</param>
-        public void SetBezierHandleOut(Vector3 position, Space space = Space.Self, CurvyBezierModeEnum mode = CurvyBezierModeEnum.None)
+        public void SetBezierHandleOut(Vector3 position, Space space = Space.Self,
+            CurvyBezierModeEnum mode = CurvyBezierModeEnum.None)
         {
             if (space == Space.Self)
                 HandleOut = position;
@@ -756,13 +959,15 @@ namespace FluffyUnderware.Curvy
             if (syncDirections)
                 HandleIn = HandleIn.magnitude * (HandleOut.normalized * -1);
             if (syncLengths)
-                HandleIn = HandleOut.magnitude * ((HandleIn == Vector3.zero) ? HandleOut.normalized * -1 : HandleIn.normalized);
+                HandleIn = HandleOut.magnitude
+                           * (HandleIn == Vector3.zero
+                               ? HandleOut.normalized * -1
+                               : HandleIn.normalized);
 
             if (Connection && syncConnectedCPs && (syncDirections || syncLengths))
-            {
-                for (int index = 0; index < (Connection.ControlPointsList).Count; index++)
+                for (int index = 0; index < Connection.ControlPointsList.Count; index++)
                 {
-                    CurvySplineSegment connectedCp = (Connection.ControlPointsList)[index];
+                    CurvySplineSegment connectedCp = Connection.ControlPointsList[index];
                     if (connectedCp == this)
                         continue;
 
@@ -770,11 +975,25 @@ namespace FluffyUnderware.Curvy
                         connectedCp.HandleOut = HandleOut;
 
                     if (syncDirections)
-                        connectedCp.SetBezierHandleOut(connectedCp.HandleOut.magnitude * HandleOut.normalized * Mathf.Sign(Vector3.Dot(HandleOut, connectedCp.HandleOut)), Space.Self, CurvyBezierModeEnum.Direction);
+                        connectedCp.SetBezierHandleOut(
+                            connectedCp.HandleOut.magnitude
+                            * HandleOut.normalized
+                            * Mathf.Sign(
+                                Vector3.Dot(
+                                    HandleOut,
+                                    connectedCp.HandleOut
+                                )
+                            ),
+                            Space.Self,
+                            CurvyBezierModeEnum.Direction
+                        );
                     if (syncLengths)
-                        connectedCp.SetBezierHandleOut(connectedCp.HandleOut.normalized * HandleOut.magnitude, Space.Self, CurvyBezierModeEnum.Length);
+                        connectedCp.SetBezierHandleOut(
+                            connectedCp.HandleOut.normalized * HandleOut.magnitude,
+                            Space.Self,
+                            CurvyBezierModeEnum.Length
+                        );
                 }
-            }
         }
 
         /// <summary>
@@ -807,7 +1026,14 @@ namespace FluffyUnderware.Curvy
                 Vector3 c = cachedTransform.localPosition;
                 Vector3 p = previousTt.localPosition - c;
                 Vector3 n = nextTt.localPosition - c;
-                SetBezierHandles(distanceFrag, p, n, setIn, setOut, noDirtying);
+                SetBezierHandles(
+                    distanceFrag,
+                    p,
+                    n,
+                    setIn,
+                    setOut,
+                    noDirtying
+                );
             }
             else
             {
@@ -824,7 +1050,6 @@ namespace FluffyUnderware.Curvy
                     else
                         HandleOut = pOut;
             }
-
         }
 
         /// <summary>
@@ -836,7 +1061,8 @@ namespace FluffyUnderware.Curvy
         /// <param name="setIn">Set HandleIn?</param>
         /// <param name="setOut">Set HandleOut?</param>
         /// <param name="noDirtying">If true, the Bezier handles will be modified without dirtying any spline</param>
-        public void SetBezierHandles(float distanceFrag, Vector3 p, Vector3 n, bool setIn = true, bool setOut = true, bool noDirtying = false)
+        public void SetBezierHandles(float distanceFrag, Vector3 p, Vector3 n, bool setIn = true, bool setOut = true,
+            bool noDirtying = false)
         {
             float pLen = p.magnitude;
             float nLen = n.magnitude;
@@ -845,7 +1071,7 @@ namespace FluffyUnderware.Curvy
 
             if (pLen != 0 || nLen != 0)
             {
-                Vector3 dir = ((pLen / nLen) * n - p).normalized;
+                Vector3 dir = (((pLen / nLen) * n) - p).normalized;
                 pIn = -dir * (pLen * distanceFrag);
                 pOut = dir * (nLen * distanceFrag);
             }
@@ -880,7 +1106,10 @@ namespace FluffyUnderware.Curvy
             else if (Spline.CanControlPointHaveFollowUp(this))
             {
                 if (Connection == null || Connection != target.Connection)
-                    DTLog.LogError("[Curvy] Trying to set as a Follow-Up a Control Point that is not part of the same connection", this);
+                    DTLog.LogError(
+                        "[Curvy] Trying to set as a Follow-Up a Control Point that is not part of the same connection",
+                        this
+                    );
                 else
                 {
                     FollowUp = target;
@@ -888,16 +1117,50 @@ namespace FluffyUnderware.Curvy
                 }
             }
             else
-                DTLog.LogError("[Curvy] Setting a Follow-Up to a Control Point that can't have one", this);
+                DTLog.LogError(
+                    "[Curvy] Setting a Follow-Up to a Control Point that can't have one",
+                    this
+                );
+        }
+
+        /// <summary>
+        /// Resets the properties of this control point , except the ones related to connections. Use <see cref="Disconnect()"/> to reset connections related properties.
+        /// </summary>
+        public void ResetConnectionUnrelatedProperties()
+        {
+            m_AutoBakeOrientation = false;
+            m_OrientationAnchor = false;
+            m_Swirl = CurvySplineSegmentDefaultValues.Swirl;
+            m_SwirlTurns = 0;
+            // Bezier
+            m_AutoHandles = CurvySplineSegmentDefaultValues.AutoHandles;
+            m_AutoHandleDistance = CurvySplineSegmentDefaultValues.AutoHandleDistance;
+            m_HandleIn = CurvySplineSegmentDefaultValues.HandleIn;
+            m_HandleOut = CurvySplineSegmentDefaultValues.HandleOut;
+            // TCB
+            m_OverrideGlobalTension = false;
+            m_OverrideGlobalContinuity = false;
+            m_OverrideGlobalBias = false;
+            m_SynchronizeTCB = CurvySplineSegmentDefaultValues.SynchronizeTCB;
+            m_StartTension = 0;
+            m_EndTension = 0;
+            m_StartContinuity = 0;
+            m_EndContinuity = 0;
+            m_StartBias = 0;
+            m_EndBias = 0;
+
+            if (CanTouchItsSpline)
+                Spline.SetDirty(
+                    this,
+                    SplineDirtyingType.Everything
+                );
         }
 
         /// <summary>
         /// Resets the connections related data (Connection, FollowUp, etc) while updating the Connection object and dirtying relevant splines.
         /// </summary>
-        public void Disconnect()
-        {
+        public void Disconnect() =>
             Disconnect(true);
-        }
 
         /// <summary>
         /// Resets the connections related data (Connection, FollowUp, etc) while updating the Connection object and dirtying relevant splines.
@@ -906,7 +1169,10 @@ namespace FluffyUnderware.Curvy
         public void Disconnect(bool destroyEmptyConnection)
         {
             if (Connection)
-                Connection.RemoveControlPoint(this, destroyEmptyConnection);
+                Connection.RemoveControlPoint(
+                    this,
+                    destroyEmptyConnection
+                );
 
             //TODO make all this data part of the connection and not the CP
             //Reset connection related data
@@ -925,9 +1191,8 @@ namespace FluffyUnderware.Curvy
         {
             CurvySpline spline = Spline;
 
+            DoSanityChecks();
 #if CURVY_SANITY_CHECKS
-            if (spline.Dirty)
-                DTLog.LogWarning("Interpolate should not be called on segment of a dirty spline. Call CurvySpline.Refresh first", this);
             Assert.IsTrue(spline.IsControlPointASegment(this));
             Assert.IsTrue(spline.IsCpsRelationshipCacheValidINTERNAL);
 #endif
@@ -940,55 +1205,72 @@ namespace FluffyUnderware.Curvy
             switch (curvyInterpolation)
             {
                 case CurvyInterpolation.BSpline:
-                    result = BSpline(spline.ControlPointsList, spline.SegmentToTF(this, localF), spline.IsBSplineClamped, spline.Closed, spline.BSplineDegree, BSplineP0Array.Array);
+                    result = BSpline(
+                        spline.ControlPointsList,
+                        spline.SegmentToTF(
+                            this,
+                            localF
+                        ),
+                        spline.IsBSplineClamped,
+                        spline.Closed,
+                        spline.BSplineDegree,
+                        BSplineP0Array.Array
+                    );
                     break;
                 case CurvyInterpolation.Bezier:
-                    {
-                        result = CurvySpline.Bezier(threadSafeLocalPosition.Addition(HandleOut),
-                            threadSafeLocalPosition,
-                            threadSafeNextCpLocalPosition,
-                            threadSafeNextCpLocalPosition.Addition(cachedNextControlPoint.HandleIn),
-                            localF);
-                        break;
-                    }
+                {
+                    result = CurvySpline.Bezier(
+                        threadSafeData.ThreadSafeLocalPosition.Addition(HandleOut),
+                        threadSafeData.ThreadSafeLocalPosition,
+                        threadSafeData.ThreadSafeNextCpLocalPosition,
+                        threadSafeData.ThreadSafeNextCpLocalPosition.Addition(cachedNextControlPoint.HandleIn),
+                        localF
+                    );
+                    break;
+                }
                 case CurvyInterpolation.CatmullRom:
                 case CurvyInterpolation.TCB:
+                {
+                    if (curvyInterpolation == CurvyInterpolation.TCB)
                     {
-                        if (curvyInterpolation == CurvyInterpolation.TCB)
-                        {
-                            float t0 = StartTension; float t1 = EndTension;
-                            float c0 = StartContinuity; float c1 = EndContinuity;
-                            float b0 = StartBias; float b1 = EndBias;
+                        TcbParameters tcbParameters = EffectiveTcbParameters;
 
-                            if (!OverrideGlobalTension)
-                                t0 = t1 = mSpline.Tension;
-                            if (!OverrideGlobalContinuity)
-                                c0 = c1 = mSpline.Continuity;
-                            if (!OverrideGlobalBias)
-                                b0 = b1 = mSpline.Bias;
-
-                            result = CurvySpline.TCB(threadSafePreviousCpLocalPosition,
-                                threadSafeLocalPosition,
-                                threadSafeNextCpLocalPosition,
-                                cachedNextControlPoint.threadSafeNextCpLocalPosition,
-                                localF, t0, c0, b0, t1, c1, b1);
-                        }
-                        else
-                            result = CurvySpline.CatmullRom(threadSafePreviousCpLocalPosition,
-                                threadSafeLocalPosition,
-                                threadSafeNextCpLocalPosition,
-                                cachedNextControlPoint.threadSafeNextCpLocalPosition,
-                                localF);
+                        result = CurvySpline.TCB(
+                            threadSafeData.ThreadSafePreviousCpLocalPosition,
+                            threadSafeData.ThreadSafeLocalPosition,
+                            threadSafeData.ThreadSafeNextCpLocalPosition,
+                            cachedNextControlPoint.threadSafeData.ThreadSafeNextCpLocalPosition,
+                            localF,
+                            tcbParameters.StartTension,
+                            tcbParameters.StartContinuity,
+                            tcbParameters.StartBias,
+                            tcbParameters.EndTension,
+                            tcbParameters.EndContinuity,
+                            tcbParameters.EndBias
+                        );
                     }
+                    else
+                        result = CurvySpline.CatmullRom(
+                            threadSafeData.ThreadSafePreviousCpLocalPosition,
+                            threadSafeData.ThreadSafeLocalPosition,
+                            threadSafeData.ThreadSafeNextCpLocalPosition,
+                            cachedNextControlPoint.threadSafeData.ThreadSafeNextCpLocalPosition,
+                            localF
+                        );
+                }
                     break;
                 case CurvyInterpolation.Linear:
                     result = OptimizedOperators.LerpUnclamped(
-                        threadSafeLocalPosition,
-                        threadSafeNextCpLocalPosition,
-                        localF);
+                        threadSafeData.ThreadSafeLocalPosition,
+                        threadSafeData.ThreadSafeNextCpLocalPosition,
+                        localF
+                    );
                     break;
                 default:
-                    DTLog.LogError("[Curvy] Invalid interpolation value " + curvyInterpolation, this);
+                    DTLog.LogError(
+                        "[Curvy] Invalid interpolation value " + curvyInterpolation,
+                        this
+                    );
                     return Vector3.zero;
             }
 
@@ -1006,14 +1288,22 @@ namespace FluffyUnderware.Curvy
         public Vector3 InterpolateFast(float localF, Space space = Space.Self)
         {
             Vector3 result;
-            if (Approximation.Length > 1)
+            SubArray<Vector3> positions = PositionsApproximation;
+            if (positions.Count > 1)
             {
                 float frag;
-                int idx = getApproximationIndexINTERNAL(localF, out frag);
-                result = OptimizedOperators.LerpUnclamped(Approximation[idx], Approximation[idx + 1], frag);
+                int idx = getApproximationIndexINTERNAL(
+                    localF,
+                    out frag
+                );
+                result = OptimizedOperators.LerpUnclamped(
+                    positions.Array[idx],
+                    positions.Array[idx + 1],
+                    frag
+                );
             }
             else
-                result = Approximation[0];
+                result = positions.Array[0];
 
             if (space == Space.World)
                 result = Spline.ToWorldPosition(result);
@@ -1028,8 +1318,15 @@ namespace FluffyUnderware.Curvy
         public Vector3 GetTangent(float localF, Space space = Space.Self)
         {
             localF = Mathf.Clamp01(localF);
-            Vector3 position = Interpolate(localF, space);
-            return GetTangent(localF, position, space);
+            Vector3 position = Interpolate(
+                localF,
+                space
+            );
+            return GetTangent(
+                localF,
+                position,
+                space
+            );
         }
 
         /// <summary>
@@ -1056,15 +1353,28 @@ namespace FluffyUnderware.Curvy
                 {
                     CurvySplineSegment nSeg = curvySpline.GetNextSegment(this);
                     if (nSeg)
-                        p2 = nSeg.Interpolate(f2 - 1, space);//return (NextSegment.Interpolate(f2 - 1) - position).normalized;
+                        p2 = nSeg.Interpolate(
+                            f2 - 1,
+                            space
+                        ); //return (NextSegment.Interpolate(f2 - 1) - position).normalized;
                     else
                     {
                         f2 = localF - fIncrement;
-                        return OptimizedOperators.Normalize(position.Subtraction(Interpolate(f2, space)));
+                        return OptimizedOperators.Normalize(
+                            position.Subtraction(
+                                Interpolate(
+                                    f2,
+                                    space
+                                )
+                            )
+                        );
                     }
                 }
                 else
-                    p2 = Interpolate(f2, space); // return (Interpolate(f2) - position).normalized;
+                    p2 = Interpolate(
+                        f2,
+                        space
+                    ); // return (Interpolate(f2) - position).normalized;
 
                 localF += fIncrement;
             } while (p2 == position && --leave > 0);
@@ -1081,14 +1391,22 @@ namespace FluffyUnderware.Curvy
         public Vector3 GetTangentFast(float localF, Space space = Space.Self)
         {
             Vector3 result;
-            if (ApproximationT.Length > 1)
+            SubArray<Vector3> tangents = TangentsApproximation;
+            if (tangents.Count > 1)
             {
                 float frag;
-                int idx = getApproximationIndexINTERNAL(localF, out frag);
-                result = Vector3.SlerpUnclamped(ApproximationT[idx], ApproximationT[idx + 1], frag);
+                int idx = getApproximationIndexINTERNAL(
+                    localF,
+                    out frag
+                );
+                result = Vector3.SlerpUnclamped(
+                    tangents.Array[idx],
+                    tangents.Array[idx + 1],
+                    frag
+                );
             }
             else
-                result = ApproximationT[0];
+                result = tangents.Array[0];
 
             if (space == Space.World)
                 result = Spline.ToWorldDirection(result);
@@ -1106,8 +1424,15 @@ namespace FluffyUnderware.Curvy
         public void InterpolateAndGetTangent(float localF, out Vector3 position, out Vector3 tangent, Space space = Space.Self)
         {
             localF = Mathf.Clamp01(localF);
-            position = Interpolate(localF, space);
-            tangent = GetTangent(localF, position, space);
+            position = Interpolate(
+                localF,
+                space
+            );
+            tangent = GetTangent(
+                localF,
+                position,
+                space
+            );
         }
 
         /// <summary>
@@ -1119,20 +1444,34 @@ namespace FluffyUnderware.Curvy
         /// <param name="position">the output position</param>
         /// <param name="tangent">the output tangent</param>
         /// <param name="space">The space (spline's local space or the world space) in which the returned result is expressed</param>
-        public void InterpolateAndGetTangentFast(float localF, out Vector3 position, out Vector3 tangent, Space space = Space.Self)
+        public void InterpolateAndGetTangentFast(float localF, out Vector3 position, out Vector3 tangent,
+            Space space = Space.Self)
         {
-            if (Approximation.Length > 1)
+            SubArray<Vector3> tangents = TangentsApproximation;
+            SubArray<Vector3> positions = PositionsApproximation;
+            if (positions.Count > 1)
             {
                 float frag;
-                int idx = getApproximationIndexINTERNAL(localF, out frag);
+                int idx = getApproximationIndexINTERNAL(
+                    localF,
+                    out frag
+                );
                 int idx2 = idx + 1;
-                position = OptimizedOperators.LerpUnclamped(Approximation[idx], Approximation[idx2], frag);
-                tangent = Vector3.SlerpUnclamped(ApproximationT[idx], ApproximationT[idx2], frag);
+                position = OptimizedOperators.LerpUnclamped(
+                    positions.Array[idx],
+                    positions.Array[idx2],
+                    frag
+                );
+                tangent = Vector3.SlerpUnclamped(
+                    tangents.Array[idx],
+                    tangents.Array[idx2],
+                    frag
+                );
             }
             else
             {
-                position = Approximation[0];
-                tangent = ApproximationT[0];
+                position = positions.Array[0];
+                tangent = tangents.Array[0];
             }
 
 
@@ -1152,14 +1491,22 @@ namespace FluffyUnderware.Curvy
         public Vector3 GetOrientationUpFast(float localF, Space space = Space.Self)
         {
             Vector3 result;
-            if (ApproximationUp.Length > 1)
+            SubArray<Vector3> ups = UpsApproximation;
+            if (ups.Count > 1)
             {
                 float frag;
-                int idx = getApproximationIndexINTERNAL(localF, out frag);
-                result = Vector3.SlerpUnclamped(ApproximationUp[idx], ApproximationUp[idx + 1], frag);
+                int idx = getApproximationIndexINTERNAL(
+                    localF,
+                    out frag
+                );
+                result = Vector3.SlerpUnclamped(
+                    ups.Array[idx],
+                    ups.Array[idx + 1],
+                    frag
+                );
             }
             else
-                result = ApproximationUp[0];
+                result = ups.Array[0];
 
             if (space == Space.World)
                 result = Spline.ToWorldDirection(result);
@@ -1175,25 +1522,39 @@ namespace FluffyUnderware.Curvy
         /// <param name="space">The space (spline's local space or the world space) in which the returned result is expressed</param>
         public Quaternion GetOrientationFast(float localF, bool inverse = false, Space space = Space.Self)
         {
-            Vector3 view = GetTangentFast(localF, space);
+            Vector3 view = GetTangentFast(
+                localF,
+                space
+            );
 
             Quaternion result;
             if (view != Vector3.zero)
             {
                 if (inverse)
                     view *= -1;
-                result = Quaternion.LookRotation(view, GetOrientationUpFast(localF, space));
+                result = Quaternion.LookRotation(
+                    view,
+                    GetOrientationUpFast(
+                        localF,
+                        space
+                    )
+                );
             }
             else
             {
 #if CURVY_SANITY_CHECKS
-                Debug.LogError(string.Format("[Curvy] Invalid Orientation for segment {0} at localF {1}", this, localF));
+                Debug.LogError(
+                    string.Format(
+                        "[Curvy] Invalid Orientation for segment {0} at localF {1}",
+                        this,
+                        localF
+                    )
+                );
 #endif
                 result = Quaternion.identity;
             }
 
             return result;
-
         }
 
 
@@ -1202,6 +1563,8 @@ namespace FluffyUnderware.Curvy
         /// <summary>
         /// Rebuilds <see cref="Metadata"/>
         /// </summary>
+        [UsedImplicitly]
+        [Obsolete("No more used in Curvy. Will get removed. Copy it if you still need it")]
         public void ReloadMetaData()
         {
             Metadata.Clear();
@@ -1224,10 +1587,8 @@ namespace FluffyUnderware.Curvy
         /// <summary>
         /// Removes a MetaData instance from <see cref="Metadata"/>
         /// </summary>
-        public void UnregisterMetaData(CurvyMetadataBase metaData)
-        {
+        public void UnregisterMetaData(CurvyMetadataBase metaData) =>
             Metadata.Remove(metaData);
-        }
 
         /// <summary>
         /// Gets Metadata of this ControlPoint
@@ -1252,6 +1613,7 @@ namespace FluffyUnderware.Curvy
                 result = gameObject.AddComponent<T>();
                 Metadata.Add(result);
             }
+
             return result;
         }
 
@@ -1271,20 +1633,30 @@ namespace FluffyUnderware.Curvy
                 CurvyInterpolatableMetadataBase<U> nextMetaData = null;
                 if (nextCp)
                     nextMetaData = nextCp.GetMetadata<T>();
-                return metaData.Interpolate(nextMetaData, f);
+                return metaData.Interpolate(
+                    nextMetaData,
+                    f
+                );
             }
+
             return default;
         }
 
         /// <summary>
         /// Removes all Metadata components of this Control Point
         /// </summary>
+        [UsedImplicitly]
+        [Obsolete]
         public void DeleteMetadata()
         {
             List<CurvyMetadataBase> metaDataList = Metadata.ToList();
             for (int i = metaDataList.Count - 1; i >= 0; i--)
-                metaDataList[i].Destroy(true, false);
+                metaDataList[i].Destroy(
+                    true,
+                    false
+                );
         }
+
         #endregion
 
         /// <summary>
@@ -1292,21 +1664,30 @@ namespace FluffyUnderware.Curvy
         /// localF stands for Local Fragment. It's a value ranging from 0 to 1 inclusive. 0 means the segment's start and 1 means the segment's end. This is the "time" parameter used in the splines' formulas. A point's localF is not proportional to its distance from the segment's start. Depending on the spline, a value of 0.5 does not always mean the middle, distance wise, of the segment
         /// </summary>
         /// <param name="position">The point's position</param>
-        /// <param name="space">The space (spline's local space or the world space) in which the returned result is expressed</param> <paramref name="position"/> is expressed</param>
+        /// <param name="space">The space (spline's local space or the world space) in which <paramref name="position"/> is expressed</param>
         /// <remarks>This method's precision and speed depend on the <see cref="CurvySpline.CacheDensity"/></remarks>
         public float GetNearestPointF(Vector3 position, Space space = Space.Self)
         {
 #if CURVY_SANITY_CHECKS
-            Assert.IsTrue(CacheSize >= 0, "[Curvy] CurvySplineSegment has uninitialized cache. Call Refresh() on the CurvySpline it belongs to.");
+            Assert.IsTrue(
+                CacheSize >= 0,
+                "[Curvy] CurvySplineSegment has uninitialized cache. Call Refresh() on the CurvySpline it belongs to."
+            );
 #endif
             if (space == Space.World)
                 position = Spline.ToLocalPosition(position);
 
-            CurvyUtility.GetNearestPointIndex(position, Approximation, Approximation.Length, out int index, out float frag);
+            SubArray<Vector3> positions = PositionsApproximation;
+            CurvyUtility.GetNearestPointIndex(
+                position,
+                positions.Array,
+                positions.Count,
+                out int index,
+                out float frag
+            );
 
             // return the nearest collision
-            return (index + frag) / (Approximation.Length - 1);
-
+            return (index + frag) / (positions.Count - 1);
         }
 
 
@@ -1321,18 +1702,24 @@ namespace FluffyUnderware.Curvy
             Assert.IsTrue(localDistance >= 0);
             Assert.IsTrue(localDistance <= Length);
 #endif
-            int approximationDistancesLength = ApproximationDistances.Length;
-
-            if (approximationDistancesLength <= 1 || localDistance == 0)
+            SubArray<float> distances = DistancesApproximation;
+            float[] distancesArray = distances.Array;
+            int distanceCount = distances.Count;
+            if (distanceCount <= 1 || localDistance == 0)
                 return 0;
 
-            int lowerIndex = CurvyUtility.InterpolationSearch(ApproximationDistances, ApproximationDistances.Length, localDistance);
-            if (lowerIndex == approximationDistancesLength - 1)
+            int lowerIndex = CurvyUtility.InterpolationSearch(
+                distancesArray,
+                distanceCount,
+                localDistance
+            );
+            if (lowerIndex == distanceCount - 1)
                 return 1;
 
             //BUG this basically interpolates linearly the F value between two cache points. This is an approximation that is not correct because F does not vary linearly between two points, unlike distance that does. The issue is not big as long as there is a lot of cache points to keep the difference between the correct answer and the approximate one small enough.
-            float frag = (localDistance - ApproximationDistances[lowerIndex]) / (ApproximationDistances[lowerIndex + 1] - ApproximationDistances[lowerIndex]);
-            return (lowerIndex + frag) / (approximationDistancesLength - 1);
+            float frag = (localDistance - distancesArray[lowerIndex])
+                         / (distancesArray[lowerIndex + 1] - distancesArray[lowerIndex]);
+            return (lowerIndex + frag) / (distanceCount - 1);
         }
 
         /// <summary>
@@ -1346,20 +1733,24 @@ namespace FluffyUnderware.Curvy
             Assert.IsTrue(localF >= 0);
             Assert.IsTrue(localF <= 1);
 #endif
-            if (ApproximationDistances.Length <= 1 || localF == 0)
+            SubArray<float> distances = DistancesApproximation;
+            if (distances.Count <= 1 || localF == 0)
                 return 0;
 
             if (localF == 1f)
                 return Length;
 
             float frag;
-            int idx = getApproximationIndexINTERNAL(localF, out frag);
+            int idx = getApproximationIndexINTERNAL(
+                localF,
+                out frag
+            );
 #if CURVY_SANITY_CHECKS
             Assert.IsTrue(idx >= 0);
-            Assert.IsTrue(idx < ApproximationDistances.Length - 1);
+            Assert.IsTrue(idx < distances.Count - 1);
 #endif
-            float d = ApproximationDistances[idx + 1] - ApproximationDistances[idx];
-            return ApproximationDistances[idx] + d * frag;
+            float d = distances.Array[idx + 1] - distances.Array[idx];
+            return distances.Array[idx] + (d * frag);
         }
 
         /// <summary>
@@ -1369,16 +1760,16 @@ namespace FluffyUnderware.Curvy
         /// <param name="localF">localF stands for Local Fragment. It's a value ranging from 0 to 1 inclusive. 0 means the segment's start and 1 means the segment's end. This is the "time" parameter used in the splines' formulas. A point's localF is not proportional to its distance from the segment's start. Depending on the spline, a value of 0.5 does not always mean the middle, distance wise, of the segment</param>
         /// <returns>a TF value</returns>
         public float LocalFToTF(float localF)
-        {
-            return Spline.SegmentToTF(this, localF);
-        }
+            => Spline.SegmentToTF(
+                this,
+                localF
+            );
 
         public override string ToString()
         {
             if (Spline != null)
                 return Spline.name + "." + name;
-            else
-                return base.ToString();
+            return base.ToString();
         }
 
         /// <summary>
@@ -1387,7 +1778,7 @@ namespace FluffyUnderware.Curvy
         public void BakeOrientationToTransform()
         {
 #if CURVY_SANITY_CHECKS
-            Assert.IsTrue(ApproximationUp.Length > 0);
+            Assert.IsTrue(UpsApproximation.Count > 0);
 #endif
 
             Quaternion orientation = GetOrientationFast(0);
@@ -1400,7 +1791,7 @@ namespace FluffyUnderware.Curvy
         /// </summary>
         public int getApproximationIndexINTERNAL(float localF, out float frag)
         {
-            int approximationLength = Approximation.Length;
+            int approximationLength = PositionsApproximation.Count;
 
             float f = localF * (approximationLength - 1);
 
@@ -1431,6 +1822,8 @@ namespace FluffyUnderware.Curvy
             mSpline = spline;
         }
 
+        [UsedImplicitly]
+        [Obsolete("Use the other overload instead")]
         public void UnlinkFromSpline()
         {
 #if CURVY_SANITY_CHECKS
@@ -1439,9 +1832,20 @@ namespace FluffyUnderware.Curvy
             mSpline = null;
         }
 
+        public void UnlinkFromSpline(CurvySpline spline)
+        {
+            if (mSpline == spline)
+                mSpline = null;
+        }
+
 #if CONTRACTS_FULL
         [ContractInvariantMethod]
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1822:MarkMembersAsStatic", Justification = "Required for code contracts.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage(
+            "Microsoft.Performance",
+            "CA1822:MarkMembersAsStatic",
+            Justification =
+                "Required for code contracts."
+        )]
         private void ObjectInvariant()
         {
             //Contract.Invariant(mSpline == null || transform.parent.GetComponent<CurvySpline>() == mSpline);
@@ -1468,11 +1872,19 @@ namespace FluffyUnderware.Curvy
             if (cachedTransform.localPosition != newPosition)
             {
                 cachedTransform.localPosition = newPosition;
-                Spline.SetDirtyPartial(this, SplineDirtyingType.Everything);
+                Spline.SetDirtyPartial(
+                    this,
+                    SplineDirtyingType.Everything
+                );
                 if ((ConnectionSyncPosition || ConnectionSyncRotation) && Connection != null)
                     Connection.SetSynchronisationPositionAndRotation(
-                        ConnectionSyncPosition ? cachedTransform.position : Connection.transform.position,
-                        ConnectionSyncRotation ? cachedTransform.rotation : Connection.transform.rotation);
+                        ConnectionSyncPosition
+                            ? cachedTransform.position
+                            : Connection.transform.position,
+                        ConnectionSyncRotation
+                            ? cachedTransform.rotation
+                            : Connection.transform.rotation
+                    );
             }
         }
 
@@ -1485,11 +1897,19 @@ namespace FluffyUnderware.Curvy
             if (cachedTransform.position != value)
             {
                 cachedTransform.position = value;
-                Spline.SetDirtyPartial(this, SplineDirtyingType.Everything);
+                Spline.SetDirtyPartial(
+                    this,
+                    SplineDirtyingType.Everything
+                );
                 if ((ConnectionSyncPosition || ConnectionSyncRotation) && Connection != null)
                     Connection.SetSynchronisationPositionAndRotation(
-                        ConnectionSyncPosition ? cachedTransform.position : Connection.transform.position,
-                        ConnectionSyncRotation ? cachedTransform.rotation : Connection.transform.rotation);
+                        ConnectionSyncPosition
+                            ? cachedTransform.position
+                            : Connection.transform.position,
+                        ConnectionSyncRotation
+                            ? cachedTransform.rotation
+                            : Connection.transform.rotation
+                    );
             }
         }
 
@@ -1502,12 +1922,20 @@ namespace FluffyUnderware.Curvy
             if (cachedTransform.localRotation != value)
             {
                 cachedTransform.localRotation = value;
-                if (OrientatinInfluencesSpline)
-                    Spline.SetDirtyPartial(this, SplineDirtyingType.OrientationOnly);
+                if (OrientationInfluencesSpline)
+                    Spline.SetDirtyPartial(
+                        this,
+                        SplineDirtyingType.OrientationOnly
+                    );
                 if ((ConnectionSyncPosition || ConnectionSyncRotation) && Connection != null)
                     Connection.SetSynchronisationPositionAndRotation(
-                        ConnectionSyncPosition ? cachedTransform.position : Connection.transform.position,
-                        ConnectionSyncRotation ? cachedTransform.rotation : Connection.transform.rotation);
+                        ConnectionSyncPosition
+                            ? cachedTransform.position
+                            : Connection.transform.position,
+                        ConnectionSyncRotation
+                            ? cachedTransform.rotation
+                            : Connection.transform.rotation
+                    );
             }
         }
 
@@ -1520,12 +1948,20 @@ namespace FluffyUnderware.Curvy
             if (cachedTransform.rotation != value)
             {
                 cachedTransform.rotation = value;
-                if (OrientatinInfluencesSpline)
-                    Spline.SetDirtyPartial(this, SplineDirtyingType.OrientationOnly);
+                if (OrientationInfluencesSpline)
+                    Spline.SetDirtyPartial(
+                        this,
+                        SplineDirtyingType.OrientationOnly
+                    );
                 if ((ConnectionSyncPosition || ConnectionSyncRotation) && Connection != null)
                     Connection.SetSynchronisationPositionAndRotation(
-                        ConnectionSyncPosition ? cachedTransform.position : Connection.transform.position,
-                        ConnectionSyncRotation ? cachedTransform.rotation : Connection.transform.rotation);
+                        ConnectionSyncPosition
+                            ? cachedTransform.position
+                            : Connection.transform.position,
+                        ConnectionSyncRotation
+                            ? cachedTransform.rotation
+                            : Connection.transform.rotation
+                    );
             }
         }
 
@@ -1535,17 +1971,13 @@ namespace FluffyUnderware.Curvy
         /// Returns true if followUp can be associated with a heading direction of <see cref="ConnectionHeadingEnum.Minus"/>
         /// </summary>
         public static bool CanFollowUpHeadToStart([NotNull] CurvySplineSegment followUp)
-        {
-            return followUp.Spline.GetPreviousControlPointIndex(followUp) != -1;
-        }
+            => followUp.Spline.GetPreviousControlPointIndex(followUp) != -1;
 
         /// <summary>
         /// Returns true if followUp can be associated with a heading direction of <see cref="ConnectionHeadingEnum.Plus"/>
         /// </summary>
         public static bool CanFollowUpHeadToEnd([NotNull] CurvySplineSegment followUp)
-        {
-            return followUp.Spline.GetNextControlPointIndex(followUp) != -1;
-        }
+            => followUp.Spline.GetNextControlPointIndex(followUp) != -1;
 
         /// <summary>
         /// Gets the position of a point on the B-Spline
@@ -1556,19 +1988,48 @@ namespace FluffyUnderware.Curvy
         /// <param name="isClosed"><see cref="CurvySpline.Closed"/></param>
         /// <param name="degree"><see cref="CurvySpline.BSplineDegree"/></param>
         /// <param name="p0Array">An array used in internal computations. This is to avoid excessive allocations.The length of the array should be greater or equal to <paramref name="degree"/> + 1. The content of the array does not matter, since it gets overwritten by the method</param>
-        public static Vector3 BSpline([NotNull] ReadOnlyCollection<CurvySplineSegment> controlPoints, float tf, bool isClamped, bool isClosed, int degree, [NotNull] Vector3[] p0Array)
+        public static Vector3 BSpline([NotNull] ReadOnlyCollection<CurvySplineSegment> controlPoints, float tf, bool isClamped,
+            bool isClosed, int degree, [NotNull] Vector3[] p0Array)
         {
 #if CURVY_SANITY_CHECKS
             Assert.IsTrue(p0Array.Length >= degree + 1);
             Assert.IsTrue(tf.IsBetween0And1());
 #endif
             int controlPointsCount = controlPoints.Count;
-            int n = BSplineHelper.GetBSplineN(controlPointsCount, degree, isClosed);
-            BSplineHelper.GetBSplineUAndK(tf, isClamped, degree, n, out float u, out int k);
-            GetBSplineP0s(controlPoints, controlPointsCount, degree, k, p0Array);
+            int n = BSplineHelper.GetBSplineN(
+                controlPointsCount,
+                degree,
+                isClosed
+            );
+            BSplineHelper.GetBSplineUAndK(
+                tf,
+                isClamped,
+                degree,
+                n,
+                out float u,
+                out int k
+            );
+            GetBSplineP0s(
+                controlPoints,
+                controlPointsCount,
+                degree,
+                k,
+                p0Array
+            );
             return isClamped
-                ? BSplineHelper.DeBoorClamped(degree, k, u, n + 1, p0Array)
-                : BSplineHelper.DeBoorUnclamped(degree, k, u, p0Array);
+                ? BSplineHelper.DeBoorClamped(
+                    degree,
+                    k,
+                    u,
+                    n + 1,
+                    p0Array
+                )
+                : BSplineHelper.DeBoorUnclamped(
+                    degree,
+                    k,
+                    u,
+                    p0Array
+                );
         }
 
         #endregion
@@ -1580,14 +2041,18 @@ namespace FluffyUnderware.Curvy
         {
             this.StripComponents();
             Disconnect();
+#pragma warning disable CS0612
             DeleteMetadata();
+#pragma warning restore CS0612
+            transform.DeleteChildren(
+                false,
+                true
+            );
         }
 
         //IPoolable
-        public void OnAfterPop()
-        {
-            Reset();
-        }
+        public void OnAfterPop() =>
+            ResetConnectionUnrelatedProperties();
 
         #endregion
     }

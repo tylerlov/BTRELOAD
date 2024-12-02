@@ -1,13 +1,13 @@
 // =====================================================================
-// Copyright 2013-2022 ToolBuddy
+// Copyright © 2013 ToolBuddy
 // All rights reserved
 // 
 // http://www.toolbuddy.net
 // =====================================================================
 
 using System.Collections.Generic;
-using System.Linq;
 using FluffyUnderware.DevTools.Extensions;
+using JetBrains.Annotations;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -19,6 +19,7 @@ namespace FluffyUnderware.Curvy.Examples
         public Text Text;
         public Dropdown DropDown;
 
+        [UsedImplicitly]
         private void Start()
         {
             List<string> items = getScenes();
@@ -30,43 +31,35 @@ namespace FluffyUnderware.Curvy.Examples
                 DropDown.ClearOptions();
                 DropDown.AddOptions(items);
             }
+
             DropDown.value = CurrentLevel;
             DropDown.onValueChanged.AddListener(OnValueChanged);
         }
 
         private int CurrentLevel
         {
-            get
-            {
-#if UNITY_5_0 || UNITY_5_1 || UNITY_5_2
-            return Application.loadedLevel;
-#else
-                return SceneManager.GetActiveScene().buildIndex;
-#endif
-            }
+            get => SceneManager.GetActiveScene().buildIndex;
             set
             {
                 if (CurrentLevel != value)
-                {
-#if UNITY_5_0 || UNITY_5_1 || UNITY_5_2
-                Application.LoadLevel(value);
-#else
-                    SceneManager.LoadScene(value, LoadSceneMode.Single);
-#endif
-                }
+                    SceneManager.LoadScene(
+                        value,
+                        LoadSceneMode.Single
+                    );
             }
         }
 
 #if !UNITY_EDITOR
-    /// <summary>
-    /// I use this to show names more understandable to people unfamiliar with Curvy. I use this only outside of the Unity's editor, to be used by the demo build.
-    /// </summary>
-        Dictionary<string, string> scenesAlternativeNames = new Dictionary<string, string>{
+        /// <summary>
+        /// I use this to show names more understandable to people unfamiliar with Curvy. I use this only outside of the Unity's editor, to be used by the demo build.
+        /// </summary>
+        Dictionary<string, string> scenesAlternativeNames = new Dictionary<string, string>
+        {
             { "00_SplineController", "Move object: Follow a static spline" },
             { "04_PaintSpline", "Move object: Follow a dynamic spline" },
             { "20_CGPaths", "Move object: Follow a blended spline" },
             { "21_CGExtrusion", "Move object: Follow a Curvy generated volume" },
-            
+
             { "06_Orientation", "Basics: Store orientation data in a spline" },
             { "05_NearestPoint", "Basics: Find nearest point on spline" },
             { "03_Connections", "Basics: Connections and events" },
@@ -115,13 +108,12 @@ namespace FluffyUnderware.Curvy.Examples
 #endif
                 result.Add(itemName);
             }
+
             return result;
         }
 
 
-        private void OnValueChanged(int value)
-        {
+        private void OnValueChanged(int value) =>
             CurrentLevel = DropDown.value;
-        }
     }
 }

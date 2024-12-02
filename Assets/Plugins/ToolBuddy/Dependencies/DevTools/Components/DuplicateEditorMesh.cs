@@ -5,6 +5,7 @@
 // http://www.fluffyunderware.com
 // =====================================================================
 
+using System;
 using UnityEngine;
 using System.Collections;
 
@@ -17,41 +18,18 @@ namespace FluffyUnderware.DevTools
     /// <remarks>On Duplicating, Awake() checks if the sharedMesh is already used in the scene. If yes, a new mesh will be created to ensure that each sharedMesh is unique</remarks>
     [ExecuteAlways]
     [RequireComponent(typeof(MeshFilter))]
+    [JetBrains.Annotations.UsedImplicitly] [Obsolete("No more used in Curvy. Will get removed. Copy it if you still need it")]
     public abstract class DuplicateEditorMesh : DTVersionedMonoBehaviour
     {
-        MeshFilter mFilter;
+        private MeshFilter mFilter;
 
         public MeshFilter Filter
         {
-            get {
-                if (mFilter == null)
-                    mFilter = GetComponent<MeshFilter>();
-                return mFilter; 
-            }
-        }
-
-        protected virtual void Awake()
-        {
-            if (!Application.isPlaying)
+            get
             {
-                MeshFilter meshFilter = Filter;
-                if (meshFilter && meshFilter.sharedMesh != null)
-                {
-                    DuplicateEditorMesh[] otherWatchdogs = GameObject.FindObjectsOfType<DuplicateEditorMesh>();
-                    foreach (DuplicateEditorMesh dog in otherWatchdogs)
-                    {
-                        if (dog != this)
-                        {
-                            MeshFilter otherMF = dog.Filter;
-                            if (otherMF && otherMF.sharedMesh == meshFilter.sharedMesh)
-                            {
-                                Mesh m = new Mesh();
-                                m.name = otherMF.sharedMesh.name;
-                                meshFilter.mesh = m;
-                            }
-                        }
-                    }
-                }
+                if (ReferenceEquals(mFilter, null))
+                    mFilter = GetComponent<MeshFilter>();
+                return mFilter;
             }
         }
     }

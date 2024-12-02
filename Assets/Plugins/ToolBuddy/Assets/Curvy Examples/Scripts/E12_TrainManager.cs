@@ -1,15 +1,12 @@
 // =====================================================================
-// Copyright 2013-2022 ToolBuddy
+// Copyright © 2013 ToolBuddy
 // All rights reserved
 // 
 // http://www.toolbuddy.net
 // =====================================================================
 
+using JetBrains.Annotations;
 using UnityEngine;
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine.UI;
-
 
 namespace FluffyUnderware.Curvy.Examples
 {
@@ -27,27 +24,27 @@ namespace FluffyUnderware.Curvy.Examples
         public float Limit = 0.2f;
 
         private bool isSetup;
-        E12_TrainCarManager[] Cars;
+        private E12_TrainCarManager[] Cars;
 
-        void Start()
-        {
+        [UsedImplicitly]
+        private void Start() =>
             setup();
-        }
 
-        void OnDisable()
-        {
+        [UsedImplicitly]
+        private void OnDisable() =>
             isSetup = false;
-        }
 
 #if UNITY_EDITOR
-        void OnValidate()
+        [UsedImplicitly]
+        private void OnValidate()
         {
             if (isSetup)
                 setup();
         }
 #endif
 
-        void LateUpdate()
+        [UsedImplicitly]
+        private void LateUpdate()
         {
             if (isSetup == false)
                 setup();
@@ -55,25 +52,24 @@ namespace FluffyUnderware.Curvy.Examples
             {
                 E12_TrainCarManager first = Cars[0];
                 E12_TrainCarManager last = Cars[Cars.Length - 1];
-                if (first.FrontAxis.Spline == last.BackAxis.Spline && first.FrontAxis.RelativePosition > last.BackAxis.RelativePosition)
-                {
+                if (first.FrontAxis.Spline == last.BackAxis.Spline
+                    && first.FrontAxis.RelativePosition > last.BackAxis.RelativePosition)
                     for (int i = 1; i < Cars.Length; i++)
                     {
                         float delta = Cars[i - 1].Position - Cars[i].Position - CarSize - CarGap;
                         if (Mathf.Abs(delta) >= Limit)
                             Cars[i].Position += delta;
                     }
-                }
             }
         }
 
-        void setup()
+        private void setup()
         {
             if (Spline.Dirty)
                 Spline.Refresh();
 
             Cars = GetComponentsInChildren<E12_TrainCarManager>();
-            float pos = Position - CarSize / 2;
+            float pos = Position - (CarSize / 2);
 
             for (int i = 0; i < Cars.Length; i++)
             {

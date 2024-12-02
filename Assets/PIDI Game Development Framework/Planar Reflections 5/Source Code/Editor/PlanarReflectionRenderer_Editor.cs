@@ -89,6 +89,15 @@
 
                 //
                 Toggle( new GUIContent( "Reflection Depth", "Whether this reflection will render its own depth texture or not" ), serializedObject, "_settings.renderDepth", 1 );
+                
+                if ( serializedObject.FindProperty( "_settings.renderFog" ).boolValue ) {
+                    GUILayout.Space( 8 );
+
+                    EditorGUILayout.HelpBox( "Fog Rendering is no longer needed in most cases for Unity 2022+ with URP as fog is rendered in the reflection by default.", MessageType.Info );
+
+                    GUILayout.Space( 8 );
+                }
+                
                 Toggle( new GUIContent( "Reflection Fog", "Whether this reflection will render its own fog pass or not" ), serializedObject, "_settings.renderFog", 1 );
                 
                 if ( serializedObject.FindProperty( "_settings.renderFog" ).boolValue ) {

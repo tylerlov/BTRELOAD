@@ -1,17 +1,14 @@
 // =====================================================================
-// Copyright 2013-2022 ToolBuddy
+// Copyright © 2013 ToolBuddy
 // All rights reserved
 // 
 // http://www.toolbuddy.net
 // =====================================================================
 
-using UnityEngine;
-using UnityEditor;
-using System.Collections;
 using FluffyUnderware.Curvy.Generator;
-using System.Collections.Generic;
-using FluffyUnderware.DevToolsEditor.Extensions;
-using FluffyUnderware.DevTools;
+using FluffyUnderware.DevTools.Extensions;
+using UnityEditor;
+using UnityEngine;
 
 namespace FluffyUnderware.CurvyEditor.Generator
 {
@@ -23,20 +20,45 @@ namespace FluffyUnderware.CurvyEditor.Generator
         {
             GUILayout.Space(5);
             if (Target)
-                EditorGUILayout.HelpBox("# of Modules: " + Target.Modules.Count.ToString(), MessageType.Info);
+                EditorGUILayout.HelpBox(
+                    "# of Modules: " + Target.Modules.Count,
+                    MessageType.Info
+                );
         }
 
         public override void OnInspectorGUI()
         {
             //With the new prefab system (Unity 2018.3) prefabs don't show inspector, and when opening prefab editor, its objects are of type PrefabAssetType.NotAPrefab, so no way to know if its from prefab or not?
 
-            GUILayout.BeginHorizontal(GUILayout.Height(24));
-            if (GUILayout.Button(new GUIContent(CurvyStyles.OpenGraphTexture, "Edit Graph")))
-                CGGraph.Open(Target);
+            GUILayoutExtension.Horizontal(
+                () =>
+                {
+                    if (GUILayout.Button(
+                            new GUIContent(
+                                CurvyStyles.OpenGraphTexture,
+                                "Edit Graph"
+                            )
+                        ))
+                        CGGraph.Open(Target);
 
-            if (GUILayout.Button(new GUIContent(CurvyStyles.DeleteTexture, "Clear Graph"), GUILayout.ExpandWidth(false), GUILayout.ExpandHeight(true)) && EditorUtility.DisplayDialog("Clear", "Clear graph?", "Yes", "No"))
-                Target.Clear();
-            GUILayout.EndHorizontal();
+                    if (GUILayout.Button(
+                            new GUIContent(
+                                CurvyStyles.DeleteTexture,
+                                "Clear Graph"
+                            ),
+                            GUILayout.ExpandWidth(false),
+                            GUILayout.ExpandHeight(true)
+                        )
+                        && EditorUtility.DisplayDialog(
+                            "Clear",
+                            "Clear graph?",
+                            "Yes",
+                            "No"
+                        ))
+                        Target.Clear();
+                },
+                GUILayout.Height(24)
+            );
 
             base.OnInspectorGUI();
         }

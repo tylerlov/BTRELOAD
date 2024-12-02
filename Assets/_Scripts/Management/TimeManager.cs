@@ -54,7 +54,7 @@ public class TimeManager : MonoBehaviour
         }
         catch (ChronosException)
         {
-            Debug.LogWarning(
+            ConditionalDebug.LogWarning(
                 $"Global clock '{debugSettings.globalClockName}' not found. Debug time scale will not be applied."
             );
         }
@@ -65,13 +65,13 @@ public class TimeManager : MonoBehaviour
         if (globalClock != null)
         {
             globalClock.localTimeScale = debugSettings.debugTimeScale;
-            Debug.Log(
+            ConditionalDebug.Log(
                 $"Debug time scale set to {debugSettings.debugTimeScale} on global clock '{debugSettings.globalClockName}'"
             );
         }
         else
         {
-            Debug.LogWarning("Global clock not initialized. Debug time scale not applied.");
+            ConditionalDebug.LogWarning("Global clock not initialized. Debug time scale not applied.");
         }
     }
 
@@ -83,14 +83,14 @@ public class TimeManager : MonoBehaviour
     {
         if (globalClock == null)
         {
-            Debug.LogError("Global clock is not yet initialized in TimeManager.RewindTime");
+            ConditionalDebug.LogError("Global clock is not yet initialized in TimeManager.RewindTime");
             yield break;
         }
 
         float startTime = globalClock.time;
         globalClock.LerpTimeScale(rewindTimeScale, rewindDuration);
 
-        Debug.Log(
+        ConditionalDebug.Log(
             $"Rewinding time... Start time: {startTime}, Rewind scale: {rewindTimeScale}, Duration: {rewindDuration}"
         );
 
@@ -99,13 +99,13 @@ public class TimeManager : MonoBehaviour
         float rewoundTime = globalClock.time;
         globalClock.LerpTimeScale(1f, returnToNormalDuration);
 
-        Debug.Log(
+        ConditionalDebug.Log(
             $"Returning to normal time... Rewound time: {rewoundTime}, Return duration: {returnToNormalDuration}"
         );
 
         yield return new WaitForSeconds(returnToNormalDuration);
 
-        Debug.Log("Rewind complete");
+        ConditionalDebug.Log("Rewind complete");
     }
 
     public void StartRewindTime(
@@ -140,11 +140,11 @@ public class TimeManager : MonoBehaviour
         {
             globalClock.localTimeScale = timeScale;
             OnTimeScaleChanged?.Invoke(timeScale);
-            Debug.Log($"Time scale set to {timeScale} on global clock '{debugSettings.globalClockName}'");
+            ConditionalDebug.Log($"Time scale set to {timeScale} on global clock '{debugSettings.globalClockName}'");
         }
         else
         {
-            Debug.LogError("Global clock is not initialized. Cannot set time scale.");
+            ConditionalDebug.LogError("Global clock is not initialized. Cannot set time scale.");
         }
     }
 
@@ -168,11 +168,11 @@ public class TimeManager : MonoBehaviour
         if (globalClock != null)
         {
             globalClock.localTimeScale = 0f;
-            Debug.Log("Time paused");
+            ConditionalDebug.Log("Time paused");
         }
         else
         {
-            Debug.LogError("Global clock is not initialized. Cannot pause time.");
+            ConditionalDebug.LogError("Global clock is not initialized. Cannot pause time.");
         }
     }
 
@@ -181,11 +181,11 @@ public class TimeManager : MonoBehaviour
         if (globalClock != null)
         {
             globalClock.localTimeScale = 1f;
-            Debug.Log("Time resumed");
+            ConditionalDebug.Log("Time resumed");
         }
         else
         {
-            Debug.LogError("Global clock is not initialized. Cannot resume time.");
+            ConditionalDebug.LogError("Global clock is not initialized. Cannot resume time.");
         }
     }
 
@@ -197,7 +197,7 @@ public class TimeManager : MonoBehaviour
         }
         else
         {
-            Debug.LogError("Global clock is not initialized. Cannot get current time.");
+            ConditionalDebug.LogError("Global clock is not initialized. Cannot get current time.");
             return 0f;
         }
     }
@@ -211,7 +211,7 @@ public class TimeManager : MonoBehaviour
     {
         if (globalClock == null)
         {
-            Debug.LogError("Global clock is not initialized. Cannot perform slow motion.");
+            ConditionalDebug.LogError("Global clock is not initialized. Cannot perform slow motion.");
             yield break;
         }
 

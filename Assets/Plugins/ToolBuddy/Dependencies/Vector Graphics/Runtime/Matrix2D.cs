@@ -36,8 +36,8 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
         /// <param name="column2">The third column</param>
         public Matrix2D(Vector2 column0, Vector2 column1, Vector2 column2)
         {
-            this.m00 = column0.x; this.m01 = column1.x; this.m02 = column2.x;
-            this.m10 = column0.y; this.m11 = column1.y; this.m12 = column2.y;
+            m00 = column0.x; m01 = column1.x; m02 = column2.x;
+            m10 = column0.y; m11 = column1.y; m12 = column2.y;
         }
 
         /// <summary>Access element at [row, column].</summary>
@@ -219,8 +219,8 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
         public Vector2 MultiplyPoint(Vector2 point)
         {
             Vector2 res;
-            res.x = this.m00 * point.x + this.m01 * point.y + this.m02;
-            res.y = this.m10 * point.x + this.m11 * point.y + this.m12;
+            res.x = m00 * point.x + m01 * point.y + m02;
+            res.y = m10 * point.x + m11 * point.y + m12;
             return res;
         }
 
@@ -230,8 +230,8 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
         public Vector2 MultiplyVector(Vector2 vector)
         {
             Vector2 res;
-            res.x = this.m00 * vector.x + this.m01 * vector.y;
-            res.y = this.m10 * vector.x + this.m11 * vector.y;
+            res.x = m00 * vector.x + m01 * vector.y;
+            res.y = m10 * vector.x + m11 * vector.y;
             return res;
         }
 
@@ -327,13 +327,39 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
             return m;
         }
 
-        static readonly Matrix2D zeroMatrix = new Matrix2D(new Vector2(0, 0), new Vector2(0, 0), new Vector2(0, 0));
+        private static readonly Matrix2D zeroMatrix = new Matrix2D(
+            new Vector2(
+                0,
+                0
+            ),
+            new Vector2(
+                0,
+                0
+            ),
+            new Vector2(
+                0,
+                0
+            )
+        );
 
         /// <summary>Returns a matrix with all elements set to zero (read-only).</summary>
         /// <returns>The zero matrix</returns>
         public static Matrix2D zero { get { return zeroMatrix; } }
 
-        static readonly Matrix2D identityMatrix = new Matrix2D(new Vector2(1, 0), new Vector2(0, 1), new Vector2(0, 0));
+        private static readonly Matrix2D identityMatrix = new Matrix2D(
+            new Vector2(
+                1,
+                0
+            ),
+            new Vector2(
+                0,
+                1
+            ),
+            new Vector2(
+                0,
+                0
+            )
+        );
 
         /// <summary>Returns the identity matrix (read-only).</summary>
         /// <returns>The identity matrix</returns>

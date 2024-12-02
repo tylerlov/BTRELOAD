@@ -1,5 +1,5 @@
 // =====================================================================
-// Copyright 2013-2022 ToolBuddy
+// Copyright © 2013 ToolBuddy
 // All rights reserved
 // 
 // http://www.toolbuddy.net
@@ -18,7 +18,17 @@ namespace FluffyUnderware.Curvy
         public const bool SynchronizeTCB = true;
         public const bool AutoHandles = true;
         public const float AutoHandleDistance = 0.39f;
-        public static readonly Vector3 HandleIn = new Vector3(-1, 0, 0);
-        public static readonly Vector3 HandleOut = new Vector3(1, 0, 0);
+
+        public static readonly Vector3 HandleIn = new Vector3(
+            -1,
+            0,
+            0
+        );
+
+        public static readonly Vector3 HandleOut = new Vector3(
+            1,
+            0,
+            0
+        );
     }
 }

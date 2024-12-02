@@ -91,7 +91,7 @@ public class QuickTimeEventManager : MonoBehaviour
         if (isQteActive)
             return;
 
-        Debug.Log($"QTE Started. Duration: {duration} seconds, Difficulty: {difficulty}");
+        ConditionalDebug.Log($"QTE Started. Duration: {duration} seconds, Difficulty: {difficulty}");
         isQteActive = true;
         qteStartTime = Time.time;
         currentSequence = GenerateSequence(difficulty).ToCharArray();
@@ -114,7 +114,7 @@ public class QuickTimeEventManager : MonoBehaviour
 
     private IEnumerator DisplayQTE(float duration)
     {
-        Debug.Log($"QTE Sequence: {new string(currentSequence)}");
+        ConditionalDebug.Log($"QTE Sequence: {new string(currentSequence)}");
 
         while (Time.time - qteStartTime < duration && currentIndex < currentSequence.Length)
         {
@@ -126,7 +126,7 @@ public class QuickTimeEventManager : MonoBehaviour
                 UpdateProgressBar();
                 if (currentIndex >= currentSequence.Length)
                 {
-                    Debug.Log("QTE Completed Successfully");
+                    ConditionalDebug.Log("QTE Completed Successfully");
                     EndQTE(true);
                     break;
                 }
@@ -223,7 +223,7 @@ public class QuickTimeEventManager : MonoBehaviour
         }
         if (isQteActive)
         {
-            Debug.Log(success ? "QTE Completed Successfully" : "QTE Failed");
+            ConditionalDebug.Log(success ? "QTE Completed Successfully" : "QTE Failed");
             isQteActive = false;
             qtePanel.SetActive(false);
             OnQteComplete?.Invoke(success);
@@ -234,7 +234,7 @@ public class QuickTimeEventManager : MonoBehaviour
     {
         if (isQteActive)
         {
-            Debug.Log("QTE Cancelled");
+            ConditionalDebug.Log("QTE Cancelled");
             EndQTE(false);
         }
     }

@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using PrimeTween;
 
 public class MotionExtractionBaseEffect : MonoBehaviour
 {
@@ -26,6 +27,8 @@ public class MotionExtractionBaseEffect : MonoBehaviour
     private Quaternion lastFrameRotation;
     private Vector3 lastFramePosition;
     private float alpha = 1.0f;
+
+    private Tween alphaTween;
 
     Texture2D[] textures;
 
@@ -104,13 +107,21 @@ public class MotionExtractionBaseEffect : MonoBehaviour
 
         bool shouldFade = isMoving || isRotating;
 
-        alpha = Mathf.Lerp(
+        // Stop any existing alpha tween
+        alphaTween.Stop();
+
+        // Create new alpha tween
+        alphaTween = Tween.Custom(
             alpha,
-            shouldFade ? fadeOutAlpha : 1,
-            (shouldFade ? fadeOutSpeed : fadeInSpeed) * Time.deltaTime
+            shouldFade ? fadeOutAlpha : 1f,
+            shouldFade ? fadeOutSpeed : fadeInSpeed,
+            value => {
+                alpha = value;
+                image.material.SetFloat("_AlphaMultiplier", value);
+            },
+            Ease.OutSine
         );
 
-        image.material.SetFloat("_AlphaMultiplier", alpha);
         lastFramePosition = mainCamera.transform.position;
         lastFrameRotation = mainCamera.transform.rotation;
     }
@@ -121,5 +132,10 @@ public class MotionExtractionBaseEffect : MonoBehaviour
         Texture2D texture2D = textures[currentFrameIndex];
         texture2D.ReadPixels(new Rect(0, 0, (int)resolution.x, (int)resolution.y), 0, 0);
         texture2D.Apply();
+    }
+
+    private void OnDestroy()
+    {
+        alphaTween.Stop();
     }
 }

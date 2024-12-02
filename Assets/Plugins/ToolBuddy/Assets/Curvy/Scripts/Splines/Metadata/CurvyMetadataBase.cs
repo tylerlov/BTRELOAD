@@ -1,11 +1,12 @@
 // =====================================================================
-// Copyright 2013-2022 ToolBuddy
+// Copyright © 2013 ToolBuddy
 // All rights reserved
 // 
 // http://www.toolbuddy.net
 // =====================================================================
 
 using FluffyUnderware.DevTools;
+using JetBrains.Annotations;
 using UnityEngine;
 
 namespace FluffyUnderware.Curvy
@@ -18,24 +19,15 @@ namespace FluffyUnderware.Curvy
     [ExecuteAlways]
     public abstract class CurvyMetadataBase : DTVersionedMonoBehaviour
     {
-        #region ### Serialized Fields ###
-        #endregion
-
         #region ### Public Properties ###
 
-        public CurvySplineSegment ControlPoint
-        {
-            get { return mCP; }
-        }
+        public CurvySplineSegment ControlPoint => mCP;
 
-        public CurvySpline Spline
-        {
-            get
-            {
-                //DESIGN should this throw an exception if mCP is null?
-                return (mCP) ? mCP.Spline : null;
-            }
-        }
+        public CurvySpline Spline =>
+            //DESIGN should this throw an exception if mCP is null?
+            mCP
+                ? mCP.Spline
+                : null;
 
         #endregion
 
@@ -46,7 +38,8 @@ namespace FluffyUnderware.Curvy
         #endregion
 
         #region ### Unity Callbacks ###
-        /*! \cond UNITY */
+
+#if DOCUMENTATION___FORCE_IGNORE___UNITY == false
 
         protected virtual void Awake()
         {
@@ -54,17 +47,18 @@ namespace FluffyUnderware.Curvy
             mCP.RegisterMetaData(this);
         }
 
-        private void OnDestroy()
-        {
+        [UsedImplicitly]
+        private void OnDestroy() =>
             mCP.UnregisterMetaData(this);
-        }
 
-        /*! \endcond */
+#endif
+
         #endregion
 
         #region ### Public Methods ###
 
-        public T GetPreviousData<T>(bool autoCreate = true, bool segmentsOnly = true, bool useFollowUp = false) where T : CurvyMetadataBase
+        public T GetPreviousData<T>(bool autoCreate = true, bool segmentsOnly = true, bool useFollowUp = false)
+            where T : CurvyMetadataBase
         {
             if (ControlPoint)
             {
@@ -81,17 +75,21 @@ namespace FluffyUnderware.Curvy
                         ? spline.GetPreviousControlPointUsingFollowUp(controlPoint)
                         : spline.GetPreviousControlPoint(controlPoint);
 
-                    if (segmentsOnly && previousControlPoint && previousControlPoint.Spline.IsControlPointASegment(previousControlPoint) == false)
+                    if (segmentsOnly
+                        && previousControlPoint
+                        && previousControlPoint.Spline.IsControlPointASegment(previousControlPoint) == false)
                         previousControlPoint = null;
                 }
 
                 if (previousControlPoint)
                     return previousControlPoint.GetMetadata<T>(autoCreate);
             }
+
             return default;
         }
 
-        public T GetNextData<T>(bool autoCreate = true, bool segmentsOnly = true, bool useFollowUp = false) where T : CurvyMetadataBase
+        public T GetNextData<T>(bool autoCreate = true, bool segmentsOnly = true, bool useFollowUp = false)
+            where T : CurvyMetadataBase
         {
             if (ControlPoint)
             {
@@ -107,13 +105,16 @@ namespace FluffyUnderware.Curvy
                         ? spline.GetNextControlPointUsingFollowUp(controlPoint)
                         : spline.GetNextControlPoint(controlPoint);
 
-                    if (segmentsOnly && nextControlPoint && nextControlPoint.Spline.IsControlPointASegment(nextControlPoint) == false)
+                    if (segmentsOnly
+                        && nextControlPoint
+                        && nextControlPoint.Spline.IsControlPointASegment(nextControlPoint) == false)
                         nextControlPoint = null;
                 }
 
                 if (nextControlPoint)
                     return nextControlPoint.GetMetadata<T>(autoCreate);
             }
+
             return default;
         }
 
@@ -128,13 +129,5 @@ namespace FluffyUnderware.Curvy
         }
 
         #endregion
-
-        #region ### Privates ###
-        /*! \cond PRIVATES */
-
-
-        /*! \endcond */
-        #endregion
-
     }
 }

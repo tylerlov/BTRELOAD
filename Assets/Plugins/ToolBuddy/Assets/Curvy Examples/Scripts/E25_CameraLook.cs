@@ -1,19 +1,22 @@
 // =====================================================================
-// Copyright 2013-2022 ToolBuddy
+// Copyright © 2013 ToolBuddy
 // All rights reserved
 // 
 // http://www.toolbuddy.net
 // =====================================================================
 
-using System;
 using UnityEngine;
 
 namespace FluffyUnderware.Curvy.Examples
 {
     public class E25_CameraLook : MonoBehaviour
     {
-
-        [Range(0f, 10f)] [SerializeField] private float m_TurnSpeed = 1.5f; 
+        [Range(
+            0f,
+            10f
+        )]
+        [SerializeField]
+        private float m_TurnSpeed = 1.5f;
 
         protected void Update()
         {
@@ -24,11 +27,18 @@ namespace FluffyUnderware.Curvy.Examples
             float x = Input.GetAxis("Mouse X");
             float y = -Input.GetAxis("Mouse Y");
 
-            transform.Rotate(y * m_TurnSpeed,0,0, Space.Self);
-            transform.Rotate(0, x * m_TurnSpeed, 0,Space.World);
-
-           
+            transform.Rotate(
+                y * m_TurnSpeed,
+                0,
+                0,
+                Space.Self
+            );
+            transform.Rotate(
+                0,
+                x * m_TurnSpeed,
+                0,
+                Space.World
+            );
         }
-        
     }
 }

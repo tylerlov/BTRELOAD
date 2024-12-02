@@ -11,9 +11,6 @@ using System.Reflection;
 using System;
 using System.Collections.Generic;
 using FluffyUnderware.DevTools.Extensions;
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
 
 namespace FluffyUnderware.DevTools
 {
@@ -21,7 +18,7 @@ namespace FluffyUnderware.DevTools
     /// <summary>
     /// Interface for attributes that change group parsing options
     /// </summary>
-    public interface IDTGroupParsingAttribute 
+    public interface IDTGroupParsingAttribute
     {
         string Path { get; }
     }
@@ -40,23 +37,12 @@ namespace FluffyUnderware.DevTools
 
     #endregion
 
-    [AttributeUsage(AttributeTargets.Class, AllowMultiple = false)]
-    public class DTVersionAttribute : System.Attribute
-    {
-        public readonly string Version;
-
-        public DTVersionAttribute(string version)
-        {
-            Version = version;
-        }
-    }
-
 
     #region ### Base Attributes ###
     //OPTIM: all the attributes bellow (and maybe DTVersionAttribute too) seem to be used only in editor code. If so, and there overhead is big, make their compilation conditional to gain performance in the build applications
 
     [AttributeUsage(AttributeTargets.Field, AllowMultiple = true)]
-    public class DTAttribute : System.Attribute, IComparable
+    public class DTAttribute : Attribute, IComparable
     {
         public int TypeSort { get; protected set; }
         public int Sort = 100;
@@ -93,7 +79,7 @@ namespace FluffyUnderware.DevTools
     {
         public string Path
         {
-            get { return mPath; }
+            get => mPath;
             protected set
             {
                 PathIsAbsolute = !string.IsNullOrEmpty(value) && value.StartsWith("@");
@@ -115,7 +101,7 @@ namespace FluffyUnderware.DevTools
         public string Tooltip = null;
         public string HelpURL = null;
 
-        string mPath;
+        private string mPath;
 
         public GroupAttribute(string pathAndName)
             : base(15)
@@ -132,7 +118,7 @@ namespace FluffyUnderware.DevTools
         public ActionPositionEnum Position = ActionPositionEnum.Below;
         public object ActionData;
 
-        MethodInfo mCallback;
+        private MethodInfo mCallback;
 
         protected ActionAttribute(string actionData, ActionEnum action = ActionEnum.Callback)
             : base(50)
@@ -181,7 +167,7 @@ namespace FluffyUnderware.DevTools
             TypeSort = 55;
             Conditions = new Condition[1]
             {
-                new Condition()
+                new Condition
                 {
                     FieldName=fieldOrProperty,
                     CompareTo=compareTo,
@@ -197,13 +183,13 @@ namespace FluffyUnderware.DevTools
             TypeSort = 55;
             Conditions = new Condition[2]
             {
-                new Condition()
+                new Condition
                 {
                     FieldName=fieldOrProperty,
                     CompareTo=compareTo,
                     CompareFalse=compareFalse
                 },
-                new Condition()
+                new Condition
                 {
                     FieldName=fieldOrProperty2,
                     CompareTo=compareTo2,
@@ -221,20 +207,20 @@ namespace FluffyUnderware.DevTools
             TypeSort = 55;
             Conditions = new Condition[3]
             {
-                new Condition()
+                new Condition
                 {
                     FieldName=fieldOrProperty,
                     CompareTo=compareTo,
                     CompareFalse=compareFalse
                 },
-                new Condition()
+                new Condition
                 {
                     FieldName=fieldOrProperty2,
                     CompareTo=compareTo2,
                     CompareFalse=compareFalse2,
                     Operator=op
                 },
-                new Condition()
+                new Condition
                 {
                     FieldName=fieldOrProperty3,
                     CompareTo=compareTo3,
@@ -250,7 +236,7 @@ namespace FluffyUnderware.DevTools
             TypeSort = 55;
             Conditions = new Condition[1]
             {
-                new Condition()
+                new Condition
                 {
                     MethodName=methodToQuery,
                     CompareTo=null
@@ -281,7 +267,7 @@ namespace FluffyUnderware.DevTools
 
         }
 
-        bool evaluate(Condition cond, object classInstance)
+        private bool evaluate(Condition cond, object classInstance)
         {
             if (!string.IsNullOrEmpty(cond.MethodName))
             {
@@ -369,7 +355,7 @@ namespace FluffyUnderware.DevTools
             Path = p;
         }
 
-        static bool split(string pathAndName, out string path, out string tabBar, out string tabname)
+        private static bool split(string pathAndName, out string path, out string tabBar, out string tabname)
         {
             string[] p = pathAndName.Split('/');
             path = string.Empty;

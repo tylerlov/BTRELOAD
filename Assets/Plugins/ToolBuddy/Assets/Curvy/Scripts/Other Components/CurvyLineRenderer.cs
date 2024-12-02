@@ -1,15 +1,15 @@
 // =====================================================================
-// Copyright 2013-2022 ToolBuddy
+// Copyright © 2013 ToolBuddy
 // All rights reserved
 // 
 // http://www.toolbuddy.net
 // =====================================================================
 
 using FluffyUnderware.Curvy.Pools;
-using UnityEngine;
 using FluffyUnderware.DevTools;
+using JetBrains.Annotations;
 using ToolBuddy.Pooling.Collections;
-using UnityEngine.Assertions;
+using UnityEngine;
 
 namespace FluffyUnderware.Curvy.Components
 {
@@ -18,62 +18,56 @@ namespace FluffyUnderware.Curvy.Components
     /// </summary>
     [AddComponentMenu(ComponentPath)]
     [RequireComponent(typeof(LineRenderer))]
-    [HelpURL(CurvySpline.DOCLINK + "curvylinerenderer")]
+    [HelpURL(AssetInformation.DocsRedirectionBaseUrl + "curvylinerenderer")]
     public class CurvyLineRenderer : SplineProcessor
     {
         public const string ComponentPath = "Curvy/Converters/Curvy Line Renderer";
 
-        private LineRenderer mRenderer;
+        private LineRenderer cachedLineRenderer;
 
-        protected override void Awake()
+        private LineRenderer LineRenderer
         {
-            mRenderer = GetComponent<LineRenderer>();
-            base.Awake();
+            get
+            {
+                if (cachedLineRenderer == null)
+                    cachedLineRenderer = GetComponent<LineRenderer>();
+                return cachedLineRenderer;
+            }
         }
 
-        protected override void OnEnable()
-        {
-            mRenderer = GetComponent<LineRenderer>();
-            base.OnEnable();
-        }
-
-        private void Update()
-        {
+        [UsedImplicitly]
+        private void Update() =>
             EnforceWorldSpaceUsage();
-        }
 
         private void EnforceWorldSpaceUsage()
         {
-            if (mRenderer.useWorldSpace == false)
+            if (LineRenderer.useWorldSpace == false)
             {
-                mRenderer.useWorldSpace = true;
-                DTLog.Log("[Curvy] CurvyLineRenderer: Line Renderer's Use World Space was overriden to true", this);
+                LineRenderer.useWorldSpace = true;
+                DTLog.Log(
+                    "[Curvy] CurvyLineRenderer: Line Renderer's Use World Space was overriden to true. It is required by the CurvyLineRenderer.",
+                    this
+                );
             }
         }
 
         /// <summary>
-        /// Update the <see cref="LineRenderer"/>'s points with the cache points of the <see cref="CurvySpline"/>
+        /// Update the <see cref="UnityEngine.LineRenderer"/>'s points with the cache points of the <see cref="CurvySpline"/>
         /// </summary>
         public override void Refresh()
         {
             if (Spline)
             {
+                EnforceWorldSpaceUsage();
                 if (Spline.IsInitialized && Spline.Dirty == false)
                 {
-#if CURVY_SANITY_CHECKS
-                    Assert.IsTrue(mRenderer != null);
-#endif
-                    EnforceWorldSpaceUsage();
                     SubArray<Vector3> positions = Spline.GetPositionsCache(Space.World);
-                    mRenderer.positionCount = positions.Count;
-                    mRenderer.SetPositions(positions.Array);
+                    LineRenderer.positionCount = positions.Count;
+                    LineRenderer.SetPositions(positions.Array);
                     ArrayPools.Vector3.Free(positions);
                 }
-                else if (mRenderer != null)
-                {
-                    EnforceWorldSpaceUsage();
-                    mRenderer.positionCount = 0;
-                }
+                else
+                    LineRenderer.positionCount = 0;
             }
         }
     }

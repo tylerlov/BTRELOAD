@@ -1,16 +1,13 @@
 // =====================================================================
-// Copyright 2013-2022 ToolBuddy
+// Copyright © 2013 ToolBuddy
 // All rights reserved
 // 
 // http://www.toolbuddy.net
 // =====================================================================
 
-using UnityEngine;
-using UnityEditor;
-using System.Collections.Generic;
 using FluffyUnderware.Curvy.Generator;
 using FluffyUnderware.Curvy.Generator.Modules;
-using FluffyUnderware.DevToolsEditor;
+using UnityEditor;
 
 namespace FluffyUnderware.CurvyEditor.Generator.Modules
 {
@@ -18,20 +15,14 @@ namespace FluffyUnderware.CurvyEditor.Generator.Modules
     [CustomEditor(typeof(BuildVolumeCaps))]
     public class BuildVolumeCapsEditor : CGModuleEditor<BuildVolumeCaps>
     {
-
-
         public override void OnModuleDebugGUI()
         {
-            CGVMesh vmesh = Target.OutVMesh.GetData<CGVMesh>();
-            if (vmesh)
-            {
-                EditorGUILayout.LabelField("Vertices: " + vmesh.Count.ToString());
-                EditorGUILayout.LabelField("Triangles: " + vmesh.TriangleCount.ToString());
-                EditorGUILayout.LabelField("SubMeshes: " + vmesh.SubMeshes.Length.ToString());
-            }
+            if (Target.OutVMesh.Data.Length == 0)
+                return;
+            CGVMesh vmesh = (CGVMesh)Target.OutVMesh.Data[0];
+            EditorGUILayout.LabelField("Vertices: " + vmesh.Count);
+            EditorGUILayout.LabelField("Triangles: " + vmesh.TriangleCount);
+            EditorGUILayout.LabelField("SubMeshes: " + vmesh.SubMeshes.Length);
         }
-
-
     }
-
 }

@@ -58,17 +58,13 @@ namespace FluffyUnderware.Curvy.ThirdParty.LibTessDotNet
         }
 
         public static bool VertCCW(MeshUtils.Vertex u, MeshUtils.Vertex v, MeshUtils.Vertex w)
-        {
-            return (u._s * (v._t - w._t) + v._s * (w._t - u._t) + w._s * (u._t - v._t)) >= 0.0f;
-        }
+            => (u._s * (v._t - w._t) + v._s * (w._t - u._t) + w._s * (u._t - v._t)) >= 0.0f;
+
         public static bool VertEq(MeshUtils.Vertex lhs, MeshUtils.Vertex rhs)
-        {
-            return lhs._s == rhs._s && lhs._t == rhs._t;
-        }
+            => lhs._s == rhs._s && lhs._t == rhs._t;
+
         public static bool VertLeq(MeshUtils.Vertex lhs, MeshUtils.Vertex rhs)
-        {
-            return (lhs._s < rhs._s) || (lhs._s == rhs._s && lhs._t <= rhs._t);
-        }
+            => (lhs._s < rhs._s) || (lhs._s == rhs._s && lhs._t <= rhs._t);
 
         /// <summary>
         /// Given three vertices u,v,w such that VertLeq(u,v) && VertLeq(v,w),
@@ -124,9 +120,7 @@ namespace FluffyUnderware.Curvy.ThirdParty.LibTessDotNet
         }
 
         public static bool TransLeq(MeshUtils.Vertex lhs, MeshUtils.Vertex rhs)
-        {
-            return (lhs._t < rhs._t) || (lhs._t == rhs._t && lhs._s <= rhs._s);
-        }
+            => (lhs._t < rhs._t) || (lhs._t == rhs._t && lhs._s <= rhs._s);
 
         public static Real TransEval(MeshUtils.Vertex u, MeshUtils.Vertex v, MeshUtils.Vertex w)
         {
@@ -166,19 +160,13 @@ namespace FluffyUnderware.Curvy.ThirdParty.LibTessDotNet
         }
 
         public static bool EdgeGoesLeft(MeshUtils.Edge e)
-        {
-            return VertLeq(e._Dst, e._Org);
-        }
+            => VertLeq(e._Dst, e._Org);
 
         public static bool EdgeGoesRight(MeshUtils.Edge e)
-        {
-            return VertLeq(e._Org, e._Dst);
-        }
+            => VertLeq(e._Org, e._Dst);
 
         public static Real VertL1dist(MeshUtils.Vertex u, MeshUtils.Vertex v)
-        {
-            return Math.Abs(u._s - v._s) + Math.Abs(u._t - v._t);
-        }
+            => Math.Abs(u._s - v._s) + Math.Abs(u._t - v._t);
 
         public static void AddWinding(MeshUtils.Edge eDst, MeshUtils.Edge eSrc)
         {
@@ -201,7 +189,7 @@ namespace FluffyUnderware.Curvy.ThirdParty.LibTessDotNet
                     : (y + (x-y) * (b/(a+b))));
         }
 
-        static void Swap(ref MeshUtils.Vertex a, ref MeshUtils.Vertex b)
+        private static void Swap(ref MeshUtils.Vertex a, ref MeshUtils.Vertex b)
         {
             (b, a) = (a, b);
         }

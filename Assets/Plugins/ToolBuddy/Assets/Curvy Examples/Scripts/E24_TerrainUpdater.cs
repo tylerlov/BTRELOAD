@@ -1,11 +1,12 @@
 // =====================================================================
-// Copyright 2013-2022 ToolBuddy
+// Copyright © 2013 ToolBuddy
 // All rights reserved
 // 
 // http://www.toolbuddy.net
 // =====================================================================
 
 using FluffyUnderware.Curvy.Generator;
+using JetBrains.Annotations;
 using UnityEngine;
 
 namespace FluffyUnderware.Curvy.Examples
@@ -17,7 +18,8 @@ namespace FluffyUnderware.Curvy.Examples
         /// </summary>
         public CurvyGenerator CurvyGenerator;
 
-        void Update()
+        [UsedImplicitly]
+        private void Update()
         {
             //Move the terrain
             Vector3 position = transform.position;

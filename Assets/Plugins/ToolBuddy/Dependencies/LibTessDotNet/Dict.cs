@@ -40,15 +40,15 @@ namespace FluffyUnderware.Curvy.ThirdParty.LibTessDotNet
             internal TValue _key;
             internal Node _prev, _next;
 
-            public TValue Key { get { return _key; } }
-            public Node Prev { get { return _prev; } }
-            public Node Next { get { return _next; } }
+            public TValue Key => _key;
+            public Node Prev => _prev;
+            public Node Next => _next;
         }
 
         public delegate bool LessOrEqual(TValue lhs, TValue rhs);
 
         private LessOrEqual _leq;
-        Node _head;
+        private Node _head;
 
         public Dict(LessOrEqual leq)
         {
@@ -60,9 +60,7 @@ namespace FluffyUnderware.Curvy.ThirdParty.LibTessDotNet
         }
 
         public Node Insert(TValue key)
-        {
-            return InsertBefore(_head, key);
-        }
+            => InsertBefore(_head, key);
 
         public Node InsertBefore(Node node, TValue key)
         {
@@ -89,9 +87,7 @@ namespace FluffyUnderware.Curvy.ThirdParty.LibTessDotNet
         }
 
         public Node Min()
-        {
-            return _head._next;
-        }
+            => _head._next;
 
         public void Remove(Node node)
         {

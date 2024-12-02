@@ -1,96 +1,100 @@
 // =====================================================================
-// Copyright 2013-2022 ToolBuddy
+// Copyright © 2013 ToolBuddy
 // All rights reserved
 // 
 // http://www.toolbuddy.net
 // =====================================================================
 
 using System;
-using UnityEngine;
-using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Linq;
 using FluffyUnderware.Curvy.Utils;
 using FluffyUnderware.DevTools;
-using FluffyUnderware.DevTools.Extensions;
-using JetBrains.Annotations;
+using UnityEngine;
 using UnityEngine.Assertions;
 using Random = UnityEngine.Random;
 
 namespace FluffyUnderware.Curvy.Controllers
 {
-
-    /// <summary>
-    /// Defines what spline a <see cref="SplineController"/> will use when reaching a <see cref="CurvyConnection"/>.
-    /// </summary>
-    public enum SplineControllerConnectionBehavior
-    {
-        /// <summary>
-        /// Continue moving on the current spline, ignoring the connection.
-        /// </summary>
-        CurrentSpline,
-        /// <summary>
-        /// Move to the spline containing the Follow-Up if any. If none, continue moving on the current spline, ignoring the connection.
-        /// </summary>
-        FollowUpSpline,
-        /// <summary>
-        /// Move to the spline of a randomly selected control point from all the connected control points.
-        /// </summary>
-        RandomSpline,
-        /// <summary>
-        /// Move to the spline containing the Follow-Up if any. If none, move to the spline of a randomly selected control point from all the connected control points.
-        /// </summary>
-        FollowUpOtherwiseRandom,
-        /// <summary>
-        /// Use a custom defined selection logic
-        /// </summary>
-        Custom
-    }
-
     /// <summary>
     /// Controller working with Splines
     /// </summary>
     [AddComponentMenu("Curvy/Controllers/Spline Controller")]
-    [HelpURL(CurvySpline.DOCLINK + "splinecontroller")]
-    public class SplineController : CurvyController
+    [HelpURL(AssetInformation.DocsRedirectionBaseUrl + "splinecontroller")]
+    public partial class SplineController : CurvyController
     {
         public SplineController()
         {
-            preAllocatedEventArgs = new CurvySplineMoveEventArgs(this, Spline, null, Single.NaN, false, Single.NaN, MovementDirection.Forward);
+            preAllocatedEventArgs = new CurvySplineMoveEventArgs(
+                this,
+                Spline,
+                null,
+                Single.NaN,
+                false,
+                Single.NaN,
+                MovementDirection.Forward
+            );
+            Switcher = new SplineSwitcher();
         }
 
         #region ### Serialized Fields ###
 
-        /*! \cond PRIVATE */
+#if DOCUMENTATION___FORCE_IGNORE___CURVY == false
 
         /// <summary>
         /// The spline to use. It is best to set/get the spline through the <see cref="Spline"/> property instead
         /// </summary>
-        [Section("General", Sort = 0)]
-
-        [FieldCondition(nameof(m_Spline), null, false, ActionAttribute.ActionEnum.ShowError, "Missing source Spline")]
+        [Section(
+            "General",
+            Sort = 0
+        )]
+        [FieldCondition(
+            nameof(m_Spline),
+            null,
+            false,
+            ActionAttribute.ActionEnum.ShowError,
+            "Missing source Spline"
+        )]
         [SerializeField]
         protected CurvySpline m_Spline;
 
-        /*! \endcond */
+#endif
 
         [SerializeField]
-        [Tooltip("Whether spline's cache data should be used. Set this to true to gain performance if precision is not required.")]
+        [Tooltip(
+            "Whether spline's cache data should be used. Set this to true to gain performance if precision is not required."
+        )]
         private bool m_UseCache;
 
         #region Connections handling
 
-        [Section("Connections handling", Sort = 250, HelpURL = CurvySpline.DOCLINK + "curvycontroller_connectionshandling")]
-
-        [SerializeField, Label("At connection, use", "What spline should the controller use when reaching a Connection")]
+        [Section(
+            "Connections Handling",
+            Sort = 250,
+            HelpURL = AssetInformation.DocsRedirectionBaseUrl + "curvycontroller_connectionshandling"
+        )]
+        [SerializeField, Label(
+             "At connection, use",
+             "What spline should the controller use when reaching a Connection"
+         )]
         private SplineControllerConnectionBehavior connectionBehavior = SplineControllerConnectionBehavior.CurrentSpline;
 
         #region Random Connection and Follow-Up options
 
-        [SerializeField, Label("Allow direction change", "When true, the controller will modify its direction to best fit the connected spline")]
+        [SerializeField, Label(
+             "Allow direction change",
+             "When true, the controller will modify its direction to best fit the connected spline"
+         )]
 #if UNITY_EDITOR
-        [FieldCondition(nameof(connectionBehavior), SplineControllerConnectionBehavior.FollowUpSpline, false, ConditionalAttribute.OperatorEnum.OR, "ShowRandomConnectionOptions", true, false)]
+        [FieldCondition(
+            nameof(connectionBehavior),
+            SplineControllerConnectionBehavior.FollowUpSpline,
+            false,
+            ConditionalAttribute.OperatorEnum.OR,
+            "ShowRandomConnectionOptions",
+            true,
+            false
+        )]
 #endif
 
         private bool allowDirectionChange = true;
@@ -99,48 +103,95 @@ namespace FluffyUnderware.Curvy.Controllers
 
         #region Random Connection options
 
-        [SerializeField, Label("Reject current spline", "Whether the current spline should be excluded from the randomly selected splines")]
-        [FieldCondition(nameof(ShowRandomConnectionOptions), true)]
+        [SerializeField, Label(
+             "Reject current spline",
+             "Whether the current spline should be excluded from the randomly selected splines"
+         )]
+        [FieldCondition(
+            nameof(ShowRandomConnectionOptions),
+            true
+        )]
         private bool rejectCurrentSpline = true;
 
-        [SerializeField, Label("Reject divergent splines", "Whether splines that diverge from the current spline with more than a specific angle should be excluded from the randomly selected splines")]
-        [FieldCondition(nameof(ShowRandomConnectionOptions), true)]
-        private bool rejectTooDivergentSplines = false;
+        [SerializeField, Label(
+             "Reject divergent splines",
+             "Whether splines that diverge from the current spline with more than a specific angle should be excluded from the randomly selected splines"
+         )]
+        [FieldCondition(
+            nameof(ShowRandomConnectionOptions),
+            true
+        )]
+        private bool rejectTooDivergentSplines;
 
-        [SerializeField, Label("Max allowed angle", "Maximum allowed divergence angle in degrees")]
+        [SerializeField, Label(
+             "Max allowed angle",
+             "Maximum allowed divergence angle in degrees"
+         )]
 #if UNITY_EDITOR
-        [FieldCondition(nameof(ShowRandomConnectionOptions), true, false, ConditionalAttribute.OperatorEnum.AND, "rejectTooDivergentSplines", true, false)]
+        [FieldCondition(
+            nameof(ShowRandomConnectionOptions),
+            true,
+            false,
+            ConditionalAttribute.OperatorEnum.AND,
+            "rejectTooDivergentSplines",
+            true,
+            false
+        )]
 #endif
-        [Range(0, 180)]
+        [Range(
+            0,
+            180
+        )]
         private float maxAllowedDivergenceAngle = 90;
 
         #endregion
 
         #region Custom options
 
-        [SerializeField, Label("Custom Selector", "A custom logic to select which connected spline to follow. Select a Script inheriting from SplineControllerConnectionBehavior")]
-        [FieldCondition(nameof(connectionBehavior), SplineControllerConnectionBehavior.Custom, false, ActionAttribute.ActionEnum.Show)]
-        [FieldCondition(nameof(connectionCustomSelector), null, false, ActionAttribute.ActionEnum.ShowWarning, "Missing custom selector")]
+        [SerializeField, Label(
+             "Custom Selector",
+             "A custom logic to select which connected spline to follow. Select a Script inheriting from SplineControllerConnectionBehavior"
+         )]
+        [FieldCondition(
+            nameof(connectionBehavior),
+            SplineControllerConnectionBehavior.Custom
+        )]
+        [FieldCondition(
+            nameof(connectionCustomSelector),
+            null,
+            false,
+            ActionAttribute.ActionEnum.ShowWarning,
+            "Missing custom selector"
+        )]
         private ConnectedControlPointsSelector connectionCustomSelector;
 
         #endregion
 
         #endregion
 
-        /*! \cond PRIVATE */
+#if DOCUMENTATION___FORCE_IGNORE___CURVY == false
 
-        [Section("Events", false, false, 1000, HelpURL = CurvySpline.DOCLINK + "splinecontroller_events")]
+        [Section(
+            "Events",
+            false,
+            false,
+            1000,
+            HelpURL = AssetInformation.DocsRedirectionBaseUrl + "splinecontroller_events"
+        )]
         [SerializeField]
         [ArrayEx]
         protected List<OnPositionReachedSettings> onPositionReachedList = new List<OnPositionReachedSettings>();
+
         [SerializeField]
         protected CurvySplineMoveEvent m_OnControlPointReached = new CurvySplineMoveEvent();
+
         [SerializeField]
         protected CurvySplineMoveEvent m_OnEndReached = new CurvySplineMoveEvent();
+
         [SerializeField]
         protected CurvySplineMoveEvent m_OnSwitch = new CurvySplineMoveEvent();
 
-        /*! \endcond */
+#endif
 
         #endregion
 
@@ -151,9 +202,8 @@ namespace FluffyUnderware.Curvy.Controllers
         /// </summary>
         public virtual CurvySpline Spline
         {
-            get { return m_Spline; }
-            set
-            { m_Spline = value; }
+            get => m_Spline;
+            set => m_Spline = value;
         }
 
         /// <summary>
@@ -161,15 +211,8 @@ namespace FluffyUnderware.Curvy.Controllers
         /// </summary>
         public bool UseCache
         {
-            get
-            {
-                return m_UseCache;
-            }
-            set
-            {
-                if (m_UseCache != value)
-                    m_UseCache = value;
-            }
+            get => m_UseCache;
+            set => m_UseCache = value;
         }
 
 
@@ -180,8 +223,8 @@ namespace FluffyUnderware.Curvy.Controllers
         /// </summary>
         public SplineControllerConnectionBehavior ConnectionBehavior
         {
-            get { return connectionBehavior; }
-            set { connectionBehavior = value; }
+            get => connectionBehavior;
+            set => connectionBehavior = value;
         }
 
         /// <summary>
@@ -189,8 +232,8 @@ namespace FluffyUnderware.Curvy.Controllers
         /// </summary>
         public ConnectedControlPointsSelector ConnectionCustomSelector
         {
-            get { return connectionCustomSelector; }
-            set { connectionCustomSelector = value; }
+            get => connectionCustomSelector;
+            set => connectionCustomSelector = value;
         }
 
         /// <summary>
@@ -198,8 +241,8 @@ namespace FluffyUnderware.Curvy.Controllers
         /// </summary>
         public bool AllowDirectionChange
         {
-            get { return allowDirectionChange; }
-            set { allowDirectionChange = value; }
+            get => allowDirectionChange;
+            set => allowDirectionChange = value;
         }
 
         /// <summary>
@@ -207,8 +250,8 @@ namespace FluffyUnderware.Curvy.Controllers
         /// </summary>
         public bool RejectCurrentSpline
         {
-            get { return rejectCurrentSpline; }
-            set { rejectCurrentSpline = value; }
+            get => rejectCurrentSpline;
+            set => rejectCurrentSpline = value;
         }
 
         /// <summary>
@@ -216,8 +259,8 @@ namespace FluffyUnderware.Curvy.Controllers
         /// </summary>
         public bool RejectTooDivergentSplines
         {
-            get { return rejectTooDivergentSplines; }
-            set { rejectTooDivergentSplines = value; }
+            get => rejectTooDivergentSplines;
+            set => rejectTooDivergentSplines = value;
         }
 
         /// <summary>
@@ -225,8 +268,8 @@ namespace FluffyUnderware.Curvy.Controllers
         /// </summary>
         public float MaxAllowedDivergenceAngle
         {
-            get { return maxAllowedDivergenceAngle; }
-            set { maxAllowedDivergenceAngle = value; }
+            get => maxAllowedDivergenceAngle;
+            set => maxAllowedDivergenceAngle = value;
         }
 
         #endregion
@@ -237,8 +280,8 @@ namespace FluffyUnderware.Curvy.Controllers
         /// </summary>
         public List<OnPositionReachedSettings> OnPositionReachedList
         {
-            get { return onPositionReachedList; }
-            set { onPositionReachedList = value; }
+            get => onPositionReachedList;
+            set => onPositionReachedList = value;
         }
 
         /// <summary>
@@ -246,8 +289,8 @@ namespace FluffyUnderware.Curvy.Controllers
         /// </summary>
         public CurvySplineMoveEvent OnControlPointReached
         {
-            get { return m_OnControlPointReached; }
-            set { m_OnControlPointReached = value; }
+            get => m_OnControlPointReached;
+            set => m_OnControlPointReached = value;
         }
 
         /// <summary>
@@ -255,30 +298,9 @@ namespace FluffyUnderware.Curvy.Controllers
         /// </summary>
         public CurvySplineMoveEvent OnEndReached
         {
-            get { return m_OnEndReached; }
-            set { m_OnEndReached = value; }
+            get => m_OnEndReached;
+            set => m_OnEndReached = value;
         }
-
-        /// <summary>
-        /// Event raised while switching splines. Splines switching is done via the <see cref="SwitchTo"/> method.
-        /// </summary>
-        public CurvySplineMoveEvent OnSwitch
-        {
-            get { return m_OnSwitch; }
-            set { m_OnSwitch = value; }
-        }
-
-
-        /// <summary>
-        /// Gets whether the Controller is switching splines
-        /// </summary>
-        public bool IsSwitching { get; private set; }
-
-        /// <summary>
-        /// The ratio (value between 0 and 1) expressing the progress of the current spline switch. 0 means the switch just started, 1 means the switch ended.
-        /// Its value is 0 if no spline switching is in progress. Spline switching is done by calling <see cref="SwitchTo"/>
-        /// </summary>
-        public float SwitchProgress { get { return IsSwitching ? Mathf.Clamp01((Time.time - SwitchStartTime) / SwitchDuration) : 0; } }
 
         /// <summary>
         /// Gets the source's length
@@ -288,68 +310,81 @@ namespace FluffyUnderware.Curvy.Controllers
             get
             {
 #if CURVY_SANITY_CHECKS
-                Assert.IsTrue(IsReady, ControllerNotReadyMessage);
+                Assert.IsTrue(
+                    IsReady,
+                    ControllerNotReadyMessage
+                );
 #endif
-                return ReferenceEquals(Spline, null) == false ? Spline.Length : 0;
+                return ReferenceEquals(
+                           Spline,
+                           null
+                       )
+                       == false
+                    ? Spline.Length
+                    : 0;
             }
         }
+
+        #region ### Switcher ###
+
+        /// <summary>
+        /// Gets whether the Controller is switching splines
+        /// </summary>
+        public bool IsSwitching => Switcher.IsSwitching;
+
+        /// <summary>
+        /// The ratio (value between 0 and 1) expressing the progress of the current spline switch. 0 means the switch just started, 1 means the switch ended.
+        /// Its value is 0 if no spline switching is in progress. Spline switching is triggered by calling <see cref="SwitchTo(FluffyUnderware.Curvy.CurvySpline,float,float)"/>
+        /// </summary>
+        public float SwitchProgress => Switcher.Progress;
+
+        /// <summary>
+        /// Event raised while switching splines. Splines switching is triggered via the <see cref="SwitchTo"/> method.
+        /// </summary>
+        public CurvySplineMoveEvent OnSwitch
+        {
+            get => m_OnSwitch;
+            set => m_OnSwitch = value;
+        }
+
+        #endregion
 
         #endregion
 
         #region ### Private & Protected Fields & Properties ###
 
+        protected readonly SplineSwitcher Switcher;
         private CurvySpline prePlaySpline;
         private readonly CurvySplineMoveEventArgs preAllocatedEventArgs;
-
-        #region Switch
-
-        /// <summary>
-        /// The time at which the current spline switching started.
-        /// Its value is invalid if no spline switching is in progress. Spline switching is done by calling <see cref="SwitchTo"/>
-        /// </summary>
-        protected float SwitchStartTime;
-        /// <summary>
-        /// The duration of the the current spline switching.
-        /// Its value is invalid if no spline switching is in progress. Spline switching is done by calling <see cref="SwitchTo"/>
-        /// </summary>
-        protected float SwitchDuration;
-        /// <summary>
-        /// The spline to which the controller is switching.
-        /// Its value is invalid if no spline switching is in progress. Spline switching is done by calling <see cref="SwitchTo"/>
-        /// </summary>
-        protected CurvySpline SwitchTarget;
-        /// <summary>
-        /// The controller's current TF on the <see cref="SwitchTarget"/>.
-        /// Its value is invalid if no spline switching is in progress. Spline switching is done by calling <see cref="SwitchTo"/>
-        /// </summary>
-        protected float TfOnSwitchTarget;
-        /// <summary>
-        /// The controller's current Direction on the <see cref="SwitchTarget"/>.
-        /// Its value is invalid if no spline switching is in progress. Spline switching is done by calling <see cref="SwitchTo"/>
-        /// </summary>
-        protected MovementDirection DirectionOnSwitchTarget;
-
-        #endregion
 
         #endregion
 
         #region ## Unity Callbacks ###
 
-        /*! \cond UNITY */
-#if UNITY_EDITOR
+#if DOCUMENTATION___FORCE_IGNORE___UNITY == false
+
         protected override void OnValidate()
         {
             base.OnValidate();
+
             if (IsReady)
                 foreach (OnPositionReachedSettings settings in OnPositionReachedList)
-                    settings.Position = Mathf.Min(Mathf.Max(settings.Position, 0), GetMaxPosition(settings.PositionMode));
+                    settings.Position = Mathf.Min(
+                        Mathf.Max(
+                            settings.Position,
+                            0
+                        ),
+                        GetMaxPosition(settings.PositionMode)
+                    );
         }
+
 #endif
 
-        /*! \endcond */
         #endregion
 
         #region ### Public Methods ###
+
+        #region ### Switcher ###
 
         /// <summary>
         /// Start a spline switch. Should be called only on non stopped controllers.
@@ -361,28 +396,36 @@ namespace FluffyUnderware.Curvy.Controllers
         public virtual void SwitchTo(CurvySpline destinationSpline, float destinationTf, float duration)
         {
 #if CURVY_SANITY_CHECKS
-            Assert.IsTrue(isInitialized, ControllerNotReadyMessage);
+            Assert.IsTrue(
+                isInitialized,
+                ControllerNotReadyMessage
+            );
 #endif
-
             if (PlayState == CurvyControllerState.Stopped)
             {
-                DTLog.LogError("[Curvy] Controller can not switch when stopped. The switch call will be ignored", this);
+                DTLog.LogError(
+                    "[Curvy] Controller can not switch when stopped. The switch call will be ignored",
+                    this
+                );
+                return;
             }
-            else if (duration <= 0)
+
+            if (duration <= 0)
             {
-                DTLog.LogWarning($"[Curvy] Controller switch has a duration set to {duration}. Duration should be a strictly positive value", this);
+                DTLog.LogWarning(
+                    $"[Curvy] Controller switch has a duration set to {duration}. Duration should be a strictly positive value",
+                    this
+                );
                 Spline = destinationSpline;
                 RelativePosition = destinationTf;
             }
             else
-            {
-                SwitchStartTime = Time.time;
-                SwitchDuration = duration;
-                SwitchTarget = destinationSpline;
-                TfOnSwitchTarget = destinationTf;
-                DirectionOnSwitchTarget = MovementDirection;
-                IsSwitching = true;
-            }
+                Switcher.Start(
+                    destinationSpline,
+                    destinationTf,
+                    duration,
+                    MovementDirection
+                );
         }
 
         /// <summary>
@@ -390,12 +433,19 @@ namespace FluffyUnderware.Curvy.Controllers
         /// </summary>
         public void FinishCurrentSwitch()
         {
-            if (IsSwitching)
-            {
-                IsSwitching = false;
-                Spline = SwitchTarget;
-                RelativePosition = TfOnSwitchTarget;
-            }
+#if CURVY_SANITY_CHECKS
+            Assert.IsTrue(
+                isInitialized,
+                ControllerNotReadyMessage
+            );
+#endif
+            if (!Switcher.IsSwitching)
+                return;
+
+            Spline = Switcher.Spline;
+            RelativePosition = Switcher.Tf;
+
+            Switcher.Stop();
         }
 
         /// <summary>
@@ -403,9 +453,20 @@ namespace FluffyUnderware.Curvy.Controllers
         /// </summary>
         public void CancelCurrentSwitch()
         {
-            if (IsSwitching)
-                IsSwitching = false;
+#if CURVY_SANITY_CHECKS
+            Assert.IsTrue(
+                isInitialized,
+                ControllerNotReadyMessage
+            );
+#endif
+            if (!Switcher.IsSwitching)
+                return;
+
+            Switcher.Stop();
         }
+
+        #endregion
+
 
         /// <summary>
         /// Get the direction change, in degrees, of controller caused by the crossing of a connection.
@@ -415,77 +476,145 @@ namespace FluffyUnderware.Curvy.Controllers
         /// <param name="after">The control point the controller is on after crossing the connection</param>
         /// <param name="allowMovementModeChange">If true, the controller will change movemen mode to best fit the after control point. <see cref="AllowDirectionChange"/></param>
         /// <returns>A positif angle in degrees</returns>
-        public static float GetAngleBetweenConnectedSplines(CurvySplineSegment before, MovementDirection movementMode, CurvySplineSegment after, bool allowMovementModeChange)
+        public static float GetAngleBetweenConnectedSplines(CurvySplineSegment before, MovementDirection movementMode,
+            CurvySplineSegment after, bool allowMovementModeChange)
         {
             Vector3 currentTangent = before.GetTangentFast(0) * movementMode.ToInt();
-            Vector3 newTangent = after.GetTangentFast(0) * GetPostConnectionDirection(after, movementMode, allowMovementModeChange).ToInt();
-            return Vector3.Angle(currentTangent, newTangent);
+            Vector3 newTangent = after.GetTangentFast(0)
+            * GetPostConnectionDirection(
+                after,
+                movementMode,
+                allowMovementModeChange
+            ).ToInt();
+            return Vector3.Angle(
+                currentTangent,
+                newTangent
+            );
         }
 
         #endregion
 
         #region ### Protected Methods ###
 
-        override public bool IsReady
-        {
-            get
-            {
-                return ReferenceEquals(Spline, null) == false && Spline.IsInitialized;
-            }
-        }
+        public override bool IsReady => ReferenceEquals(
+                                            Spline,
+                                            null
+                                        )
+                                        == false
+                                        && Spline.IsInitialized;
 
-        override protected void SavePrePlayState()
+        #region Preplay state
+
+        protected override void SavePrePlayState()
         {
             prePlaySpline = Spline;
             base.SavePrePlayState();
         }
 
-        override protected void RestorePrePlayState()
+        protected override void RestorePrePlayState()
         {
             Spline = prePlaySpline;
             base.RestorePrePlayState();
         }
 
+        protected override void ResetPrePlayState()
+        {
+            prePlaySpline = default;
+            base.ResetPrePlayState();
+        }
+
+        #endregion
+
         protected override float RelativeToAbsolute(float relativeDistance)
         {
 #if CURVY_SANITY_CHECKS
-            Assert.IsTrue(IsReady, ControllerNotReadyMessage);
-            Assert.IsTrue(CurvyUtility.Approximately(relativeDistance, GetClampedPosition(relativeDistance, CurvyPositionMode.Relative, Clamping, Length)));
+            Assert.IsTrue(
+                IsReady,
+                ControllerNotReadyMessage
+            );
+            Assert.IsTrue(
+                CurvyUtility.Approximately(
+                    relativeDistance,
+                    GetClampedPosition(
+                        relativeDistance,
+                        CurvyPositionMode.Relative,
+                        Clamping,
+                        Length
+                    )
+                )
+            );
 #endif
-            return Spline.TFToDistance(relativeDistance, Clamping);
+            return Spline.TFToDistance(
+                relativeDistance,
+                Clamping
+            );
         }
 
 
         protected override float AbsoluteToRelative(float worldUnitDistance)
         {
 #if CURVY_SANITY_CHECKS
-            Assert.IsTrue(IsReady, ControllerNotReadyMessage);
-            Assert.IsTrue(CurvyUtility.Approximately(worldUnitDistance, GetClampedPosition(worldUnitDistance, CurvyPositionMode.WorldUnits, Clamping, Length)));
+            Assert.IsTrue(
+                IsReady,
+                ControllerNotReadyMessage
+            );
+            Assert.IsTrue(
+                CurvyUtility.Approximately(
+                    worldUnitDistance,
+                    GetClampedPosition(
+                        worldUnitDistance,
+                        CurvyPositionMode.WorldUnits,
+                        Clamping,
+                        Length
+                    )
+                )
+            );
 #endif
-            return Spline.DistanceToTF(worldUnitDistance, Clamping);
+            return Spline.DistanceToTF(
+                worldUnitDistance,
+                Clamping
+            );
         }
 
         protected override Vector3 GetInterpolatedSourcePosition(float tf)
         {
-            Vector3 p = (UseCache) ? Spline.InterpolateFast(tf) : Spline.Interpolate(tf);
+            Vector3 p = UseCache
+                ? Spline.InterpolateFast(tf)
+                : Spline.Interpolate(tf);
 
             return Spline.transform.TransformPoint(p);
         }
 
 
-        protected override void GetInterpolatedSourcePosition(float tf, out Vector3 interpolatedPosition, out Vector3 tangent, out Vector3 up)
+        protected override void GetInterpolatedSourcePosition(float tf, out Vector3 interpolatedPosition, out Vector3 tangent,
+            out Vector3 up)
         {
             CurvySpline spline = Spline;
             Transform splineTransform = spline.transform;
 
             float localF;
-            CurvySplineSegment currentSegment = spline.TFToSegment(tf, out localF);
-            if (ReferenceEquals(currentSegment, null) == false)
+            CurvySplineSegment currentSegment = spline.TFToSegment(
+                tf,
+                out localF
+            );
+            if (ReferenceEquals(
+                    currentSegment,
+                    null
+                )
+                == false)
             {
                 if (UseCache)
-                    currentSegment.InterpolateAndGetTangentFast(localF, out interpolatedPosition, out tangent);
+                    currentSegment.InterpolateAndGetTangentFast(
+                        localF,
+                        out interpolatedPosition,
+                        out tangent
+                    );
                 else
-                    currentSegment.InterpolateAndGetTangent(localF, out interpolatedPosition, out tangent);
+                    currentSegment.InterpolateAndGetTangent(
+                        localF,
+                        out interpolatedPosition,
+                        out tangent
+                    );
                 up = currentSegment.GetOrientationUpFast(localF);
             }
 
@@ -503,14 +632,14 @@ namespace FluffyUnderware.Curvy.Controllers
 
         protected override Vector3 GetTangent(float tf)
         {
-            Vector3 t = (UseCache) ? Spline.GetTangentFast(tf) : Spline.GetTangent(tf);
+            Vector3 t = UseCache
+                ? Spline.GetTangentFast(tf)
+                : Spline.GetTangent(tf);
             return Spline.transform.TransformDirection(t);
         }
 
         protected override Vector3 GetOrientation(float tf)
-        {
-            return Spline.transform.TransformDirection(Spline.GetOrientationUpFast(tf));
-        }
+            => Spline.transform.TransformDirection(Spline.GetOrientationUpFast(tf));
 
         protected override void Advance(float speed, float deltaTime)
         {
@@ -523,96 +652,203 @@ namespace FluffyUnderware.Curvy.Controllers
             if (Spline.Count != 0)
                 EventAwareMove(distance);
 
-
-            if (IsSwitching && SwitchTarget.Count > 0)
-            {
-                SimulateAdvanceOnSpline(ref TfOnSwitchTarget, ref DirectionOnSwitchTarget, SwitchTarget, speed * deltaTime);
-
-                preAllocatedEventArgs.Set_INTERNAL(this, SwitchTarget, null, TfOnSwitchTarget, SwitchProgress, DirectionOnSwitchTarget, false);
-                OnSwitch.Invoke(preAllocatedEventArgs);
-                if (preAllocatedEventArgs.Cancel)
-                    CancelCurrentSwitch();
-            }
+            if (Switcher.IsSwitching && Switcher.Spline.Count > 0)
+                AdvanceSwitching(distance);
         }
 
-        override protected void SimulateAdvance(ref float tf, ref MovementDirection curyDirection, float speed, float deltaTime)
+        protected override void SimulateAdvance(ref float tf, ref MovementDirection direction, float speed, float deltaTime)
         {
-            SimulateAdvanceOnSpline(ref tf, ref curyDirection, Spline, speed * deltaTime);
+            float distance = speed * deltaTime;
+            SimulateAdvanceOnSpline(
+                Spline,
+                ref tf,
+                ref direction,
+                distance,
+                MoveMode,
+                Clamping
+            );
         }
 
-        private void SimulateAdvanceOnSpline(ref float tf, ref MovementDirection curyDirection, CurvySpline spline, float distance)
+        private static void SimulateAdvanceOnSpline(CurvySpline spline, ref float tf, ref MovementDirection direction,
+            float distance, MoveModeEnum moveModeEnum, CurvyClamping curvyClamping)
         {
             if (spline.Count > 0)
             {
-                int directionInt = curyDirection.ToInt();
-                switch (MoveMode)
+                int directionInt = direction.ToInt();
+                switch (moveModeEnum)
                 {
                     case MoveModeEnum.AbsolutePrecise:
-                        tf = spline.DistanceToTF(spline.ClampDistance(spline.TFToDistance(tf) + distance * directionInt, ref directionInt, Clamping));
+                        tf = spline.DistanceToTF(
+                            spline.ClampDistance(
+                                spline.TFToDistance(tf) + (distance * directionInt),
+                                ref directionInt,
+                                curvyClamping
+                            )
+                        );
                         break;
                     case MoveModeEnum.Relative:
-                        tf = CurvyUtility.ClampTF(tf + distance * directionInt, ref directionInt, Clamping);
+                        tf = CurvyUtility.ClampTF(
+                            tf + (distance * directionInt),
+                            ref directionInt,
+                            curvyClamping
+                        );
                         break;
                     default:
                         throw new NotSupportedException();
                 }
-                curyDirection = MovementDirectionMethods.FromInt(directionInt);
+
+                direction = MovementDirectionMethods.FromInt(directionInt);
             }
         }
 
-        override protected void InitializedApplyDeltaTime(float deltaTime)
+        protected override void InitializedApplyDeltaTime(float deltaTime)
         {
             if (Spline.Dirty)
                 Spline.Refresh();
 
             base.InitializedApplyDeltaTime(deltaTime);
 
-            if (IsSwitching && SwitchProgress >= 1)
+            if (Switcher.IsSwitching && Switcher.Progress >= 1)
                 FinishCurrentSwitch();
         }
 
-        override protected void ComputeTargetPositionAndRotation(out Vector3 targetPosition, out Vector3 targetUp, out Vector3 targetForward)
+        protected override void ComputeTargetPositionAndRotation(out Vector3 targetPosition, out Vector3 targetUp,
+            out Vector3 targetForward)
         {
-            Vector3 switchlessPosition;
-            Vector3 switchlessUp;
-            Vector3 switchlessForward;
-            base.ComputeTargetPositionAndRotation(out switchlessPosition, out switchlessUp, out switchlessForward);
-            Quaternion switchlessRotation = Quaternion.LookRotation(switchlessForward, switchlessUp);
+            Vector3 positionOnCurrentSpline;
+            Vector3 upOnCurrentSpline;
+            Vector3 forwardOnCurrentSpline;
 
-            if (IsSwitching)
+            base.ComputeTargetPositionAndRotation(
+                out positionOnCurrentSpline,
+                out upOnCurrentSpline,
+                out forwardOnCurrentSpline
+            );
+
+            if (Switcher.IsSwitching)
             {
-                CurvySpline preSwitchSpline = Spline;
-                float preSwitchSplineTf = RelativePosition;
+                GetSwitchingPositionAndRotation(
+                    forwardOnCurrentSpline,
+                    upOnCurrentSpline,
+                    positionOnCurrentSpline,
+                    out Vector3 switchingPosition,
+                    out Quaternion switchingRotation
+                );
 
-                m_Spline = SwitchTarget;
-                RelativePosition = TfOnSwitchTarget;
-
-                Vector3 positionOnSwitchToSpline;
-                Vector3 upOnSwitchToSpline;
-                Vector3 forwardOnSwitchToSpline;
-                base.ComputeTargetPositionAndRotation(out positionOnSwitchToSpline, out upOnSwitchToSpline, out forwardOnSwitchToSpline);
-                Quaternion rotationOnSwitchToSpline = Quaternion.LookRotation(forwardOnSwitchToSpline, upOnSwitchToSpline);
-
-                m_Spline = preSwitchSpline;
-                RelativePosition = preSwitchSplineTf;
-
-                targetPosition = OptimizedOperators.LerpUnclamped(switchlessPosition, positionOnSwitchToSpline, SwitchProgress);
-                Quaternion interpolatedRotation = Quaternion.LerpUnclamped(switchlessRotation, rotationOnSwitchToSpline, SwitchProgress);
-                targetUp = interpolatedRotation * Vector3.up;
-                targetForward = interpolatedRotation * Vector3.forward;
+                targetPosition = switchingPosition;
+                targetUp = switchingRotation * Vector3.up;
+                targetForward = switchingRotation * Vector3.forward;
             }
             else
             {
-                targetPosition = switchlessPosition;
-                targetUp = switchlessUp;
-                targetForward = switchlessForward;
+                targetPosition = positionOnCurrentSpline;
+                targetUp = upOnCurrentSpline;
+                targetForward = forwardOnCurrentSpline;
             }
         }
+#if DOCUMENTATION___FORCE_IGNORE___CURVY == false
+        protected override void ResetOnEnable()
+        {
+            base.ResetOnEnable();
+
+            preAllocatedEventArgs.Set_INTERNAL(
+                this,
+                Spline,
+                null,
+                Single.NaN,
+                Single.NaN,
+                MovementDirection.Forward,
+                false
+            );
+            Switcher.Stop();
+        }
+#endif
 
         #endregion
 
         #region ### Privates ###
-        /*! \cond PRIVATE */
+
+        #region ### Switcher  ###
+
+        private void AdvanceSwitching(float distance)
+        {
+            Switcher.Advance(
+                Switcher.Spline,
+                MoveMode,
+                distance,
+                Clamping
+            );
+
+            preAllocatedEventArgs.Set_INTERNAL(
+                this,
+                Switcher.Spline,
+                null,
+                Switcher.Tf,
+                Switcher.Progress,
+                Switcher.Direction,
+                false
+            );
+
+            OnSwitch.Invoke(preAllocatedEventArgs);
+
+            if (preAllocatedEventArgs.Cancel)
+                CancelCurrentSwitch();
+        }
+
+        private void GetSwitchingPositionAndRotation(Vector3 forwardOnCurrentSpline, Vector3 upOnCurrentSpline,
+            Vector3 positionOnCurrentSpline, out Vector3 interpolatedPosition, out Quaternion interpolatedRotation)
+        {
+            Quaternion rotationOnCurrentSpline = Quaternion.LookRotation(
+                forwardOnCurrentSpline,
+                upOnCurrentSpline
+            );
+
+            ComputePositionAndRotationOnSwitchTarget(
+                out Vector3 positionOnSwitchTarget,
+                out Quaternion rotationOnSwitchTarget
+            );
+
+            interpolatedPosition = OptimizedOperators.LerpUnclamped(
+                positionOnCurrentSpline,
+                positionOnSwitchTarget,
+                Switcher.Progress
+            );
+
+            interpolatedRotation = Quaternion.LerpUnclamped(
+                rotationOnCurrentSpline,
+                rotationOnSwitchTarget,
+                Switcher.Progress
+            );
+        }
+
+        private void ComputePositionAndRotationOnSwitchTarget(out Vector3 positionOnSwitchToSpline,
+            out Quaternion rotationOnSwitchToSpline)
+        {
+            CurvySpline preSwitchSpline = Spline;
+            float preSwitchSplineTf = RelativePosition;
+
+            m_Spline = Switcher.Spline;
+            RelativePosition = Switcher.Tf;
+
+            Vector3 upOnSwitchToSpline;
+            Vector3 forwardOnSwitchToSpline;
+            base.ComputeTargetPositionAndRotation(
+                out positionOnSwitchToSpline,
+                out upOnSwitchToSpline,
+                out forwardOnSwitchToSpline
+            );
+
+            rotationOnSwitchToSpline = Quaternion.LookRotation(
+                forwardOnSwitchToSpline,
+                upOnSwitchToSpline
+            );
+
+            m_Spline = preSwitchSpline;
+            RelativePosition = preSwitchSplineTf;
+        }
+
+        #endregion
+
 
         /// <summary>
         /// This method gets the controller position, but handles the looping differently than usual (it does not change a relative position of 1 to 0), which avoids hardly solvable ambiguities in the movement logic.
@@ -620,9 +856,9 @@ namespace FluffyUnderware.Curvy.Controllers
         /// <remarks>This is to make controller logic simpler, since it does not need anymore to guess if a position of 0 meant controller on the end of the spline and needed looping, or meant that the controller is on the start of the spline.</remarks>
         /// <param name="positionMode"> The one of the returned position</param>
         /// <param name="clampedPosition"> Uses the controller's <see cref="CurvyController.PositionMode"/></param>
-        private static float MovementCompatibleGetPosition(SplineController controller, float clampedPosition, CurvyPositionMode positionMode, out CurvySplineSegment controlPoint, out bool isOnControlPoint)
+        private static float MovementCompatibleGetPosition(SplineController controller, float clampedPosition,
+            CurvyPositionMode positionMode, out CurvySplineSegment controlPoint, out bool isOnControlPoint)
         {
-
             float resultPosition;
             CurvySpline spline = controller.Spline;
 
@@ -632,10 +868,21 @@ namespace FluffyUnderware.Curvy.Controllers
             switch (controller.PositionMode)
             {
                 case CurvyPositionMode.Relative:
-                    controlPoint = spline.TFToSegment(clampedPosition, out unconvertedLocalPosition, out isOnSegmentFirstCp, out isOnSegmentLastCp, CurvyClamping.Clamp); //CurvyClamping.Clamp to cancel looping handling
+                    controlPoint = spline.TFToSegment(
+                        clampedPosition,
+                        out unconvertedLocalPosition,
+                        out isOnSegmentFirstCp,
+                        out isOnSegmentLastCp,
+                        CurvyClamping.Clamp
+                    ); //CurvyClamping.Clamp to cancel looping handling
                     break;
                 case CurvyPositionMode.WorldUnits:
-                    controlPoint = spline.DistanceToSegment(clampedPosition, out unconvertedLocalPosition, out isOnSegmentFirstCp, out isOnSegmentLastCp, CurvyClamping.Clamp); //CurvyClamping.Clamp to cancel looping handling
+                    controlPoint = spline.DistanceToSegment(
+                        clampedPosition,
+                        out unconvertedLocalPosition,
+                        out isOnSegmentFirstCp,
+                        out isOnSegmentLastCp
+                    ); //CurvyClamping.Clamp to cancel looping handling
                     break;
                 default:
                     throw new NotSupportedException();
@@ -644,11 +891,13 @@ namespace FluffyUnderware.Curvy.Controllers
             if (positionMode == controller.PositionMode)
                 resultPosition = clampedPosition;
             else
-            {
                 switch (positionMode)
                 {
                     case CurvyPositionMode.Relative:
-                        resultPosition = spline.SegmentToTF(controlPoint, controlPoint.DistanceToLocalF(unconvertedLocalPosition));
+                        resultPosition = spline.SegmentToTF(
+                            controlPoint,
+                            controlPoint.DistanceToLocalF(unconvertedLocalPosition)
+                        );
                         break;
                     case CurvyPositionMode.WorldUnits:
                         resultPosition = controlPoint.Distance + controlPoint.LocalFToDistance(unconvertedLocalPosition);
@@ -656,7 +905,6 @@ namespace FluffyUnderware.Curvy.Controllers
                     default:
                         throw new ArgumentOutOfRangeException();
                 }
-            }
 
             if (isOnSegmentLastCp) //Case of last cp of an open spline
                 controlPoint = spline.GetNextControlPoint(controlPoint);
@@ -670,7 +918,8 @@ namespace FluffyUnderware.Curvy.Controllers
         /// This method sets the controller position, but handles the looping differently than usual (it does not change a realtive position of 1 to 0), which avoids hardly solvable ambiguities in the movement logic.
         /// </summary>
         /// <remarks>This is to make controller logic simpler, since it does not need anymore to guess if a position of 0 meant controller on the end of the spline and needed looping, or meant that the controller is on the start of the spline.</remarks>
-        private static void MovementCompatibleSetPosition(SplineController controller, CurvyPositionMode positionMode, float specialClampedPosition)
+        private static void MovementCompatibleSetPosition(SplineController controller, CurvyPositionMode positionMode,
+            float specialClampedPosition)
         {
             float clampedPosition = specialClampedPosition;
 
@@ -680,17 +929,24 @@ namespace FluffyUnderware.Curvy.Controllers
                 switch (positionMode)
                 {
                     case CurvyPositionMode.Relative:
-                        controller.m_Position = controller.Spline.TFToDistance(clampedPosition, controller.Clamping);
+                        controller.m_Position = controller.Spline.TFToDistance(
+                            clampedPosition,
+                            controller.Clamping
+                        );
                         break;
                     case CurvyPositionMode.WorldUnits:
-                        controller.m_Position = controller.Spline.DistanceToTF(clampedPosition, controller.Clamping);
+                        controller.m_Position = controller.Spline.DistanceToTF(
+                            clampedPosition,
+                            controller.Clamping
+                        );
                         break;
                     default:
                         throw new ArgumentOutOfRangeException();
                 }
         }
 
-        private const string InvalidSegmentErrorMessage = "[Curvy] Controller {0} reached segment {1} which is invalid segment because it has a length of 0. Please fix the invalid segment to avoid issues with the controller";
+        private const string InvalidSegmentErrorMessage =
+            "[Curvy] Controller {0} reached segment {1} which is invalid segment because it has a length of 0. Please fix the invalid segment to avoid issues with the controller";
 
         /// <summary>
         /// Updates position and direction while triggering events when reaching a control point
@@ -732,19 +988,19 @@ namespace FluffyUnderware.Curvy.Controllers
                     break;
                 case MovementDirection.Forward:
                     float upperLimit;
+                {
+                    switch (PositionMode)
                     {
-                        switch (PositionMode)
-                        {
-                            case CurvyPositionMode.Relative:
-                                upperLimit = 1f;
-                                break;
-                            case CurvyPositionMode.WorldUnits:
-                                upperLimit = m_Spline.Length;
-                                break;
-                            default:
-                                throw new ArgumentOutOfRangeException();
-                        }
+                        case CurvyPositionMode.Relative:
+                            upperLimit = 1f;
+                            break;
+                        case CurvyPositionMode.WorldUnits:
+                            upperLimit = m_Spline.Length;
+                            break;
+                        default:
+                            throw new ArgumentOutOfRangeException();
                     }
+                }
                     if (m_Position == upperLimit)
                         if (Clamping == CurvyClamping.PingPong)
                             MovementDirection = MovementDirection.GetOpposite();
@@ -758,18 +1014,32 @@ namespace FluffyUnderware.Curvy.Controllers
             CurvySplineSegment currentCp;
             bool isOnCp;
             float movementCompatibleCurrentPosition;
-            movementCompatibleCurrentPosition = MovementCompatibleGetPosition(this, m_Position, movementRelatedPositionMode, out currentCp, out isOnCp);
+            movementCompatibleCurrentPosition = MovementCompatibleGetPosition(
+                this,
+                m_Position,
+                movementRelatedPositionMode,
+                out currentCp,
+                out isOnCp
+            );
 
             if (currentCp.Length == 0 && Spline.IsControlPointASegment(currentCp))
-                DTLog.LogWarning(String.Format(InvalidSegmentErrorMessage, this.name, currentCp), this);
+                DTLog.LogWarning(
+                    String.Format(
+                        InvalidSegmentErrorMessage,
+                        name,
+                        currentCp
+                    ),
+                    this
+                );
 
             int infiniteLoopSafety = 10000;
             while (!cancelMovement && currentDelta > 0 && infiniteLoopSafety-- > 0)
             {
-
 #if CURVY_SANITY_CHECKS
                 Assert.IsTrue(Spline.Count > 0);
-                Assert.IsTrue(moveModeAtMethodStart == MoveMode);// MoveMode is not allowed to be modified while moving a Spline Controller;
+                Assert.IsTrue(
+                    moveModeAtMethodStart == MoveMode
+                ); // MoveMode is not allowed to be modified while moving a Spline Controller;
 #endif
                 CurvySplineSegment candidateControlPoint;
                 {
@@ -781,13 +1051,23 @@ namespace FluffyUnderware.Curvy.Controllers
                             : currentCp;
                 }
 
-                if (ReferenceEquals(candidateControlPoint, null) == false && Spline.IsControlPointVisible(candidateControlPoint))
+                if (ReferenceEquals(
+                        candidateControlPoint,
+                        null
+                    )
+                    == false
+                    && Spline.IsControlPointVisible(candidateControlPoint))
                 {
                     float candidateControlPointPosition;
                     {
-                        candidateControlPointPosition = GetControlPointPosition(candidateControlPoint, movementRelatedPositionMode);
+                        candidateControlPointPosition = GetControlPointPosition(
+                            candidateControlPoint,
+                            movementRelatedPositionMode
+                        );
                         //handles first cp of closed spline having two values: 0 and max value
-                        if (MovementDirection == MovementDirection.Forward && m_Spline.Closed && candidateControlPointPosition == 0)
+                        if (MovementDirection == MovementDirection.Forward
+                            && m_Spline.Closed
+                            && candidateControlPointPosition == 0)
                             candidateControlPointPosition = GetMaxPosition(movementRelatedPositionMode);
                     }
 
@@ -795,44 +1075,68 @@ namespace FluffyUnderware.Curvy.Controllers
 
                     float postEventsEndPosition;
 
-                    if (distanceToCandidate > currentDelta)//If no more control point to reach, move the controller and exit
+                    if (distanceToCandidate > currentDelta) //If no more control point to reach, move the controller and exit
                     {
-                        float movementCompatibleNewPosition_Unclamped = movementCompatibleCurrentPosition + currentDelta * MovementDirection.ToInt();
+                        float movementCompatibleNewPosition_Unclamped =
+                            movementCompatibleCurrentPosition + (currentDelta * MovementDirection.ToInt());
 
-                        float movementCompatibleNewPosition_Clamped = GetClampedPosition(movementCompatibleNewPosition_Unclamped, movementRelatedPositionMode, Clamping, m_Spline.Length);
+                        float movementCompatibleNewPosition_Clamped = GetClampedPosition(
+                            movementCompatibleNewPosition_Unclamped,
+                            movementRelatedPositionMode,
+                            Clamping,
+                            m_Spline.Length
+                        );
 
-                        HandleOnPositionReachedEvents(movementRelatedPositionMode,
+                        HandleOnPositionReachedEvents(
+                            movementRelatedPositionMode,
                             movementCompatibleCurrentPosition,
                             movementCompatibleNewPosition_Clamped,
                             movementCompatibleNewPosition_Unclamped,
                             out postEventsEndPosition,
                             currentDelta,
                             currentCp,
-                            ref cancelMovement);
+                            ref cancelMovement
+                        );
 
-                        MovementCompatibleSetPosition(this, movementRelatedPositionMode, postEventsEndPosition);
+                        MovementCompatibleSetPosition(
+                            this,
+                            movementRelatedPositionMode,
+                            postEventsEndPosition
+                        );
 
                         break;
                     }
 
-                    HandleOnPositionReachedEvents(movementRelatedPositionMode,
+                    HandleOnPositionReachedEvents(
+                        movementRelatedPositionMode,
                         movementCompatibleCurrentPosition,
                         candidateControlPointPosition,
                         candidateControlPointPosition,
                         out postEventsEndPosition,
                         currentDelta,
                         currentCp,
-                        ref cancelMovement);
+                        ref cancelMovement
+                    );
 
                     if (postEventsEndPosition.Approximately(candidateControlPointPosition) == false)
-                    {
-                        DTLog.LogWarning($"[Curvy] Spline Controller {name}: Position was modified in an {nameof(OnPositionReachedList)} event handler. That modification will be ignored to prioritize the controller reaching a new control point. You can use the {nameof(OnControlPointReached)} event or {(nameof(OnEndReached))} instead. If this behavior is problematic, please contact the developers.", this);
-                    }
+                        DTLog.LogWarning(
+                            $"[Curvy] Spline Controller {name}: Position was modified in an {nameof(OnPositionReachedList)} event handler. That modification will be ignored to prioritize the controller reaching a new control point. You can use the {nameof(OnControlPointReached)} event or {nameof(OnEndReached)} instead. If this behavior is problematic, please contact the developers.",
+                            this
+                        );
 
                     currentDelta -= distanceToCandidate;
 
                     //Move to next control point
-                    HandleReachingNewControlPoint(candidateControlPoint, candidateControlPointPosition, movementRelatedPositionMode, currentDelta, ref cancelMovement, out currentCp, out isOnCp, out movementCompatibleCurrentPosition);
+                    HandleReachingNewControlPoint(
+                        candidateControlPoint,
+                        candidateControlPointPosition,
+                        movementRelatedPositionMode,
+                        currentDelta,
+                        ref cancelMovement,
+                        out currentCp,
+                        out isOnCp,
+                        out movementCompatibleCurrentPosition
+                    );
                 }
 
                 //handle connection
@@ -848,35 +1152,77 @@ namespace FluffyUnderware.Curvy.Controllers
                                 newDirection = MovementDirection;
                                 break;
                             case SplineControllerConnectionBehavior.FollowUpSpline:
-                                postConnectionHandlingControlPoint = HandleFollowUpConnectionBehavior(currentCp, MovementDirection, out newDirection);
+                                postConnectionHandlingControlPoint = HandleFollowUpConnectionBehavior(
+                                    currentCp,
+                                    MovementDirection,
+                                    out newDirection
+                                );
                                 break;
                             case SplineControllerConnectionBehavior.FollowUpOtherwiseRandom:
                                 postConnectionHandlingControlPoint = currentCp.FollowUp
-                                    ? HandleFollowUpConnectionBehavior(currentCp, MovementDirection, out newDirection)
-                                    : HandleRandomConnectionBehavior(currentCp, MovementDirection, out newDirection, currentCp.Connection.ControlPointsList);
+                                    ? HandleFollowUpConnectionBehavior(
+                                        currentCp,
+                                        MovementDirection,
+                                        out newDirection
+                                    )
+                                    : HandleRandomConnectionBehavior(
+                                        currentCp,
+                                        MovementDirection,
+                                        out newDirection,
+                                        currentCp.Connection.ControlPointsList
+                                    );
                                 break;
                             case SplineControllerConnectionBehavior.RandomSpline:
-                                postConnectionHandlingControlPoint = HandleRandomConnectionBehavior(currentCp, MovementDirection, out newDirection, currentCp.Connection.ControlPointsList);
+                                postConnectionHandlingControlPoint = HandleRandomConnectionBehavior(
+                                    currentCp,
+                                    MovementDirection,
+                                    out newDirection,
+                                    currentCp.Connection.ControlPointsList
+                                );
                                 break;
                             case SplineControllerConnectionBehavior.Custom:
                                 if (ConnectionCustomSelector == null)
                                 {
-                                    DTLog.LogError("[Curvy] You need to set a non null ConnectionCustomSelector when using SplineControllerConnectionBehavior.Custom", this);
+                                    DTLog.LogError(
+                                        "[Curvy] You need to set a non null ConnectionCustomSelector when using SplineControllerConnectionBehavior.Custom",
+                                        this
+                                    );
                                     postConnectionHandlingControlPoint = currentCp;
                                 }
                                 else
-                                    postConnectionHandlingControlPoint = ConnectionCustomSelector.SelectConnectedControlPoint(this, currentCp.Connection, currentCp);
+                                    postConnectionHandlingControlPoint = ConnectionCustomSelector.SelectConnectedControlPoint(
+                                        this,
+                                        currentCp.Connection,
+                                        currentCp
+                                    );
+
                                 newDirection = MovementDirection;
                                 break;
                             default:
                                 throw new ArgumentOutOfRangeException();
                         }
 
-                        if (ReferenceEquals(postConnectionHandlingControlPoint, currentCp) == false)
+                        if (ReferenceEquals(
+                                postConnectionHandlingControlPoint,
+                                currentCp
+                            )
+                            == false)
                         {
                             MovementDirection = newDirection;
-                            float postConnectionHandlingControlPointPosition = GetControlPointPosition(postConnectionHandlingControlPoint, movementRelatedPositionMode);
-                            HandleReachingNewControlPoint(postConnectionHandlingControlPoint, postConnectionHandlingControlPointPosition, movementRelatedPositionMode, currentDelta, ref cancelMovement, out currentCp, out isOnCp, out movementCompatibleCurrentPosition);
+                            float postConnectionHandlingControlPointPosition = GetControlPointPosition(
+                                postConnectionHandlingControlPoint,
+                                movementRelatedPositionMode
+                            );
+                            HandleReachingNewControlPoint(
+                                postConnectionHandlingControlPoint,
+                                postConnectionHandlingControlPointPosition,
+                                movementRelatedPositionMode,
+                                currentDelta,
+                                ref cancelMovement,
+                                out currentCp,
+                                out isOnCp,
+                                out movementCompatibleCurrentPosition
+                            );
                         }
                     }
                 }
@@ -884,47 +1230,91 @@ namespace FluffyUnderware.Curvy.Controllers
                 //handle clamping
                 {
                     if (isOnCp)
-                    {
                         switch (Clamping)
                         {
                             case CurvyClamping.Loop:
                                 if (Spline.Closed == false)
                                 {
                                     CurvySplineSegment newControlPoint;
-                                    if (MovementDirection == MovementDirection.Backward && ReferenceEquals(currentCp, Spline.FirstVisibleControlPoint))
+                                    if (MovementDirection == MovementDirection.Backward
+                                        && ReferenceEquals(
+                                            currentCp,
+                                            Spline.FirstVisibleControlPoint
+                                        ))
                                         newControlPoint = Spline.LastVisibleControlPoint;
-                                    else if (MovementDirection == MovementDirection.Forward && ReferenceEquals(currentCp, Spline.LastVisibleControlPoint))
+                                    else if (MovementDirection == MovementDirection.Forward
+                                             && ReferenceEquals(
+                                                 currentCp,
+                                                 Spline.LastVisibleControlPoint
+                                             ))
                                         newControlPoint = Spline.FirstVisibleControlPoint;
                                     else
                                         newControlPoint = null;
 
-                                    if (ReferenceEquals(newControlPoint, null) == false)
+                                    if (ReferenceEquals(
+                                            newControlPoint,
+                                            null
+                                        )
+                                        == false)
                                     {
-                                        float newControlPointPosition = GetControlPointPosition(newControlPoint, movementRelatedPositionMode);
-                                        HandleReachingNewControlPoint(newControlPoint, newControlPointPosition, movementRelatedPositionMode, currentDelta, ref cancelMovement, out currentCp, out isOnCp, out movementCompatibleCurrentPosition);
+                                        float newControlPointPosition = GetControlPointPosition(
+                                            newControlPoint,
+                                            movementRelatedPositionMode
+                                        );
+                                        HandleReachingNewControlPoint(
+                                            newControlPoint,
+                                            newControlPointPosition,
+                                            movementRelatedPositionMode,
+                                            currentDelta,
+                                            ref cancelMovement,
+                                            out currentCp,
+                                            out isOnCp,
+                                            out movementCompatibleCurrentPosition
+                                        );
                                     }
                                 }
+
                                 break;
                             case CurvyClamping.Clamp:
-                                if ((MovementDirection == MovementDirection.Backward && ReferenceEquals(currentCp, Spline.FirstVisibleControlPoint)) ||
-                                    (MovementDirection == MovementDirection.Forward && ReferenceEquals(currentCp, Spline.LastVisibleControlPoint)))
+                                if ((MovementDirection == MovementDirection.Backward
+                                    && ReferenceEquals(
+                                        currentCp,
+                                        Spline.FirstVisibleControlPoint
+                                    ))
+                                    || (MovementDirection == MovementDirection.Forward
+                                    && ReferenceEquals(
+                                        currentCp,
+                                        Spline.LastVisibleControlPoint
+                                    )))
                                     currentDelta = 0;
                                 break;
                             case CurvyClamping.PingPong:
-                                if ((MovementDirection == MovementDirection.Backward && ReferenceEquals(currentCp, Spline.FirstVisibleControlPoint)) ||
-                                    (MovementDirection == MovementDirection.Forward && ReferenceEquals(currentCp, Spline.LastVisibleControlPoint)))
+                                if ((MovementDirection == MovementDirection.Backward
+                                    && ReferenceEquals(
+                                        currentCp,
+                                        Spline.FirstVisibleControlPoint
+                                    ))
+                                    || (MovementDirection == MovementDirection.Forward
+                                    && ReferenceEquals(
+                                        currentCp,
+                                        Spline.LastVisibleControlPoint
+                                    )))
                                     MovementDirection = MovementDirection.GetOpposite();
                                 break;
                             default:
                                 throw new ArgumentOutOfRangeException();
                         }
-                    }
                 }
             }
 
             if (infiniteLoopSafety <= 0)
-                DTLog.LogError(String.Format("[Curvy] Unexpected behavior in Spline Controller '{0}'. Please raise a Bug Report.", name), this);
-
+                DTLog.LogError(
+                    String.Format(
+                        "[Curvy] Unexpected behavior in Spline Controller '{0}'. Please raise a Bug Report.",
+                        name
+                    ),
+                    this
+                );
         }
 
         /// <summary>
@@ -940,7 +1330,6 @@ namespace FluffyUnderware.Curvy.Controllers
             CurvySplineSegment currentCp,
             ref bool cancelMovement)
         {
-
 #if CURVY_SANITY_CHECKS
             switch (MovementDirection)
             {
@@ -958,36 +1347,55 @@ namespace FluffyUnderware.Curvy.Controllers
             float? nullablePostEventsEndPosition = null;
             foreach (OnPositionReachedSettings eventSettings in OnPositionReachedList)
             {
-                nullablePostEventsEndPosition = HandleOnPositionReachedEvent(positionMode, startPosition, endPositionUnclamped, currentDelta, currentCp, ref cancelMovement, eventSettings, nullablePostEventsEndPosition);
+                nullablePostEventsEndPosition = HandleOnPositionReachedEvent(
+                    positionMode,
+                    startPosition,
+                    endPositionUnclamped,
+                    currentDelta,
+                    currentCp,
+                    ref cancelMovement,
+                    eventSettings,
+                    nullablePostEventsEndPosition
+                );
 
                 if (Spline.Closed)
                 {
                     //handles first cp of closed spline having two values: 0 and max value. In the controller logic, that point has a value of max value when going forward, and 0 when going backwards. To handle this, we create two events, one for each value of the ambiguous point 
 
                     OnPositionReachedSettings extraEventSettings;
-                    if (MovementDirection == MovementDirection.Forward 
+                    if (MovementDirection == MovementDirection.Forward
                         && eventSettings.Position == 0)
                     {
                         extraEventSettings = eventSettings.Clone();
                         extraEventSettings.Position = GetMaxPosition(eventSettings.PositionMode);
                     }
-                    else if (MovementDirection == MovementDirection.Backward 
-                             && Mathf.Approximately(eventSettings.Position ,GetMaxPosition(eventSettings.PositionMode)))
+                    else if (MovementDirection == MovementDirection.Backward
+                             && Mathf.Approximately(
+                                 eventSettings.Position,
+                                 GetMaxPosition(eventSettings.PositionMode)
+                             ))
                     {
                         extraEventSettings = eventSettings.Clone();
                         extraEventSettings.Position = 0;
                     }
                     else
-                    {
                         extraEventSettings = null;
-                    }
 
                     if (extraEventSettings != null)
-                        nullablePostEventsEndPosition = HandleOnPositionReachedEvent(positionMode, startPosition, endPositionUnclamped, currentDelta, currentCp, ref cancelMovement, extraEventSettings, nullablePostEventsEndPosition);
+                        nullablePostEventsEndPosition = HandleOnPositionReachedEvent(
+                            positionMode,
+                            startPosition,
+                            endPositionUnclamped,
+                            currentDelta,
+                            currentCp,
+                            ref cancelMovement,
+                            extraEventSettings,
+                            nullablePostEventsEndPosition
+                        );
                 }
             }
 
-           
+
             postEventsEndPosition = nullablePostEventsEndPosition ?? endPosition;
         }
 
@@ -1017,39 +1425,54 @@ namespace FluffyUnderware.Curvy.Controllers
                             eventPosition = Spline.TFToDistance(settings.Position);
                             break;
                         default:
-                            throw new ArgumentOutOfRangeException(nameof(positionMode), positionMode, null);
+                            throw new ArgumentOutOfRangeException(
+                                nameof(positionMode),
+                                positionMode,
+                                null
+                            );
                     }
             }
 
             TriggeringDirections triggeringDirections = settings.TriggeringDirections;
 
             bool isForwardEventTriggered =
-                (triggeringDirections == TriggeringDirections.All ||
-                 triggeringDirections == TriggeringDirections.Forward) &&
-                startPosition < eventPosition &&
-                eventPosition <= endPositionUnclamped;
+                (triggeringDirections == TriggeringDirections.All || triggeringDirections == TriggeringDirections.Forward)
+                && startPosition < eventPosition
+                && eventPosition <= endPositionUnclamped;
             bool isBackwardEventTriggered =
-                (triggeringDirections == TriggeringDirections.All ||
-                 triggeringDirections == TriggeringDirections.Backward) &&
-                endPositionUnclamped <= eventPosition &&
-                eventPosition < startPosition;
+                (triggeringDirections == TriggeringDirections.All || triggeringDirections == TriggeringDirections.Backward)
+                && endPositionUnclamped <= eventPosition
+                && eventPosition < startPosition;
 
             if (isForwardEventTriggered || isBackwardEventTriggered)
             {
                 float delta = Math.Abs(eventPosition - startPosition);
 
                 //every custom event triggering will modify the controller's position to the event's position. This will override any possible position modification by a prior event handler
-                MovementCompatibleSetPosition(this, settings.PositionMode, eventPosition);
+                MovementCompatibleSetPosition(
+                    this,
+                    settings.PositionMode,
+                    eventPosition
+                );
 
-                preAllocatedEventArgs.Set_INTERNAL(this,
+                preAllocatedEventArgs.Set_INTERNAL(
+                    this,
                     Spline,
                     currentCp,
                     eventPosition,
                     currentDelta - delta,
                     MovementDirection,
-                    settings.PositionMode == CurvyPositionMode.WorldUnits);
+                    settings.PositionMode == CurvyPositionMode.WorldUnits
+                );
 
-                InvokeEventHandler(settings.Event, preAllocatedEventArgs, positionMode, out _, out _, out postEventEndPosition);
+                InvokeEventHandler(
+                    settings.Event,
+                    preAllocatedEventArgs,
+                    positionMode,
+                    out _,
+                    out _,
+                    out postEventEndPosition
+                );
 
                 cancelMovement |= preAllocatedEventArgs.Cancel;
             }
@@ -1070,7 +1493,11 @@ namespace FluffyUnderware.Curvy.Controllers
             out float postEventsControlPointPosition)
         {
             //update state
-            MovementCompatibleSetPosition(this, positionMode, controlPointPosition);
+            MovementCompatibleSetPosition(
+                this,
+                positionMode,
+                controlPointPosition
+            );
             Spline = controlPoint.Spline;
             postEventsControlPoint = controlPoint;
             postEventsIsControllerOnControlPoint = true;
@@ -1078,19 +1505,54 @@ namespace FluffyUnderware.Curvy.Controllers
 
             //handle invalid situation
             if (controlPoint.Length == 0 && Spline.IsControlPointASegment(controlPoint))
-                DTLog.LogWarning(String.Format(InvalidSegmentErrorMessage, this.name, controlPoint), this);
+                DTLog.LogWarning(
+                    String.Format(
+                        InvalidSegmentErrorMessage,
+                        name,
+                        controlPoint
+                    ),
+                    this
+                );
 
 
             //setup event param
-            preAllocatedEventArgs.Set_INTERNAL(this, Spline, controlPoint, controlPointPosition, currentDelta, MovementDirection, positionMode == CurvyPositionMode.WorldUnits);
+            preAllocatedEventArgs.Set_INTERNAL(
+                this,
+                Spline,
+                controlPoint,
+                controlPointPosition,
+                currentDelta,
+                MovementDirection,
+                positionMode == CurvyPositionMode.WorldUnits
+            );
 
             //handle OnControlPointReached
-            InvokeEventHandler(OnControlPointReached, preAllocatedEventArgs, positionMode, ref postEventsControlPoint, ref postEventsIsControllerOnControlPoint, ref postEventsControlPointPosition);
+            InvokeEventHandler(
+                OnControlPointReached,
+                preAllocatedEventArgs,
+                positionMode,
+                ref postEventsControlPoint,
+                ref postEventsIsControllerOnControlPoint,
+                ref postEventsControlPointPosition
+            );
 
             //handle OnEndReached
-            if (ReferenceEquals(preAllocatedEventArgs.Spline.FirstVisibleControlPoint, preAllocatedEventArgs.ControlPoint)
-                || ReferenceEquals(preAllocatedEventArgs.Spline.LastVisibleControlPoint, preAllocatedEventArgs.ControlPoint))
-                InvokeEventHandler(OnEndReached, preAllocatedEventArgs, positionMode, ref postEventsControlPoint, ref postEventsIsControllerOnControlPoint, ref postEventsControlPointPosition);
+            if (ReferenceEquals(
+                    preAllocatedEventArgs.Spline.FirstVisibleControlPoint,
+                    preAllocatedEventArgs.ControlPoint
+                )
+                || ReferenceEquals(
+                    preAllocatedEventArgs.Spline.LastVisibleControlPoint,
+                    preAllocatedEventArgs.ControlPoint
+                ))
+                InvokeEventHandler(
+                    OnEndReached,
+                    preAllocatedEventArgs,
+                    positionMode,
+                    ref postEventsControlPoint,
+                    ref postEventsIsControllerOnControlPoint,
+                    ref postEventsControlPointPosition
+                );
 
             cancelMovement |= preAllocatedEventArgs.Cancel;
         }
@@ -1102,12 +1564,14 @@ namespace FluffyUnderware.Curvy.Controllers
             ref bool postEventsIsControllerOnControlPoint,
             ref float postEventPosition)
         {
-            InvokeEventHandler(@event,
+            InvokeEventHandler(
+                @event,
                 eventArgument,
                 positionMode,
                 out CurvySplineSegment outControlPoint,
                 out bool? outIsControllerOnControlPoint,
-                out float? outPosition);
+                out float? outPosition
+            );
 
             if (outPosition != null)
                 postEventPosition = outPosition.Value;
@@ -1115,7 +1579,6 @@ namespace FluffyUnderware.Curvy.Controllers
                 postEventsIsControllerOnControlPoint = outIsControllerOnControlPoint.Value;
             if (outControlPoint != null)
                 postEventsControlPoint = outControlPoint;
-
         }
 
         private void InvokeEventHandler(CurvySplineMoveEvent @event,
@@ -1132,9 +1595,21 @@ namespace FluffyUnderware.Curvy.Controllers
             //call event handler
             @event.Invoke(eventArgument);
             //update state if event handler changed important things
-            if (m_Position != preEventPosition || PositionMode != preEventPositionMode || ReferenceEquals(m_Spline, preEventPositionSpline) == false)
+            if (m_Position != preEventPosition
+                || PositionMode != preEventPositionMode
+                || ReferenceEquals(
+                    m_Spline,
+                    preEventPositionSpline
+                )
+                == false)
             {
-                postEventPosition = MovementCompatibleGetPosition(this, m_Position, positionMode, out postEventsControlPoint, out bool outIsOnCP);
+                postEventPosition = MovementCompatibleGetPosition(
+                    this,
+                    m_Position,
+                    positionMode,
+                    out postEventsControlPoint,
+                    out bool outIsOnCP
+                );
                 postEventsIsControllerOnControlPoint = outIsOnCP;
             }
             else
@@ -1148,7 +1623,9 @@ namespace FluffyUnderware.Curvy.Controllers
         /// <summary>
         /// Get the correct control point and direction from applying the Random connection handling logic
         /// </summary>
-        private CurvySplineSegment HandleRandomConnectionBehavior(CurvySplineSegment currentControlPoint, MovementDirection currentDirection, out MovementDirection newDirection, ReadOnlyCollection<CurvySplineSegment> connectedControlPoints)
+        private CurvySplineSegment HandleRandomConnectionBehavior(CurvySplineSegment currentControlPoint,
+            MovementDirection currentDirection, out MovementDirection newDirection,
+            ReadOnlyCollection<CurvySplineSegment> connectedControlPoints)
         {
             //OPTIM avoid allocation
             List<CurvySplineSegment> validConnectedControlPoints = new List<CurvySplineSegment>(connectedControlPoints.Count);
@@ -1160,19 +1637,30 @@ namespace FluffyUnderware.Curvy.Controllers
                     continue;
 
                 if (RejectTooDivergentSplines)
-                {
-                    if (GetAngleBetweenConnectedSplines(currentControlPoint, currentDirection, controlPoint, AllowDirectionChange) > MaxAllowedDivergenceAngle)
+                    if (GetAngleBetweenConnectedSplines(
+                            currentControlPoint,
+                            currentDirection,
+                            controlPoint,
+                            AllowDirectionChange
+                        )
+                        > MaxAllowedDivergenceAngle)
                         continue;
-                }
 
                 validConnectedControlPoints.Add(controlPoint);
             }
 
-            CurvySplineSegment newControlPoint = validConnectedControlPoints.Count == 0 ?
-                currentControlPoint :
-                validConnectedControlPoints[Random.Range(0, validConnectedControlPoints.Count)];
+            CurvySplineSegment newControlPoint = validConnectedControlPoints.Count == 0
+                ? currentControlPoint
+                : validConnectedControlPoints[Random.Range(
+                    0,
+                    validConnectedControlPoints.Count
+                )];
 
-            newDirection = GetPostConnectionDirection(newControlPoint, currentDirection, AllowDirectionChange);
+            newDirection = GetPostConnectionDirection(
+                newControlPoint,
+                currentDirection,
+                AllowDirectionChange
+            );
 
             return newControlPoint;
         }
@@ -1180,24 +1668,32 @@ namespace FluffyUnderware.Curvy.Controllers
         /// <summary>
         /// Get the direction the controller should have if moving through a specific connected Control Point
         /// </summary>
-        private static MovementDirection GetPostConnectionDirection(CurvySplineSegment connectedControlPoint, MovementDirection currentDirection, bool directionChangeAllowed)
-        {
-            return directionChangeAllowed && connectedControlPoint.Spline.Closed == false
-                ? HeadingToDirection(ConnectionHeadingEnum.Auto, connectedControlPoint, currentDirection)
+        private static MovementDirection GetPostConnectionDirection(CurvySplineSegment connectedControlPoint,
+            MovementDirection currentDirection, bool directionChangeAllowed)
+            => directionChangeAllowed && connectedControlPoint.Spline.Closed == false
+                ? HeadingToDirection(
+                    ConnectionHeadingEnum.Auto,
+                    connectedControlPoint,
+                    currentDirection
+                )
                 : currentDirection;
-        }
 
         /// <summary>
         /// Get the correct control point and direction from applying the FollowUp connection handling logic
         /// </summary>
-        private CurvySplineSegment HandleFollowUpConnectionBehavior(CurvySplineSegment currentControlPoint, MovementDirection currentDirection, out MovementDirection newDirection)
+        private CurvySplineSegment HandleFollowUpConnectionBehavior(CurvySplineSegment currentControlPoint,
+            MovementDirection currentDirection, out MovementDirection newDirection)
         {
             CurvySplineSegment newControlPoint = currentControlPoint.FollowUp
                 ? currentControlPoint.FollowUp
                 : currentControlPoint;
 
             newDirection = AllowDirectionChange && currentControlPoint.FollowUp
-                ? HeadingToDirection(currentControlPoint.FollowUpHeading, currentControlPoint.FollowUp, currentDirection)
+                ? HeadingToDirection(
+                    currentControlPoint.FollowUpHeading,
+                    currentControlPoint.FollowUp,
+                    currentDirection
+                )
                 : currentDirection;
 
             return newControlPoint;
@@ -1206,7 +1702,8 @@ namespace FluffyUnderware.Curvy.Controllers
         /// <summary>
         /// Translates a heading value to a controller direction, based on the current control point situation
         /// </summary>
-        static private MovementDirection HeadingToDirection(ConnectionHeadingEnum heading, CurvySplineSegment controlPoint, MovementDirection currentDirection)
+        private static MovementDirection HeadingToDirection(ConnectionHeadingEnum heading, CurvySplineSegment controlPoint,
+            MovementDirection currentDirection)
         {
             MovementDirection newDirection;
             ConnectionHeadingEnum resolveHeading = heading.ResolveAuto(controlPoint);
@@ -1225,6 +1722,7 @@ namespace FluffyUnderware.Curvy.Controllers
                 default:
                     throw new ArgumentOutOfRangeException();
             }
+
             return newDirection;
         }
 
@@ -1253,11 +1751,10 @@ namespace FluffyUnderware.Curvy.Controllers
         /// <summary>
         /// Used as a field condition
         /// </summary>
-        private bool ShowRandomConnectionOptions { get { return ConnectionBehavior == SplineControllerConnectionBehavior.FollowUpOtherwiseRandom || ConnectionBehavior == SplineControllerConnectionBehavior.RandomSpline; } }
-
-        /*! \endcond */
+        private bool ShowRandomConnectionOptions =>
+            ConnectionBehavior == SplineControllerConnectionBehavior.FollowUpOtherwiseRandom
+            || ConnectionBehavior == SplineControllerConnectionBehavior.RandomSpline;
 
         #endregion
-
     }
 }

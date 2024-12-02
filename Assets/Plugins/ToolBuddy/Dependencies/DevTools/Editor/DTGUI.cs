@@ -13,9 +13,9 @@ namespace FluffyUnderware.DevToolsEditor
 {
     public static class DTGUI
     {
-        static readonly Stack<Color> _BGColorStack = new Stack<Color>();
-        static readonly Stack<Color> _ColorStack = new Stack<Color>();
-        static readonly Stack<Color> _ContentColorStack = new Stack<Color>();
+        private static readonly Stack<Color> _BGColorStack = new Stack<Color>();
+        private static readonly Stack<Color> _ColorStack = new Stack<Color>();
+        private static readonly Stack<Color> _ContentColorStack = new Stack<Color>();
         
 
         #region --- Colors ---
@@ -59,31 +59,14 @@ namespace FluffyUnderware.DevToolsEditor
         
         #region --- Events ---
 
-        public static bool IsClick
-        {
-            get
-            {
-                return (Event.current!=null && Event.current.type == EventType.MouseDown && Event.current.button == 0);
-            }
-        }
-        public static bool IsContextClick
-        {
-            get
-            {
-                return (Event.current != null && Event.current.type == EventType.MouseDown && Event.current.button == 1);
-            }
-        }
+        public static bool IsClick => (Event.current!=null && Event.current.type == EventType.MouseDown && Event.current.button == 0);
 
-        public static bool IsLayout { get { return Event.current != null && Event.current.type == EventType.Layout; } }
-        public static bool IsRepaint { get { return Event.current != null && Event.current.type == EventType.Repaint; } }
+        public static bool IsContextClick => (Event.current != null && Event.current.type == EventType.MouseDown && Event.current.button == 1);
 
-        public static Vector2 MousePosition
-        {
-            get
-            {
-                return (Event.current != null) ? Event.current.mousePosition : Vector2.zero;
-            }
-        }
+        public static bool IsLayout => Event.current != null && Event.current.type == EventType.Layout;
+        public static bool IsRepaint => Event.current != null && Event.current.type == EventType.Repaint;
+
+        public static Vector2 MousePosition => (Event.current != null) ? Event.current.mousePosition : Vector2.zero;
 
         public static void UseEvent(int hashcode, Event e)
         {
@@ -165,7 +148,7 @@ namespace FluffyUnderware.DevToolsEditor
 
         public static bool LinkButton(Rect position, GUIContent content, ref bool repaint)
         {
-            if (position.Contains(DTGUI.MousePosition))
+            if (position.Contains(MousePosition))
                 repaint = true;
             return GUI.Button(position, content, DTStyles.HtmlLinkLabel);
         }
@@ -173,17 +156,19 @@ namespace FluffyUnderware.DevToolsEditor
         #endregion
 
         public static float LabelWidth(string label)
-        {
-            return LabelWidth(new GUIContent(label));
-        }
+            => LabelWidth(new GUIContent(label));
+
         public static float LabelWidth(GUIContent label)
-        {
-            return EditorStyles.label.CalcSize(label).x;
-        }
+            => EditorStyles.label.CalcSize(label).x;
 
         public static Rect FromTo(this Vector2 start, Vector2 end)
         {
-            Rect result = new Rect(start.x, start.y, end.x - start.x, end.y - start.y);
+            Rect result = new Rect(
+                start.x,
+                start.y,
+                end.x - start.x,
+                end.y - start.y
+            );
             if (result.width < 0f)
             {
                 result.x += result.width;

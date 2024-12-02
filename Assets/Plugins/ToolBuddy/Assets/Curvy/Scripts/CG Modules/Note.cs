@@ -1,34 +1,37 @@
 // =====================================================================
-// Copyright 2013-2022 ToolBuddy
+// Copyright © 2013 ToolBuddy
 // All rights reserved
 // 
 // http://www.toolbuddy.net
 // =====================================================================
 
 using UnityEngine;
-using System.Collections;
 
 namespace FluffyUnderware.Curvy.Generator.Modules
 {
-    [ModuleInfo("Note", ModuleName="Note", Description = "Creates a note")]
-    [HelpURL(CurvySpline.DOCLINK + "cgnote")]
+    [ModuleInfo(
+        "Note",
+        ModuleName = "Note",
+        Description = "Creates a note"
+    )]
+    [HelpURL(AssetInformation.DocsRedirectionBaseUrl + "cgnote")]
     public class Note : CGModule, INoProcessing
     {
-
-        [SerializeField, TextArea(3, 10)] private string m_Note;
+        [SerializeField, TextArea(
+             3,
+             10
+         )]
+        private string m_Note;
 
         public string NoteText
         {
-            get { return m_Note; }
-            set
-            {
-                if (m_Note != value)
-                    m_Note = value;
-            }
+            get => m_Note;
+            set => m_Note = value;
         }
 
         #region ### Unity Callbacks ###
-        /*! \cond UNITY */
+
+#if DOCUMENTATION___FORCE_IGNORE___UNITY == false
 
         protected override void OnEnable()
         {
@@ -43,16 +46,8 @@ namespace FluffyUnderware.Curvy.Generator.Modules
             m_Note = null;
         }
 
-#if UNITY_EDITOR
-        protected override void OnValidate()
-        {
-            base.OnValidate();
-            NoteText = m_Note;
-        }
 #endif
 
-        /*! \endcond */
         #endregion
-      
     }
 }

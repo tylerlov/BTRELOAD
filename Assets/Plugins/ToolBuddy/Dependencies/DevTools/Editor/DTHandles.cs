@@ -36,10 +36,13 @@ namespace FluffyUnderware.DevToolsEditor
                 }
             }
 
-            public static Vector3 Move
-            {
-                get { return new Vector3(MoveX, MoveY, MoveZ); }
-            }
+            public static Vector3 Move =>
+                new Vector3(
+                    MoveX,
+                    MoveY,
+                    MoveZ
+                );
+
             public static float MoveX
             {
                 get { Initialize(); return s_MoveSnapX; }
@@ -62,23 +65,11 @@ namespace FluffyUnderware.DevToolsEditor
             }
         }
 
-        public static bool MouseOverSceneView
-        {
-            get
-            {
-                return (SceneView.currentDrawingSceneView != null && Event.current != null) && SceneView.currentDrawingSceneView.position.Contains(GUIUtility.GUIToScreenPoint(Event.current.mousePosition));
-            }
-        }
+        public static bool MouseOverSceneView => (SceneView.currentDrawingSceneView != null && Event.current != null) && SceneView.currentDrawingSceneView.position.Contains(GUIUtility.GUIToScreenPoint(Event.current.mousePosition));
 
-        public static bool SceneViewIsSelected
-        {
-            get
-            {
-                return SceneView.focusedWindow == SceneView.currentDrawingSceneView;
-            }
-        }
+        public static bool SceneViewIsSelected => EditorWindow.focusedWindow == SceneView.currentDrawingSceneView;
 
-        static readonly Stack<Color> mHandlesColorstack = new Stack<Color>();
+        private static readonly Stack<Color> mHandlesColorstack = new Stack<Color>();
 
         public static void PushHandlesColor(Color col)
         {
@@ -91,7 +82,7 @@ namespace FluffyUnderware.DevToolsEditor
             Handles.color = mHandlesColorstack.Pop();
         }
 
-        static readonly Stack<Matrix4x4> mHandlesMatrixstack = new Stack<Matrix4x4>();
+        private static readonly Stack<Matrix4x4> mHandlesMatrixstack = new Stack<Matrix4x4>();
 
         public static void PushMatrix(Matrix4x4 matrix)
         {
@@ -184,9 +175,9 @@ namespace FluffyUnderware.DevToolsEditor
             return (newRotation != rotation);
         }
 
-        static Vector2 s_StartMousePosition;
-        static Vector2 s_CurrentMousePosition;
-        static float s_StartScale;
+        private static Vector2 s_StartMousePosition;
+        private static Vector2 s_CurrentMousePosition;
+        private static float s_StartScale;
 
         public static bool ScaleSlider(float scale, Vector3 position, Vector3 direction, Quaternion rotation, float length, float size, float snap, out float delta)
         {
@@ -259,7 +250,12 @@ namespace FluffyUnderware.DevToolsEditor
 
         public static Quaternion RotationHandle(Quaternion rotation, Vector3 position, float size)
         {
-            Color staticColor = new Color(0.5f, 0.5f, 0.5f, 0f);
+            Color staticColor = new Color(
+                0.5f,
+                0.5f,
+                0.5f,
+                0f
+            );
             float staticBlend = 0.6f;
             float handleSize = HandleUtility.GetHandleSize(position) * size;
             Color color = Handles.color;
@@ -338,9 +334,21 @@ namespace FluffyUnderware.DevToolsEditor
             Color axis2Color;
             Color planeColor;
             {
-                Color xColor = new Color(0.9f, 0.3f, 0.1f);
-                Color yColor = new Color(0.6f, 0.9f, 0.3f);
-                Color zColor = new Color(0.2f, 0.4f, 0.9f);
+                Color xColor = new Color(
+                    0.9f,
+                    0.3f,
+                    0.1f
+                );
+                Color yColor = new Color(
+                    0.6f,
+                    0.9f,
+                    0.3f
+                );
+                Color zColor = new Color(
+                    0.2f,
+                    0.4f,
+                    0.9f
+                );
 
                 switch (plane)
                 {
@@ -388,19 +396,13 @@ namespace FluffyUnderware.DevToolsEditor
         }
 
         public static Vector3 TinyHandle2D(int id, Vector3 position, Quaternion rotation, float size, Handles.CapFunction func = null)
-        {
-            return TinyHandle2D(id, position, rotation * Vector3.forward, rotation * Vector3.up, rotation * Vector3.right, size, func);
-        }
+            => TinyHandle2D(id, position, rotation * Vector3.forward, rotation * Vector3.up, rotation * Vector3.right, size, func);
 
         public static Vector3 TinyHandle2D(int id, Transform transform, float size, Handles.CapFunction func = null)
-        {
-            return TinyHandle2D(id, transform.position, transform.forward, transform.up, transform.right, size, func);
-        }
+            => TinyHandle2D(id, transform.position, transform.forward, transform.up, transform.right, size, func);
 
         public static Vector3 TinyHandle2D(int id, Vector3 pos, Vector3 forward, Vector3 up, Vector3 right, float size, Handles.CapFunction func = null)
-        {
-            return Handles.Slider2D(id, pos, forward, up, right, HandleUtility.GetHandleSize(pos) * size, func, SnapSettings.Move);
-        }
+            => Handles.Slider2D(id, pos, forward, up, right, HandleUtility.GetHandleSize(pos) * size, func, SnapSettings.Move);
 
         public static void DrawSolidRectangleWithOutline(Vector2 center, Vector2 extends, Color backgroundColor, Color outlineColor)
         {
@@ -411,10 +413,26 @@ namespace FluffyUnderware.DevToolsEditor
         {
             Vector3[] verts = new Vector3[4]
             {
-                new Vector3(r.xMin,r.yMin,0),
-                new Vector3(r.xMax,r.yMin,0),
-                new Vector3(r.xMax,r.yMax,0),
-                new Vector3(r.xMin,r.yMax,0)
+                new Vector3(
+                    r.xMin,
+                    r.yMin,
+                    0
+                ),
+                new Vector3(
+                    r.xMax,
+                    r.yMin,
+                    0
+                ),
+                new Vector3(
+                    r.xMax,
+                    r.yMax,
+                    0
+                ),
+                new Vector3(
+                    r.xMin,
+                    r.yMax,
+                    0
+                )
             };
             Handles.DrawSolidRectangleWithOutline(verts, backgroundColor, outlineColor);
         }
@@ -489,9 +507,8 @@ namespace FluffyUnderware.DevToolsEditor
         }
 
         public static Vector3 TranslateByPixel(Vector3 position, float x, float y)
-        {
-            return TranslateByPixel(position, new Vector3(x, y));
-        }
+            => TranslateByPixel(position, new Vector3(x, y));
+
         public static Vector3 TranslateByPixel(Vector3 position, Vector3 translateBy)
         {
             Camera cam = SceneView.currentDrawingSceneView.camera;
@@ -518,7 +535,7 @@ namespace FluffyUnderware.DevToolsEditor
 
         }
 
-        static bool ContainsStatic(GameObject[] objects)
+        private static bool ContainsStatic(GameObject[] objects)
         {
             if (objects == null || objects.Length == 0)
             {

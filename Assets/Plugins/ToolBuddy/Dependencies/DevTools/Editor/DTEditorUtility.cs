@@ -18,15 +18,9 @@ namespace FluffyUnderware.DevToolsEditor
 {
     public static class DTEditorUtility
     {
-        public static Camera ActiveCamera
-        {
-            get
-            {
-                return (SceneView.currentDrawingSceneView) ? SceneView.currentDrawingSceneView.camera : Camera.current;
-            }
-        }
+        public static Camera ActiveCamera => (SceneView.currentDrawingSceneView) ? SceneView.currentDrawingSceneView.camera : Camera.current;
 
-        public static bool DragDropTypeMatch(System.Type type)
+        public static bool DragDropTypeMatch(Type type)
         {
             foreach (Object go in DragAndDrop.objectReferences)
             {
@@ -46,11 +40,9 @@ namespace FluffyUnderware.DevToolsEditor
         }
 
         public static bool DragDropTypeMatch<T>() where T : Object
-        {
-            return DragDropTypeMatch(typeof(T));
-        }
+            => DragDropTypeMatch(typeof(T));
 
-        public static Object[] DragDropGetObjectsOfType(System.Type type)
+        public static Object[] DragDropGetObjectsOfType(Type type)
         {
             if (type.IsArrayOrList())
                 return new Object[0];
@@ -87,7 +79,7 @@ namespace FluffyUnderware.DevToolsEditor
             int val = gizmosOn ? 1 : 0;
             List<string> classes = new List<string>(scriptClasses);
             Assembly asm = Assembly.GetAssembly(typeof(Editor));
-            System.Type type = asm.GetType("UnityEditor.AnnotationUtility");
+            Type type = asm.GetType("UnityEditor.AnnotationUtility");
             if (type != null)
             {
                 MethodInfo getAnnotations = type.GetMethod("GetAnnotations", BindingFlags.Static | BindingFlags.NonPublic);
@@ -130,7 +122,7 @@ namespace FluffyUnderware.DevToolsEditor
                 Debug.LogError("Couldn't find type UnityEditor.AnnotationUtility in assembly " + asm.FullName);
         }
 
-        public static List<T> LoadPrefabsContaining<T>(string path) where T : UnityEngine.Component
+        public static List<T> LoadPrefabsContaining<T>(string path) where T : Component
         {
             List<T> res = new List<T>();
 

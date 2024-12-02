@@ -96,7 +96,7 @@ public class CrosshairCore : MonoBehaviour
 
         if (playerLocking == null || playerShooting == null || playerTimeControl == null)
         {
-            Debug.LogError("Required components not found on the same GameObject.");
+            ConditionalDebug.LogError("Required components not found on the same GameObject.");
         }
     }
 
@@ -127,12 +127,12 @@ public class CrosshairCore : MonoBehaviour
         {
             musicPlayback = musicGameObject.GetComponent<StudioEventEmitter>();
             if (musicPlayback == null)
-                Debug.LogError(
+                ConditionalDebug.LogError(
                     "StudioEventEmitter component not found on 'FMOD Music' GameObject."
                 );
         }
         else
-            Debug.LogError("GameObject with name 'FMOD Music' not found in the scene.");
+            ConditionalDebug.LogError("GameObject with name 'FMOD Music' not found in the scene.");
 
         collectHealthMode = false;
     }
@@ -165,7 +165,7 @@ public class CrosshairCore : MonoBehaviour
 
     private void UpdatePlayerComponents()
     {
-        Debug.DrawRay(RaySpawn.transform.position, RaySpawn.transform.forward, Color.green);
+        ConditionalDebug.Log($"Drawing ray from {RaySpawn.transform.position} in direction {RaySpawn.transform.forward}");
         GetComponent<PlayerLocking>().OnLock();
         GetComponent<PlayerLocking>().CheckEnemyLock(); // Make sure this line is present
         GetComponent<PlayerTimeControl>().HandleRewindToBeat();
@@ -209,10 +209,10 @@ public class CrosshairCore : MonoBehaviour
             Koreographer.Instance.RegisterForEvents(eventIDShooting, OnMusicalShoot);
             Koreographer.Instance.RegisterForEvents(eventIDShooting, OnMusicalLock);
             Koreographer.Instance.RegisterForEvents(eventIDRewindTime, UpdateTime);
-            Debug.Log("Events registered successfully");
+            ConditionalDebug.Log("Events registered successfully");
         }
         else
-            Debug.LogError("Failed to register events: Koreographer instance is null");
+            ConditionalDebug.LogError("Failed to register events: Koreographer instance is null");
     }
 
     private void UnregisterKoreographyEvents()

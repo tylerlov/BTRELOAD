@@ -1,5 +1,5 @@
 // =====================================================================
-// Copyright 2013-2022 ToolBuddy
+// Copyright © 2013 ToolBuddy
 // All rights reserved
 // 
 // http://www.toolbuddy.net
@@ -16,26 +16,37 @@ namespace FluffyUnderware.Curvy.Generator.Modules
     /// <summary>
     /// Creates <see cref="CGVMesh"/>s from the meshes of GameObjects
     /// </summary>
-    [ModuleInfo("Convert/GameObject To Mesh", ModuleName = "GameObject To Mesh", Description = "Converts GameObjects to Volume Meshes")]
-    [HelpURL(CurvySpline.DOCLINK + "cggameobject2mesh")]
+    [ModuleInfo(
+        "Convert/GameObject To Mesh",
+        ModuleName = "GameObject To Mesh",
+        Description = "Converts GameObjects to Volume Meshes"
+    )]
+    [HelpURL(AssetInformation.DocsRedirectionBaseUrl + "cggameobject2mesh")]
     public class GameObjectToMesh : CGModule
     {
         /// <summary>
         /// Input Game Objects
         /// </summary>
         [HideInInspector]
-        [InputSlotInfo(typeof(CGGameObject), Array = true)]
+        [InputSlotInfo(
+            typeof(CGGameObject),
+            Array = true
+        )]
         public CGModuleInputSlot InGameObjects = new CGModuleInputSlot();
 
         /// <summary>
         /// Output Volume Meshes
         /// </summary>
         [HideInInspector]
-        [OutputSlotInfo(typeof(CGVMesh), Array = true)]
+        [OutputSlotInfo(
+            typeof(CGVMesh),
+            Array = true
+        )]
         public CGModuleOutputSlot OutVMesh = new CGModuleOutputSlot();
 
 
         #region ### Serialized Fields ###
+
         [SerializeField]
         [Tooltip("Whether to include or not the meshes from the input Game Objects' children")]
         private bool useChildrenMeshes;
@@ -80,15 +91,8 @@ namespace FluffyUnderware.Curvy.Generator.Modules
         }
 
         #region ### Unity Callbacks ###
-        /*! \cond UNITY */
 
-#if UNITY_EDITOR
-        protected override void OnValidate()
-        {
-            base.OnValidate();
-            Dirty = true;
-        }
-#endif
+#if DOCUMENTATION___FORCE_IGNORE___UNITY == false
 
         public override void Reset()
         {
@@ -97,7 +101,8 @@ namespace FluffyUnderware.Curvy.Generator.Modules
             CenterMesh = false;
         }
 
-        /*! \endcond */
+#endif
+
         #endregion
 
         public override void Refresh()
@@ -108,9 +113,7 @@ namespace FluffyUnderware.Curvy.Generator.Modules
                 return;
 
             List<CGGameObject> gameObjects = InGameObjects.GetAllData<CGGameObject>(out bool isDataDisposable);
-            CGVMesh[] data = new CGVMesh[gameObjects.Count];
-            int total = 0;
-
+            List<CGVMesh> data = new List<CGVMesh>(gameObjects.Count);
             foreach (CGGameObject cgGameObject in gameObjects)
             {
                 GameObject inputGameObject = cgGameObject.Object;
@@ -122,10 +125,12 @@ namespace FluffyUnderware.Curvy.Generator.Modules
                 Material[] materials;
                 if (UseChildrenMeshes)
                 {
-                    mesh = CombineMeshFilters(inputGameObject.GetComponentsInChildren<MeshFilter>(false),
+                    mesh = CombineMeshFilters(
+                        inputGameObject.GetComponentsInChildren<MeshFilter>(false),
                         out List<Material> materialsList,
                         inputGameObject.transform.worldToLocalMatrix,
-                        UIMessages);
+                        UIMessages
+                    );
 
                     materials = materialsList.ToArray();
                 }
@@ -135,7 +140,9 @@ namespace FluffyUnderware.Curvy.Generator.Modules
 
                     if (meshFilter == null)
                     {
-                        UIMessages.Add($"GameObject '{inputGameObject.name}' has no Mesh Filter associated to it. If you want to use Mesh Filters in its children, set the 'Use Children Mesh' parameter to true");
+                        UIMessages.Add(
+                            $"GameObject '{inputGameObject.name}' has no Mesh Filter associated to it. If you want to use Mesh Filters in its children, set the 'Use Children Mesh' parameter to true"
+                        );
                         continue;
                     }
 
@@ -146,33 +153,39 @@ namespace FluffyUnderware.Curvy.Generator.Modules
                         MeshRenderer meshRenderer = meshFilter.gameObject.GetComponent<MeshRenderer>();
                         if (meshRenderer == null)
                         {
-                            UIMessages.Add($"GameObject '{inputGameObject.name}' has a Mesh Filter but no Mesh Renderer associated to it. No material will be assigned to this mesh");
+                            UIMessages.Add(
+                                $"GameObject '{inputGameObject.name}' has a Mesh Filter but no Mesh Renderer associated to it. No material will be assigned to this mesh"
+                            );
                             materials = new Material[0];
                         }
                         else
                             materials = meshRenderer.sharedMaterials;
                     }
                 }
+
                 Matrix4x4 trsMatrix = cgGameObject.Matrix;
                 if (centerMesh)
                     trsMatrix *= Matrix4x4.Translate(-mesh.bounds.center);
 
                 if (mesh.isReadable == false)
-                {
-                    UIMessages.Add($"GameObject '{inputGameObject.name}' has a mesh '{mesh.name}' that is not readable. Please set the 'Read/Write Enabled' parameter to true in the mesh model import settings");
-                }
+                    UIMessages.Add(
+                        $"GameObject '{inputGameObject.name}' has a mesh '{mesh.name}' that is not readable. Please set the 'Read/Write Enabled' parameter to true in the mesh model import settings"
+                    );
 
-                data[total++] = new CGVMesh(mesh, materials, trsMatrix);
+                data.Add(
+                    new CGVMesh(
+                        mesh,
+                        materials,
+                        trsMatrix
+                    )
+                );
             }
 
-            System.Array.Resize(ref data, total);
-            OutVMesh.SetData(data);
+            OutVMesh.SetDataToCollection(data.ToArray());
 
             if (isDataDisposable)
-            {
                 foreach (CGGameObject cgGameObject in gameObjects)
                     cgGameObject.Dispose();
-            }
         }
 
         /// <summary>
@@ -200,27 +213,32 @@ namespace FluffyUnderware.Curvy.Generator.Modules
                 Mesh mesh = meshFilter.sharedMesh;
 
                 if (mesh.isReadable == false)
-                {
-                    errorMessages?.Add($"Mesh '{mesh.name}' is not readable. Please set the 'Read/Write Enabled' parameter to true in the mesh model import settings.");
-                }
+                    errorMessages?.Add(
+                        $"Mesh '{mesh.name}' is not readable. Please set the 'Read/Write Enabled' parameter to true in the mesh model import settings."
+                    );
 
                 for (int i = 0; i < mesh.subMeshCount; i++)
                 {
-                    combiners.Add(new CombineInstance
-                    {
-                        transform = originTrs * meshFilter.transform.localToWorldMatrix,
-                        mesh = mesh,
-                        subMeshIndex = i
-                    });
+                    combiners.Add(
+                        new CombineInstance
+                        {
+                            transform = originTrs * meshFilter.transform.localToWorldMatrix,
+                            mesh = mesh,
+                            subMeshIndex = i
+                        }
+                    );
                     vertexTotalCount_submeshDuplicate += mesh.vertexCount;
                 }
+
                 vertexTotalCount += mesh.vertexCount;
 
 
                 MeshRenderer meshRenderer = meshFilter.gameObject.GetComponent<MeshRenderer>();
                 if (meshRenderer == null)
                 {
-                    errorMessages?.Add($"GameObject '{meshFilter.gameObject.name}' has a Mesh Filter but no Mesh Renderer associated to it. No material will be assigned to this mesh");
+                    errorMessages?.Add(
+                        $"GameObject '{meshFilter.gameObject.name}' has a Mesh Filter but no Mesh Renderer associated to it. No material will be assigned to this mesh"
+                    );
                     for (int k = 0; k < mesh.subMeshCount; k++)
                         materials.Add(null);
                 }
@@ -232,9 +250,16 @@ namespace FluffyUnderware.Curvy.Generator.Modules
             }
 
             //it seems there is a bug in CombineMeshes where it counts the vertex count for each submesh as equal to the whole mesh (in some circumstances, happened to me only at scene opening, go figure). So before the call to CombineMeshes, I set indexFormat accordingly, then after the call I set it to according to the real value of vertexTotalCount
-            combinedMesh.indexFormat = vertexTotalCount_submeshDuplicate >= UInt16.MaxValue ? IndexFormat.UInt32 : IndexFormat.UInt16;
-            combinedMesh.CombineMeshes(combiners.ToArray(), false);
-            IndexFormat realIndexFormat = vertexTotalCount >= UInt16.MaxValue ? IndexFormat.UInt32 : IndexFormat.UInt16;
+            combinedMesh.indexFormat = vertexTotalCount_submeshDuplicate >= UInt16.MaxValue
+                ? IndexFormat.UInt32
+                : IndexFormat.UInt16;
+            combinedMesh.CombineMeshes(
+                combiners.ToArray(),
+                false
+            );
+            IndexFormat realIndexFormat = vertexTotalCount >= UInt16.MaxValue
+                ? IndexFormat.UInt32
+                : IndexFormat.UInt16;
             if (combinedMesh.indexFormat != realIndexFormat)
                 combinedMesh.indexFormat = realIndexFormat;
 

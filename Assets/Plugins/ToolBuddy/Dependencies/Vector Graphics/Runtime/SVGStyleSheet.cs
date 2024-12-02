@@ -206,7 +206,7 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
         {
             var tokens = new List<string>();
 
-            cssText = cssText.Replace(System.Environment.NewLine, ""); // Remove newlines
+            cssText = cssText.Replace(Environment.NewLine, ""); // Remove newlines
             cssText = Regex.Replace(cssText, @"/\*.*?\*/", ""); // Remove CSS comments
             cssText = Regex.Replace(cssText, @"<!--.*?-->", ""); // Remove XML comments
 

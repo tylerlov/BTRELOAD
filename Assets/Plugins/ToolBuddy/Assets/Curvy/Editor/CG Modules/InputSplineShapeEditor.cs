@@ -1,16 +1,13 @@
 // =====================================================================
-// Copyright 2013-2022 ToolBuddy
+// Copyright © 2013 ToolBuddy
 // All rights reserved
 // 
 // http://www.toolbuddy.net
 // =====================================================================
 
-using UnityEngine;
-using UnityEditor;
-using FluffyUnderware.Curvy.Generator;
 using FluffyUnderware.Curvy.Generator.Modules;
-using FluffyUnderware.DevToolsEditor;
-using FluffyUnderware.Curvy;
+using UnityEditor;
+using UnityEngine;
 
 namespace FluffyUnderware.CurvyEditor.Generator.Modules
 {
@@ -18,7 +15,6 @@ namespace FluffyUnderware.CurvyEditor.Generator.Modules
     [CustomEditor(typeof(InputSplineShape))]
     public class InputSplineShapeEditor : CGModuleEditor<InputSplineShape>
     {
-
         protected override void OnEnable()
         {
             base.OnEnable();
@@ -40,7 +36,13 @@ namespace FluffyUnderware.CurvyEditor.Generator.Modules
                     Transform t = Target.Shape.transform;
                     scn.size = Target.Shape.Bounds.extents.magnitude * 1.5f;
                     scn.FixNegativeSize();
-                    scn.LookAt(t.position + t.forward, Quaternion.LookRotation(t.forward, Vector3.up));
+                    scn.LookAt(
+                        t.position + t.forward,
+                        Quaternion.LookRotation(
+                            t.forward,
+                            Vector3.up
+                        )
+                    );
                 }
 
                 SceneView.RepaintAll();
@@ -61,14 +63,6 @@ namespace FluffyUnderware.CurvyEditor.Generator.Modules
             }
         }
 
-        internal override void EndIPE()
-        {
-
-        }
-
-
-
+        internal override void EndIPE() { }
     }
-
-
 }

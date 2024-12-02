@@ -19,6 +19,6 @@ namespace FluffyUnderware.DevTools
 
         [TextArea(5,20)]
         [SerializeField]
-        string m_Note;
+        private string m_Note;
     }
 }

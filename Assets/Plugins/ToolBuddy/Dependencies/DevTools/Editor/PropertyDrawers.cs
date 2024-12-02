@@ -5,9 +5,6 @@
 // http://www.fluffyunderware.com
 // =====================================================================
 
-#if UNITY_5_4 || UNITY_5_3 || UNITY_5_2 || UNITY_5_1 || UNITY_5_0
-#define UNITY_PRE_5_5
-#endif
 using System;
 using UnityEngine;
 using UnityEditor;
@@ -28,18 +25,12 @@ namespace FluffyUnderware.DevToolsEditor
         /// <summary>
         /// Gets the attribute
         /// </summary>
-        protected T Attribute
-        {
-            get { return attribute as T; }
-        }
+        protected T Attribute => attribute as T;
 
         /// <summary>
         /// Gets some common attribute options
         /// </summary>
-        protected AttributeOptionsFlags Options
-        {
-            get { return Attribute.Options; }
-        }
+        protected AttributeOptionsFlags Options => Attribute.Options;
 
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
@@ -105,7 +96,7 @@ namespace FluffyUnderware.DevToolsEditor
             if (oT == rT)
                 return (U)o;
             else if (oT == typeof(int) && rT == typeof(float))
-                return (U)System.Convert.ChangeType(o, rT, System.Globalization.CultureInfo.InvariantCulture);
+                return (U)Convert.ChangeType(o, rT, System.Globalization.CultureInfo.InvariantCulture);
             else
                 return default;
         }
@@ -120,7 +111,7 @@ namespace FluffyUnderware.DevToolsEditor
                 if (element.Contains("["))
                 {
                     string elementName = element.Substring(0, element.IndexOf("["));
-                    int index = System.Convert.ToInt32(element.Substring(element.IndexOf("[")).Replace("[", "").Replace("]", ""));
+                    int index = Convert.ToInt32(element.Substring(element.IndexOf("[")).Replace("[", "").Replace("]", ""));
                     obj = GetValue(obj, elementName, index);
                 }
                 else
@@ -131,7 +122,7 @@ namespace FluffyUnderware.DevToolsEditor
             return obj;
         }
 
-        object GetValue(object source, string name)
+        private object GetValue(object source, string name)
         {
             if (source == null)
                 return null;
@@ -147,7 +138,7 @@ namespace FluffyUnderware.DevToolsEditor
             return f.GetValue(source);
         }
 
-        object GetValue(object source, string name, int index)
+        private object GetValue(object source, string name, int index)
         {
             IEnumerable enumerable = GetValue(source, name) as IEnumerable;
             IEnumerator enm = enumerable.GetEnumerator();
@@ -157,9 +148,8 @@ namespace FluffyUnderware.DevToolsEditor
         }
 
         protected U GetPropertySourceField<U>(SerializedProperty property)
-        {
-            return (U)fieldInfo.GetValue(GetParent(property));
-            /*
+            => (U)fieldInfo.GetValue(GetParent(property));
+        /*
             var instance = property.serializedObject.targetObject;
             var t = instance.GetType();
             FieldInfo fi = null;
@@ -171,7 +161,6 @@ namespace FluffyUnderware.DevToolsEditor
             }
             return (fi != null) ? (U)fi.GetValue(instance) : default(U);
             */
-        }
     }
 
     [CustomPropertyDrawer(typeof(LabelAttribute))]
@@ -231,11 +220,26 @@ namespace FluffyUnderware.DevToolsEditor
     [CustomPropertyDrawer(typeof(VectorExAttribute))]
     public class VectorExPropertyDrawer : DTPropertyDrawer<VectorExAttribute>
     {
-        private static readonly GUIContent CopyButtonGuiContent = new GUIContent("C", "Copy");
-        private static readonly GUIContent PasteButtonGuiContent = new GUIContent("P", "Past");
-        private static readonly GUIContent SetZeroButtonGuiContent = new GUIContent("0", "Set to zero");
-        private static readonly GUIContent SetOneButtonGuiContent = new GUIContent("1", "Set to one");
-        private static readonly GUIContent NegateButtonGuiContent = new GUIContent("~", "Negate");
+        private static readonly GUIContent CopyButtonGuiContent = new GUIContent(
+            "C",
+            "Copy"
+        );
+        private static readonly GUIContent PasteButtonGuiContent = new GUIContent(
+            "P",
+            "Past"
+        );
+        private static readonly GUIContent SetZeroButtonGuiContent = new GUIContent(
+            "0",
+            "Set to zero"
+        );
+        private static readonly GUIContent SetOneButtonGuiContent = new GUIContent(
+            "1",
+            "Set to one"
+        );
+        private static readonly GUIContent NegateButtonGuiContent = new GUIContent(
+            "~",
+            "Negate"
+        );
 
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
@@ -440,8 +444,8 @@ namespace FluffyUnderware.DevToolsEditor
     [CustomPropertyDrawer(typeof(RangeExAttribute))]
     public class RangeExPropertyDrawer : DTPropertyDrawer<RangeExAttribute>
     {
-        float minV;
-        float maxV;
+        private float minV;
+        private float maxV;
 
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
@@ -507,11 +511,11 @@ namespace FluffyUnderware.DevToolsEditor
         }
     }
 
-    [CustomPropertyDrawer(typeof(FluffyUnderware.DevTools.MinMaxAttribute))]
-    public class MinMaxPropertyDrawer : DTPropertyDrawer<FluffyUnderware.DevTools.MinMaxAttribute>
+    [CustomPropertyDrawer(typeof(MinMaxAttribute))]
+    public class MinMaxPropertyDrawer : DTPropertyDrawer<MinMaxAttribute>
     {
-        float lBound;
-        float uBound;
+        private float lBound;
+        private float uBound;
 
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
@@ -551,20 +555,12 @@ namespace FluffyUnderware.DevToolsEditor
                 case SerializedPropertyType.Float:
                     minV = property.floatValue;
                     maxV = pMaxV.floatValue;
-#if UNITY_PRE_5_5
-                    EditorGUI.MinMaxSlider(label, position, ref minV, ref maxV, lBound, uBound);
-#else
                     EditorGUI.MinMaxSlider(position, label, ref minV, ref maxV, lBound, uBound);
-#endif
                     break;
                 case SerializedPropertyType.Integer:
                     minV = property.intValue;
                     maxV = pMaxV.intValue;
-#if UNITY_PRE_5_5
-                    EditorGUI.MinMaxSlider(label, position, ref minV, ref maxV, lBound, uBound);
-#else
                     EditorGUI.MinMaxSlider(position, label, ref minV, ref maxV, lBound, uBound);
-#endif
                     break;
             }
 
@@ -711,11 +707,11 @@ namespace FluffyUnderware.DevToolsEditor
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
 
-            System.Enum targetEnum = GetPropertySourceField<System.Enum>(property);
+            Enum targetEnum = GetPropertySourceField<Enum>(property);
 
             EditorGUI.BeginProperty(position, label, property);
-            System.Enum enumNew = EditorGUI.EnumFlagsField(position, label, targetEnum);
-            property.intValue = (int)System.Convert.ChangeType(enumNew, targetEnum.GetType(), System.Globalization.CultureInfo.InvariantCulture);
+            Enum enumNew = EditorGUI.EnumFlagsField(position, label, targetEnum);
+            property.intValue = (int)Convert.ChangeType(enumNew, targetEnum.GetType(), System.Globalization.CultureInfo.InvariantCulture);
             EditorGUI.EndProperty();
         }
     }
@@ -749,34 +745,22 @@ namespace FluffyUnderware.DevToolsEditor
     [CustomPropertyDrawer(typeof(FloatRegionAttribute))]
     public class FloatRegionPropertyDrawer : DTPropertyDrawer<FloatRegionAttribute>
     {
-        PropertyInfo mPI;
-        object mObject;
-        SerializedProperty ppFrom;
-        SerializedProperty ppTo;
-        SerializedProperty ppSimpleValue;
-        RegionOptions<float> mOptions;
+        private PropertyInfo mPI;
+        private object mObject;
+        private SerializedProperty ppFrom;
+        private SerializedProperty ppTo;
+        private SerializedProperty ppSimpleValue;
+        private RegionOptions<float> mOptions;
 
-        bool compact
-        {
-            get
-            {
-                return ((EditorGUIUtility.wideMode && Options == AttributeOptionsFlags.None) ||
-                        ((Options & AttributeOptionsFlags.Compact) == AttributeOptionsFlags.Compact ||
-                          (Options & AttributeOptionsFlags.FullCompact) == AttributeOptionsFlags.FullCompact
-                        )
-                        );
-            }
-        }
+        private bool compact => ((EditorGUIUtility.wideMode && Options == AttributeOptionsFlags.None) ||
+                                 ((Options & AttributeOptionsFlags.Compact) == AttributeOptionsFlags.Compact ||
+                                  (Options & AttributeOptionsFlags.FullCompact) == AttributeOptionsFlags.FullCompact
+                                 )
+            );
 
-        bool minmax
-        {
-            get
-            {
-                return (Attribute.UseSlider && !ppSimpleValue.boolValue &&
-                        mOptions.ClampFrom == DTValueClamping.Range && mOptions.ClampTo == DTValueClamping.Range &&
-                        mOptions.FromMin == mOptions.ToMin && mOptions.FromMax == mOptions.ToMax);
-            }
-        }
+        private bool minmax => (Attribute.UseSlider && !ppSimpleValue.boolValue &&
+                                mOptions.ClampFrom == DTValueClamping.Range && mOptions.ClampTo == DTValueClamping.Range &&
+                                mOptions.FromMin == mOptions.ToMin && mOptions.FromMax == mOptions.ToMax);
 
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
@@ -814,7 +798,7 @@ namespace FluffyUnderware.DevToolsEditor
             label.tooltip = "";
         }
 
-        void doMinmax(Rect r, GUIContent label, bool showOptional)
+        private void doMinmax(Rect r, GUIContent label, bool showOptional)
         {
             float l = ppFrom.floatValue;
             float u = ppTo.floatValue;
@@ -825,11 +809,7 @@ namespace FluffyUnderware.DevToolsEditor
                 r2.width -= 16;
 
             EditorGUI.BeginChangeCheck();
-#if UNITY_PRE_5_5
-            EditorGUI.MinMaxSlider(label, r2, ref l, ref u, mOptions.FromMin, mOptions.FromMax);
-#else
             EditorGUI.MinMaxSlider(r2, label, ref l, ref u, mOptions.FromMin, mOptions.FromMax);
-#endif
             if (EditorGUI.EndChangeCheck())
             {
                 ppFrom.floatValue = l;
@@ -848,7 +828,7 @@ namespace FluffyUnderware.DevToolsEditor
             }
         }
 
-        void doCompact(Rect r, GUIContent label, GUIContent labelTo, bool showOptional, bool fullLine = false)
+        private void doCompact(Rect r, GUIContent label, GUIContent labelTo, bool showOptional, bool fullLine = false)
         {
             float lw = EditorGUIUtility.labelWidth;
             float fw = EditorGUIUtility.fieldWidth;
@@ -897,7 +877,7 @@ namespace FluffyUnderware.DevToolsEditor
             EditorGUIUtility.fieldWidth = fw;
         }
 
-        void doRegular(Rect r, GUIContent label)
+        private void doRegular(Rect r, GUIContent label)
         {
             // From
             Rect rF = new Rect(r);
@@ -933,7 +913,7 @@ namespace FluffyUnderware.DevToolsEditor
             }
         }
 
-        void validateFrom()
+        private void validateFrom()
         {
             ppFrom.floatValue = DTMath.SnapPrecision(ppFrom.floatValue, Attribute.Precision);
             switch (mOptions.ClampFrom)
@@ -952,7 +932,7 @@ namespace FluffyUnderware.DevToolsEditor
             }
         }
 
-        void validateTo()
+        private void validateTo()
         {
             ppTo.floatValue = DTMath.SnapPrecision(ppTo.floatValue, Attribute.Precision);
             switch (mOptions.ClampTo)
@@ -971,7 +951,7 @@ namespace FluffyUnderware.DevToolsEditor
             }
         }
 
-        void Init(SerializedProperty property)
+        private void Init(SerializedProperty property)
         {
             try
             {
@@ -984,7 +964,7 @@ namespace FluffyUnderware.DevToolsEditor
                 else
                     mOptions = RegionOptions<float>.Default;
             }
-            catch (System.Exception e)
+            catch (Exception e)
             {
                 DTLog.LogError("[DevTools] FloatRegionPropertyDrawer: Unable to find property '" + Attribute.RegionOptionsPropertyName + "'! (" + e.ToString() + ")", property.serializedObject.targetObject);
             }
@@ -1000,34 +980,22 @@ namespace FluffyUnderware.DevToolsEditor
     [CustomPropertyDrawer(typeof(IntRegionAttribute))]
     public class IntRegionPropertyDrawer : DTPropertyDrawer<IntRegionAttribute>
     {
-        PropertyInfo mPI;
-        object mObject;
-        SerializedProperty ppFrom;
-        SerializedProperty ppTo;
-        SerializedProperty ppSimpleValue;
-        RegionOptions<int> mOptions;
+        private PropertyInfo mPI;
+        private object mObject;
+        private SerializedProperty ppFrom;
+        private SerializedProperty ppTo;
+        private SerializedProperty ppSimpleValue;
+        private RegionOptions<int> mOptions;
 
-        bool compact
-        {
-            get
-            {
-                return (EditorGUIUtility.wideMode ||
-                        ((Options & AttributeOptionsFlags.Compact) == AttributeOptionsFlags.Compact ||
-                          (Options & AttributeOptionsFlags.FullCompact) == AttributeOptionsFlags.FullCompact
-                        )
-                        );
-            }
-        }
+        private bool compact => (EditorGUIUtility.wideMode ||
+                                 ((Options & AttributeOptionsFlags.Compact) == AttributeOptionsFlags.Compact ||
+                                  (Options & AttributeOptionsFlags.FullCompact) == AttributeOptionsFlags.FullCompact
+                                 )
+            );
 
-        bool minmax
-        {
-            get
-            {
-                return (Attribute.UseSlider && !Attribute.RegionIsOptional &&
-                        mOptions.ClampFrom == DTValueClamping.Range && mOptions.ClampTo == DTValueClamping.Range &&
-                        mOptions.FromMin == mOptions.ToMin && mOptions.FromMax == mOptions.ToMax);
-            }
-        }
+        private bool minmax => (Attribute.UseSlider && !Attribute.RegionIsOptional &&
+                                mOptions.ClampFrom == DTValueClamping.Range && mOptions.ClampTo == DTValueClamping.Range &&
+                                mOptions.FromMin == mOptions.ToMin && mOptions.FromMax == mOptions.ToMax);
 
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
@@ -1065,7 +1033,7 @@ namespace FluffyUnderware.DevToolsEditor
             label.tooltip = "";
         }
 
-        void doMinmax(Rect r, GUIContent label, bool showOptional)
+        private void doMinmax(Rect r, GUIContent label, bool showOptional)
         {
             float l = ppFrom.intValue;
             float u = ppTo.intValue;
@@ -1076,11 +1044,7 @@ namespace FluffyUnderware.DevToolsEditor
                 r2.width -= 16;
 
             EditorGUI.BeginChangeCheck();
-#if UNITY_PRE_5_5
-            EditorGUI.MinMaxSlider(label, r2, ref l, ref u, mOptions.FromMin, mOptions.FromMax);
-#else
             EditorGUI.MinMaxSlider(r2, label, ref l, ref u, mOptions.FromMin, mOptions.FromMax);
-#endif
             if (EditorGUI.EndChangeCheck())
             {
                 ppFrom.intValue = (int)l;
@@ -1099,7 +1063,7 @@ namespace FluffyUnderware.DevToolsEditor
             }
         }
 
-        void doCompact(Rect r, GUIContent label, GUIContent labelTo, bool showOptional, bool fullLine = false)
+        private void doCompact(Rect r, GUIContent label, GUIContent labelTo, bool showOptional, bool fullLine = false)
         {
             float lw = EditorGUIUtility.labelWidth;
             float fw = EditorGUIUtility.fieldWidth;
@@ -1148,7 +1112,7 @@ namespace FluffyUnderware.DevToolsEditor
             EditorGUIUtility.fieldWidth = fw;
         }
 
-        void doRegular(Rect r, GUIContent label)
+        private void doRegular(Rect r, GUIContent label)
         {
             // From
             Rect rF = new Rect(r);
@@ -1184,7 +1148,7 @@ namespace FluffyUnderware.DevToolsEditor
             }
         }
 
-        void validateFrom()
+        private void validateFrom()
         {
             switch (mOptions.ClampFrom)
             {
@@ -1202,7 +1166,7 @@ namespace FluffyUnderware.DevToolsEditor
             }
         }
 
-        void validateTo()
+        private void validateTo()
         {
             switch (mOptions.ClampTo)
             {
@@ -1220,7 +1184,7 @@ namespace FluffyUnderware.DevToolsEditor
             }
         }
 
-        void Init(SerializedProperty property)
+        private void Init(SerializedProperty property)
         {
             try
             {
@@ -1233,7 +1197,7 @@ namespace FluffyUnderware.DevToolsEditor
                 else
                     mOptions = RegionOptions<int>.Default;
             }
-            catch (System.Exception e)
+            catch (Exception e)
             {
                 DTLog.LogError("[DevTools] IntRegionPropertyDrawer: Unable to find property '" + Attribute.RegionOptionsPropertyName + "'! (" + e.ToString() + ")", property.serializedObject.targetObject);
             }

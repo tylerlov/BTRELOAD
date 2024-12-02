@@ -86,7 +86,7 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
 
             // Validation and resolving can reach through HTTP to fetch and validate against schemas/DTDs, which could take ages
 #if (NET_STANDARD_2_0 || NET_4_6)
-            settings.DtdProcessing = System.Xml.DtdProcessing.Ignore;
+            settings.DtdProcessing = DtdProcessing.Ignore;
 #else
             settings.ProhibitDtd = false;
 #endif
@@ -128,10 +128,10 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
                     // We cannot add the clipper directly on scene.Root since it may have a viewbox transform applied.
                     // The simplest is to replace the root node with the new "clipped" one, then the clipping
                     // rectangle can stay in the viewport space (no need to take the viewbox transform into account).
-                    scene.Root = new SceneNode()
+                    scene.Root = new SceneNode
                     {
                         Children = new List<SceneNode> { scene.Root },
-                        Clipper = new SceneNode() { Shapes = new List<Shape>() { rectClip } }
+                        Clipper = new SceneNode { Shapes = new List<Shape> { rectClip } }
                     };
                 }
             }
@@ -165,9 +165,9 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
             }
 
             public int Depth { get { return depth; } }
-            XmlReader reader;
-            int depth;
-            string name;
+            private XmlReader reader;
+            private int depth;
+            private string name;
         }
 
         public XmlReaderIterator(XmlReader reader) { this.reader = reader; }
@@ -208,8 +208,8 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
             return text;
         }
 
-        XmlReader reader;
-        bool currentElementVisited;
+        private XmlReader reader;
+        private bool currentElementVisited;
     }
 
     internal class SVGFormatException : Exception
@@ -220,7 +220,7 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
 
         public static SVGFormatException StackError { get { return new SVGFormatException("Vector scene construction mismatch"); } }
 
-        static string ComposeMessage(XmlReader reader, string message)
+        private static string ComposeMessage(XmlReader reader, string message)
         {
             IXmlLineInfo li = reader as IXmlLineInfo;
             if (li != null)
@@ -245,12 +245,12 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
 
             this.docReader = new XmlReaderIterator(docReader);
             this.scene = scene;
-            this.dpiScale = dpi / 90.0f; // SVG specs assume 90DPI but this machine might use something else
+            dpiScale = dpi / 90.0f; // SVG specs assume 90DPI but this machine might use something else
             this.windowWidth = windowWidth;
             this.windowHeight = windowHeight;
             this.applyRootViewBox = applyRootViewBox;
-            this.svgObjects[StockBlackNonZeroFillName] = new SolidFill() { Color = new Color(0, 0, 0), Mode = FillMode.NonZero };
-            this.svgObjects[StockBlackOddEvenFillName] = new SolidFill() { Color = new Color(0, 0, 0), Mode = FillMode.OddEven };
+            svgObjects[StockBlackNonZeroFillName] = new SolidFill() { Color = new Color(0, 0, 0), Mode = FillMode.NonZero };
+            svgObjects[StockBlackOddEvenFillName] = new SolidFill() { Color = new Color(0, 0, 0), Mode = FillMode.OddEven };
         }
 
         public void Import()
@@ -275,10 +275,10 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
         public Dictionary<string, SceneNode> NodeIDs { get { return nodeIDs; } }
 
         internal const float SVGLengthFactor = 1.41421356f; // Used when calculating relative lengths. See http://www.w3.org/TR/SVG/coords.html#Units
-        static internal string StockBlackNonZeroFillName { get { return "unity_internal_black_nz"; } }
-        static internal string StockBlackOddEvenFillName { get { return "unity_internal_black_oe"; } }
+        internal static string StockBlackNonZeroFillName { get { return "unity_internal_black_nz"; } }
+        internal static string StockBlackOddEvenFillName { get { return "unity_internal_black_oe"; } }
 
-        void ParseChildren(XmlReaderIterator.Node node, string nodeName)
+        private void ParseChildren(XmlReaderIterator.Node node, string nodeName)
         {
             var sceneNode = currentSceneNode.Peek();
 
@@ -302,7 +302,7 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
                     if (sceneNode.Children == null)
                         sceneNode.Children = new List<SceneNode>();
                     childVectorNode = new SceneNode();
-                    nodeGlobalSceneState[childVectorNode] = new NodeGlobalSceneState() { ContainerSize = currentContainerSize.Peek() };
+                    nodeGlobalSceneState[childVectorNode] = new NodeGlobalSceneState { ContainerSize = currentContainerSize.Peek() };
                     sceneNode.Children.Add(childVectorNode);
                     currentSceneNode.Push(childVectorNode);
                 }
@@ -313,7 +313,7 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
                 {
                     styles.SaveLayerForSceneNode(childVectorNode);
                     if (styles.Evaluate("display") == "none")
-                        invisibleNodes.Add(new NodeWithParent() { node = childVectorNode, parent = sceneNode });
+                        invisibleNodes.Add(new NodeWithParent { node = childVectorNode, parent = sceneNode });
                 }
 
                 handler();
@@ -327,7 +327,8 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
         }
 
         #region Tag handling
-        void circle()
+
+        private void circle()
         {
             var node = docReader.VisitCurrent();
             var sceneNode = currentSceneNode.Peek();
@@ -346,7 +347,7 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
 
             var circle = new Shape();
             VectorUtils.MakeCircleShape(circle, new Vector2(cx, cy), r);
-            circle.PathProps = new PathProperties() { Stroke = stroke, Head = strokeEnding, Tail = strokeEnding, Corners = strokeCorner };
+            circle.PathProps = new PathProperties { Stroke = stroke, Head = strokeEnding, Tail = strokeEnding, Corners = strokeCorner };
             circle.Fill = fill;
 
             sceneNode.Shapes = new List<Shape>(1);
@@ -359,7 +360,7 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
                 SupportElems(node);  // No children supported
         }
 
-        void defs()
+        private void defs()
         {
             var node = docReader.VisitCurrent();
             var sceneNode = new SceneNode(); // A new scene node instead of one precreated for us
@@ -376,7 +377,7 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
                 throw SVGFormatException.StackError;
         }
 
-        void ellipse()
+        private void ellipse()
         {
             var node = docReader.VisitCurrent();
             var sceneNode = currentSceneNode.Peek();
@@ -396,7 +397,7 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
 
             var ellipse = new Shape();
             VectorUtils.MakeEllipseShape(ellipse, new Vector2(cx, cy), rx, ry);
-            ellipse.PathProps = new PathProperties() { Stroke = stroke, Corners = strokeCorner, Head = strokeEnding, Tail = strokeEnding };
+            ellipse.PathProps = new PathProperties { Stroke = stroke, Corners = strokeCorner, Head = strokeEnding, Tail = strokeEnding };
             ellipse.Fill = fill;
 
             sceneNode.Shapes = new List<Shape>(1);
@@ -409,7 +410,7 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
                 SupportElems(node);  // No children supported
         }
 
-        void g()
+        private void g()
         {
             var node = docReader.VisitCurrent();
             var sceneNode = currentSceneNode.Peek();
@@ -425,7 +426,7 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
                 SupportElems(node, allElems);
         }
 
-        void image()
+        private void image()
         {
             var node = docReader.VisitCurrent();
             var sceneNode = currentSceneNode.Peek();
@@ -513,7 +514,7 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
                 SupportElems(node);  // No children supported
         }
 
-        void line()
+        private void line()
         {
             var node = docReader.VisitCurrent();
             var sceneNode = currentSceneNode.Peek();
@@ -531,9 +532,9 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
             float y2 = AttribLengthVal(node, "y2", 0.0f, DimType.Height);
 
             var path = new Shape();
-            path.PathProps = new PathProperties() { Stroke = stroke, Head = strokeEnding, Tail = strokeEnding };
+            path.PathProps = new PathProperties { Stroke = stroke, Head = strokeEnding, Tail = strokeEnding };
             path.Contours = new BezierContour[] {
-                new BezierContour() { Segments = VectorUtils.BezierSegmentToPath(VectorUtils.MakeLine(new Vector2(x1, y1), new Vector2(x2, y2))) }
+                new BezierContour { Segments = VectorUtils.BezierSegmentToPath(VectorUtils.MakeLine(new Vector2(x1, y1), new Vector2(x2, y2))) }
             };
             sceneNode.Shapes = new List<Shape>(1);
             sceneNode.Shapes.Add(path);
@@ -545,7 +546,7 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
                 SupportElems(node);  // No children supported
         }
 
-        void linearGradient()
+        private void linearGradient()
         {
             var node = docReader.VisitCurrent();
 
@@ -597,9 +598,9 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
 
             GradientFill fill = CloneGradientFill(refFill);
             if (fill == null)
-                fill = new GradientFill() { Addressing = addressing, Type = GradientFillType.Linear };
+                fill = new GradientFill { Addressing = addressing, Type = GradientFillType.Linear };
 
-            LinearGradientExData fillExData = new LinearGradientExData() { WorldRelative = relativeToWorld, FillTransform = gradientTransform };
+            LinearGradientExData fillExData = new LinearGradientExData { WorldRelative = relativeToWorld, FillTransform = gradientTransform };
             gradientExInfo[fill] = fillExData;
 
             // Fills are defined outside of a shape scope, so we can't resolve relative coordinates here.
@@ -628,7 +629,7 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
                 // Reference may be defined later in the file. Save for postponed processing.
                 if (!postponedStopData.ContainsKey(currentGradientLink))
                     postponedStopData.Add(currentGradientLink, new List<PostponedStopData>());
-                postponedStopData[currentGradientLink].Add(new PostponedStopData() { fill = fill });
+                postponedStopData[currentGradientLink].Add(new PostponedStopData { fill = fill });
             }
 
             AddToSVGDictionaryIfPossible(node, fill);
@@ -636,7 +637,7 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
                 SupportElems(node, stop);
         }
 
-        void path()
+        private void path()
         {
             var node = docReader.VisitCurrent();
             var sceneNode = currentSceneNode.Peek();
@@ -657,7 +658,7 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
                 //float pathLength = AttribFloatVal(node, "pathLength"); // This is useful for animation purposes mostly
 
                 sceneNode.Shapes = new List<Shape>(1);
-                sceneNode.Shapes.Add(new Shape() { Contours = contours.ToArray(), Fill = fill, PathProps = pathProps });
+                sceneNode.Shapes.Add(new Shape { Contours = contours.ToArray(), Fill = fill, PathProps = pathProps });
 
                 AddToSVGDictionaryIfPossible(node, sceneNode);
             }
@@ -668,7 +669,7 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
                 SupportElems(node);  // No children supported
         }
 
-        void polygon()
+        private void polygon()
         {
             var node = docReader.VisitCurrent();
             var sceneNode = currentSceneNode.Peek();
@@ -705,14 +706,14 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
                     if (newPoint == lastPoint)
                         continue;
                     var seg = VectorUtils.MakeLine(lastPoint, newPoint);
-                    segments.Add(new BezierPathSegment() { P0 = seg.P0, P1 = seg.P1, P2 = seg.P2 });
+                    segments.Add(new BezierPathSegment { P0 = seg.P0, P1 = seg.P1, P2 = seg.P2 });
                     lastPoint = newPoint;
                 }
 
                 if (segments.Count > 0)
                 {
                     var connect = VectorUtils.MakeLine(lastPoint, segments[0].P0);
-                    segments.Add(new BezierPathSegment() { P0 = connect.P0, P1 = connect.P1, P2 = connect.P2 });
+                    segments.Add(new BezierPathSegment { P0 = connect.P0, P1 = connect.P1, P2 = connect.P2 });
                     contour.Segments = segments.ToArray();
 
                     var shape = new Shape() { Contours = new BezierContour[] { contour }, PathProps = pathProps, Fill = fill };
@@ -728,7 +729,7 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
                 SupportElems(node);  // No children supported
         }
 
-        void polyline()
+        private void polyline()
         {
             var node = docReader.VisitCurrent();
             var sceneNode = currentSceneNode.Peek();
@@ -751,7 +752,7 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
                     throw node.GetException("polyline 'points' do not even specify one line");
 
                 var shape = new Shape() { Fill = fill };
-                shape.PathProps = new PathProperties() { Stroke = stroke, Corners = strokeCorner, Head = strokeEnding, Tail = strokeEnding };
+                shape.PathProps = new PathProperties { Stroke = stroke, Corners = strokeCorner, Head = strokeEnding, Tail = strokeEnding };
                 var lastPoint = new Vector2(
                         AttribLengthVal(pointsString[0], node, "points", 0.0f, DimType.Width),
                         AttribLengthVal(pointsString[1], node, "points", 0.0f, DimType.Height));
@@ -765,15 +766,15 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
                     if (newPoint == lastPoint)
                         continue;
                     var seg = VectorUtils.MakeLine(lastPoint, newPoint);
-                    segments.Add(new BezierPathSegment() { P0 = seg.P0, P1 = seg.P1, P2 = seg.P2 });
+                    segments.Add(new BezierPathSegment { P0 = seg.P0, P1 = seg.P1, P2 = seg.P2 });
                     lastPoint = newPoint;
                 }
                 if (segments.Count > 0 )
                 {
                     var connect = VectorUtils.MakeLine(lastPoint, segments[0].P0);
-                    segments.Add(new BezierPathSegment() { P0 = connect.P0, P1 = connect.P1, P2 = connect.P2 });
+                    segments.Add(new BezierPathSegment { P0 = connect.P0, P1 = connect.P1, P2 = connect.P2 });
                     shape.Contours = new BezierContour[] {
-                         new BezierContour() { Segments = segments.ToArray() }
+                        new BezierContour { Segments = segments.ToArray() }
                     };
                     sceneNode.Shapes = new List<Shape>(1);
                     sceneNode.Shapes.Add(shape);
@@ -787,7 +788,7 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
                 SupportElems(node);  // No children supported
         }
 
-        void radialGradient()
+        private void radialGradient()
         {
             var node = docReader.VisitCurrent();
 
@@ -839,9 +840,9 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
 
             GradientFill fill = CloneGradientFill(refFill);
             if (fill == null)
-                fill = new GradientFill() { Addressing = addressing, Type = GradientFillType.Radial };
+                fill = new GradientFill { Addressing = addressing, Type = GradientFillType.Radial };
 
-            RadialGradientExData fillExData = new RadialGradientExData() { WorldRelative = relativeToWorld, FillTransform = gradientTransform };
+            RadialGradientExData fillExData = new RadialGradientExData { WorldRelative = relativeToWorld, FillTransform = gradientTransform };
             gradientExInfo[fill] = fillExData;
 
             // Fills are defined outside of a shape scope, so we can't resolve relative coordinates here.
@@ -872,7 +873,7 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
                 // Reference may be defined later in the file. Save for postponed processing.
                 if (!postponedStopData.ContainsKey(currentGradientLink))
                     postponedStopData.Add(currentGradientLink, new List<PostponedStopData>());
-                postponedStopData[currentGradientLink].Add(new PostponedStopData() { fill = fill });
+                postponedStopData[currentGradientLink].Add(new PostponedStopData { fill = fill });
             }
 
             AddToSVGDictionaryIfPossible(node, fill);
@@ -880,7 +881,7 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
                 SupportElems(node, stop);
         }
 
-        void clipPath()
+        private void clipPath()
         {
             var node = docReader.VisitCurrent();
             string id = node["id"];
@@ -906,7 +907,7 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
                     throw node.GetUnsupportedAttribValException("clipPathUnits");
             }
 
-            clipData[clipRoot] = new ClipData() { WorldRelative = relativeToWorld };
+            clipData[clipRoot] = new ClipData { WorldRelative = relativeToWorld };
 
             AddToSVGDictionaryIfPossible(node, clipRoot);
             if (ShouldDeclareSupportedChildren(node))
@@ -930,7 +931,7 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
 
         }
 
-        void pattern()
+        private void pattern()
         {
             var node = docReader.VisitCurrent();
 
@@ -978,7 +979,8 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
 
             var patternTransform = SVGAttribParser.ParseTransform(node, "patternTransform");
 
-            patternData[patternRoot] = new PatternData() {
+            patternData[patternRoot] = new PatternData
+            {
                 WorldRelative = relativeToWorld,
                 ContentWorldRelative = contentRelativeToWorld,
                 PatternTransform = patternTransform
@@ -999,7 +1001,7 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
                 throw SVGFormatException.StackError;
         }
 
-        void mask()
+        private void mask()
         {
             var node = docReader.VisitCurrent();
 
@@ -1040,7 +1042,8 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
                     throw node.GetUnsupportedAttribValException("maskContentUnits");
             }
 
-            maskData[maskRoot] = new MaskData() {
+            maskData[maskRoot] = new MaskData
+            {
                 WorldRelative = relativeToWorld,
                 ContentWorldRelative = contentRelativeToWorld,
             };
@@ -1055,7 +1058,7 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
                 throw SVGFormatException.StackError;
         }
 
-        void rect()
+        private void rect()
         {
             var node = docReader.VisitCurrent();
             var sceneNode = currentSceneNode.Peek();
@@ -1088,7 +1091,7 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
             var rect = new Shape();
             VectorUtils.MakeRectangleShape(rect, new Rect(x, y, width, height), rad, rad, rad, rad);
             rect.Fill = fill;
-            rect.PathProps = new PathProperties() { Stroke = stroke, Head = strokeEnding, Tail = strokeEnding, Corners = strokeCorner };
+            rect.PathProps = new PathProperties { Stroke = stroke, Head = strokeEnding, Tail = strokeEnding, Corners = strokeCorner };
             sceneNode.Shapes = new List<Shape>(1);
             sceneNode.Shapes.Add(rect);
 
@@ -1099,7 +1102,7 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
                 SupportElems(node);  // No children supported
         }
 
-        void stop()
+        private void stop()
         {
             var node = docReader.VisitCurrent();
             System.Diagnostics.Debug.Assert(currentGradientFill != null);
@@ -1163,7 +1166,7 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
                 SupportElems(node);  // No children supported
         }
 
-        void svg()
+        private void svg()
         {
             var node = docReader.VisitCurrent();
             var sceneNode = new SceneNode();
@@ -1188,7 +1191,7 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
                 currentViewBoxSize.Push(viewBoxInfo.ViewBox.size);
 
             currentSceneNode.Push(sceneNode);
-            nodeGlobalSceneState[sceneNode] = new NodeGlobalSceneState() { ContainerSize = currentContainerSize.Peek() };
+            nodeGlobalSceneState[sceneNode] = new NodeGlobalSceneState { ContainerSize = currentContainerSize.Peek() };
 
             if (ShouldDeclareSupportedChildren(node))
                 SupportElems(node, allElems);
@@ -1204,7 +1207,7 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
             styles.PopNode();
         }
 
-        void symbol()
+        private void symbol()
         {
             var node = docReader.VisitCurrent();
             var sceneNode = new SceneNode(); // A new scene node instead of one precreated for us
@@ -1214,7 +1217,10 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
             ParseOpacity(sceneNode);
             sceneNode.Transform = Matrix2D.identity;
 
-            Rect viewportRect = new Rect(Vector2.zero, currentContainerSize.Peek());
+            Rect viewportRect = new Rect(
+                Vector2.zero,
+                currentContainerSize.Peek()
+            );
             var viewBoxInfo = ParseViewBox(node, sceneNode, viewportRect);
             if (!viewBoxInfo.IsEmpty)
                 currentViewBoxSize.Push(viewBoxInfo.ViewBox.size);
@@ -1247,7 +1253,7 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
             }
         }
 
-        void use()
+        private void use()
         {
             var node = docReader.VisitCurrent();
             var sceneNode = currentSceneNode.Peek();
@@ -1289,7 +1295,7 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
                 SupportElems(node);  // No children supported
         }
 
-        void style()
+        private void style()
         {
             var node = docReader.VisitCurrent();
             var text = docReader.ReadTextWithinElement();
@@ -1430,7 +1436,8 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
                 for (int i = 0; i < contours.Length; ++i)
                     contours[i] = CloneContour(shape.Contours[i]);
             }
-            return new Shape() {
+            return new Shape
+            {
                 Fill = CloneFill(shape.Fill),
                 FillTransform = shape.FillTransform,
                 PathProps = ClonePathProps(shape.PathProps),
@@ -1448,10 +1455,10 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
                 for (int i = 0; i < segs.Length; ++i)
                 {
                     var s = c.Segments[i];
-                    segs[i] = new BezierPathSegment() { P0 = s.P0, P1 = s.P1, P2 = s.P2 };
+                    segs[i] = new BezierPathSegment { P0 = s.P0, P1 = s.P1, P2 = s.P2 };
                 }
             }
-            return new BezierContour() { Segments = segs, Closed = c.Closed };
+            return new BezierContour { Segments = segs, Closed = c.Closed };
         }
 
         private IFill CloneFill(IFill fill)
@@ -1479,7 +1486,7 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
                     for (int i = 0; i < stops.Length; ++i)
                     {
                         var stop = grad.Stops[i];
-                        stops[i] = new GradientStop() { Color = stop.Color, StopPercentage = stop.StopPercentage };
+                        stops[i] = new GradientStop { Color = stop.Color, StopPercentage = stop.StopPercentage };
                     }
                 }
                 var gradientFill = new GradientFill() {
@@ -1528,7 +1535,8 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
                     for (int i = 0; i < pattern.Length; ++i)
                         pattern[i] = props.Stroke.Pattern[i];
                 }
-                stroke = new Stroke() {
+                stroke = new Stroke
+                {
                     Fill = CloneFill(props.Stroke.Fill),
                     FillTransform = props.Stroke.FillTransform,
                     HalfThickness = props.Stroke.HalfThickness,
@@ -1538,7 +1546,8 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
                 };
             }
 
-            return new PathProperties() {
+            return new PathProperties
+            {
                 Stroke = stroke,
                 Head = props.Head,
                 Tail = props.Tail,
@@ -1555,7 +1564,8 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
 
             // This is a very fragile gradient fill cloning used since Illustrator
             // will sometimes refer to another fill using a "xlink:href" attribute.
-            return new GradientFill() {
+            return new GradientFill
+            {
                 Type = other.Type,
                 Stops = other.Stops,
                 Mode = other.Mode,
@@ -1567,28 +1577,32 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
         #endregion
 
         #region Simple Attribute Handling
-        int AttribIntVal(string attribName) { return AttribIntVal(attribName, 0); }
-        int AttribIntVal(string attribName, int defaultVal)
+
+        private int AttribIntVal(string attribName) { return AttribIntVal(attribName, 0); }
+
+        private int AttribIntVal(string attribName, int defaultVal)
         {
             string val = styles.Evaluate(attribName);
             return (val != null) ? int.Parse(val) : defaultVal;
         }
 
-        float AttribFloatVal(string attribName) { return AttribFloatVal(attribName, 0.0f); }
-        float AttribFloatVal(string attribName, float defaultVal)
+        private float AttribFloatVal(string attribName) { return AttribFloatVal(attribName, 0.0f); }
+
+        private float AttribFloatVal(string attribName, float defaultVal)
         {
             string val = styles.Evaluate(attribName);
             return (val != null) ? SVGAttribParser.ParseFloat(val) : defaultVal;
         }
 
-        float AttribLengthVal(XmlReaderIterator.Node node, string attribName, DimType dimType) { return AttribLengthVal(node, attribName, 0.0f, dimType); }
-        float AttribLengthVal(XmlReaderIterator.Node node, string attribName, float defaultUnitVal, DimType dimType)
+        private float AttribLengthVal(XmlReaderIterator.Node node, string attribName, DimType dimType) { return AttribLengthVal(node, attribName, 0.0f, dimType); }
+
+        private float AttribLengthVal(XmlReaderIterator.Node node, string attribName, float defaultUnitVal, DimType dimType)
         {
             var val = styles.Evaluate(attribName);
             return AttribLengthVal(val, node, attribName, defaultUnitVal, dimType);
         }
 
-        float AttribLengthVal(string val, XmlReaderIterator.Node node, string attribName, float defaultUnitVal, DimType dimType)
+        private float AttribLengthVal(string val, XmlReaderIterator.Node node, string attribName, float defaultUnitVal, DimType dimType)
         {
             // For reference: http://www.w3.org/TR/SVG/coords.html#Units
             if (val == null) return defaultUnitVal;
@@ -1640,14 +1654,15 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
         #endregion
 
         #region Attribute Set Handling
-        void AddToSVGDictionaryIfPossible(XmlReaderIterator.Node node, object vectorElement)
+
+        private void AddToSVGDictionaryIfPossible(XmlReaderIterator.Node node, object vectorElement)
         {
             string id = node["id"];
             if (!string.IsNullOrEmpty(id))
                 svgObjects[id] = vectorElement;
         }
 
-        Rect ParseViewport(XmlReaderIterator.Node node, SceneNode sceneNode, Vector2 defaultViewportSize)
+        private Rect ParseViewport(XmlReaderIterator.Node node, SceneNode sceneNode, Vector2 defaultViewportSize)
         {
             scenePos.x = AttribLengthVal(node, "x", DimType.Width);
             scenePos.y = AttribLengthVal(node, "y", DimType.Height);
@@ -1658,10 +1673,13 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
             return new Rect(scenePos, sceneSize);
         }
 
-        enum ViewBoxAlign { Min, Mid, Max }
-        enum ViewBoxAspectRatio { DontPreserve, FitLargestDim, FitSmallestDim }
-        struct ViewBoxInfo { public Rect ViewBox; public ViewBoxAspectRatio AspectRatio; public ViewBoxAlign AlignX, AlignY; public bool IsEmpty; }
-        ViewBoxInfo ParseViewBox(XmlReaderIterator.Node node, SceneNode sceneNode, Rect sceneViewport)
+        private enum ViewBoxAlign { Min, Mid, Max }
+
+        private enum ViewBoxAspectRatio { DontPreserve, FitLargestDim, FitSmallestDim }
+
+        private struct ViewBoxInfo { public Rect ViewBox; public ViewBoxAspectRatio AspectRatio; public ViewBoxAlign AlignX, AlignY; public bool IsEmpty; }
+
+        private ViewBoxInfo ParseViewBox(XmlReaderIterator.Node node, SceneNode sceneNode, Rect sceneViewport)
         {
             var viewBoxInfo = new ViewBoxInfo() { IsEmpty = true };
             string viewBoxString = node["viewBox"];
@@ -1673,11 +1691,37 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
             if (viewBoxValues.Length != 4)
                 throw node.GetException("Invalid viewBox specification");
             Vector2 viewBoxMin = new Vector2(
-                    AttribLengthVal(viewBoxValues[0], node, "viewBox", 0.0f, DimType.Width),
-                    AttribLengthVal(viewBoxValues[1], node, "viewBox", 0.0f, DimType.Height));
+                AttribLengthVal(
+                    viewBoxValues[0],
+                    node,
+                    "viewBox",
+                    0.0f,
+                    DimType.Width
+                ),
+                AttribLengthVal(
+                    viewBoxValues[1],
+                    node,
+                    "viewBox",
+                    0.0f,
+                    DimType.Height
+                )
+            );
             Vector2 viewBoxSize = new Vector2(
-                    AttribLengthVal(viewBoxValues[2], node, "viewBox", sceneViewport.width, DimType.Width),
-                    AttribLengthVal(viewBoxValues[3], node, "viewBox", sceneViewport.height, DimType.Height));
+                AttribLengthVal(
+                    viewBoxValues[2],
+                    node,
+                    "viewBox",
+                    sceneViewport.width,
+                    DimType.Width
+                ),
+                AttribLengthVal(
+                    viewBoxValues[3],
+                    node,
+                    "viewBox",
+                    sceneViewport.height,
+                    DimType.Height
+                )
+            );
 
             viewBoxInfo.ViewBox = new Rect(viewBoxMin, viewBoxSize);
             ParseViewBoxAspectRatio(node, ref viewBoxInfo);
@@ -1686,7 +1730,7 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
             return viewBoxInfo;
         }
 
-        void ParseViewBoxAspectRatio(XmlReaderIterator.Node node, ref ViewBoxInfo viewBoxInfo)
+        private void ParseViewBoxAspectRatio(XmlReaderIterator.Node node, ref ViewBoxInfo viewBoxInfo)
         {
             viewBoxInfo.AspectRatio = ViewBoxAspectRatio.FitLargestDim;
             viewBoxInfo.AlignX = ViewBoxAlign.Mid;
@@ -1723,7 +1767,7 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
                 viewBoxInfo.AspectRatio = ViewBoxAspectRatio.DontPreserve;
         }
 
-        void ApplyViewBox(SceneNode sceneNode, ViewBoxInfo viewBoxInfo, Rect sceneViewport)
+        private void ApplyViewBox(SceneNode sceneNode, ViewBoxInfo viewBoxInfo, Rect sceneViewport)
         {
             if ((viewBoxInfo.ViewBox.size == Vector2.zero) || (sceneViewport.size == Vector2.zero))
                 return;
@@ -1769,7 +1813,7 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
             sceneNode.Transform = sceneNode.Transform * Matrix2D.Scale(scale) * Matrix2D.Translate(offset);
         }
 
-        Stroke ParseStrokeAttributeSet(XmlReaderIterator.Node node, out PathCorner strokeCorner, out PathEnding strokeEnding, Inheritance inheritance = Inheritance.Inherited)
+        private Stroke ParseStrokeAttributeSet(XmlReaderIterator.Node node, out PathCorner strokeCorner, out PathEnding strokeEnding, Inheritance inheritance = Inheritance.Inherited)
         {
             var stroke = SVGAttribParser.ParseStrokeAndOpacity(node, svgObjects, styles, inheritance);
             strokeCorner = PathCorner.Tipped;
@@ -1820,7 +1864,7 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
             return stroke;
         }
 
-        void ParseID(XmlReaderIterator.Node node, SceneNode sceneNode)
+        private void ParseID(XmlReaderIterator.Node node, SceneNode sceneNode)
         {
             string id = node["id"];
             if (!string.IsNullOrEmpty(id))
@@ -1832,7 +1876,7 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
             }
         }
 
-        float ParseOpacity(SceneNode sceneNode)
+        private float ParseOpacity(SceneNode sceneNode)
         {
             float opacity = AttribFloatVal("opacity", 1.0f);
             if (opacity != 1.0f && sceneNode != null)
@@ -1840,13 +1884,13 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
             return opacity;
         }
 
-        void ParseClipAndMask(XmlReaderIterator.Node node, SceneNode sceneNode)
+        private void ParseClipAndMask(XmlReaderIterator.Node node, SceneNode sceneNode)
         {
             ParseClip(node, sceneNode);
             ParseMask(node, sceneNode);
         }
 
-        void ParseClip(XmlReaderIterator.Node node, SceneNode sceneNode)
+        private void ParseClip(XmlReaderIterator.Node node, SceneNode sceneNode)
         {
             string reference = null;
             string clipPath = styles.Evaluate("clip-path");
@@ -1863,7 +1907,7 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
                 List<PostponedClip> clips;
                 if (!postponedClip.TryGetValue(reference, out clips))
                     clips = new List<PostponedClip>(1);
-                clips.Add(new PostponedClip() { node = sceneNode });
+                clips.Add(new PostponedClip { node = sceneNode });
                 postponedClip[reference.Substring(1)] = clips;
                 return;
             }
@@ -1877,7 +1921,7 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
             ApplyClipper(clipper, sceneNode, worldRelative);
         }
 
-        void ApplyClipper(SceneNode clipper, SceneNode target, bool worldRelative)
+        private void ApplyClipper(SceneNode clipper, SceneNode target, bool worldRelative)
         {
             SceneNode clipperRoot = clipper;
             if (!worldRelative)
@@ -1887,7 +1931,8 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
                 var rect = VectorUtils.SceneNodeBounds(target);
                 var transform = Matrix2D.Translate(rect.position) * Matrix2D.Scale(rect.size);
 
-                clipperRoot = new SceneNode() {
+                clipperRoot = new SceneNode
+                {
                     Children = new List<SceneNode> { clipper },
                     Transform = transform
                 };
@@ -1895,7 +1940,7 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
             target.Clipper = clipperRoot;
         }
 
-        void ParseMask(XmlReaderIterator.Node node, SceneNode sceneNode)
+        private void ParseMask(XmlReaderIterator.Node node, SceneNode sceneNode)
         {
             string reference = null;
             string maskRef = node["mask"];
@@ -1916,7 +1961,8 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
                 var rect = VectorUtils.SceneNodeBounds(sceneNode);
                 var transform = Matrix2D.Translate(rect.position) * Matrix2D.Scale(rect.size);
 
-                maskRoot = new SceneNode() {
+                maskRoot = new SceneNode
+                {
                     Children = new List<SceneNode> { maskPath },
                     Transform = transform
                 };
@@ -1928,7 +1974,8 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
         #endregion
 
         #region Textures
-        Texture2D DecodeTextureData(string dataURI)
+
+        private Texture2D DecodeTextureData(string dataURI)
         {
             int pos = 5; // Skip "data:"
             int length = dataURI.Length;
@@ -1961,19 +2008,19 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
 
         #region Post-processing
 
-        void PostProcess(SceneNode root)
+        private void PostProcess(SceneNode root)
         {
             AdjustFills(root);
         }
 
-        struct HierarchyUpdate
+        private struct HierarchyUpdate
         {
             public SceneNode Parent;
             public SceneNode NewNode;
             public SceneNode ReplaceNode;
         }
 
-        void AdjustFills(SceneNode root)
+        private void AdjustFills(SceneNode root)
         {
             var hierarchyUpdates = new List<HierarchyUpdate>();
 
@@ -2015,7 +2062,7 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
                         var fillNode = AdjustPatternFill(nodeInfo.Node, nodeInfo.WorldTransform, shape);
                         if (fillNode != null)
                         {
-                            hierarchyUpdates.Add(new HierarchyUpdate()
+                            hierarchyUpdates.Add(new HierarchyUpdate
                             {
                                 Parent = nodeInfo.Parent,
                                 NewNode = fillNode,
@@ -2034,7 +2081,7 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
             }
         }
 
-        void AdjustGradientFill(SceneNode node, Matrix2D worldTransform, IFill fill, BezierContour[] contours, ref Matrix2D computedTransform)
+        private void AdjustGradientFill(SceneNode node, Matrix2D worldTransform, IFill fill, BezierContour[] contours, ref Matrix2D computedTransform)
         {
             var gradientFill = fill as GradientFill;
             if (fill == null || contours == null || contours.Length == 0)
@@ -2049,7 +2096,10 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
                 max = Vector2.Max(max, bbox.max);
             }
 
-            Rect bounds = new Rect(min, max - min);
+            Rect bounds = new Rect(
+                min,
+                max - min
+            );
 
             GradientExData extInfo = (GradientExData)gradientExInfo[gradientFill];
             var containerSize = nodeGlobalSceneState[node].ContainerSize;
@@ -2070,11 +2120,37 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
                 // the linear gradient with its slant and all the fun involved.
                 var linGradEx = (LinearGradientExData)extInfo;
                 Vector2 lineStart = new Vector2(
-                        AttribLengthVal(linGradEx.X1, null, null, 0.0f, DimType.Width),
-                        AttribLengthVal(linGradEx.Y1, null, null, 0.0f, DimType.Height));
+                    AttribLengthVal(
+                        linGradEx.X1,
+                        null,
+                        null,
+                        0.0f,
+                        DimType.Width
+                    ),
+                    AttribLengthVal(
+                        linGradEx.Y1,
+                        null,
+                        null,
+                        0.0f,
+                        DimType.Height
+                    )
+                );
                 Vector2 lineEnd = new Vector2(
-                        AttribLengthVal(linGradEx.X2, null, null, currentContainerSize.Peek().x, DimType.Width),
-                        AttribLengthVal(linGradEx.Y2, null, null, 0.0f, DimType.Height));
+                    AttribLengthVal(
+                        linGradEx.X2,
+                        null,
+                        null,
+                        currentContainerSize.Peek().x,
+                        DimType.Width
+                    ),
+                    AttribLengthVal(
+                        linGradEx.Y2,
+                        null,
+                        null,
+                        0.0f,
+                        DimType.Height
+                    )
+                );
 
                 var gradientVector = lineEnd - lineStart;
                 float gradientVectorInvLength = 1.0f / gradientVector.magnitude;
@@ -2092,11 +2168,37 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
                 var radGradEx = (RadialGradientExData)extInfo;
                 Vector2 halfCurrentContainerSize = currentContainerSize.Peek() * 0.5f;
                 Vector2 center = new Vector2(
-                        AttribLengthVal(radGradEx.Cx, null, null, halfCurrentContainerSize.x, DimType.Width),
-                        AttribLengthVal(radGradEx.Cy, null, null, halfCurrentContainerSize.y, DimType.Height));
+                    AttribLengthVal(
+                        radGradEx.Cx,
+                        null,
+                        null,
+                        halfCurrentContainerSize.x,
+                        DimType.Width
+                    ),
+                    AttribLengthVal(
+                        radGradEx.Cy,
+                        null,
+                        null,
+                        halfCurrentContainerSize.y,
+                        DimType.Height
+                    )
+                );
                 Vector2 focus = new Vector2(
-                        AttribLengthVal(radGradEx.Fx, null, null, center.x, DimType.Width),
-                        AttribLengthVal(radGradEx.Fy, null, null, center.y, DimType.Height));
+                    AttribLengthVal(
+                        radGradEx.Fx,
+                        null,
+                        null,
+                        center.x,
+                        DimType.Width
+                    ),
+                    AttribLengthVal(
+                        radGradEx.Fy,
+                        null,
+                        null,
+                        center.y,
+                        DimType.Height
+                    )
+                );
                 float radius = AttribLengthVal(radGradEx.R, null, null, halfCurrentContainerSize.magnitude / SVGLengthFactor, DimType.Length);
 
                 // This block below tells that radial focus cannot change per object, but is realized correctly for the first object
@@ -2129,7 +2231,7 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
             computedTransform = Matrix2D.Scale(boundsInv) * gradTransform * extInfo.FillTransform.Inverse() * uvToWorld;
         }
 
-        SceneNode AdjustPatternFill(SceneNode node, Matrix2D worldTransform, Shape shape)
+        private SceneNode AdjustPatternFill(SceneNode node, Matrix2D worldTransform, Shape shape)
         {
             PatternFill patternFill = shape.Fill as PatternFill;
             if (patternFill == null ||
@@ -2161,7 +2263,8 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
             var patternNode = patternFill.Pattern;
             if (!data.ContentWorldRelative)
             {
-                patternNode = new SceneNode() {
+                patternNode = new SceneNode
+                {
                     Transform = Matrix2D.Scale(nodeBounds.size),
                     Children = new List<SceneNode> { patternFill.Pattern }
                 };
@@ -2236,7 +2339,7 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
             return replacementNode;
         }
 
-        void RemoveInvisibleNodes()
+        private void RemoveInvisibleNodes()
         {
             foreach (var n in invisibleNodes)
             {
@@ -2247,13 +2350,16 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
 
         #endregion
 
-        delegate void ElemHandler();
-        class Handlers : Dictionary<string, ElemHandler>
+        private delegate void ElemHandler();
+
+        private class Handlers : Dictionary<string, ElemHandler>
         {
             public Handlers(int capacity) : base(capacity) {}
         }
-        bool ShouldDeclareSupportedChildren(XmlReaderIterator.Node node) { return !subTags.ContainsKey(node.Name); }
-        void SupportElems(XmlReaderIterator.Node node, params ElemHandler[] handlers)
+
+        private bool ShouldDeclareSupportedChildren(XmlReaderIterator.Node node) { return !subTags.ContainsKey(node.Name); }
+
+        private void SupportElems(XmlReaderIterator.Node node, params ElemHandler[] handlers)
         {
             var elems = new Handlers(handlers.Length);
             foreach (var h in handlers)
@@ -2261,101 +2367,106 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
             subTags[node.Name] = elems;
         }
 
-        static char[] whiteSpaceNumberChars = " \r\n\t,".ToCharArray();
-        enum DimType { Width, Height, Length };
-        XmlReaderIterator docReader;
-        Scene scene;
-        float dpiScale;
-        int windowWidth, windowHeight;
-        Vector2 scenePos, sceneSize;
-        SVGDictionary svgObjects = new SVGDictionary(); // Named elements are looked up in this
-        Dictionary<string, Handlers> subTags = new Dictionary<string, Handlers>(); // For each element, the set of elements supported as its children
-        Dictionary<GradientFill, GradientExData> gradientExInfo = new Dictionary<GradientFill, GradientExData>();
-        Dictionary<SceneNode, ViewBoxInfo> symbolViewBoxes = new Dictionary<SceneNode, ViewBoxInfo>();
-        Dictionary<SceneNode, NodeGlobalSceneState> nodeGlobalSceneState = new Dictionary<SceneNode, NodeGlobalSceneState>();
-        Dictionary<SceneNode, float> nodeOpacity = new Dictionary<SceneNode, float>();
-        Dictionary<string, SceneNode> nodeIDs = new Dictionary<string, SceneNode>();
-        Dictionary<SceneNode, SVGStyleResolver.StyleLayer> nodeStyleLayers = new Dictionary<SceneNode, SVGStyleResolver.StyleLayer>();
-        Dictionary<SceneNode, ClipData> clipData = new Dictionary<SceneNode, ClipData>();
-        Dictionary<SceneNode, PatternData> patternData = new Dictionary<SceneNode, PatternData>();
-        Dictionary<SceneNode, MaskData> maskData = new Dictionary<SceneNode, MaskData>();
-        Dictionary<string, List<NodeReferenceData>> postponedSymbolData = new Dictionary<string, List<NodeReferenceData>>();
-        Dictionary<string, List<PostponedStopData>> postponedStopData = new Dictionary<string, List<PostponedStopData>>();
-        Dictionary<string, List<PostponedClip>> postponedClip = new Dictionary<string, List<PostponedClip>>();
-        SVGPostponedFills postponedFills = new SVGPostponedFills();
-        List<NodeWithParent> invisibleNodes = new List<NodeWithParent>();
-        Stack<Vector2> currentContainerSize = new Stack<Vector2>();
-        Stack<Vector2> currentViewBoxSize = new Stack<Vector2>();
-        Stack<SceneNode> currentSceneNode = new Stack<SceneNode>();
-        GradientFill currentGradientFill;
-        string currentGradientId;
-        string currentGradientLink;
-        ElemHandler[] allElems;
-        HashSet<ElemHandler> elemsToAddToHierarchy;
-        SVGStyleResolver styles = new SVGStyleResolver();
-        bool applyRootViewBox;
+        private static char[] whiteSpaceNumberChars = " \r\n\t,".ToCharArray();
+
+        private enum DimType { Width, Height, Length };
+
+        private XmlReaderIterator docReader;
+        private Scene scene;
+        private float dpiScale;
+        private int windowWidth, windowHeight;
+        private Vector2 scenePos, sceneSize;
+        private SVGDictionary svgObjects = new SVGDictionary(); // Named elements are looked up in this
+        private Dictionary<string, Handlers> subTags = new Dictionary<string, Handlers>(); // For each element, the set of elements supported as its children
+        private Dictionary<GradientFill, GradientExData> gradientExInfo = new Dictionary<GradientFill, GradientExData>();
+        private Dictionary<SceneNode, ViewBoxInfo> symbolViewBoxes = new Dictionary<SceneNode, ViewBoxInfo>();
+        private Dictionary<SceneNode, NodeGlobalSceneState> nodeGlobalSceneState =
+            new Dictionary<SceneNode, NodeGlobalSceneState>();
+        private Dictionary<SceneNode, float> nodeOpacity = new Dictionary<SceneNode, float>();
+        private Dictionary<string, SceneNode> nodeIDs = new Dictionary<string, SceneNode>();
+        private Dictionary<SceneNode, SVGStyleResolver.StyleLayer> nodeStyleLayers =
+            new Dictionary<SceneNode, SVGStyleResolver.StyleLayer>();
+        private Dictionary<SceneNode, ClipData> clipData = new Dictionary<SceneNode, ClipData>();
+        private Dictionary<SceneNode, PatternData> patternData = new Dictionary<SceneNode, PatternData>();
+        private Dictionary<SceneNode, MaskData> maskData = new Dictionary<SceneNode, MaskData>();
+        private Dictionary<string, List<NodeReferenceData>> postponedSymbolData =
+            new Dictionary<string, List<NodeReferenceData>>();
+        private Dictionary<string, List<PostponedStopData>> postponedStopData = new Dictionary<string, List<PostponedStopData>>();
+        private Dictionary<string, List<PostponedClip>> postponedClip = new Dictionary<string, List<PostponedClip>>();
+        private SVGPostponedFills postponedFills = new SVGPostponedFills();
+        private List<NodeWithParent> invisibleNodes = new List<NodeWithParent>();
+        private Stack<Vector2> currentContainerSize = new Stack<Vector2>();
+        private Stack<Vector2> currentViewBoxSize = new Stack<Vector2>();
+        private Stack<SceneNode> currentSceneNode = new Stack<SceneNode>();
+        private GradientFill currentGradientFill;
+        private string currentGradientId;
+        private string currentGradientLink;
+        private ElemHandler[] allElems;
+        private HashSet<ElemHandler> elemsToAddToHierarchy;
+        private SVGStyleResolver styles = new SVGStyleResolver();
+        private bool applyRootViewBox;
 
         internal Rect sceneViewport;
 
-        struct NodeGlobalSceneState
+        private struct NodeGlobalSceneState
         {
             public Vector2 ContainerSize;
         }
 
-        class GradientExData
+        private class GradientExData
         {
             public bool WorldRelative;
             public Matrix2D FillTransform;
         }
 
-        class LinearGradientExData : GradientExData
+        private class LinearGradientExData : GradientExData
         {
             public string X1, Y1, X2, Y2;
         }
 
-        class RadialGradientExData : GradientExData
+        private class RadialGradientExData : GradientExData
         {
             public bool Parsed;
             public string Cx, Cy, Fx, Fy, R;
         }
 
-        struct ClipData
+        private struct ClipData
         {
             public bool WorldRelative;
         }
 
-        struct PatternData
+        private struct PatternData
         {
             public bool WorldRelative;
             public bool ContentWorldRelative;
             public Matrix2D PatternTransform;
         }
 
-        struct MaskData
+        private struct MaskData
         {
             public bool WorldRelative;
             public bool ContentWorldRelative;
         }
 
-        struct NodeWithParent
+        private struct NodeWithParent
         {
             public SceneNode node;
             public SceneNode parent;
         }
 
-        struct NodeReferenceData
+        private struct NodeReferenceData
         {
             public SceneNode node;
             public Rect viewport;
             public string id;
         }
 
-        struct PostponedStopData
+        private struct PostponedStopData
         {
             public GradientFill fill;
         }
 
-        struct PostponedClip
+        private struct PostponedClip
         {
             public SceneNode node;
         }
@@ -2657,7 +2768,7 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
             if (strokeFill == null)
                 return null;
 
-            return new Stroke() { Fill = strokeFill };
+            return new Stroke { Fill = strokeFill };
         }
 
         public static Color ParseColor(string colorString)
@@ -2742,7 +2853,7 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
             return iri;
         }
 
-        SVGAttribParser(string attrib, AttribPath attribPath)
+        private SVGAttribParser(string attrib, AttribPath attribPath)
         {
             attribName = "path";
             attribString = attrib;
@@ -2872,7 +2983,7 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
             ConcludePath(false);
         }
 
-        SVGAttribParser(string attrib, string attribNameVal, AttribTransform attribTransform)
+        private SVGAttribParser(string attrib, string attribNameVal, AttribTransform attribTransform)
         {
             attribString = attrib;
             attribName = attribNameVal;
@@ -2938,7 +3049,7 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
             }
         }
 
-        SVGAttribParser(string attrib, string attribName, float opacity, FillMode mode, SVGDictionary dict, SVGPostponedFills postponedFills, bool allowReference = true)
+        private SVGAttribParser(string attrib, string attribName, float opacity, FillMode mode, SVGDictionary dict, SVGPostponedFills postponedFills, bool allowReference = true)
         {
             this.attribName = attribName;
             if (string.IsNullOrEmpty(attrib))
@@ -2999,7 +3110,7 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
             fill = new SolidFill() { Color = clr, Mode = mode };
         }
 
-        void ConcludePath(bool joinEnds)
+        private void ConcludePath(bool joinEnds)
         {
             // No need to manually close the path with the last line. It is implied.
             //if (joinEnds && currentPath.Count >= 2)
@@ -3015,21 +3126,21 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
                 contour.Segments = new BezierPathSegment[currentContour.Count + 1];
                 int index = 0;
                 foreach (var bs in currentContour)
-                    contour.Segments[index++] = new BezierPathSegment() { P0 = bs.P0, P1 = bs.P1, P2 = bs.P2  };
+                    contour.Segments[index++] = new BezierPathSegment { P0 = bs.P0, P1 = bs.P1, P2 = bs.P2  };
                 var connect = VectorUtils.MakeLine(currentContour.Last.Value.P3, contour.Segments[0].P0);
-                contour.Segments[index] = new BezierPathSegment() { P0 = connect.P0, P1 = connect.P1, P2 = connect.P2 };
+                contour.Segments[index] = new BezierPathSegment { P0 = connect.P0, P1 = connect.P1, P2 = connect.P2 };
                 contours.Add(contour);
             }
             currentContour.Clear(); // Restart a new path
         }
 
-        Vector2 NextVector2(bool relative = false)
+        private Vector2 NextVector2(bool relative = false)
         {
             var v = new Vector2(NextFloat(), NextFloat());
             return relative ? v + penPos : v;
         }
 
-        float NextFloat()
+        private float NextFloat()
         {
             SkipWhitespaces();
             if (stringPos >= attribString.Length)
@@ -3075,12 +3186,12 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
             return float.Parse(s, NumberStyles.Number | NumberStyles.AllowExponent, CultureInfo.InvariantCulture);
         }
 
-        bool NextBool()
+        private bool NextBool()
         {
             return Mathf.Abs(NextFloat()) > VectorUtils.Epsilon;
         }
 
-        char NextPathCommand(bool noCommandInheritance = false)
+        private char NextPathCommand(bool noCommandInheritance = false)
         {
             SkipWhitespaces();
             if (stringPos >= attribString.Length)
@@ -3099,7 +3210,7 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
             throw new Exception("Unexpected character at " + stringPos + " in path specification");
         }
 
-        string NextStringCommand()
+        private string NextStringCommand()
         {
             SkipWhitespaces();
             if (stringPos >= attribString.Length)
@@ -3120,7 +3231,7 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
             return attribString.Substring(startPos, stringPos - startPos);
         }
 
-        void SkipSymbol(char s)
+        private void SkipSymbol(char s)
         {
             SkipWhitespaces();
             if (stringPos >= attribString.Length || (attribString[stringPos] != s))
@@ -3128,13 +3239,13 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
             stringPos++;
         }
 
-        bool PeekSymbol(char s)
+        private bool PeekSymbol(char s)
         {
             SkipWhitespaces();
             return (stringPos < attribString.Length) && (attribString[stringPos] == s);
         }
 
-        void SkipWhitespaces()
+        private void SkipWhitespaces()
         {
             while (stringPos < attribString.Length)
             {
@@ -3153,31 +3264,33 @@ namespace ToolBuddy.ThirdParty.VectorGraphics
             }
         }
 
-        enum AttribPath { Path };
-        enum AttribTransform { Transform };
-        enum AttribStroke { Stroke };
+        private enum AttribPath { Path };
+
+        private enum AttribTransform { Transform };
+
+        private enum AttribStroke { Stroke };
 
         // Path data
-        LinkedList<BezierSegment> currentContour = new LinkedList<BezierSegment>();
-        List<BezierContour> contours = new List<BezierContour>();
-        Vector2 penPos;
-        string attribString;
-        char pathCommand;
+        private LinkedList<BezierSegment> currentContour = new LinkedList<BezierSegment>();
+        private List<BezierContour> contours = new List<BezierContour>();
+        private Vector2 penPos;
+        private string attribString;
+        private char pathCommand;
 
         // Transform data
-        Matrix2D transform;
+        private Matrix2D transform;
 
         // Fill data
-        IFill fill;
+        private IFill fill;
 
         // Parsing data
-        string attribName;
-        int stringPos;
+        private string attribName;
+        private int stringPos;
 
-        static NamedWebColorDictionary namedColors;
+        private static NamedWebColorDictionary namedColors;
     }
 
-    class NamedWebColorDictionary : Dictionary<string, Color>
+    internal class NamedWebColorDictionary : Dictionary<string, Color>
     {
         public NamedWebColorDictionary()
         {

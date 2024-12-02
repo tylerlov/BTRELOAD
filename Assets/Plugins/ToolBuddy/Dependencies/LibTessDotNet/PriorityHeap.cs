@@ -59,7 +59,7 @@ namespace FluffyUnderware.Curvy.ThirdParty.LibTessDotNet
         private int _freeList;
         private bool _initialized;
 
-        public bool Empty { get { return _size == 0; } }
+        public bool Empty => _size == 0;
 
         public PriorityHeap(int initialSize, LessOrEqual leq)
         {

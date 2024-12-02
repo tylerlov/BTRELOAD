@@ -1,17 +1,16 @@
 // =====================================================================
-// Copyright 2013-2022 ToolBuddy
+// Copyright © 2013 ToolBuddy
 // All rights reserved
 // 
 // http://www.toolbuddy.net
 // =====================================================================
 
-using UnityEngine;
-using UnityEditor;
 using FluffyUnderware.Curvy.Generator;
-using System.Collections.Generic;
 using FluffyUnderware.Curvy.Generator.Modules;
-using System.Linq;
 using FluffyUnderware.DevToolsEditor;
+using JetBrains.Annotations;
+using UnityEditor;
+using UnityEngine;
 
 namespace FluffyUnderware.CurvyEditor.Generator.Modules
 {
@@ -19,26 +18,24 @@ namespace FluffyUnderware.CurvyEditor.Generator.Modules
     [CustomEditor(typeof(BuildVolumeMesh))]
     public class BuildVolumeMeshEditor : CGModuleEditor<BuildVolumeMesh>
     {
-        bool showAddButton;
-        int matcount;
+        private bool showAddButton;
+        private int matcount;
 
         public override void OnModuleDebugGUI()
         {
-            CGVMesh vmesh = Target.OutVMesh.GetData<CGVMesh>();
-            if (vmesh)
-            {
-                EditorGUILayout.LabelField("Vertices: " + vmesh.Count.ToString());
-                EditorGUILayout.LabelField("Triangles: " + vmesh.TriangleCount.ToString());
-                EditorGUILayout.LabelField("SubMeshes: " + vmesh.SubMeshes.Length.ToString());
-            }
+            if (Target.OutVMesh.Data.Length == 0)
+                return;
+
+            CGVMesh vmesh = (CGVMesh)Target.OutVMesh.Data[0];
+            EditorGUILayout.LabelField("Vertices: " + vmesh.Count);
+            EditorGUILayout.LabelField("Triangles: " + vmesh.TriangleCount);
+            EditorGUILayout.LabelField("SubMeshes: " + vmesh.SubMeshes.Length);
         }
 
-        protected override void OnReadNodes()
-        {
+        protected override void OnReadNodes() =>
             ensureMaterialTabs();
-        }
 
-        void ensureMaterialTabs()
+        private void ensureMaterialTabs()
         {
             DTGroupNode tabbar = Node.FindTabBarAt("Default");
 
@@ -48,21 +45,28 @@ namespace FluffyUnderware.CurvyEditor.Generator.Modules
             tabbar.MaxItemsPerRow = 4;
             for (int i = 0; i < Target.MaterialCount; i++)
             {
-                string tabName = string.Format("Mat {0}", i);
+                string tabName = string.Format(
+                    "Mat {0}",
+                    i
+                );
                 if (tabbar.Count <= i + 1)
-                    tabbar.AddTab(tabName, OnRenderTab);
+                    tabbar.AddTab(
+                        tabName,
+                        OnRenderTab
+                    );
                 else
                 {
                     tabbar[i + 1].Name = tabName;
                     tabbar[i + 1].GUIContent.text = tabName;
                 }
             }
+
             while (tabbar.Count > Target.MaterialCount + 1)
                 tabbar[tabbar.Count - 1].Delete();
             matcount = Target.MaterialCount;
         }
 
-        void OnRenderTab(DTInspectorNode node)
+        private void OnRenderTab(DTInspectorNode node)
         {
             int idx = node.Index - 1;
 
@@ -71,35 +75,67 @@ namespace FluffyUnderware.CurvyEditor.Generator.Modules
                 CGMaterialSettingsEx mat = Target.MaterialSettings[idx];
                 EditorGUI.BeginChangeCheck();
 
-                bool matSwapUv = EditorGUILayout.Toggle("Swap UV", mat.SwapUV);
+                bool matSwapUv = EditorGUILayout.Toggle(
+                    "Swap UV",
+                    mat.SwapUV
+                );
                 if (matSwapUv != mat.SwapUV)
                 {
-                    Undo.RegisterCompleteObjectUndo(Target, "Modify Swap UV");
+                    Undo.RecordObject(
+                        Target,
+                        "Modify Swap UV"
+                    );
                     mat.SwapUV = matSwapUv;
                 }
 
-                CGKeepAspectMode cgKeepAspectMode = (CGKeepAspectMode)EditorGUILayout.EnumPopup("Keep Aspect", mat.KeepAspect);
+                CGKeepAspectMode cgKeepAspectMode = (CGKeepAspectMode)EditorGUILayout.EnumPopup(
+                    "Keep Aspect",
+                    mat.KeepAspect
+                );
                 if (cgKeepAspectMode != mat.KeepAspect)
                 {
-                    Undo.RegisterCompleteObjectUndo(Target, "Modify Keep Aspect");
+                    Undo.RecordObject(
+                        Target,
+                        "Modify Keep Aspect"
+                    );
                     mat.KeepAspect = cgKeepAspectMode;
                 }
 
-                Vector2 matUvOffset = EditorGUILayout.Vector2Field("UV Offset", mat.UVOffset);
+                Vector2 matUvOffset = EditorGUILayout.Vector2Field(
+                    "UV Offset",
+                    mat.UVOffset
+                );
                 if (matUvOffset != mat.UVOffset)
                 {
-                    Undo.RegisterCompleteObjectUndo(Target, "Modify UV Offset");
+                    Undo.RecordObject(
+                        Target,
+                        "Modify UV Offset"
+                    );
                     mat.UVOffset = matUvOffset;
                 }
 
-                Vector2 matUvScale = EditorGUILayout.Vector2Field("UV Scale", mat.UVScale);
+                Vector2 matUvScale = EditorGUILayout.Vector2Field(
+                    "UV Scale",
+                    mat.UVScale
+                );
                 if (matUvScale != mat.UVScale)
                 {
-                    Undo.RegisterCompleteObjectUndo(Target, "Modify UV Scale");
+                    Undo.RecordObject(
+                        Target,
+                        "Modify UV Scale"
+                    );
                     mat.UVScale = matUvScale;
                 }
 
-                Target.SetMaterial(idx, EditorGUILayout.ObjectField("Material", Target.GetMaterial(idx), typeof(Material), true) as Material);
+                Target.SetMaterial(
+                    idx,
+                    EditorGUILayout.ObjectField(
+                        "Material",
+                        Target.GetMaterial(idx),
+                        typeof(Material),
+                        true
+                    ) as Material
+                );
 
                 if (Target.MaterialCount > 1 && GUILayout.Button("Remove"))
                 {
@@ -108,6 +144,7 @@ namespace FluffyUnderware.CurvyEditor.Generator.Modules
                     ensureMaterialTabs();
                     GUIUtility.ExitGUI();
                 }
+
                 if (EditorGUI.EndChangeCheck())
                 {
                     Target.Dirty = true;
@@ -116,20 +153,18 @@ namespace FluffyUnderware.CurvyEditor.Generator.Modules
             }
         }
 
-        void CBAddMaterial()
+        [UsedImplicitly]
+        private void CBAddMaterial()
         {
             if (DTGUI.IsLayout)
                 showAddButton = Node.FindTabBarAt("Default").SelectedIndex == 0;
             if (showAddButton)
-            {
                 if (GUILayout.Button("Add Material Group"))
                 {
                     Target.AddMaterial();
                     ensureMaterialTabs();
                     GUIUtility.ExitGUI();
                 }
-            }
-
         }
 
         protected override void OnCustomInspectorGUI()

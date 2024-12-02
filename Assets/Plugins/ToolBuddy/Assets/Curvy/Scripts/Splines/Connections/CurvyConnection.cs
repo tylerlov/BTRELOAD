@@ -1,5 +1,5 @@
 // =====================================================================
-// Copyright 2013-2022 ToolBuddy
+// Copyright © 2013 ToolBuddy
 // All rights reserved
 // 
 // http://www.toolbuddy.net
@@ -9,7 +9,6 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
-using FluffyUnderware.Curvy;
 using FluffyUnderware.DevTools;
 using FluffyUnderware.DevTools.Extensions;
 using JetBrains.Annotations;
@@ -18,6 +17,8 @@ using UnityEngine.Assertions;
 using UnityEngine.SceneManagement;
 #if UNITY_EDITOR
 using UnityEditor;
+using UnityEditor.Experimental.SceneManagement;
+using UnityEditor.SceneManagement;
 #endif
 
 namespace FluffyUnderware.Curvy
@@ -26,31 +27,16 @@ namespace FluffyUnderware.Curvy
     /// Connection component
     /// </summary>
     [ExecuteInEditMode]
-    [HelpURL(CurvySpline.DOCLINK + "curvyconnection")]
-    public class CurvyConnection : DTVersionedMonoBehaviour, ISerializationCallbackReceiver
+    [HelpURL(AssetInformation.DocsRedirectionBaseUrl + "curvyconnection")]
+    public partial class CurvyConnection : DTVersionedMonoBehaviour, ISerializationCallbackReceiver
     {
-        #region ### Serialized Fields ###
-
-        [SerializeField, Hide] private List<CurvySplineSegment> m_ControlPoints = new List<CurvySplineSegment>();
-
-        #endregion
-
-        #region ### Private Fields ###
-
-        private ReadOnlyCollection<CurvySplineSegment> readOnlyControlPoints;
-        /// <summary>
-        /// The coordinates of the connection the last time synchronisation was processed
-        /// </summary>
-        private Couple<Vector3, Quaternion> processedConnectionCoordinates;
-        /// <summary>
-        /// The coordinates of the connection's control points the last time synchronisation was processed
-        /// </summary>
-        [SerializeField, Hide] private List<ControlPointCoordinates> processedControlPointsCoordinates = new List<ControlPointCoordinates>();
-
-        #endregion
+        public CurvyConnection()
+        {
+            transformSynchronizer = new TransformSynchronizer(this);
+            undoFixer = new UndoFixer(this);
+        }
 
         #region ### Public Properties ###
-
 
         /// <summary>
         /// The list of connected control points
@@ -65,98 +51,111 @@ namespace FluffyUnderware.Curvy
                 return readOnlyControlPoints;
             }
         }
+
         /// <summary>
         /// Gets the number of Control Points being part of this connection
         /// </summary>
-        public int Count
-        {
-            get { return m_ControlPoints.Count; }
-        }
+        public int Count => m_ControlPoints.Count;
 
         /// <summary>
         /// Gets a certain Control Point by index
         /// </summary>
         /// <param name="idx">index of the Control Point</param>
         /// <returns>a Control Point</returns>
-        public CurvySplineSegment this[int idx]
-        {
-            get
-            {
-                return m_ControlPoints[idx];
-            }
-        }
+        public CurvySplineSegment this[int idx] => m_ControlPoints[idx];
 
         #endregion
 
         #region ### Unity Callbacks ###
-        /*! \cond UNITY */
+
+#if DOCUMENTATION___FORCE_IGNORE___UNITY == false
 
 
-        private void OnEnable()
+        protected override void OnEnable()
         {
+            base.OnEnable();
             SceneManager.sceneLoaded += OnSceneLoaded;
 
-            ResetProcessedCoordinates();
+            transformSynchronizer.ResetMonitoring();
 #if UNITY_EDITOR
             EditorApplication.update += EditorUpdate;
+            Undo.undoRedoPerformed += undoFixer.FixIssuesIntroducedByUndoing;
 #endif
         }
 
-        private void OnDisable()
+        protected override void OnDisable()
         {
+            base.OnDisable();
             SceneManager.sceneLoaded -= OnSceneLoaded;
 #if UNITY_EDITOR
             EditorApplication.update -= EditorUpdate;
+            Undo.undoRedoPerformed -= undoFixer.FixIssuesIntroducedByUndoing;
 #endif
         }
 
 #if UNITY_EDITOR
         private void EditorUpdate()
         {
+            if (IsActiveAndEnabled == false)
+            {
+                //todo bug? For some reason I can't explain,EditorUpdate is called while transform is unity null. OnDisable stops listening on this method, but it is called anyways. Maybe this is due to the connection being destroyed and a new one created in the same frame. This happens when synching a Curvy Spline with a Unity spline container having links
+                return;
+            }
+
             DoUpdate();
         }
 #endif
-
-
+        [UsedImplicitly]
         private void Update()
         {
             if (Application.isPlaying)
                 DoUpdate();
         }
 
+        [UsedImplicitly]
         private void LateUpdate()
         {
             if (Application.isPlaying)
                 DoUpdate();
         }
 
+        [UsedImplicitly]
         private void FixedUpdate()
         {
             if (Application.isPlaying)
                 DoUpdate();
         }
 
+        [UsedImplicitly]
         private void OnDestroy()
         {
-            bool realDestroy = true;
 #if UNITY_EDITOR
-            if (EditorApplication.isPlayingOrWillChangePlaymode && !EditorApplication.isPlaying)
-                realDestroy = false;
+            const string undoingStepLabel = "Destroy Connection";
+            Undo.RecordObject(
+                this,
+                undoingStepLabel
+            );
 #endif
-            if (realDestroy)
+            foreach (CurvySplineSegment cp in m_ControlPoints)
             {
-                List<CurvySplineSegment> controlPointsToDisconnect = new List<CurvySplineSegment>(m_ControlPoints);
-                foreach (CurvySplineSegment cp in controlPointsToDisconnect)
-                    cp.Disconnect(false);
+#if UNITY_EDITOR
+                Undo.RecordObject(
+                    cp,
+                    undoingStepLabel
+                );
+#endif
 
-                //This is needed even if cp.Disconnect removes the cp from those lists via Connection.RemoveControlPoint, because when calling cp.Disconnect you can have cp.Connection == null, which will lead to Connection.RemoveControlPoint not being called. Saw that happening when undoing the creation of a connect CP (via the Smart Connect tool)
-                m_ControlPoints.Clear();
-                processedControlPointsCoordinates.Clear();
+                cp.Connection = null;
+                cp.Disconnect(false);
             }
+
+            m_ControlPoints.Clear();
+            transformSynchronizer.OnControlPointsUpdated();
         }
 
 
-        /*! \endcond */
+#endif
+
         #endregion
 
         #region ### Public Methods ###
@@ -166,8 +165,24 @@ namespace FluffyUnderware.Curvy
         /// </summary>
         /// <param name="controlPoints">Control Points to add</param>
         /// <returns>the new connection</returns>
-        public static CurvyConnection Create(params CurvySplineSegment[] controlPoints)
+        public static CurvyConnection Create(
+            [NotNull] [ItemNotNull] params CurvySplineSegment[] controlPoints)
         {
+            if (controlPoints == null)
+                throw new ArgumentNullException(nameof(controlPoints));
+
+#if UNITY_EDITOR
+
+            bool isInPrefabStage = PrefabStageUtility.GetCurrentPrefabStage() != null;
+            if (isInPrefabStage)
+            {
+                DTLog.LogError(
+                    "[Curvy] Connections can not be created in Prefab mode. Please delay their creation to after exiting Prefab mode."
+                );
+                return null;
+            }
+#endif
+
             CurvyGlobalManager curvyGlobalManager = CurvyGlobalManager.Instance;
             if (curvyGlobalManager == null)
             {
@@ -175,20 +190,31 @@ namespace FluffyUnderware.Curvy
                 return null;
             }
 
-            CurvyConnection con = curvyGlobalManager.AddChildGameObject<CurvyConnection>("Connection");
-#if UNITY_EDITOR
-            if (!Application.isPlaying)
-                Undo.RegisterCreatedObjectUndo(con.gameObject, "Add Connection");
-#endif
-            if (!con)
-                return null;
-            if (controlPoints.Length > 0)
-            {
-                con.transform.position = controlPoints[0].transform.position;
-                con.AddControlPoints(controlPoints);
-            }
+            const string undoOperationName = "Add Connection";
 
-            return con;
+            GameObject gameObject = new GameObject("Connection");
+#if UNITY_EDITOR
+            Undo.RegisterCreatedObjectUndo(
+                gameObject,
+                undoOperationName
+            );
+#endif
+            gameObject.transform.UndoableSetParent(
+                curvyGlobalManager.transform,
+                true,
+                undoOperationName
+            );
+
+            CurvyConnection connection = gameObject.UndoableAddComponent<CurvyConnection>();
+            if (connection == null)
+                return null;
+            if (controlPoints.Length == 0)
+                return connection;
+
+            connection.transform.position = controlPoints[0].transform.position;
+            connection.AddControlPoints(controlPoints);
+
+            return connection;
         }
 
         /// <summary>
@@ -201,22 +227,44 @@ namespace FluffyUnderware.Curvy
             {
                 if (cp.Connection)
                 {
-                    DTLog.LogErrorFormat(this, "[Curvy] CurvyConnection.AddControlPoints called on a control point '{0}' that has already a connection. Only control points with no connection can be added.", cp);
+                    DTLog.LogErrorFormat(
+                        this,
+                        "[Curvy] CurvyConnection.AddControlPoints called on a control point '{0}' that has already a connection. Only control points with no connection can be added.",
+                        cp
+                    );
                     continue;
                 }
 
 #if UNITY_EDITOR
-                if (!Application.isPlaying)
-                    Undo.RecordObject(cp, "Add Connection");
+                Undo.RecordObject(
+                    cp,
+                    "Add Connection"
+                );
 #endif
 #if CURVY_SANITY_CHECKS
                 Assert.IsFalse(m_ControlPoints.Contains(cp));
 #endif
                 m_ControlPoints.Add(cp);
-                processedControlPointsCoordinates.Add(new ControlPointCoordinates(cp));
                 cp.Connection = this;
             }
+
+            transformSynchronizer.OnControlPointsUpdated();
             AutoSetFollowUp();
+        }
+
+        /// <summary>
+        /// Sets the <see cref="CurvySplineSegment.ConnectionSyncPosition"/> and <see cref="CurvySplineSegment.ConnectionSyncRotation"/> options for all the connected control points
+        /// </summary>
+        public void SetSynchronizationOptions(
+            bool syncPosition,
+            bool syncRotation)
+        {
+            for (int index = 0; index < ControlPointsList.Count; index++)
+            {
+                CurvySplineSegment controlPoint = ControlPointsList[index];
+                controlPoint.ConnectionSyncPosition = syncPosition;
+                controlPoint.ConnectionSyncRotation = syncRotation;
+            }
         }
 
         public void AutoSetFollowUp()
@@ -225,11 +273,17 @@ namespace FluffyUnderware.Curvy
             {
                 CurvySplineSegment firstControlPoint = m_ControlPoints[0];
                 CurvySplineSegment secondControlPoint = m_ControlPoints[1];
-                if (firstControlPoint.transform.position == secondControlPoint.transform.position && firstControlPoint.ConnectionSyncPosition && secondControlPoint.ConnectionSyncPosition)
+                if (firstControlPoint.transform.position == secondControlPoint.transform.position
+                    && firstControlPoint.ConnectionSyncPosition
+                    && secondControlPoint.ConnectionSyncPosition)
                 {
-                    if (firstControlPoint.FollowUp == null && firstControlPoint.Spline && firstControlPoint.Spline.CanControlPointHaveFollowUp(firstControlPoint))
+                    if (firstControlPoint.FollowUp == null
+                        && firstControlPoint.Spline
+                        && firstControlPoint.Spline.CanControlPointHaveFollowUp(firstControlPoint))
                         firstControlPoint.SetFollowUp(secondControlPoint);
-                    if (secondControlPoint.FollowUp == null && secondControlPoint.Spline && secondControlPoint.Spline.CanControlPointHaveFollowUp(secondControlPoint))
+                    if (secondControlPoint.FollowUp == null
+                        && secondControlPoint.Spline
+                        && secondControlPoint.Spline.CanControlPointHaveFollowUp(secondControlPoint))
                         secondControlPoint.SetFollowUp(firstControlPoint);
                 }
             }
@@ -244,27 +298,32 @@ namespace FluffyUnderware.Curvy
         {
 #if UNITY_EDITOR
             const string undoingStepLabel = "Disconnect from Connection";
-
-            Undo.RegisterCompleteObjectUndo(new UnityEngine.Object[]{
-                controlPoint, this
-            }, undoingStepLabel);
+            Undo.RecordObject(
+                this,
+                undoingStepLabel
+            );
+            Undo.RecordObject(
+                controlPoint,
+                undoingStepLabel
+            );
 #endif
 
             controlPoint.Connection = null;
-
             m_ControlPoints.Remove(controlPoint);
-            processedControlPointsCoordinates.RemoveAll(element => ReferenceEquals(element.ControlPoint, controlPoint));
+            transformSynchronizer.OnControlPointsUpdated();
 
             foreach (CurvySplineSegment splineSegment in m_ControlPoints)
-            {
                 if (splineSegment.FollowUp == controlPoint)
                 {
 #if UNITY_EDITOR
-                    Undo.RegisterCompleteObjectUndo(splineSegment, undoingStepLabel);
+                    Undo.RecordObject(
+                        splineSegment,
+                        undoingStepLabel
+                    );
 #endif
                     splineSegment.SetFollowUp(null);
                 }
-            }
+
             if (m_ControlPoints.Count == 0 && destroySelfIfEmpty)
                 Delete();
         }
@@ -272,66 +331,40 @@ namespace FluffyUnderware.Curvy
         /// <summary>
         /// Deletes the connection
         /// </summary>
-        public void Delete()
-        {
-            gameObject.Destroy(true, true);
-        }
+        public void Delete() =>
+            gameObject.Destroy(
+                true,
+                true
+            );
 
         /// <summary>
         /// Gets all Control Points except the one provided
         /// </summary>
         /// <param name="source">the Control Point to filter out</param>
         /// <returns>list of Control Points</returns>
+        [Obsolete("Inline the method's body if needed")]
         public List<CurvySplineSegment> OtherControlPoints(CurvySplineSegment source)
-        {
-            List<CurvySplineSegment> res = new List<CurvySplineSegment>(m_ControlPoints);
-            res.Remove(source);
-            return res;
-        }
+            => ControlPointsList
+                .Where(cp => cp != source)
+                .ToList();
 
         /// <summary>
-        /// Synchronise all the connected control points to match the given position and rotation, based on their synchronisation options, namely <see cref="CurvySplineSegment.ConnectionSyncPosition"/> and <see cref="CurvySplineSegment.ConnectionSyncRotation"/>. Will update the CurvyConnection's game object's transform too.
+        /// Synchronize all the connected control points to match the given position and rotation, based on their synchronisation options, namely <see cref="CurvySplineSegment.ConnectionSyncPosition"/> and <see cref="CurvySplineSegment.ConnectionSyncRotation"/>. Will update the CurvyConnection's game object's transform too.
         /// </summary>
         /// <remarks>Can dirty the splines of the updated control points</remarks>
-        public void SetSynchronisationPositionAndRotation(Vector3 referencePosition, Quaternion referenceRotation)
-        {
-            Transform cachedTransform = transform;
-
-            cachedTransform.position = referencePosition;
-            cachedTransform.rotation = referenceRotation;
-            cachedTransform.hasChanged = false;
-            processedConnectionCoordinates.First = referencePosition;
-            processedConnectionCoordinates.Second = referenceRotation;
-
-            for (int i = 0; i < m_ControlPoints.Count; i++)
-            {
-                CurvySplineSegment controlPoint = m_ControlPoints[i];
-
-                bool positionModified = controlPoint.ConnectionSyncPosition && controlPoint.transform.position.NotApproximately(referencePosition);
-                bool rotationModified = controlPoint.ConnectionSyncRotation && controlPoint.transform.rotation.DifferentOrientation(referenceRotation);
-
-                if (positionModified)
-                    controlPoint.transform.position = referencePosition;
-                if (rotationModified)
-                    controlPoint.transform.rotation = referenceRotation;
-
-                ControlPointCoordinates processedControlPointCoordinates =
-                    processedControlPointsCoordinates.Single(element => ReferenceEquals(element.ControlPoint, controlPoint));
-
-                processedControlPointCoordinates.Position = controlPoint.transform.position;
-                processedControlPointCoordinates.Rotation = controlPoint.transform.rotation;
-
-                if (positionModified || (rotationModified && controlPoint.OrientatinInfluencesSpline))
-                    controlPoint.Spline.SetDirtyPartial(controlPoint
-                        , positionModified == false ? SplineDirtyingType.OrientationOnly : SplineDirtyingType.Everything);
-            }
-        }
-
+        //todo rename to use Synchronization instead of Synchronisation
+        public void SetSynchronisationPositionAndRotation(Vector3 referencePosition, Quaternion referenceRotation) =>
+            transformSynchronizer.ApplyTransform(
+                referencePosition,
+                referenceRotation
+            );
 
 #if UNITY_EDITOR
         /// <summary>
         /// Gets the gizmo color based on the synchronization options of the connected control points
         /// </summary>
+        [UsedImplicitly]
+        [Obsolete("Use CurvyConnectionEditor.GetGizmoColor instead")]
         public Color GetGizmoColor()
         {
             Color gizmoColor;
@@ -354,9 +387,17 @@ namespace FluffyUnderware.Curvy
                 if (allPositionsSynced)
                     gizmoColor = allRotationsSynced
                         ? Color.white
-                        : new Color(255 / 255f, 49 / 255f, 38 / 255f);
+                        : new Color(
+                            255 / 255f,
+                            49 / 255f,
+                            38 / 255f
+                        );
                 else if (allRotationsSynced)
-                    gizmoColor = new Color(1, 1, 0);
+                    gizmoColor = new Color(
+                        1,
+                        1,
+                        0
+                    );
                 else
                     gizmoColor = Color.black;
             }
@@ -365,74 +406,54 @@ namespace FluffyUnderware.Curvy
         }
 #endif
 
+        #endregion
+
+        #region ISerializationCallbackReceiver
+
+        /// <summary>
+        /// Implementation of UnityEngine.ISerializationCallbackReceiver
+        /// Called automatically by Unity, is not meant to be called by Curvy's users
+        /// </summary>
+        public void OnBeforeSerialize() =>
+            RemoveNullCPs();
+
+        /// <summary>
+        /// Implementation of UnityEngine.ISerializationCallbackReceiver
+        /// Called automatically by Unity, is not meant to be called by Curvy's users
+        /// </summary>
+        public void OnAfterDeserialize() =>
+            RemoveNullCPs();
+
+        private void RemoveNullCPs() =>
+            m_ControlPoints.RemoveAll(
+                cp => ReferenceEquals(
+                    cp,
+                    null
+                )
+            );
 
         #endregion
 
         #region ### Privates & Internals ###
-        /*! \cond PRIVATE */
 
-        private void DoUpdate()
-        {
-            Transform cachedTransform = transform;
+#if DOCUMENTATION___FORCE_IGNORE___CURVY == false
 
-            bool synchronised;
-            if (cachedTransform.hasChanged)
-            {
-                cachedTransform.hasChanged = false;
-                if (cachedTransform.position.NotApproximately(processedConnectionCoordinates.First) ||
-                    cachedTransform.rotation.DifferentOrientation(processedConnectionCoordinates.Second))
-                {
-                    SetSynchronisationPositionAndRotation(cachedTransform.position, cachedTransform.rotation);
-                    synchronised = true;
-                }
-                else
-                    synchronised = false;
-            }
-            else
-                synchronised = false;
+        [SerializeField, Hide]
+        private List<CurvySplineSegment> m_ControlPoints = new List<CurvySplineSegment>();
 
-            if (synchronised == false)
-            {
-                Vector3? synchronisationPosition = null;
-                Quaternion? synchronisationRotation = null;
+        private ReadOnlyCollection<CurvySplineSegment> readOnlyControlPoints;
 
-                foreach (CurvySplineSegment controlPoint in m_ControlPoints)
-                {
-                    if (controlPoint.gameObject == null)
-                    {
-                        //The only case I am aware of where this happens is when running test (see [TestFixture]), when the test is finished, a connection is duplicated and "restored", while having in its CPs list CPs that have been destroyed.
-                        //This is somehow related to the following statement in the RemoveControlPoint method:
-                        //Undo.RegisterCompleteObjectUndo(new UnityEngine.Object[]{
-                        //    controlPoint, this
-                        //}, undoingStepLabel);
+        [NotNull]
+        private readonly TransformSynchronizer transformSynchronizer;
 
-                        //If you fix the problem above, remove unnecessary checks on controlPoint.gameObject. Look for the following comment to find such places:
-                        // "see comment in CurvyConnection.DoUpdate to know more about when cp.gameObject can be null"
+        [NotNull]
+        private readonly UndoFixer undoFixer;
 
-                        DTLog.LogError(String.Format("[Curvy] Connection named '{0}' had in its list a control point with no game object. Control point was ignored", this.name), this);
-                        continue;
-                    }
-                    ControlPointCoordinates processedControlPointsCoordinate =
-                        processedControlPointsCoordinates.Single(element => ReferenceEquals(element.ControlPoint, controlPoint));
+        private void DoUpdate() => transformSynchronizer.OnUpdate();
 
-                    Transform controlPointTransform = controlPoint.transform;
-
-                    if (controlPoint.ConnectionSyncPosition && controlPointTransform.position.NotApproximately(processedControlPointsCoordinate.Position))
-                        synchronisationPosition = controlPointTransform.position;
-
-                    if (controlPoint.ConnectionSyncRotation && controlPointTransform.rotation.DifferentOrientation(processedControlPointsCoordinate.Rotation))
-                        synchronisationRotation = controlPointTransform.rotation;
-
-                    if (synchronisationPosition != null && synchronisationRotation != null)
-                        break;
-                }
-
-                if (synchronisationPosition != null || synchronisationRotation != null)
-                    SetSynchronisationPositionAndRotation(synchronisationPosition ?? transform.position, synchronisationRotation ?? transform.rotation);
-            }
-        }
-
-        private void OnSceneLoaded(Scene arg0, LoadSceneMode arg1)
+        private void OnSceneLoaded(
+            Scene scene,
+            LoadSceneMode loadSceneMode)
         {
             //m_ControlPoints can have null references in it because if the cp it has is disabled, and then the scene is switched, the cp will not execute its OnDestroy, ans thus will not remove himself from the connection. And since destroyed unity objects become equal to null, the CPs list will have a null value in it
             int removedElementsCount = m_ControlPoints.RemoveAll(cp => cp == null);
@@ -442,70 +463,25 @@ namespace FluffyUnderware.Curvy
                     Delete();
                 else
                 {
-                    DTLog.LogWarning("[Curvy] Connection " + this.name + " was not destroyed after scene switch. That should not happen. Please raise a bug report.", this);
-                    ResetProcessedCoordinates();
+                    DTLog.LogWarning(
+                        "[Curvy] Connection "
+                        + name
+                        + " was not destroyed after scene switch. That should not happen. Please raise a bug report.",
+                        this
+                    );
+                    transformSynchronizer.ResetMonitoring();
                 }
             }
         }
 
-        private void ResetProcessedCoordinates()
+        protected override void ResetOnEnable()
         {
-            Transform cachedTransform = transform;
-            processedConnectionCoordinates =
-                new Couple<Vector3, Quaternion>(cachedTransform.position, cachedTransform.rotation);
-            processedControlPointsCoordinates.Clear();
-            for (int index = 0; index < m_ControlPoints.Count; index++)
-                processedControlPointsCoordinates.Add(new ControlPointCoordinates(m_ControlPoints[index]));
+            base.ResetOnEnable();
+            readOnlyControlPoints = null;
         }
 
-        /*! \endcond */
+#endif
+
         #endregion
-
-        #region ISerializationCallbackReceiver
-        /*! \cond PRIVATE */
-        /// <summary>
-        /// Implementation of UnityEngine.ISerializationCallbackReceiver
-        /// Called automatically by Unity, is not meant to be called by Curvy's users
-        /// </summary>
-        public void OnBeforeSerialize()
-        {
-            m_ControlPoints.RemoveAll(cp => ReferenceEquals(cp, null));
-        }
-
-        /// <summary>
-        /// Implementation of UnityEngine.ISerializationCallbackReceiver
-        /// Called automatically by Unity, is not meant to be called by Curvy's users
-        /// </summary>
-        public void OnAfterDeserialize()
-        {
-            m_ControlPoints.RemoveAll(cp => ReferenceEquals(cp, null));
-        }
-        /*! \endcond */
-        #endregion
-
-    }
-
-    /// <summary>
-    /// A class that exists only because Unity does not serialize Dictionary<CurvySplineSegment, Couple<Vector3, Quaternion>>
-    /// </summary>
-    [Serializable]
-    internal class ControlPointCoordinates
-    {
-        internal ControlPointCoordinates(CurvySplineSegment controlPoint)
-        {
-            ControlPoint = controlPoint;
-            if(controlPoint.gameObject)
-            {
-                // see comment in CurvyConnection.DoUpdate to know more about when cp.gameObject can be null
-                Position = controlPoint.transform.position;
-                Rotation = controlPoint.transform.rotation;
-            }
-        }
-        [SerializeField]
-        internal CurvySplineSegment ControlPoint;
-        [SerializeField]
-        internal Vector3 Position;
-        [SerializeField]
-        internal Quaternion Rotation;
     }
 }

@@ -14,13 +14,13 @@ namespace FluffyUnderware.DevToolsEditor
 {
     public class DTStatusbar
     {
-        string mSourceIdent;
-        string mStatusBarMessage;
-        MessageType mStatusBarMessageType;
-        float mStatusBarMessageDelay;
-        double mStatusBarMessageLastTime;
+        private string mSourceIdent;
+        private string mStatusBarMessage;
+        private MessageType mStatusBarMessageType;
+        private float mStatusBarMessageDelay;
+        private double mStatusBarMessageLastTime;
 
-        GUIStyle mMessageStyle;
+        private GUIStyle mMessageStyle;
         public GUIStyle MessageStyle
         {
             get
@@ -31,10 +31,7 @@ namespace FluffyUnderware.DevToolsEditor
                 }
                 return mMessageStyle;
             }
-            set
-            {
-                mMessageStyle = value;
-            }
+            set => mMessageStyle = value;
         }
 
         public bool Visible = true;
@@ -42,7 +39,7 @@ namespace FluffyUnderware.DevToolsEditor
 
         protected virtual GUIStyle GetStyle()
         {
-            GUIStyle st=new GUIStyle(GUI.skin.GetStyle("HelpBox"));
+            GUIStyle st= new GUIStyle(GUI.skin.GetStyle("HelpBox"));
             st.richText = true;
             return st;
         }

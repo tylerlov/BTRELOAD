@@ -12,6 +12,7 @@ using System.Reflection;
 
 namespace FluffyUnderware.DevTools
 {
+    [JetBrains.Annotations.UsedImplicitly] [Obsolete]
     public enum DTMessageType
     {
         None = 0,
@@ -249,24 +250,18 @@ namespace FluffyUnderware.DevTools
         public T ToMin;
         public T ToMax;
 
-        public static RegionOptions<T> Default
-        {
-            get
+        public static RegionOptions<T> Default =>
+            new RegionOptions<T>
             {
-                return new RegionOptions<T>
-                {
-                    OptionalTooltip = "Range",
-                    LabelFrom= "From",
-                    LabelTo= "To",
-                    ClampFrom = DTValueClamping.None,
-                    ClampTo = DTValueClamping.None
-                };
-            }
-        }
+            OptionalTooltip = "Range",
+            LabelFrom= "From",
+            LabelTo= "To",
+            ClampFrom = DTValueClamping.None,
+            ClampTo = DTValueClamping.None
+        };
 
-        public static RegionOptions<T> MinMax(T min, T max)
-        {
-            return new RegionOptions<T>
+        public static RegionOptions<T> MinMax(T min, T max) =>
+            new RegionOptions<T>
             {
                 LabelFrom = "From",
                 LabelTo = "To",
@@ -277,8 +272,6 @@ namespace FluffyUnderware.DevTools
                 ToMin=min,
                 ToMax=max
             };
-            
-        }
     }
 
     public enum DTValueClamping

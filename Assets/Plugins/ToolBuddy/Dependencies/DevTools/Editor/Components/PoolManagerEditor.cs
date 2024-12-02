@@ -25,11 +25,12 @@ namespace FluffyUnderware.DevToolsEditor
         }
 
 
-
-        void typePoolsGUI(DTInspectorNode node)
+        private void typePoolsGUI(DTInspectorNode node)
         {
 
+#pragma warning disable CS0618
             foreach (KeyValuePair<Type, IPool> kv in Target.TypePools)
+#pragma warning restore CS0618
             {
                 showBar(kv.Value);
             }
@@ -39,11 +40,11 @@ namespace FluffyUnderware.DevToolsEditor
         public static void showBar(IPool pool)
         {
             Rect r = EditorGUILayout.GetControlRect(false, GUILayout.Height(20));
-            float hi = Mathf.Max(pool.Count, pool.Settings.Threshold);
+            float hi = Mathf.Max(pool.Count, pool.Settings.MaximumCount);
             Color c = Color.green;
-            if (pool.Count < pool.Settings.MinItems)
+            if (pool.Count < pool.Settings.MinimumCount)
                 c = Color.yellow;
-            else if (pool.Count > pool.Settings.Threshold)
+            else if (pool.Count > pool.Settings.MaximumCount)
                 c = Color.red;
             DTGUI.PushContentColor(c);
             string s = pool.Identifier;

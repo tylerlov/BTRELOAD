@@ -10,10 +10,12 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
 using System;
+using System.Diagnostics;
 using System.Text;
 using FluffyUnderware.DevTools.Extensions;
 using JetBrains.Annotations;
 using UnityEngine.Events;
+using Debug = UnityEngine.Debug;
 using Object = UnityEngine.Object;
 #if UNITY_EDITOR
 using UnityEditor;
@@ -30,16 +32,18 @@ namespace FluffyUnderware.DevTools
         public const string HelpUrlBase = "https://curvyeditor.com/doclink/";
 
 #if UNITY_EDITOR
-        static MethodInfo mGetBuiltinExtraResourcesMethod;
+        [UsedImplicitly] [Obsolete("Will get removed since it is not used by Curvy, and needs maintenance to be compatible with Unity's Enter Play Mode Settings")]
+        private static MethodInfo mGetBuiltinExtraResourcesMethod;
 #endif
 
+        [UsedImplicitly] [Obsolete("Will get removed since it is not used by Curvy, and needs maintenance to be compatible with Unity's Enter Play Mode Settings")]
         public static Material GetDefaultMaterial()
         {
 #if UNITY_EDITOR
             if (mGetBuiltinExtraResourcesMethod == null)
             {
                 BindingFlags bfs = BindingFlags.NonPublic | BindingFlags.Static;
-                mGetBuiltinExtraResourcesMethod = typeof(UnityEditor.EditorGUIUtility).GetMethod("GetBuiltinExtraResource", bfs);
+                mGetBuiltinExtraResourcesMethod = typeof(EditorGUIUtility).GetMethod("GetBuiltinExtraResource", bfs);
             }
 
             Material result;
@@ -63,7 +67,7 @@ namespace FluffyUnderware.DevTools
             get
             {
 #if UNITY_EDITOR
-                if (UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode && !UnityEditor.EditorApplication.isPlaying)
+                if (EditorApplication.isPlayingOrWillChangePlaymode && !EditorApplication.isPlaying)
                     return true;
                 else
 #endif
@@ -78,7 +82,7 @@ namespace FluffyUnderware.DevTools
         {
             int indent = 0;
             bool quoted = false;
-            StringBuilder sb = new System.Text.StringBuilder();
+            StringBuilder sb = new StringBuilder();
             for (int i = 0; i < str.Length; i++)
             {
                 char ch = str[i];
@@ -209,7 +213,7 @@ namespace FluffyUnderware.DevTools
             }
             else if (tt.IsArray)
             {
-                throw new System.NotImplementedException();
+                throw new NotImplementedException();
             }
             else if (tt.Matches(typeof(int), typeof(Int32)))
                 PlayerPrefs.SetInt(key, (value as int?).Value);
@@ -238,7 +242,7 @@ namespace FluffyUnderware.DevTools
                     }
                     else if (tt.IsArray)
                     {
-                        throw new System.NotImplementedException();
+                        throw new NotImplementedException();
                     }
                     else if (tt == typeof(string))
                         return (T)(object)PlayerPrefs.GetString(key, defaultValue.ToString());
@@ -263,14 +267,10 @@ namespace FluffyUnderware.DevTools
         }
 
         public static float RandomSign()
-        {
-            return UnityEngine.Random.Range(0, 2) * 2 - 1;
-        }
+            => UnityEngine.Random.Range(0, 2) * 2 - 1;
 
         public static string GetHelpUrl(object forClass)
-        {
-            return (forClass == null) ? string.Empty : GetHelpUrl(forClass.GetType());
-        }
+            => (forClass == null) ? string.Empty : GetHelpUrl(forClass.GetType());
 
         public static string GetHelpUrl(Type classType)
         {
@@ -310,7 +310,7 @@ namespace FluffyUnderware.DevTools
         /// <param name="object">The input object to test</param>
         /// <param name="errorMessage"> Is set to empty string if method returns true, otherwise it is set to a message error, similar to the one display by Unity, explaining the issue.</param>
         /// <see cref="PrefabInstanceStatus"/>
-        public static bool DoesPrefabStatusAllowDeletion(this UnityEngine.Object @object, out string errorMessage)
+        public static bool DoesPrefabStatusAllowDeletion(this Object @object, out string errorMessage)
         {
             PrefabInstanceStatus prefabInstanceStatus = default;
             bool isDeletionAllowed = @object is GameObject == false || DoesPrefabStatusAllowDeletion((GameObject)@object, out prefabInstanceStatus);
@@ -362,36 +362,42 @@ namespace FluffyUnderware.DevTools
 
     public static class DTTime
     {
-        static float _EditorDeltaTime;
-        static float _EditorLastTime;
+        [UsedImplicitly] [Obsolete("Will get removed since it is not used by Curvy, and needs maintenance to be compatible with Unity's Enter Play Mode Settings")]
+        private static float _EditorDeltaTime;
+        [UsedImplicitly] [Obsolete("Will get removed since it is not used by Curvy, and needs maintenance to be compatible with Unity's Enter Play Mode Settings")]
+        private static float _EditorLastTime;
 
+        /// <summary>
+        /// Expressed in seconds of real time.
+        /// </summary>
         public static double TimeSinceStartup
         {
             get
             {
 #if UNITY_EDITOR
                 if (!Application.isPlaying)
-                    return UnityEditor.EditorApplication.timeSinceStartup;
+                    return EditorApplication.timeSinceStartup;
 #endif
-                return Time.timeSinceLevelLoad;
+
+#if UNITY_2020_2_OR_NEWER
+                return Time.realtimeSinceStartupAsDouble;
+#else
+                return Time.realtimeSinceStartup;
+#endif
             }
         }
 
-        [Obsolete("Seems to me that this is not working properly. Probably because InitializeEditorTime and UpdateEditorTime are never called. Fix this before using it")]
-        public static float deltaTime
-        {
-            get
-            {
-                return (Application.isPlaying) ? Time.deltaTime : _EditorDeltaTime;
-            }
-        }
+        [UsedImplicitly] [Obsolete("Seems to me that this is not working properly. Probably because InitializeEditorTime and UpdateEditorTime are never called. Fix this before using it")]
+        public static float deltaTime => (Application.isPlaying) ? Time.deltaTime : _EditorDeltaTime;
 
+        [UsedImplicitly] [Obsolete("Will get removed since it is not used by Curvy, and needs maintenance to be compatible with Unity's Enter Play Mode Settings")]
         public static void InitializeEditorTime()
         {
             _EditorLastTime = Time.realtimeSinceStartup;
             _EditorDeltaTime = 0;
         }
 
+        [UsedImplicitly] [Obsolete("Will get removed since it is not used by Curvy, and needs maintenance to be compatible with Unity's Enter Play Mode Settings")]
         public static void UpdateEditorTime()
         {
             float cur = Time.realtimeSinceStartup;
@@ -420,7 +426,7 @@ namespace FluffyUnderware.DevTools
 
     public class TimeMeasure : Ring<long>
     {
-        public System.Diagnostics.Stopwatch mWatch = new System.Diagnostics.Stopwatch();
+        public System.Diagnostics.Stopwatch mWatch = new Stopwatch();
 
         public TimeMeasure(int size) : base(size)
         { }
@@ -442,31 +448,19 @@ namespace FluffyUnderware.DevTools
             mWatch.Stop();
         }
 
-        public double LastTicks
-        {
-            get
-            {
-                return this[this.Count - 1];
-            }
-        }
+        public double LastTicks => this[Count - 1];
 
-        public double LastMS
-        {
-            get
-            {
-                return LastTicks / (double)System.TimeSpan.TicksPerMillisecond;
-            }
-        }
+        public double LastMS => LastTicks / (double)TimeSpan.TicksPerMillisecond;
 
         public double AverageMS
         {
             get
             {
                 long d = 0;
-                for (int i = 0; i < this.Count; i++)
+                for (int i = 0; i < Count; i++)
                     d += this[i];
 
-                return DTMath.FixNaN((d / (double)System.TimeSpan.TicksPerMillisecond) / Count);
+                return DTMath.FixNaN((d / (double)TimeSpan.TicksPerMillisecond) / Count);
             }
         }
 
@@ -475,10 +469,10 @@ namespace FluffyUnderware.DevTools
             get
             {
                 long d = long.MaxValue;
-                for (int i = 0; i < this.Count; i++)
-                    d = System.Math.Min(d, this[i]);
+                for (int i = 0; i < Count; i++)
+                    d = Math.Min(d, this[i]);
 
-                return DTMath.FixNaN(d / (double)System.TimeSpan.TicksPerMillisecond);
+                return DTMath.FixNaN(d / (double)TimeSpan.TicksPerMillisecond);
             }
         }
 
@@ -487,10 +481,10 @@ namespace FluffyUnderware.DevTools
             get
             {
                 long d = long.MinValue;
-                for (int i = 0; i < this.Count; i++)
-                    d = System.Math.Max(d, this[i]);
+                for (int i = 0; i < Count; i++)
+                    d = Math.Max(d, this[i]);
 
-                return DTMath.FixNaN(d / (double)System.TimeSpan.TicksPerMillisecond);
+                return DTMath.FixNaN(d / (double)TimeSpan.TicksPerMillisecond);
             }
         }
 
@@ -499,7 +493,7 @@ namespace FluffyUnderware.DevTools
             get
             {
                 long d = 0;
-                for (int i = 0; i < this.Count; i++)
+                for (int i = 0; i < Count; i++)
                     d += this[i];
                 return d / (double)Count;
             }
@@ -510,8 +504,8 @@ namespace FluffyUnderware.DevTools
             get
             {
                 long d = long.MaxValue;
-                for (int i = 0; i < this.Count; i++)
-                    d = System.Math.Min(d, this[i]);
+                for (int i = 0; i < Count; i++)
+                    d = Math.Min(d, this[i]);
                 return d;
             }
         }
@@ -521,8 +515,8 @@ namespace FluffyUnderware.DevTools
             get
             {
                 long d = 0;
-                for (int i = 0; i < this.Count; i++)
-                    d = System.Math.Max(d, this[i]);
+                for (int i = 0; i < Count; i++)
+                    d = Math.Max(d, this[i]);
                 return d;
             }
         }
@@ -542,22 +536,16 @@ namespace FluffyUnderware.DevTools
         }
 
         public static Vector3 LeftTan(ref Vector3 tan, ref Vector3 up)
-        {
-            return Vector3.Cross(tan, up);
-        }
+            => Vector3.Cross(tan, up);
 
         public static Vector3 RightTan(ref Vector3 tan, ref Vector3 up)
-        {
-            return Vector3.Cross(up, tan);
-        }
+            => Vector3.Cross(up, tan);
 
         /// <summary>
         /// Much like Mathf.Repeat(), but DTMath.Repeat(v,v) returns v instead of 0
         /// </summary>
         public static float Repeat(float t, float length)
-        {
-            return (t == length) ? t : t - Mathf.Floor(t / length) * length;
-        }
+            => (t == length) ? t : t - Mathf.Floor(t / length) * length;
 
         public static double FixNaN(double v)
         {
@@ -618,14 +606,10 @@ namespace FluffyUnderware.DevTools
         /// <param name="vMax">max source value</param>
         /// <returns></returns>
         public static float MapValue(float min, float max, float value, float vMin = -1, float vMax = 1)
-        {
-            return min + (max - min) * (value - vMin) / (vMax - vMin);
-        }
+            => min + (max - min) * (value - vMin) / (vMax - vMin);
 
         public static float SnapPrecision(float value, int decimals)
-        {
-            return (decimals >= 0) ? (float)System.Math.Round(value, decimals) : value;
-        }
+            => (decimals >= 0) ? (float)Math.Round(value, decimals) : value;
 
         public static Vector2 SnapPrecision(Vector2 value, int decimals)
         {
@@ -764,7 +748,7 @@ namespace FluffyUnderware.DevTools
             double d2121 = p21.x * (double)p21.x + (double)p21.y * p21.y + (double)p21.z * p21.z;
 
             double denom = d2121 * d4343 - d4321 * d4321;
-            if (System.Math.Abs(denom) < double.Epsilon)
+            if (Math.Abs(denom) < double.Epsilon)
             {
                 return false;
             }
@@ -858,11 +842,12 @@ namespace FluffyUnderware.DevTools
     /// <summary>
     /// Extended UnityEvent
     /// </summary>
+    [Serializable]
     public class UnityEventEx<T0> : UnityEvent<T0>
     {
-        object mCallerList;
-        MethodInfo mCallsCount;
-        int mCount = -1;
+        private object mCallerList;
+        private MethodInfo mCallsCount;
+        private int mCount = -1;
 
         /// <summary>
         /// Removes and adds a listener, ensuring it's only bound once
@@ -870,8 +855,8 @@ namespace FluffyUnderware.DevTools
         /// <param name="call"></param>
         public void AddListenerOnce(UnityAction<T0> call)
         {
-            base.RemoveListener(call);
-            base.AddListener(call);
+            RemoveListener(call);
+            AddListener(call);
             CheckForListeners();
         }
 
@@ -940,7 +925,7 @@ namespace FluffyUnderware.DevTools
             Debug.LogErrorFormat(format, args);
         }
 
-        public static void LogErrorFormat(UnityEngine.Object context, string format, params object[] args)
+        public static void LogErrorFormat(Object context, string format, params object[] args)
         {
             Debug.LogErrorFormat(context, format, args);
         }
@@ -960,7 +945,7 @@ namespace FluffyUnderware.DevTools
             Debug.LogFormat(format, args);
         }
 
-        public static void LogFormat(UnityEngine.Object context, string format, params object[] args)
+        public static void LogFormat(Object context, string format, params object[] args)
         {
             Debug.LogFormat(context, format, args);
         }
