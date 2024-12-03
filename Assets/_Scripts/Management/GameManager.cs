@@ -70,7 +70,7 @@ public class GameManager : MonoBehaviour
         debugSettings = Resources.Load<DebugSettings>("DebugSettings");
         if (debugSettings == null)
         {
-            Debug.LogError("DebugSettings asset not found. Create it in Resources folder.");
+            ConditionalDebug.LogError("DebugSettings asset not found. Create it in Resources folder.");
         }
         else
         {
@@ -80,7 +80,7 @@ public class GameManager : MonoBehaviour
         playerUI = FindObjectOfType<PlayerUI>();
         if (playerUI == null)
         {
-            Debug.LogError("PlayerUI not found in the scene.");
+            ConditionalDebug.LogError("PlayerUI not found in the scene.");
         }
     }
 
@@ -94,11 +94,11 @@ public class GameManager : MonoBehaviour
         // Check for required components after assignment
         if (AudioManager == null)
         {
-            Debug.LogError("AudioManager not found in scene! Ensure it's attached to the FMOD music object.");
+            ConditionalDebug.LogError("AudioManager not found in scene! Ensure it's attached to the FMOD music object.");
         }
         if (ScoreManager == null || TimeManager == null || SceneManagerBTR == null)
         {
-            Debug.LogError("One or more required manager components are missing on GameManager object!");
+            ConditionalDebug.LogError("One or more required manager components are missing on GameManager object!");
         }
     }
 
@@ -109,7 +109,7 @@ public class GameManager : MonoBehaviour
             playerHealth = FindObjectOfType<PlayerHealth>();
             if (playerHealth == null)
             {
-                Debug.LogError("PlayerHealth component not found in the scene.");
+                ConditionalDebug.LogError("PlayerHealth component not found in the scene.");
             }
         }
     }
@@ -149,7 +149,7 @@ public class GameManager : MonoBehaviour
                 stateDrivenCamera = FindObjectOfType<CinemachineStateDrivenCamera>();
                 if (stateDrivenCamera == null)
                 {
-                    Debug.LogError("No Cinemachine State Driven Camera found in the scene.");
+                    ConditionalDebug.LogError("No Cinemachine State Driven Camera found in the scene.");
                 }
             });
     }
@@ -170,7 +170,7 @@ public class GameManager : MonoBehaviour
         }
         else
         {
-            Debug.LogError("CinemachineCameraSwitching component not found in the scene.");
+            ConditionalDebug.LogError("CinemachineCameraSwitching component not found in the scene.");
         }
     }
 
@@ -191,7 +191,7 @@ public class GameManager : MonoBehaviour
         }
         else
         {
-            Debug.LogError("ShooterMovement component not found in the scene for transCamOff.");
+            ConditionalDebug.LogError("ShooterMovement component not found in the scene for transCamOff.");
         }
     }
 
@@ -201,7 +201,7 @@ public class GameManager : MonoBehaviour
             return;
 
         isPlayerDead = true;
-        Debug.Log("Player has died. Pausing game and showing menu.");
+        ConditionalDebug.Log("Player has died. Pausing game and showing menu.");
 
         StopAllCoroutines();
 
@@ -274,7 +274,7 @@ public class GameManager : MonoBehaviour
             }
             else
             {
-                Debug.LogError("PlayerHealth is not set in GameManager.");
+                ConditionalDebug.LogError("PlayerHealth is not set in GameManager.");
             }
         }
     }
@@ -305,11 +305,11 @@ public class GameManager : MonoBehaviour
         {
             spawnedEnemies.Add(enemy);
             lockedEnemies[enemy] = false;
-            Debug.Log($"Enemy registered: {enemy.name}");
+            ConditionalDebug.Log($"Enemy registered: {enemy.name}");
         }
         else
         {
-            Debug.LogWarning($"Enemy already registered: {enemy.name}");
+            ConditionalDebug.LogWarning($"Enemy already registered: {enemy.name}");
         }
     }
 
@@ -324,11 +324,11 @@ public class GameManager : MonoBehaviour
         if (lockedEnemies.ContainsKey(enemy))
         {
             lockedEnemies[enemy] = isLocked;
-            Debug.Log($"Enemy {enemy.name} lock state set to: {isLocked}");
+            ConditionalDebug.Log($"Enemy {enemy.name} lock state set to: {isLocked}");
         }
         else
         {
-            Debug.LogWarning($"Attempted to set lock state for unregistered enemy: {enemy.name}");
+            ConditionalDebug.LogWarning($"Attempted to set lock state for unregistered enemy: {enemy.name}");
         }
     }
 
@@ -358,7 +358,7 @@ public class GameManager : MonoBehaviour
             lockedEnemies.Remove(enemy);
         }
 
-        Debug.Log("All enemy locks cleared");
+        ConditionalDebug.Log("All enemy locks cleared");
     }
 
     public void ClearSpawnedEnemies()
@@ -402,13 +402,13 @@ public class GameManager : MonoBehaviour
             message += $" - {additionalInfo}";
         }
 
-        Debug.Log($"[ProjectileHit] {message}");
+        ConditionalDebug.Log($"[ProjectileHit] {message}");
     }
 
     public void LogProjectileExpired(bool isPlayerShot)
     {
         string message = isPlayerShot ? "Player projectile expired" : "Enemy projectile expired";
-        Debug.Log($"[ProjectileExpired] {message}");
+        ConditionalDebug.Log($"[ProjectileExpired] {message}");
     }
 
     private void OnDestroy()
@@ -443,11 +443,11 @@ public class GameManager : MonoBehaviour
         if (PlayerLocking.Instance != null)
         {
             PlayerLocking.Instance.ClearLockedTargets();
-            Debug.Log("All player locks cleared.");
+            ConditionalDebug.Log("All player locks cleared.");
         }
         else
         {
-            Debug.LogWarning("PlayerLocking instance not found. Unable to clear locks.");
+            ConditionalDebug.LogWarning("PlayerLocking instance not found. Unable to clear locks.");
         }
     }
 

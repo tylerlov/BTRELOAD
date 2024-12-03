@@ -51,7 +51,8 @@ public class CrosshairCore : MonoBehaviour
 
     #region Components
     [HideInInspector]
-    public StudioEventEmitter musicPlayback;
+    public StudioEventEmitter musicPlayback;  // Keep for backwards compatibility
+    private AudioManager audioManager;
     #endregion
 
     #region Koreography Events
@@ -122,6 +123,10 @@ public class CrosshairCore : MonoBehaviour
 
     private void InitializeComponents()
     {
+        audioManager = AudioManager.Instance;
+        if (audioManager == null)
+            ConditionalDebug.LogError("AudioManager instance not found in the scene.");
+
         GameObject musicGameObject = GameObject.Find("FMOD Music");
         if (musicGameObject != null)
         {
@@ -239,11 +244,11 @@ public class CrosshairCore : MonoBehaviour
             StartCoroutine(playerShooting.LaunchProjectilesWithDelay());
             playerShooting.HandleShootingEffects();
             
-            // Reset both parameters
-            if (musicPlayback != null && musicPlayback.EventInstance.isValid())
+            // Use AudioManager to reset parameters
+            if (audioManager != null)
             {
-                musicPlayback.EventInstance.setParameterByName("Lock State", 0);
-                musicPlayback.EventInstance.setParameterByName("Player_Lock_State", 0);
+                audioManager.SetMusicParameter("Lock State", 0);
+                audioManager.SetMusicParameter("Player_Lock_State", 0);
             }
         }
     }
@@ -259,13 +264,11 @@ public class CrosshairCore : MonoBehaviour
             {
                 ConditionalDebug.Log($"Locked onto projectile. Current locks: {playerLocking.Locks}");
                 
-                // Set FMOD parameter but don't let it affect enemy shooting
-                if (musicPlayback != null && musicPlayback.EventInstance.isValid())
+                // Use AudioManager to set parameters
+                if (audioManager != null)
                 {
-                    musicPlayback.EventInstance.setParameterByName("Lock State", 1);
-                    
-                    // Add a new parameter specifically for player lock state
-                    musicPlayback.EventInstance.setParameterByName("Player_Lock_State", 1);
+                    audioManager.SetMusicParameter("Lock State", 1);
+                    audioManager.SetMusicParameter("Player_Lock_State", 1);
                 }
 
                 GetComponent<PlayerShooting>().AnimateLockOnEffect();

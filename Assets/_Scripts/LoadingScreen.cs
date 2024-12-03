@@ -47,13 +47,13 @@ public class LoadingScreen : MonoBehaviour
         }
         else
         {
-            Debug.LogError("[LoadingScreen] Failed to get JPG effect from Volume profile!");
+            ConditionalDebug.LogError("[LoadingScreen] Failed to get JPG effect from Volume profile!");
         }
     }
 
     public void InitializeForFreshStart()
     {
-        Debug.Log("[LoadingScreen] Initializing for fresh start (max intensity)");
+        ConditionalDebug.Log("[LoadingScreen] Initializing for fresh start (max intensity)");
         SetInitialState(MAX_INTENSITY);
     }
 
@@ -77,11 +77,11 @@ public class LoadingScreen : MonoBehaviour
     {
         if (!initialized || jpgEffect == null)
         {
-            Debug.LogError($"[LoadingScreen] Cannot FadeOut - Initialized: {initialized}, Effect null: {jpgEffect == null}");
+            ConditionalDebug.LogError($"[LoadingScreen] Cannot FadeOut - Initialized: {initialized}, Effect null: {jpgEffect == null}");
             return;
         }
         
-        Debug.Log($"[LoadingScreen] StartFadeOut called. Current: {currentIntensity}, Target: {MIN_INTENSITY}");
+        ConditionalDebug.Log($"[LoadingScreen] StartFadeOut called. Current: {currentIntensity}, Target: {MIN_INTENSITY}");
         volume.enabled = true;
         jpgEffect.active = true;
         
@@ -101,7 +101,7 @@ public class LoadingScreen : MonoBehaviour
                 currentIntensity = MIN_INTENSITY;
                 volume.enabled = false;
                 jpgEffect.active = false;
-                Debug.Log($"[LoadingScreen] FadeOut complete. Volume enabled: {volume.enabled}, Intensity: {currentIntensity}");
+                ConditionalDebug.Log($"[LoadingScreen] FadeOut complete. Volume enabled: {volume.enabled}, Intensity: {currentIntensity}");
                 tcs.SetResult(true);
             });
         
@@ -112,11 +112,11 @@ public class LoadingScreen : MonoBehaviour
     {
         if (!initialized || jpgEffect == null)
         {
-            Debug.LogError($"[LoadingScreen] Cannot FadeIn - Initialized: {initialized}, Effect null: {jpgEffect == null}");
+            ConditionalDebug.LogError($"[LoadingScreen] Cannot FadeIn - Initialized: {initialized}, Effect null: {jpgEffect == null}");
             return;
         }
         
-        Debug.Log($"[LoadingScreen] StartFadeIn called. Current: {currentIntensity}, Target: {MAX_INTENSITY}");
+        ConditionalDebug.Log($"[LoadingScreen] StartFadeIn called. Current: {currentIntensity}, Target: {MAX_INTENSITY}");
         volume.enabled = true;
         jpgEffect.active = true;
         
@@ -134,7 +134,7 @@ public class LoadingScreen : MonoBehaviour
             })
             .OnComplete(() => {
                 currentIntensity = MAX_INTENSITY;
-                Debug.Log($"[LoadingScreen] FadeIn complete. Volume enabled: {volume.enabled}, Intensity: {currentIntensity}");
+                ConditionalDebug.Log($"[LoadingScreen] FadeIn complete. Volume enabled: {volume.enabled}, Intensity: {currentIntensity}");
                 tcs.SetResult(true);
             });
         

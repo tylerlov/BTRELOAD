@@ -55,19 +55,19 @@ public class SplineManager : MonoBehaviour
             splineController = playerPlane.GetComponent<SplineController>();
             if (splineController == null)
             {
-                Debug.LogError("SplineController not found on PlayerPlane!");
+                ConditionalDebug.LogError("SplineController not found on PlayerPlane!");
             }
         }
         else
         {
-            Debug.LogError("PlayerPlane not found!");
+            ConditionalDebug.LogError("PlayerPlane not found!");
         }
 
         // Find the Shooting object
         shooting = GameObject.FindGameObjectWithTag("Shooting");
         if (shooting == null)
         {
-            Debug.LogError("Shooting object not found!");
+            ConditionalDebug.LogError("Shooting object not found!");
         }
 
         currSpline = 0;
@@ -96,15 +96,15 @@ public class SplineManager : MonoBehaviour
 
     public void IncrementSpline()
     {
-        Debug.Log(
+        ConditionalDebug.Log(
             $"<color=yellow>[SPLINE] IncrementSpline called. Current spline before increment: {currSpline}</color>"
         );
-        Debug.Log(
+        ConditionalDebug.Log(
             $"<color=yellow>[SPLINE] IncrementSpline called from:\n{UnityEngine.StackTraceUtility.ExtractStackTrace()}</color>"
         );
         if (!canIncrement)
         {
-            Debug.Log(
+            ConditionalDebug.Log(
                 $"<color=orange>[SPLINE] Increment attempted during cooldown, ignoring. Time since last increment: {Time.time - lastSwitchTime}</color>"
             );
             return;
@@ -128,7 +128,7 @@ public class SplineManager : MonoBehaviour
             float currentTime = Time.time;
             if (currentTime - lastSwitchTime < MIN_SWITCH_INTERVAL)
             {
-                Debug.LogWarning(
+                ConditionalDebug.LogWarning(
                     $"<color=orange>[SPLINE] Spline switch attempted too soon. Time since last switch: {currentTime - lastSwitchTime}</color>"
                 );
                 return;
@@ -138,14 +138,14 @@ public class SplineManager : MonoBehaviour
             SetSplineDataAttributes(currSpline);
             splineSwitchCounter++;
             lastSwitchTime = currentTime;
-            Debug.Log(
+            ConditionalDebug.Log(
                 $"<color=yellow>[SPLINE] Spline Incremented. Current spline: {currSpline} (Spline #{currSpline + 1}), Total switches: {splineSwitchCounter}, Time: {currentTime}</color>"
             );
 
             // Check if we've reached the final spline
             if (currSpline == splineDatas.Count - 1)
             {
-                Debug.Log(
+                ConditionalDebug.Log(
                     $"<color=yellow>[SPLINE] Final spline reached (Spline #{splineDatas.Count}). Total switches: {splineSwitchCounter}</color>"
                 );
                 OnFinalSplineReached?.Invoke();
@@ -153,20 +153,17 @@ public class SplineManager : MonoBehaviour
         }
         else if (currSpline >= splineDatas.Count - 1)
         {
-            Debug.Log(
+            ConditionalDebug.Log(
                 $"<color=orange>[SPLINE] Already at final spline (Spline #{splineDatas.Count}). Cannot increment further.</color>"
             );
         }
         else
         {
-            Debug.Log(
+            ConditionalDebug.Log(
                 "<color=orange>[SPLINE] Next Spline is not available, maintaining current Spline</color>"
             );
         }
     }
-
-    // Remove the lockShooter coroutine as it's no longer needed
-    // Mayu need to bring this back, but for now, it's not needed
 
     // ... (keep other existing methods)
 }

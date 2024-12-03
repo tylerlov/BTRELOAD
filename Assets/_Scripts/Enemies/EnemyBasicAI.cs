@@ -27,7 +27,7 @@ public class EnemyBasicAI : MonoBehaviour
     [Tooltip("Number of attempts to find a position with line of sight")]
     public int lineOfSightAttempts = 5;
     [Tooltip("Layer mask for obstacles that block line of sight")]
-    public LayerMask obstacleLayerMask;
+    public static LayerMask obstacleLayerMask;
 
     private FollowerEntity followerEntity;
     private EnemyBasicSetup enemySetup;
@@ -35,13 +35,29 @@ public class EnemyBasicAI : MonoBehaviour
     private float lastAttackTime;
     private float lastPositionChangeTime;
     private Vector3 currentDestination;
-    private float pathUpdateInterval = 0.5f; // Add this line
+    private float pathUpdateInterval = 0.5f;
     private float lastPathUpdateTime;
-    private float lineOfSightCheckInterval = 0.2f; // Check line of sight every 0.2 seconds
-    private float lastLineOfSightCheckTime;
-    private bool cachedLineOfSight;
-    private RaycastHit[] raycastHits = new RaycastHit[1];
+    private float distanceThresholdForPathUpdate = 1f; // Only update path if moved this far
+    private Vector3 lastPathUpdatePosition;
     private bool hasLineOfSightToPlayer;
+
+    // Cache for position calculations
+    private static readonly Vector3[] cachedDirections;
+    private static readonly Vector3[] potentialPositions;
+    private static int currentPositionIndex;
+
+    static EnemyBasicAI()
+    {
+        cachedDirections = new Vector3[8];
+        potentialPositions = new Vector3[8];
+
+        // Pre-calculate evenly distributed directions
+        for (int i = 0; i < 8; i++)
+        {
+            float angle = i * (360f / 8);
+            cachedDirections[i] = Quaternion.Euler(0, angle, 0) * Vector3.forward;
+        }
+    }
 
     private void Awake()
     {
@@ -73,11 +89,11 @@ public class EnemyBasicAI : MonoBehaviour
             ChooseNewPosition();
         }
 
-        // Update path less frequently
-        if (Time.time - lastPathUpdateTime > pathUpdateInterval)
+        // Update path based on distance moved
+        if (Vector3.Distance(transform.position, lastPathUpdatePosition) > distanceThresholdForPathUpdate)
         {
             followerEntity.destination = currentDestination;
-            lastPathUpdateTime = Time.time;
+            lastPathUpdatePosition = transform.position;
         }
 
         // Attack if possible
@@ -105,20 +121,28 @@ public class EnemyBasicAI : MonoBehaviour
 
     private Vector3 GetRandomPositionAroundPlayer()
     {
-        float angle = Random.Range(0f, 360f);
+        // Use cached directions instead of random angles
+        int dirIndex = Random.Range(0, cachedDirections.Length);
         float distance = Random.Range(minPlayerDistance, maxPlayerDistance);
-        Vector3 offset = Quaternion.Euler(0, angle, 0) * Vector3.forward * distance;
-        return playerTransform.position + offset;
+        return playerTransform.position + cachedDirections[dirIndex] * distance;
     }
 
     private Vector3 FindPositionWithLineOfSight()
     {
-        Vector3 bestPosition = GetRandomPositionAroundPlayer();
+        // Pre-calculate potential positions
+        for (int i = 0; i < cachedDirections.Length; i++)
+        {
+            float distance = Random.Range(minPlayerDistance, maxPlayerDistance);
+            potentialPositions[i] = playerTransform.position + cachedDirections[i] * distance;
+        }
+
+        // Find best position from pre-calculated positions
+        Vector3 bestPosition = potentialPositions[0];
         float bestDistance = float.MaxValue;
 
-        for (int i = 0; i < lineOfSightAttempts; i++)
+        for (int i = 0; i < cachedDirections.Length; i++)
         {
-            Vector3 potentialPosition = GetRandomPositionAroundPlayer();
+            Vector3 potentialPosition = potentialPositions[i];
             if (HasLineOfSight(potentialPosition))
             {
                 float distance = Vector3.Distance(potentialPosition, playerTransform.position);
@@ -135,19 +159,10 @@ public class EnemyBasicAI : MonoBehaviour
 
     private bool HasLineOfSight(Vector3 fromPosition)
     {
+        // This method is now only called from FindPositionWithLineOfSight
+        // Line of sight to player is handled by EnemyShootingManager
         Vector3 direction = playerTransform.position - fromPosition;
-        int hitCount = Physics.RaycastNonAlloc(fromPosition, direction, raycastHits, direction.magnitude, obstacleLayerMask);
-        return hitCount == 0;
-    }
-
-    private bool HasLineOfSightToPlayer()
-    {
-        if (Time.time - lastLineOfSightCheckTime > lineOfSightCheckInterval)
-        {
-            cachedLineOfSight = HasLineOfSight(transform.position);
-            lastLineOfSightCheckTime = Time.time;
-        }
-        return cachedLineOfSight;
+        return !Physics.Raycast(fromPosition, direction, direction.magnitude, obstacleLayerMask);
     }
 
     private void Attack()

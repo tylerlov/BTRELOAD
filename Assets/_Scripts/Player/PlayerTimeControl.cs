@@ -12,6 +12,7 @@ public class PlayerTimeControl : MonoBehaviour
     private PlayerLocking playerLocking;
     private SplineController splineControl;
     private PlayerMovement pMove;
+    private AudioManager audioManager;
 
     [Header("Component References")]
     [SerializeField] private MMF_Player rewindFeedback;
@@ -68,6 +69,7 @@ public class PlayerTimeControl : MonoBehaviour
         playerLocking = GetComponent<PlayerLocking>();
         splineControl = FindObjectOfType<SplineController>();
         pMove = FindObjectOfType<PlayerMovement>();
+        audioManager = AudioManager.Instance;
 
         // Store the baseline JPG intensity on startup
         if (JPGEffectController.Instance != null)
@@ -75,9 +77,9 @@ public class PlayerTimeControl : MonoBehaviour
             baselineJPGIntensity = JPGEffectController.Instance.GetCurrentIntensity();
         }
 
-        if (crosshairCore == null || playerLocking == null || splineControl == null || pMove == null)
+        if (crosshairCore == null || playerLocking == null || splineControl == null || pMove == null || audioManager == null)
         {
-            Debug.LogError("Required components not found on the same GameObject or in the scene.");
+            ConditionalDebug.LogError("Required components not found on the same GameObject or in the scene.");
         }
     }
 
@@ -86,7 +88,7 @@ public class PlayerTimeControl : MonoBehaviour
         if (crosshairCore.CheckRewindToBeat() && Time.time - lastRewindTime > rewindCooldown)
         {
             float timeSinceLastLaunch = Time.time - crosshairCore.lastProjectileLaunchTime;
-            Debug.Log(
+            ConditionalDebug.Log(
                 $"Time since last projectile launch: {timeSinceLastLaunch}, QTE window: {CrosshairCore.QTE_TRIGGER_WINDOW}, QTE Locked targets: {playerLocking.qteEnemyLockList.Count}"
             );
 
@@ -96,12 +98,12 @@ public class PlayerTimeControl : MonoBehaviour
                 && playerLocking.qteEnemyLockList.Count > 0
             )
             {
-                Debug.Log("QTE Initiated for Rewind");
+                ConditionalDebug.Log("QTE Initiated for Rewind");
                 TriggerQTE(rewindDuration, 3); // 3 is an example difficulty level
             }
             else
             {
-                Debug.Log(
+                ConditionalDebug.Log(
                     $"Rewind started without QTE. Time condition met: {timeSinceLastLaunch <= CrosshairCore.QTE_TRIGGER_WINDOW}, Targets condition met: {playerLocking.qteEnemyLockList.Count > 0}"
                 );
                 StartCoroutine(RewindToBeat());
@@ -114,7 +116,7 @@ public class PlayerTimeControl : MonoBehaviour
         if (crosshairCore.CheckSlowToBeat())
         {
             float timeSinceLastLaunch = Time.time - crosshairCore.lastProjectileLaunchTime;
-            Debug.Log(
+            ConditionalDebug.Log(
                 $"Time since last projectile launch: {timeSinceLastLaunch}, QTE window: {CrosshairCore.QTE_TRIGGER_WINDOW}, QTE Locked targets: {playerLocking.qteEnemyLockList.Count}"
             );
 
@@ -123,12 +125,12 @@ public class PlayerTimeControl : MonoBehaviour
                 && playerLocking.qteEnemyLockList.Count > 0
             )
             {
-                Debug.Log("QTE Initiated for Slow");
+                ConditionalDebug.Log("QTE Initiated for Slow");
                 TriggerQTE(slowTimeDuration);
             }
             else
             {
-                Debug.Log(
+                ConditionalDebug.Log(
                     $"Slow started without QTE. Time condition met: {timeSinceLastLaunch <= CrosshairCore.QTE_TRIGGER_WINDOW}, Targets condition met: {playerLocking.qteEnemyLockList.Count > 0}"
                 );
                 StartCoroutine(SlowToBeat());
@@ -146,7 +148,7 @@ public class PlayerTimeControl : MonoBehaviour
         }
         else
         {
-            Debug.LogError("QuickTimeEventManager instance is null");
+            ConditionalDebug.LogError("QuickTimeEventManager instance is null");
         }
     }
 
@@ -170,19 +172,19 @@ public class PlayerTimeControl : MonoBehaviour
 
         ResetMusicState();
 
-        Debug.Log($"QTE completed with success: {success}");
+        ConditionalDebug.Log($"QTE completed with success: {success}");
     }
 
     public void ResetMusicState()
     {
-        if (MusicManager.Instance != null)
+        if (audioManager != null)
         {
-            Debug.Log("Resetting music state");
-            MusicManager.Instance.SetMusicParameter("Time State", 0f); // 0 represents Default state
+            ConditionalDebug.Log("Resetting music state");
+            audioManager.SetMusicParameter("Time State", 0f); // 0 represents Default state
         }
         else
         {
-            Debug.LogError("MusicManager.Instance is null in ResetMusicState");
+            ConditionalDebug.LogError("AudioManager.Instance is null in ResetMusicState");
         }
     }
 
@@ -210,7 +212,10 @@ public class PlayerTimeControl : MonoBehaviour
 
         // Use TimeManager to set the time scale
         TimeManager.Instance.SetTimeScale(-1f);
-        MusicManager.Instance.SetMusicParameter("Time State", 1f); // 1 represents Rewind state
+        if (audioManager != null)
+        {
+            audioManager.SetMusicParameter("Time State", 1f); // 1 represents Rewind state
+        }
 
         yield return new WaitForSeconds(rewindDuration);
 
@@ -239,7 +244,7 @@ public class PlayerTimeControl : MonoBehaviour
         ResetMusicState();
 
         playerLocking.qteEnemyLockList.Clear();
-        Debug.Log("QTE Enemy Lock List cleared after Rewind");
+        ConditionalDebug.Log("QTE Enemy Lock List cleared after Rewind");
 
         delayLoop = false;
     }
@@ -263,8 +268,11 @@ public class PlayerTimeControl : MonoBehaviour
         rewindFeedback.PlayFeedbacks();
         JPGEffectController.Instance.SetJPGIntensity(slowJPGIntensity, jpgEffectDuration);
 
-        // Set music state to Slow
-        MusicManager.Instance.SetMusicParameter("Time State", 2f); // 2 represents Slow state
+        // Set music state to Slow using AudioManager
+        if (audioManager != null)
+        {
+            audioManager.SetMusicParameter("Time State", 2f); // 2 represents Slow state
+        }
 
         // Use TimeManager to set the time scale
         TimeManager.Instance.SetTimeScale(slowTimeScale);
@@ -288,12 +296,15 @@ public class PlayerTimeControl : MonoBehaviour
         DeactivateRewindEffects();
         crosshairCore.TriggerRewindEnd();
 
-        // Reset music state to Default
-        MusicManager.Instance.SetMusicParameter("Time State", 0f); // 0 represents Default state
+        // Reset music state to Default using AudioManager
+        if (audioManager != null)
+        {
+            audioManager.SetMusicParameter("Time State", 0f); // 0 represents Default state
+        }
 
         slowTime.enabled = false;
         playerLocking.qteEnemyLockList.Clear();
-        Debug.Log("QTE Enemy Lock List cleared after Slow");
+        ConditionalDebug.Log("QTE Enemy Lock List cleared after Slow");
 
         delayLoop = false;
     }

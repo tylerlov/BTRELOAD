@@ -2,14 +2,10 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using Chronos;
-using Unity.Burst;
-using Unity.Collections;
-using Unity.Jobs;
-using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using UnityEngine.Jobs;
 using System.Linq;
+using System.Text;
 
 public class ProjectileManager : MonoBehaviour
 {
@@ -18,10 +14,188 @@ public class ProjectileManager : MonoBehaviour
     [SerializeField]
     private int staticShootingRequestsPerFrame = 10;
 
-    private NativeArray<int> projectileIds;
-    private NativeHashMap<int, float> projectileLifetimes;
     private Dictionary<int, ProjectileStateBased> projectileLookup =
         new Dictionary<int, ProjectileStateBased>();
+
+    // Spatial partitioning grid system
+    private const float GRID_CELL_SIZE = 10f; // Increased from 5f to better handle fast-moving projectiles
+    private Dictionary<Vector2Int, HashSet<ProjectileStateBased>> playerProjectileGrid = new Dictionary<Vector2Int, HashSet<ProjectileStateBased>>();
+    private Dictionary<Vector2Int, HashSet<ProjectileStateBased>> enemyProjectileGrid = new Dictionary<Vector2Int, HashSet<ProjectileStateBased>>();
+
+    [Header("Debug Settings")]
+    [SerializeField] private bool showDebugGrid = false;
+    [SerializeField] private bool showProjectileConnections = false;
+    [SerializeField] private Color gridColor = new Color(0.2f, 1f, 0.2f, 0.1f);
+    [SerializeField] private Color connectionColor = new Color(1f, 0f, 0f, 0.5f);
+
+    private Vector2Int GetGridCell(Vector3 worldPosition)
+    {
+        return new Vector2Int(
+            Mathf.FloorToInt(worldPosition.x / GRID_CELL_SIZE),
+            Mathf.FloorToInt(worldPosition.z / GRID_CELL_SIZE)
+        );
+    }
+
+    private void UpdateProjectileGridPosition(ProjectileStateBased projectile, Vector3 oldPosition, Vector3 newPosition)
+    {
+        Vector2Int oldCell = GetGridCell(oldPosition);
+        Vector2Int newCell = GetGridCell(newPosition);
+
+        // If the projectile hasn't changed cells, no need to update
+        if (oldCell == newCell) return;
+
+        var grid = projectile.isPlayerShot ? playerProjectileGrid : enemyProjectileGrid;
+
+        // Remove from old cell
+        if (grid.ContainsKey(oldCell))
+        {
+            grid[oldCell].Remove(projectile);
+            LogGridOperation("Remove", oldCell, projectile);
+            if (grid[oldCell].Count == 0)
+            {
+                grid.Remove(oldCell);
+            }
+        }
+
+        // Add to new cell
+        if (!grid.ContainsKey(newCell))
+        {
+            grid[newCell] = new HashSet<ProjectileStateBased>();
+        }
+        grid[newCell].Add(projectile);
+        LogGridOperation("Add", newCell, projectile);
+    }
+
+    private HashSet<ProjectileStateBased> tempProjectileSet = new HashSet<ProjectileStateBased>();
+    private List<ProjectileStateBased> playerProjectiles = new List<ProjectileStateBased>();
+    private List<ProjectileStateBased> enemyProjectiles = new List<ProjectileStateBased>();
+    private StringBuilder logBuilder = new StringBuilder(256);
+
+    private void UpdateProjectileLists()
+    {
+        playerProjectiles.Clear();
+        enemyProjectiles.Clear();
+        
+        foreach (var projectile in projectileLookup.Values)
+        {
+            if (projectile.isPlayerShot)
+                playerProjectiles.Add(projectile);
+            else
+                enemyProjectiles.Add(projectile);
+        }
+    }
+
+    private IEnumerable<ProjectileStateBased> GetNearbyProjectiles(Vector3 position, float radius, bool isPlayerShot)
+    {
+        tempProjectileSet.Clear();
+        int cellRadius = Mathf.CeilToInt(radius / GRID_CELL_SIZE);
+        Vector2Int centerCell = GetGridCell(position);
+
+        // Only check the grid that contains potential targets
+        var targetGrid = isPlayerShot ? enemyProjectileGrid : playerProjectileGrid;
+
+        for (int x = -cellRadius; x <= cellRadius; x++)
+        {
+            for (int y = -cellRadius; y <= cellRadius; y++)
+            {
+                Vector2Int cell = new Vector2Int(centerCell.x + x, centerCell.y + y);
+                if (targetGrid.TryGetValue(cell, out var projectiles))
+                {
+                    foreach (var projectile in projectiles)
+                    {
+                        tempProjectileSet.Add(projectile);
+                    }
+                }
+            }
+        }
+
+        return tempProjectileSet;
+    }
+
+    private void LogGridOperation(string operation, Vector2Int cell, ProjectileStateBased projectile)
+    {
+        if (!showDebugGrid) return;
+        
+        logBuilder.Clear();
+        logBuilder.Append("Grid Operation: ")
+                 .Append(operation)
+                 .Append(" | Cell: ")
+                 .Append(cell)
+                 .Append(" | Projectile: ")
+                 .Append(projectile.name)
+                 .Append(" | Total in cell: ");
+
+        int totalCount = 0;
+        if (playerProjectileGrid.TryGetValue(cell, out var playerProjectiles))
+            totalCount += playerProjectiles.Count;
+        if (enemyProjectileGrid.TryGetValue(cell, out var enemyProjectiles))
+            totalCount += enemyProjectiles.Count;
+            
+        logBuilder.Append(totalCount);
+        Debug.Log(logBuilder.ToString());
+    }
+
+    private void HandleCollisions()
+    {
+        UpdateProjectileLists();
+
+        // Process player projectiles against enemies
+        for (int i = 0; i < playerProjectiles.Count; i++)
+        {
+            var projectile = playerProjectiles[i];
+            if (projectile == null || !projectile.gameObject.activeInHierarchy)
+                continue;
+
+            ProcessProjectileCollisions(projectile, true);
+        }
+
+        // Process enemy projectiles against player
+        for (int i = 0; i < enemyProjectiles.Count; i++)
+        {
+            var projectile = enemyProjectiles[i];
+            if (projectile == null || !projectile.gameObject.activeInHierarchy)
+                continue;
+
+            ProcessProjectileCollisions(projectile, false);
+        }
+    }
+
+    private void ProcessProjectileCollisions(ProjectileStateBased projectile, bool isPlayerShot)
+    {
+        var nearbyProjectiles = GetNearbyProjectiles(projectile.transform.position, maxRaycastDistance, isPlayerShot);
+
+        foreach (var nearbyProjectile in nearbyProjectiles)
+        {
+            if (nearbyProjectile == null || !nearbyProjectile.gameObject.activeInHierarchy)
+                continue;
+
+            // Only check relevant collisions based on projectile type
+            if (isPlayerShot)
+            {
+                // Player projectiles only check against enemies
+                if (nearbyProjectile.gameObject.CompareTag("Enemy"))
+                {
+                    float distance = Vector3.Distance(projectile.transform.position, nearbyProjectile.transform.position);
+                    if (distance <= maxRaycastDistance)
+                    {
+                        projectile.OnTriggerEnter(nearbyProjectile.GetComponent<Collider>());
+                    }
+                }
+            }
+            else
+            {
+                // Enemy projectiles only check against player
+                if (nearbyProjectile.gameObject.CompareTag("Player"))
+                {
+                    float distance = Vector3.Distance(projectile.transform.position, nearbyProjectile.transform.position);
+                    if (distance <= maxRaycastDistance)
+                    {
+                        projectile.OnTriggerEnter(nearbyProjectile.GetComponent<Collider>());
+                    }
+                }
+            }
+        }
+    }
 
     [SerializeField]
     private Timekeeper timekeeper;
@@ -43,6 +217,7 @@ public class ProjectileManager : MonoBehaviour
     private ProjectilePool projectilePool;
     private ProjectileEffectManager effectManager;
     private ProjectileSpawner projectileSpawner;
+    private ProjectileJobSystem projectileJobSystem;
 
     private Dictionary<Transform, Vector3> cachedEnemyPositions =
         new Dictionary<Transform, Vector3>();
@@ -56,25 +231,14 @@ public class ProjectileManager : MonoBehaviour
     private int frameCounter = 0;
     private const int UPDATE_INTERVAL = 5; // Update every 5 frames
 
-    // Added member variables for job handling
-    private NativeArray<float> updatedLifetimes;
-    private JobHandle updateJobHandle;
-
-    private JobHandle _updateProjectilesJobHandle;
-    private bool _isJobRunning = false;
-
     private const int INITIAL_CAPACITY = 1000;
     private const int GROWTH_FACTOR = 2;
 
-    [SerializeField] private int maxRaycastsPerJob = 500; // Reduced from 1000
-    [SerializeField] private int subSteps = 1; // Reduced from 2
-    [SerializeField] private float maxRaycastDistance = 3f; // Reduced from 5f
+    [SerializeField] private int maxRaycastsPerJob = 500;
+    [SerializeField] private int subSteps = 1;
+    [SerializeField] private float maxRaycastDistance = 3f;
     [SerializeField] private bool useRaycastsOnlyForHoming = true;
-    [SerializeField] private bool useRaycastsForPlayerShots = false; // New field
-
-    private NativeArray<RaycastCommand> raycastCommands;
-    private NativeArray<RaycastHit> raycastResults;
-    private TransformAccessArray transformAccessArray;
+    [SerializeField] private bool useRaycastsForPlayerShots = false;
 
     [SerializeField] private LayerMask enemyLayerMask;
     [SerializeField] private LayerMask playerLayerMask;
@@ -111,36 +275,15 @@ public class ProjectileManager : MonoBehaviour
 
         try
         {
-            // Initialize collections with proper error handling
-            InitializeCollections();
-            
             // Initialize components
             InitializeComponents();
-            
-            // Set up scene handling
-            SceneManager.sceneLoaded += OnSceneLoaded;
-            
             isInitialized = true;
             ConditionalDebug.Log("[ProjectileManager] Initialization completed successfully");
         }
         catch (System.Exception e)
         {
             ConditionalDebug.LogError($"[ProjectileManager] Initialization failed: {e.Message}");
-            throw; // Rethrow to ensure the error is visible
-        }
-    }
-
-    private void InitializeCollections()
-    {
-        SafeDispose(); // Ensure clean slate
-        
-        projectileIds = new NativeArray<int>(INITIAL_CAPACITY, Allocator.Persistent);
-        projectileLifetimes = new NativeHashMap<int, float>(INITIAL_CAPACITY, Allocator.Persistent);
-        updatedLifetimes = new NativeArray<float>(INITIAL_CAPACITY, Allocator.Persistent);
-        
-        if (!ValidateCollections())
-        {
-            throw new System.InvalidOperationException("Failed to initialize collections properly");
+            throw;
         }
     }
 
@@ -149,6 +292,7 @@ public class ProjectileManager : MonoBehaviour
         projectilePool = GetComponent<ProjectilePool>() ?? throw new System.NullReferenceException("ProjectilePool component missing");
         effectManager = GetComponent<ProjectileEffectManager>() ?? throw new System.NullReferenceException("ProjectileEffectManager component missing");
         projectileSpawner = GetComponent<ProjectileSpawner>() ?? throw new System.NullReferenceException("ProjectileSpawner component missing");
+        projectileJobSystem = GetComponent<ProjectileJobSystem>() ?? throw new System.NullReferenceException("ProjectileJobSystem component missing");
     }
 
     private void Start()
@@ -176,74 +320,85 @@ public class ProjectileManager : MonoBehaviour
         }
     }
 
+    private void OnEnable()
+    {
+        SceneManager.sceneLoaded += OnSceneLoaded;
+    }
+
+    private void OnDisable()
+    {
+        SceneManager.sceneLoaded -= OnSceneLoaded;
+    }
+
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
+        if (this == null || !gameObject.activeInHierarchy) return;
         StartCoroutine(InitializeAfterSceneLoad());
     }
 
     private IEnumerator InitializeAfterSceneLoad()
     {
+        isTransitioning = true;
         yield return new WaitForEndOfFrame();
         
-        // Clear existing collections
-        SafeDispose();
-        
-        // Reinitialize collections
-        projectileIds = new NativeArray<int>(INITIAL_CAPACITY, Allocator.Persistent);
-        projectileLifetimes = new NativeHashMap<int, float>(INITIAL_CAPACITY, Allocator.Persistent);
-        updatedLifetimes = new NativeArray<float>(INITIAL_CAPACITY, Allocator.Persistent);
-        
-        // Clear dictionaries
-        projectileLookup.Clear();
-        
-        // Validate the initialization
-        if (!ValidateCollections())
+        if (projectileLookup != null)
         {
-            ConditionalDebug.LogError("[ProjectileManager] Failed to initialize collections after scene load");
+            projectileLookup.Clear();
         }
-    }
-
-    private void OnDestroy()
-    {
-        SceneManager.sceneLoaded -= OnSceneLoaded;
-        SafeDispose();
-        isInitialized = false;
-    }
-
-    private void UpdateProcessingInterval(float timeScale)
-    {
-        currentProcessingInterval = baseProcessingInterval / timeScale;
+        
+        if (playerProjectileGrid != null)
+        {
+            playerProjectileGrid.Clear();
+        }
+        
+        if (enemyProjectileGrid != null)
+        {
+            enemyProjectileGrid.Clear();
+        }
+        
+        isTransitioning = false;
     }
 
     private void Update()
     {
-        if (isTransitioning)
-        {
+        if (!isInitialized || isTransitioning)
             return;
-        }
 
-        if (!ValidateCollections())
-        {
-            ConditionalDebug.LogWarning("[ProjectileManager] Collections were invalid and have been recovered during Update");
-            return;
-        }
+        float deltaTime = Time.deltaTime;
 
-        if (Time.time - lastProcessingTime >= currentProcessingInterval)
-        {
-            ProcessProjectileRequests();
-            lastProcessingTime = Time.time;
-        }
-
-        float subStepTime = Time.deltaTime / subSteps;
-
-        for (int step = 0; step < subSteps; step++)
-        {
-            // Handle collisions
-            HandleCollisions();
-        }
-
-        // Process results and clean up
+        UpdateProjectilePositions();
+        ProcessProjectileRequests();
+        HandleCollisions();
         ProcessCollisionResults();
+
+        // Rest of your update logic...
+    }
+
+    private void UpdateProjectilePositions()
+    {
+        foreach (var projectile in projectileLookup.Values)
+        {
+            if (projectile != null && projectile.gameObject != null)
+            {
+                Vector3 currentPosition = projectile.transform.position;
+                if (lastPositions.TryGetValue(projectile.gameObject, out Vector3 lastPosition))
+                {
+                    UpdateProjectileGridPosition(projectile, lastPosition, currentPosition);
+                }
+                else
+                {
+                    // First time seeing this projectile, just add it to the grid
+                    Vector2Int cell = GetGridCell(currentPosition);
+                    var grid = projectile.isPlayerShot ? playerProjectileGrid : enemyProjectileGrid;
+                    if (!grid.ContainsKey(cell))
+                    {
+                        grid[cell] = new HashSet<ProjectileStateBased>();
+                    }
+                    grid[cell].Add(projectile);
+                }
+                lastPositions[projectile.gameObject] = currentPosition;
+            }
+        }
     }
 
     private void ProcessProjectileRequests()
@@ -255,7 +410,7 @@ public class ProjectileManager : MonoBehaviour
 
         // Process a fixed number of requests per interval, adjusted for time scale
         int requestsToProcess = Mathf.CeilToInt(staticShootingRequestsPerFrame / TimeManager.Instance.GetCurrentTimeScale());
-        
+
         for (int i = 0; i < requestsToProcess && ProjectilePool.Instance.HasPendingRequests(); i++)
         {
             ProjectileRequest request;
@@ -270,66 +425,6 @@ public class ProjectileManager : MonoBehaviour
         }
     }
 
-    private void HandleCollisions()
-    {
-        // Count only projectiles that need raycasts
-        int projectileCount = projectileLookup.Values.Where(p => 
-            ShouldUseRaycastForProjectile(p)
-        ).Count();  // Changed from .Count to .Count()
-
-        if (projectileCount == 0) return;
-
-        // Resize arrays if needed
-        if (raycastCommands.Length < projectileCount)
-        {
-            if (raycastCommands.IsCreated) raycastCommands.Dispose();
-            if (raycastResults.IsCreated) raycastResults.Dispose();
-            raycastCommands = new NativeArray<RaycastCommand>(projectileCount, Allocator.Persistent);
-            raycastResults = new NativeArray<RaycastHit>(projectileCount, Allocator.Persistent);
-        }
-
-        // Set up raycast commands
-        int index = 0;
-        foreach (var projectile in projectileLookup.Values)
-        {
-            if (!ShouldUseRaycastForProjectile(projectile))
-                continue;
-
-            // Calculate dynamic raycast distance based on projectile speed
-            float dynamicDistance = Mathf.Min(
-                projectile.bulletSpeed * Time.fixedDeltaTime * 2f, 
-                maxRaycastDistance
-            );
-
-            LayerMask layerMask = GetLayerMaskForProjectile(projectile);
-            raycastCommands[index] = new RaycastCommand(
-                projectile.transform.position,
-                projectile.transform.forward,
-                dynamicDistance,
-                layerMask
-            );
-            index++;
-        }
-
-        // Schedule the raycast job with appropriate batch size
-        if (index > 0)
-        {
-            int batchSize = Mathf.Max(1, index / 32); // Divide work into reasonable batches
-            JobHandle raycastJobHandle = RaycastCommand.ScheduleBatch(
-                raycastCommands.GetSubArray(0, index), 
-                raycastResults.GetSubArray(0, index), 
-                batchSize,
-                default(JobHandle)
-            );
-            raycastJobHandle.Complete();
-        }
-    }
-
-    private LayerMask GetLayerMaskForProjectile(ProjectileStateBased projectile)
-    {
-        return projectile.isPlayerShot ? enemyLayerMask : playerLayerMask;
-    }
-
     private void ProcessCollisionResults()
     {
         // Create a safe copy of projectiles to process
@@ -337,111 +432,16 @@ public class ProjectileManager : MonoBehaviour
             .Where(p => ShouldUseRaycastForProjectile(p))
             .ToList();
 
-        int processedCount = 0;
         foreach (var projectile in projectilesToProcess)
         {
             if (projectile == null || !projectileLookup.ContainsValue(projectile))
                 continue;
-
-            if (raycastResults[processedCount].collider != null)
-            {
-                try
-                {
-                    projectile.OnTriggerEnter(raycastResults[processedCount].collider);
-                    ConditionalDebug.Log($"Projectile {projectile.GetInstanceID()} hit {raycastResults[processedCount].collider.name}");
-                }
-                catch (Exception e)
-                {
-                    ConditionalDebug.LogError($"Error processing collision for projectile {projectile.GetInstanceID()}: {e.Message}");
-                }
-            }
-            processedCount++;
         }
     }
 
-    private void ScheduleUpdateProjectiles(float deltaTime, float globalTimeScale)
+    private LayerMask GetLayerMaskForProjectile(ProjectileStateBased projectile)
     {
-        int activeProjectileCount = projectileLookup.Count;
-        if (activeProjectileCount == 0)
-            return;
-
-        // Ensure updatedLifetimes has enough capacity
-        if (updatedLifetimes.Length < activeProjectileCount)
-        {
-            updatedLifetimes.Dispose();
-            updatedLifetimes = new NativeArray<float>(activeProjectileCount, Allocator.Persistent);
-        }
-
-        var job = new UpdateProjectilesJob
-        {
-            ProjectileIds = projectileIds,
-            ProjectileLifetimes = projectileLifetimes,
-            UpdatedLifetimes = updatedLifetimes,
-            DeltaTime = deltaTime,
-            GlobalTimeScale = globalTimeScale,
-        };
-
-        _updateProjectilesJobHandle = job.Schedule(activeProjectileCount, 64);
-        _isJobRunning = true;
-    }
-
-    private void UpdateProjectilesAfterJob(float deltaTime, float globalTimeScale)
-    {
-        int activeProjectileCount = projectileLookup.Count;
-        if (activeProjectileCount == 0)
-            return;
-
-        List<int> projectilesToRemove = new List<int>();
-
-        for (int i = 0; i < activeProjectileCount; i++)
-        {
-            int projectileId = projectileIds[i];
-            if (projectileId == 0) continue; // Skip inactive slots
-
-            if (projectileLookup.TryGetValue(projectileId, out ProjectileStateBased projectile))
-            {
-                float updatedLifetime = updatedLifetimes[i];
-
-                if (updatedLifetime < 0)
-                {
-                    projectilesToRemove.Add(projectileId);
-                }
-                else
-                {
-                    projectileLifetimes[projectileId] = updatedLifetime;
-                    projectile.CustomUpdate(globalTimeScale);
-                }
-            }
-            else
-            {
-                projectilesToRemove.Add(projectileId);
-            }
-        }
-
-        for (int i = projectilesToRemove.Count - 1; i >= 0; i--)
-        {
-            RemoveProjectile(projectilesToRemove[i]);
-        }
-    }
-
-    private void RemoveProjectile(int projectileId)
-    {
-        if (projectileLookup.TryGetValue(projectileId, out ProjectileStateBased projectile))
-        {
-            projectile.Death();
-            projectilePool.ReturnProjectileToPool(projectile);
-            projectileLifetimes.Remove(projectileId);
-            projectileLookup.Remove(projectileId);
-
-            // Use binary search to find and remove the projectile ID
-            int index = System.Array.BinarySearch(projectileIds.ToArray(), projectileId);
-            if (index >= 0)
-            {
-                int lastIndex = projectileIds.Length - 1;
-                projectileIds[index] = projectileIds[lastIndex];
-                ResizeNativeArray(ref projectileIds, lastIndex);
-            }
-        }
+        return projectile.isPlayerShot ? enemyLayerMask : playerLayerMask;
     }
 
     public void RegisterProjectile(ProjectileStateBased projectile)
@@ -452,52 +452,35 @@ public class ProjectileManager : MonoBehaviour
         if (projectileLookup.ContainsKey(projectileId)) return;
 
         // Register projectile
-        int currentCount = projectileLookup.Count;
-        if (currentCount >= projectileIds.Length)
-        {
-            ResizeNativeArrays(projectileIds.Length * GROWTH_FACTOR);
-        }
-
-        if (currentCount < projectileIds.Length)
-        {
-            projectileIds[currentCount] = projectileId;
-            projectileLifetimes[projectileId] = projectile.lifetime;
-            projectileLookup[projectileId] = projectile;
-            projectile.SetAccuracy(projectileAccuracy);
-        }
+        projectileLookup[projectileId] = projectile;
+        projectile.SetAccuracy(projectileAccuracy);
     }
 
     public void UnregisterProjectile(ProjectileStateBased projectile)
     {
-        if (_isJobRunning)
-        {
-            _updateProjectilesJobHandle.Complete();
-            _isJobRunning = false;
-        }
-
         if (projectile == null)
             return;
 
         int projectileId = projectile.GetInstanceID();
         if (projectileLookup.ContainsKey(projectileId))
         {
-            for (int i = 0; i < projectileIds.Length; i++)
-            {
-                if (projectileIds[i] == projectileId)
-                {
-                    projectileIds[i] = projectileIds[projectileIds.Length - 1];
-                    ResizeNativeArray(ref projectileIds, projectileIds.Length - 1);
-                    break;
-                }
-            }
-            projectileLifetimes.Remove(projectileId);
             projectileLookup.Remove(projectileId);
+        }
+    }
+
+    public void CompleteRunningJobs()
+    {
+        // This method is kept for compatibility with existing code
+        // In the new system, jobs are handled by ProjectileJobSystem
+        if (projectileJobSystem != null)
+        {
+            projectileJobSystem.CompleteProjectileUpdate();
         }
     }
 
     public void UpdateProjectileTargets()
     {
-        foreach (var projectileId in projectileIds)
+        foreach (var projectileId in projectileLookup.Keys)
         {
             if (
                 projectileLookup.TryGetValue(projectileId, out ProjectileStateBased projectile)
@@ -509,6 +492,31 @@ public class ProjectileManager : MonoBehaviour
                     projectile.currentTarget = playerTransform;
             }
         }
+    }
+
+    private bool ShouldUseRaycastForProjectile(ProjectileStateBased projectile)
+    {
+        // Always use raycasts for high-speed projectiles
+        if (projectile.bulletSpeed > 30f)
+            return true;
+
+        // Use state-based checks
+        if (projectile.GetCurrentState() is PlayerShotState)
+            return useRaycastsForPlayerShots;
+
+        if (projectile.GetCurrentState() is EnemyShotState)
+            return useRaycastsOnlyForHoming && projectile.homing;
+
+        return false;
+    }
+
+    public ProjectileStateBased GetProjectileById(int id)
+    {
+        if (projectileLookup.TryGetValue(id, out ProjectileStateBased projectile))
+        {
+            return projectile;
+        }
+        return null;
     }
 
     public Vector3 CalculateTargetVelocity(GameObject target)
@@ -589,8 +597,6 @@ public class ProjectileManager : MonoBehaviour
 
     public void ReRegisterEnemiesAndProjectiles()
     {
-        ClearNativeArray(projectileIds);
-        projectileLifetimes.Clear();
         projectileLookup.Clear();
         projectilePool.ClearPool();
         effectManager.ClearPools();
@@ -615,17 +621,11 @@ public class ProjectileManager : MonoBehaviour
 
     public void ClearAllProjectiles()
     {
-        if (_isJobRunning)
-        {
-            _updateProjectilesJobHandle.Complete();
-            _isJobRunning = false;
-        }
-
         try
         {
             // Create a copy of the dictionary keys to avoid modification during iteration
             var projectileIds = new List<int>(projectileLookup.Keys);
-            
+
             foreach (var id in projectileIds)
             {
                 if (projectileLookup.TryGetValue(id, out ProjectileStateBased projectile))
@@ -638,293 +638,52 @@ public class ProjectileManager : MonoBehaviour
                 }
             }
 
-            // Clear all collections
-            SafeDispose();
-            InitializeCollections();
-            
             projectileLookup.Clear();
             projectilePool.ClearProjectileRequests();
 
-            ConditionalDebug.Log($"[ProjectileManager] Cleared all projectiles and reinitialized collections");
+            ConditionalDebug.Log($"[ProjectileManager] Cleared all projectiles");
         }
         catch (System.Exception e)
         {
             ConditionalDebug.LogError($"[ProjectileManager] Error during ClearAllProjectiles: {e.Message}");
-            // Try to recover
-            RecoverCollections();
         }
     }
 
     public void HandleRewind(float currentTime)
     {
-        for (int i = projectileIds.Length - 1; i >= 0; i--)
+        var projectileIds = new List<int>(projectileLookup.Keys);
+        foreach (var id in projectileIds)
         {
-            int projectileId = projectileIds[i];
-            if (projectileLookup.TryGetValue(projectileId, out ProjectileStateBased projectile))
+            if (projectileLookup.TryGetValue(id, out ProjectileStateBased projectile))
             {
                 if (projectile.ShouldDeactivate(currentTime))
                 {
-                    RemoveProjectile(projectileId);
+                    if (projectile != null)
+                    {
+                        projectile.Death();
+                        projectilePool.ReturnProjectileToPool(projectile);
+                    }
+                    projectileLookup.Remove(id);
                 }
             }
-        }
-    }
-
-    private void ClearNativeArray<T>(NativeArray<T> array)
-        where T : struct
-    {
-        for (int i = 0; i < array.Length; i++)
-        {
-            array[i] = default;
-        }
-    }
-
-    private void ResizeNativeArray<T>(ref NativeArray<T> array, int newSize)
-        where T : struct
-    {
-        NativeArray<T> newArray = new NativeArray<T>(newSize, Allocator.Persistent);
-        int copyLength = Mathf.Min(array.Length, newSize);
-        NativeArray<T>.Copy(array, newArray, copyLength);
-        array.Dispose();
-        array = newArray;
-    }
-
-    private void LogProjectileStatus()
-    {
-        int activeProjectiles = projectileLookup.Count;
-        int pooledProjectiles = projectilePool.GetPoolSize();
-        int enemyCount = enemyTransforms.Count;
-
-        ConditionalDebug.Log(
-            $"[ProjectileManager] Active Projectiles: {activeProjectiles}, "
-                + $"Pooled Projectiles: {pooledProjectiles}, "
-                + $"Enemy Count: {enemyCount}, "
-                + $"Global Time Scale: {globalClock?.timeScale ?? 0}"
-        );
-    }
-
-    [BurstCompile]
-    private struct UpdateProjectilesJob : IJobParallelFor
-    {
-        [ReadOnly]
-        public NativeArray<int> ProjectileIds;
-
-        [ReadOnly]
-        public NativeHashMap<int, float> ProjectileLifetimes;
-
-        public NativeArray<float> UpdatedLifetimes;
-
-        public float DeltaTime;
-        public float GlobalTimeScale;
-
-        public void Execute(int index)
-        {
-            if (index >= ProjectileIds.Length)
-            {
-                return;
-            }
-
-            int projectileId = ProjectileIds[index];
-            if (
-                projectileId == 0
-                || !ProjectileLifetimes.TryGetValue(projectileId, out float lifetime)
-            )
-            {
-                return;
-            }
-
-            lifetime -= DeltaTime * GlobalTimeScale;
-            UpdatedLifetimes[index] = lifetime;
-        }
-    }
-
-    public void CompleteRunningJobs()
-    {
-        if (_isJobRunning)
-        {
-            _updateProjectilesJobHandle.Complete();
-            _isJobRunning = false;
-        }
-    }
-
-    private void ResizeNativeArrays(int newSize)
-    {
-        ResizeNativeArray(ref projectileIds, newSize);
-        ResizeNativeArray(ref updatedLifetimes, newSize);
-        
-        NativeHashMap<int, float> newLifetimes = new NativeHashMap<int, float>(newSize, Allocator.Persistent);
-        foreach (var kvp in projectileLifetimes)
-        {
-            newLifetimes.Add(kvp.Key, kvp.Value);
-        }
-        projectileLifetimes.Dispose();
-        projectileLifetimes = newLifetimes;
-    }
-
-    public void ResetManager()
-    {
-        // Dispose existing collections
-        if (projectileIds.IsCreated) projectileIds.Dispose();
-        if (projectileLifetimes.IsCreated) projectileLifetimes.Dispose();
-        if (updatedLifetimes.IsCreated) updatedLifetimes.Dispose();
-
-        // Reinitialize collections
-        projectileIds = new NativeArray<int>(INITIAL_CAPACITY, Allocator.Persistent);
-        projectileLifetimes = new NativeHashMap<int, float>(INITIAL_CAPACITY, Allocator.Persistent);
-        updatedLifetimes = new NativeArray<float>(INITIAL_CAPACITY, Allocator.Persistent);
-
-        // Clear dictionaries
-        projectileLookup.Clear();
-        lastPredictionTimes.Clear();
-        lastPositions.Clear();
-        enemyTransforms.Clear();
-        cachedEnemyPositions.Clear();
-    }
-
-    private bool ValidateCollections()
-    {
-        bool isValid = true;
-        string errorMessage = "";
-
-        // Check if collections are created
-        if (!projectileIds.IsCreated)
-        {
-            errorMessage += "ProjectileIds not created. ";
-            isValid = false;
-        }
-        if (!projectileLifetimes.IsCreated)
-        {
-            errorMessage += "ProjectileLifetimes not created. ";
-            isValid = false;
-        }
-        if (!updatedLifetimes.IsCreated)
-        {
-            errorMessage += "UpdatedLifetimes not created. ";
-            isValid = false;
-        }
-
-        // Check for zero-length arrays
-        if (projectileIds.Length == 0)
-        {
-            errorMessage += "ProjectileIds has zero length. ";
-            isValid = false;
-        }
-
-        // Check for capacity mismatches
-        if (projectileIds.Length != updatedLifetimes.Length)
-        {
-            errorMessage += "Array length mismatch. ";
-            isValid = false;
-        }
-
-        if (!isValid)
-        {
-            ConditionalDebug.LogError($"[ProjectileManager] Collection validation failed: {errorMessage}");
-            RecoverCollections();
-        }
-
-        return isValid;
-    }
-
-    private void RecoverCollections()
-    {
-        ConditionalDebug.Log("[ProjectileManager] Attempting to recover collections...");
-        
-        try
-        {
-            // Store existing data if possible
-            Dictionary<int, float> tempLifetimes = new Dictionary<int, float>();
-            if (projectileLifetimes.IsCreated)
-            {
-                foreach (var kvp in projectileLifetimes)
-                {
-                    tempLifetimes[kvp.Key] = kvp.Value;
-                }
-            }
-
-            // Safely dispose existing collections
-            SafeDispose();
-
-            // Reinitialize with default capacity
-            projectileIds = new NativeArray<int>(INITIAL_CAPACITY, Allocator.Persistent);
-            projectileLifetimes = new NativeHashMap<int, float>(INITIAL_CAPACITY, Allocator.Persistent);
-            updatedLifetimes = new NativeArray<float>(INITIAL_CAPACITY, Allocator.Persistent);
-
-            // Restore data
-            int index = 0;
-            foreach (var projectile in projectileLookup.Values)
-            {
-                if (projectile != null && index < INITIAL_CAPACITY)
-                {
-                    int projectileId = projectile.GetInstanceID();
-                    projectileIds[index] = projectileId;
-                    projectileLifetimes[projectileId] = tempLifetimes.ContainsKey(projectileId) 
-                        ? tempLifetimes[projectileId] 
-                        : projectile.lifetime;
-                    index++;
-                }
-            }
-
-            ConditionalDebug.Log("[ProjectileManager] Collections recovered successfully");
-        }
-        catch (System.Exception e)
-        {
-            ConditionalDebug.LogError($"[ProjectileManager] Failed to recover collections: {e.Message}");
-            throw; // Rethrow to ensure the error is not silently swallowed
-        }
-    }
-
-    private void SafeDispose()
-    {
-        if (projectileIds.IsCreated) projectileIds.Dispose();
-        if (projectileLifetimes.IsCreated) projectileLifetimes.Dispose();
-        if (updatedLifetimes.IsCreated) updatedLifetimes.Dispose();
-    }
-
-    private void OnEnable()
-    {
-        SceneManager.sceneLoaded += OnSceneLoaded;
-        SceneManager.sceneUnloaded += OnSceneUnloaded;
-        if (SceneManagerBTR.Instance != null)
-        {
-            // Use the event names defined in GameManager
-            EventManager.Instance.AddListener(GameManager.StartingTransitionEvent, OnSceneTransitionStart);
-            EventManager.Instance.AddListener(GameManager.TransCamOffEvent, OnSceneTransitionEnd);
-        }
-    }
-
-    private void OnDisable()
-    {
-        SceneManager.sceneLoaded -= OnSceneLoaded;
-        SceneManager.sceneUnloaded -= OnSceneUnloaded;
-        if (EventManager.Instance != null)
-        {
-            // Use the event names defined in GameManager
-            EventManager.Instance.RemoveListener(GameManager.StartingTransitionEvent, OnSceneTransitionStart);
-            EventManager.Instance.RemoveListener(GameManager.TransCamOffEvent, OnSceneTransitionEnd);
         }
     }
 
     private void OnSceneTransitionStart()
     {
         isTransitioning = true;
-        // Clear all projectiles when transitioning starts
         ClearAllProjectiles();
     }
 
     private void OnSceneTransitionEnd()
     {
         isTransitioning = false;
-        // Reinitialize collections after transition
-        InitializeCollections();
     }
 
     private void OnSceneUnloaded(Scene scene)
     {
         if (scene != SceneManager.GetActiveScene()) return;
-        
-        // Safely dispose and clear collections when unloading scene
-        SafeDispose();
+
         projectileLookup.Clear();
         lastPredictionTimes.Clear();
         lastPositions.Clear();
@@ -932,7 +691,6 @@ public class ProjectileManager : MonoBehaviour
         cachedEnemyPositions.Clear();
     }
 
-    // Add async initialization support
     public async System.Threading.Tasks.Task InitializeAsync()
     {
         if (isInitialized)
@@ -944,13 +702,11 @@ public class ProjectileManager : MonoBehaviour
         {
             await System.Threading.Tasks.Task.Run(() =>
             {
-                InitializeCollections();
+                InitializeComponents();
             });
 
-            InitializeComponents();
-            
             SceneManager.sceneLoaded += OnSceneLoaded;
-            
+
             isInitialized = true;
             ConditionalDebug.Log("[ProjectileManager] Async initialization completed successfully");
         }
@@ -963,74 +719,46 @@ public class ProjectileManager : MonoBehaviour
 
     public void OnWaveEnd()
     {
-        // Complete any running jobs first
-        CompleteRunningJobs();
-        
         // Clear all projectiles safely
         var projectileIds = new List<int>(projectileLookup.Keys);
         foreach (var id in projectileIds)
         {
             if (projectileLookup.TryGetValue(id, out ProjectileStateBased projectile))
             {
-                RemoveProjectile(id);
+                if (projectile != null)
+                {
+                    projectile.Death();
+                    projectilePool.ReturnProjectileToPool(projectile);
+                }
             }
         }
-        
+
         // Rest of wave end cleanup...
         lastEnemyUpdateTime = 0f;
         lastEnemyPositionUpdateTime = 0f;
         lastPositions.Clear();
         enemyTransforms.Clear();
         cachedEnemyPositions.Clear();
-        
-        // Reinitialize collections for the next wave
-        InitializeCollections();
+        projectileLookup.Clear();
     }
 
     public void OnWaveStart()
     {
         ConditionalDebug.Log("[ProjectileManager] Wave started, initializing systems...");
-        
-        // Ensure we're starting with clean collections
-        if (!ValidateCollections())
-        {
-            InitializeCollections();
-        }
-        
+
         // Reset any wave-specific state
         lastEnemyUpdateTime = 0f;
         lastEnemyPositionUpdateTime = 0f;
-        
+
         // Clear any leftover data from previous wave
         lastPositions.Clear();
         enemyTransforms.Clear();
         cachedEnemyPositions.Clear();
     }
 
-    // Add this new method to determine if a projectile should use raycasts
-    private bool ShouldUseRaycastForProjectile(ProjectileStateBased projectile)
+    private void UpdateProcessingInterval(float timeScale)
     {
-        // Always use raycasts for high-speed projectiles
-        if (projectile.bulletSpeed > 30f) 
-            return true;
-
-        // Use state-based checks
-        if (projectile.GetCurrentState() is PlayerShotState)
-            return useRaycastsForPlayerShots;
-
-        if (projectile.GetCurrentState() is EnemyShotState)
-            return useRaycastsOnlyForHoming && projectile.homing;
-
-        return false;
-    }
-
-    public ProjectileStateBased GetProjectileById(int id)
-    {
-        if (projectileLookup.TryGetValue(id, out ProjectileStateBased projectile))
-        {
-            return projectile;
-        }
-        return null;
+        currentProcessingInterval = baseProcessingInterval / timeScale;
     }
 
     public void RegisterHomingProjectile(int projectileId)
@@ -1046,5 +774,65 @@ public class ProjectileManager : MonoBehaviour
     public IReadOnlyCollection<int> GetActiveHomingProjectileIds()
     {
         return homingProjectileIds;
+    }
+
+    private void OnDrawGizmos()
+    {
+        if (!showDebugGrid || !Application.isPlaying) return;
+
+        // Draw player projectile grid in blue
+        DrawGrid(playerProjectileGrid, new Color(0f, 0.5f, 1f, 0.1f), "Player");
+
+        // Draw enemy projectile grid in red
+        DrawGrid(enemyProjectileGrid, new Color(1f, 0.2f, 0.2f, 0.1f), "Enemy");
+    }
+
+    private void DrawGrid(Dictionary<Vector2Int, HashSet<ProjectileStateBased>> grid, Color color, string label)
+    {
+        foreach (var cell in grid.Keys)
+        {
+            Vector3 cellCenter = new Vector3(
+                (cell.x + 0.5f) * GRID_CELL_SIZE,
+                0,
+                (cell.y + 0.5f) * GRID_CELL_SIZE
+            );
+
+            // Draw cell boundaries
+            Gizmos.color = color;
+            Gizmos.DrawWireCube(cellCenter, new Vector3(GRID_CELL_SIZE, 0.1f, GRID_CELL_SIZE));
+
+#if UNITY_EDITOR
+            // Show projectile count in scene view
+            UnityEditor.Handles.Label(cellCenter + Vector3.up * 2,
+                $"{label} Projectiles: {grid[cell].Count}");
+#endif
+
+            if (showProjectileConnections)
+            {
+                DrawProjectileConnections(grid[cell], color);
+            }
+        }
+    }
+
+    private void DrawProjectileConnections(HashSet<ProjectileStateBased> projectiles, Color baseColor)
+    {
+        var projectileList = projectiles.ToList();
+        for (int i = 0; i < projectileList.Count; i++)
+        {
+            if (projectileList[i] == null) continue;
+
+            Vector3 pos1 = projectileList[i].transform.position;
+            for (int j = i + 1; j < projectileList.Count; j++)
+            {
+                if (projectileList[j] == null) continue;
+
+                Vector3 pos2 = projectileList[j].transform.position;
+                if (Vector3.Distance(pos1, pos2) <= maxRaycastDistance)
+                {
+                    Gizmos.color = new Color(baseColor.r, baseColor.g, baseColor.b, 0.5f);
+                    Gizmos.DrawLine(pos1, pos2);
+                }
+            }
+        }
     }
 }

@@ -127,7 +127,7 @@ public class AudioManager : MonoBehaviour
     #endregion
 
     #region Music Management
-    private void SetMusicParameter(string parameterName, float value)
+    public void SetMusicParameter(string parameterName, float value)
     {
         if (musicPlayback == null || !musicPlayback.EventInstance.isValid())
         {

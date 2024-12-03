@@ -34,7 +34,7 @@ public class WaveEventSubscriptions : MonoBehaviour
 
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
-        Debug.Log("Scene Loaded: " + scene.name);
+        ConditionalDebug.Log("Scene Loaded: " + scene.name);
         FindAndSubscribeToComponents();
     }
 
@@ -49,7 +49,7 @@ public class WaveEventSubscriptions : MonoBehaviour
         splineManager = FindObjectOfType<SplineManager>();
         if (splineManager == null)
         {
-            Debug.LogError("SplineManager not found in the scene!");
+            ConditionalDebug.LogError("SplineManager not found in the scene!");
         }
 
         if (waveSpawnController != null)
@@ -62,7 +62,7 @@ public class WaveEventSubscriptions : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning("Active WaveSpawnController not found in the scene!");
+            ConditionalDebug.LogWarning("Active WaveSpawnController not found in the scene!");
         }
     }
 
@@ -94,14 +94,14 @@ public class WaveEventSubscriptions : MonoBehaviour
 
     private void OnWaveStarted()
     {
-        Debug.Log($"<color=blue>[WAVE] Wave Started! Current Scene: {SceneManagerBTR.Instance.GetCurrentSceneName()}, Section: {SceneManagerBTR.Instance.GetCurrentSongSectionName()}</color>");
-        
+        ConditionalDebug.Log($"<color=blue>[WAVE] Wave Started! Current Scene: {SceneManagerBTR.Instance.GetCurrentSceneName()}, Section: {SceneManagerBTR.Instance.GetCurrentSongSectionName()}</color>");
+
         // Notify ProjectileManager of wave start
         if (ProjectileManager.Instance != null)
         {
             ProjectileManager.Instance.OnWaveStart();
         }
-        
+
         SceneManagerBTR.Instance.updateStatus("wavestart");
 
         // Clear all player locks at the start of a wave
@@ -131,10 +131,14 @@ public class WaveEventSubscriptions : MonoBehaviour
         PlayerLocking.Instance.OnNewWaveOrAreaTransition();
 
         // Increment spline at the start of a wave
+        ConditionalDebug.Log("<color=blue>[WAVE] Calling IncrementSpline from OnWaveStarted</color>");
         if (splineManager != null)
         {
-            Debug.Log($"<color=blue>[WAVE] Calling IncrementSpline from OnWaveStarted</color>");
             splineManager.IncrementSpline();
+        }
+        else
+        {
+            ConditionalDebug.LogError("SplineManager is null in OnWaveStarted!");
         }
 
         // Invoke the UnityEvent
@@ -143,14 +147,14 @@ public class WaveEventSubscriptions : MonoBehaviour
 
     private void OnWaveEnded()
     {
-        Debug.Log($"<color=blue>[WAVE] Wave Ended! Current Scene: {SceneManagerBTR.Instance.GetCurrentSceneName()}, Section: {SceneManagerBTR.Instance.GetCurrentSongSectionName()}</color>");
-        
+        ConditionalDebug.Log($"<color=blue>[WAVE] Wave Ended! Current Scene: {SceneManagerBTR.Instance.GetCurrentSceneName()}, Section: {SceneManagerBTR.Instance.GetCurrentSongSectionName()}</color>");
+
         // Clean up projectiles at wave end
         if (ProjectileManager.Instance != null)
         {
             ProjectileManager.Instance.OnWaveEnd();
         }
-        
+
         ScoreManager.Instance.waveCounterAdd();
         SceneManagerBTR.Instance.updateStatus("waveend");
 
