@@ -18,9 +18,9 @@ public class DebugProjectileShooter : MonoBehaviour
 
     private void FindRequiredComponents()
     {
-        playerLocking = FindObjectOfType<PlayerLocking>();
-        playerShooting = FindObjectOfType<PlayerShooting>();
-        crosshairCore = FindObjectOfType<CrosshairCore>();
+        playerLocking = FindFirstObjectByType<PlayerLocking>();
+        playerShooting = FindFirstObjectByType<PlayerShooting>();
+        crosshairCore = FindFirstObjectByType<CrosshairCore>();
 
         if (playerLocking == null || playerShooting == null || crosshairCore == null)
         {

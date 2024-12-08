@@ -11,7 +11,7 @@ public class EnemySpeedController : MonoBehaviour
     [SerializeField]
     private float maxSpeedMultiplier = 2f;
 
-    private EnemyBasicSetup enemySetup;
+    private EnemyBasics enemySetup;
     private CustomAIPathAlignedToSurface aiPath;
     private int initialPartCount;
     private int currentAliveParts;
@@ -19,7 +19,7 @@ public class EnemySpeedController : MonoBehaviour
 
     private void Awake()
     {
-        enemySetup = GetComponent<EnemyBasicSetup>();
+        enemySetup = GetComponent<EnemyBasics>();
         aiPath = GetComponent<CustomAIPathAlignedToSurface>();
 
         // Initialize part count and speed

@@ -36,12 +36,12 @@ public class StaticEnemyShooting : MonoBehaviour
 
     public void OnEnable()
     {
-        EnemyShootingManager.Instance?.RegisterStaticEnemyShooting(this);
+        EnemyManager.Instance?.RegisterStaticEnemyShooting(this);
     }
 
     void OnDisable()
     {
-        EnemyShootingManager.Instance?.UnregisterStaticEnemyShooting(this);
+        EnemyManager.Instance?.UnregisterStaticEnemyShooting(this);
     }
 
     public void Shoot()
@@ -69,16 +69,16 @@ public class StaticEnemyShooting : MonoBehaviour
             return;
         }
 
-        if (EnemyShootingManager.Instance == null)
+        if (EnemyManager.Instance == null)
         {
             #if UNITY_EDITOR
-            ConditionalDebug.LogError(logBuilder.Append(": EnemyShootingManager.Instance is null").ToString());
+            ConditionalDebug.LogError(logBuilder.Append(": EnemyManager.Instance is null").ToString());
             #endif
             return;
         }
 
         bool shouldShoot = true;
-        float currentTime = EnemyShootingManager.Instance.GetCurrentTime();
+        float currentTime = EnemyManager.Instance.GetCurrentTime();
         float timeSinceLastShot = currentTime - lastShootTime;
 
         #if UNITY_EDITOR

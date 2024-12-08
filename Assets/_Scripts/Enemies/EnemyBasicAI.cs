@@ -1,199 +1,241 @@
 using UnityEngine;
 using Pathfinding;
+using System.Collections;
+using System.Collections.Generic;
 
 [RequireComponent(typeof(FollowerEntity))]
-[RequireComponent(typeof(EnemyBasicSetup))]
+[RequireComponent(typeof(EnemyBasics))]
 public class EnemyBasicAI : MonoBehaviour
 {
     [Header("Movement Settings")]
-    [Tooltip("Minimum distance to maintain from the player")]
-    public float minPlayerDistance = 5f;
-    [Tooltip("Maximum distance to maintain from the player")]
-    public float maxPlayerDistance = 10f;
-    [Tooltip("Time to wait at each position before moving")]
-    public float timeAtPosition = 2f;
-    [Tooltip("Minimum angle to rotate when choosing a new position")]
-    public float minMoveAngle = 10f;
-    [Tooltip("Maximum angle to rotate when choosing a new position")]
-    public float maxMoveAngle = 20f;
+    private float _minPlayerDistance = 5f;
+    private float _maxPlayerDistance = 10f;
+    private float _repositionInterval = 0.5f; // How often to update position
+    private float _minEnemySpacing = 3f; // Minimum distance between enemies
 
-    [Header("Attack Settings")]
-    [Tooltip("Cooldown between attacks")]
-    public float attackCooldown = 1f;
+    [Header("Positioning")]
+    private bool _prioritizeLineOfSight = true;
+    private int _positionAttempts = 8;
+    private LayerMask _obstacleLayerMask;
+    private LayerMask _enemyLayerMask;
 
-    [Header("Line of Sight Settings")]
-    [Tooltip("Should the enemy prioritize positions with line of sight to the player?")]
-    public bool prioritizeLineOfSight = true;
-    [Tooltip("Number of attempts to find a position with line of sight")]
-    public int lineOfSightAttempts = 5;
-    [Tooltip("Layer mask for obstacles that block line of sight")]
-    public static LayerMask obstacleLayerMask;
+    protected float MinPlayerDistance => _minPlayerDistance;
+    protected float MaxPlayerDistance => _maxPlayerDistance;
+    protected float RepositionInterval => _repositionInterval;
+    protected float MinEnemySpacing => _minEnemySpacing;
+    protected bool PrioritizeLineOfSight => _prioritizeLineOfSight;
+    protected int PositionAttempts => _positionAttempts;
+    protected LayerMask ObstacleLayerMask => _obstacleLayerMask;
+    protected LayerMask EnemyLayerMask => _enemyLayerMask;
 
-    private FollowerEntity followerEntity;
-    private EnemyBasicSetup enemySetup;
-    private static Transform playerTransform;
-    private float lastAttackTime;
-    private float lastPositionChangeTime;
+    private FollowerEntity _followerEntity;
+    private EnemyBasics _basics;
+    private Transform _playerTransform;
     private Vector3 currentDestination;
-    private float pathUpdateInterval = 0.5f;
-    private float lastPathUpdateTime;
-    private float distanceThresholdForPathUpdate = 1f; // Only update path if moved this far
-    private Vector3 lastPathUpdatePosition;
+    private float lastRepositionTime;
     private bool hasLineOfSightToPlayer;
+    private List<EnemyBasicAI> nearbyEnemies = new List<EnemyBasicAI>();
+    private const float NEARBY_ENEMY_CHECK_RADIUS = 10f;
 
-    // Cache for position calculations
-    private static readonly Vector3[] cachedDirections;
-    private static readonly Vector3[] potentialPositions;
-    private static int currentPositionIndex;
+    protected FollowerEntity FollowerEntity => _followerEntity;
+    protected Transform PlayerTransform => _playerTransform;
+    protected EnemyBasics Basics => _basics;
 
-    static EnemyBasicAI()
+    protected virtual void Awake()
     {
-        cachedDirections = new Vector3[8];
-        potentialPositions = new Vector3[8];
-
-        // Pre-calculate evenly distributed directions
-        for (int i = 0; i < 8; i++)
-        {
-            float angle = i * (360f / 8);
-            cachedDirections[i] = Quaternion.Euler(0, angle, 0) * Vector3.forward;
-        }
-    }
-
-    private void Awake()
-    {
-        followerEntity = GetComponent<FollowerEntity>();
-        enemySetup = GetComponent<EnemyBasicSetup>();
-        if (playerTransform == null)
-        {
-            playerTransform = GameObject.FindGameObjectWithTag("Player").transform;
-        }
-        EnemyShootingManager.Instance.RegisterBasicEnemy(this);
-    }
-
-    private void OnDestroy()
-    {
-        EnemyShootingManager.Instance.UnregisterBasicEnemy(this);
+        _followerEntity = GetComponent<FollowerEntity>();
+        _basics = GetComponent<EnemyBasics>();
+        _playerTransform = _basics.PlayerTransform;
     }
 
     private void Start()
     {
-        // Initial position setup
+        StartCoroutine(StaggeredStart());
+    }
+
+    private IEnumerator StaggeredStart()
+    {
+        // Register with manager first - this is lightweight
+        if (EnemyManager.Instance != null)
+        {
+            EnemyManager.Instance.RegisterBasicEnemy(this);
+            EnemyManager.Instance.RegisterEnemy(GetComponent<EnemyBasics>());
+        }
+        
+        // Wait for a random short delay to spread out the heavy operations
+        yield return new WaitForSeconds(Random.Range(0.1f, 0.3f));
+        
+        // Then do the expensive operations
         ChooseNewPosition();
+    }
+
+    private void OnDestroy()
+    {
+        if (EnemyManager.Instance != null)
+        {
+            EnemyManager.Instance.UnregisterBasicEnemy(this);
+            EnemyManager.Instance.UnregisterEnemy(GetComponent<EnemyBasics>());
+        }
     }
 
     private void Update()
     {
-        // Check if it's time to move to a new position
-        if (Time.time - lastPositionChangeTime > timeAtPosition)
+        // Constantly evaluate and update position
+        if (Time.time - lastRepositionTime >= RepositionInterval)
         {
+            UpdateNearbyEnemies();
             ChooseNewPosition();
         }
 
-        // Update path based on distance moved
-        if (Vector3.Distance(transform.position, lastPathUpdatePosition) > distanceThresholdForPathUpdate)
+        // Ensure we have a valid line of sight state
+        if (!hasLineOfSightToPlayer)
         {
-            followerEntity.destination = currentDestination;
-            lastPathUpdatePosition = transform.position;
+            hasLineOfSightToPlayer = CheckLineOfSight();
         }
+    }
 
-        // Attack if possible
-        if (Time.time - lastAttackTime > attackCooldown && hasLineOfSightToPlayer)
+    private void UpdateNearbyEnemies()
+    {
+        nearbyEnemies.Clear();
+        Collider[] colliders = Physics.OverlapSphere(transform.position, NEARBY_ENEMY_CHECK_RADIUS, EnemyLayerMask);
+        
+        foreach (var collider in colliders)
         {
-            Attack();
+            var enemy = collider.GetComponent<EnemyBasicAI>();
+            if (enemy != null && enemy != this)
+            {
+                nearbyEnemies.Add(enemy);
+            }
         }
     }
 
     private void ChooseNewPosition()
     {
-        Vector3 newPosition;
-        if (prioritizeLineOfSight)
+        Vector3 bestPosition = transform.position;
+        float bestScore = float.MinValue;
+
+        // Generate positions around the player at different angles
+        for (int i = 0; i < PositionAttempts; i++)
         {
-            newPosition = FindPositionWithLineOfSight();
-        }
-        else
-        {
-            newPosition = GetRandomPositionAroundPlayer();
-        }
+            float angle = (360f / PositionAttempts) * i;
+            Vector3 potentialPosition = GetPositionAtAngle(angle);
+            float score = EvaluatePosition(potentialPosition);
 
-        currentDestination = newPosition;
-        lastPositionChangeTime = Time.time;
-    }
-
-    private Vector3 GetRandomPositionAroundPlayer()
-    {
-        // Use cached directions instead of random angles
-        int dirIndex = Random.Range(0, cachedDirections.Length);
-        float distance = Random.Range(minPlayerDistance, maxPlayerDistance);
-        return playerTransform.position + cachedDirections[dirIndex] * distance;
-    }
-
-    private Vector3 FindPositionWithLineOfSight()
-    {
-        // Pre-calculate potential positions
-        for (int i = 0; i < cachedDirections.Length; i++)
-        {
-            float distance = Random.Range(minPlayerDistance, maxPlayerDistance);
-            potentialPositions[i] = playerTransform.position + cachedDirections[i] * distance;
-        }
-
-        // Find best position from pre-calculated positions
-        Vector3 bestPosition = potentialPositions[0];
-        float bestDistance = float.MaxValue;
-
-        for (int i = 0; i < cachedDirections.Length; i++)
-        {
-            Vector3 potentialPosition = potentialPositions[i];
-            if (HasLineOfSight(potentialPosition))
+            if (score > bestScore)
             {
-                float distance = Vector3.Distance(potentialPosition, playerTransform.position);
-                if (distance < bestDistance)
-                {
-                    bestPosition = potentialPosition;
-                    bestDistance = distance;
-                }
+                bestScore = score;
+                bestPosition = potentialPosition;
             }
         }
 
-        return bestPosition;
+        currentDestination = bestPosition;
+        lastRepositionTime = Time.time;
+        FollowerEntity.destination = currentDestination;
     }
 
-    private bool HasLineOfSight(Vector3 fromPosition)
+    private Vector3 GetPositionAtAngle(float angle)
     {
-        // This method is now only called from FindPositionWithLineOfSight
-        // Line of sight to player is handled by EnemyShootingManager
-        Vector3 direction = playerTransform.position - fromPosition;
-        return !Physics.Raycast(fromPosition, direction, direction.magnitude, obstacleLayerMask);
+        float distance = Random.Range(MinPlayerDistance, MaxPlayerDistance);
+        Vector3 direction = Quaternion.Euler(0, angle, 0) * Vector3.forward;
+        return PlayerTransform.position + direction * distance;
     }
 
-    private void Attack()
+    private float EvaluatePosition(Vector3 position)
     {
-        // Use EnemyBasicSetup to perform the attack
-        enemySetup.Attack(playerTransform.position);
-        lastAttackTime = Time.time;
+        float score = 0f;
+
+        // Base distance score
+        float distanceToPlayer = Vector3.Distance(position, PlayerTransform.position);
+        score += GetDistanceScore(distanceToPlayer);
+
+        // Line of sight score is now handled by EnemyManager
+        if (PrioritizeLineOfSight && hasLineOfSightToPlayer)
+        {
+            score += 2f;
+        }
+
+        // Enemy spacing score
+        score += GetSpacingScore(position);
+
+        // Surrounding score (prefer positions that help surround the player)
+        score += GetSurroundingScore(position);
+
+        return score;
     }
 
-    // This method can be called to force the enemy to choose a new position immediately
-    public void ForceNewPosition()
+    private float GetDistanceScore(float distance)
     {
-        ChooseNewPosition();
+        // Prefer distances in the middle of the min-max range
+        float optimalDistance = (MinPlayerDistance + MaxPlayerDistance) * 0.5f;
+        return 1f - Mathf.Abs(distance - optimalDistance) / MaxPlayerDistance;
+    }
+
+    private float GetSpacingScore(Vector3 position)
+    {
+        float score = 0f;
+        
+        foreach (var enemy in nearbyEnemies)
+        {
+            float distance = Vector3.Distance(position, enemy.transform.position);
+            if (distance < MinEnemySpacing)
+            {
+                // Heavily penalize positions too close to other enemies
+                score -= (MinEnemySpacing - distance) * 2f;
+            }
+        }
+        
+        return score;
+    }
+
+    private float GetSurroundingScore(Vector3 position)
+    {
+        // Calculate the angle between this position and other enemies relative to the player
+        float score = 0f;
+        Vector3 dirToPosition = (position - PlayerTransform.position).normalized;
+        
+        foreach (var enemy in nearbyEnemies)
+        {
+            Vector3 dirToEnemy = (enemy.transform.position - PlayerTransform.position).normalized;
+            float angle = Vector3.Angle(dirToPosition, dirToEnemy);
+            
+            // Prefer positions that maximize angles between enemies (better surrounding)
+            score += Mathf.Clamp01(angle / 180f);
+        }
+        
+        return score;
+    }
+
+    #region Line of Sight
+    public bool CheckLineOfSight()
+    {
+        Vector3 directionToPlayer = (PlayerTransform.position - transform.position).normalized;
+        float distanceToPlayer = Vector3.Distance(transform.position, PlayerTransform.position);
+        
+        return !Physics.Raycast(transform.position, directionToPlayer, distanceToPlayer, ObstacleLayerMask);
+    }
+
+    public bool HasLineOfSightFrom(Vector3 position)
+    {
+        Vector3 directionToPlayer = (PlayerTransform.position - position).normalized;
+        float distanceToPlayer = Vector3.Distance(position, PlayerTransform.position);
+        
+        return !Physics.Raycast(position, directionToPlayer, distanceToPlayer, ObstacleLayerMask);
     }
 
     public void HandleLineOfSightResult(bool hasLineOfSight)
     {
         hasLineOfSightToPlayer = hasLineOfSight;
-
-        if (hasLineOfSight)
-        {
-            // Enemy can see the player, maybe prepare to attack
-            if (Time.time - lastAttackTime > attackCooldown)
-            {
-                Attack();
-            }
-        }
-        else
-        {
-            // Enemy can't see the player, maybe move to a better position
-            ForceNewPosition();
-        }
     }
+    #endregion
+
+    #region Public Interface
+    public bool HasLineOfSight() => hasLineOfSightToPlayer;
+    public float GetDistanceToPlayer() => Vector3.Distance(transform.position, PlayerTransform.position);
+    public Vector3 GetDirectionToPlayer() => (PlayerTransform.position - transform.position).normalized;
+
+    public void ForceNewPosition()
+    {
+        ChooseNewPosition();
+    }
+    #endregion
 }

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -76,7 +76,7 @@ public class PlayerMovement : MonoBehaviour
 
     [Header("Camera")]
     [SerializeField]
-    private CinemachineVirtualCamera mainVirtualCamera;
+    private CinemachineCamera mainVirtualCamera;
     private CinemachineBrain cinemachineBrain;
     private Vector3 cameraPositionBeforeRotation;
 

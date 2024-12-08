@@ -21,6 +21,7 @@ public class CustomRenderPass : ScriptableRenderPass
     // You should never call CommandBuffer.SetRenderTarget. Instead call <c>ConfigureTarget</c> and <c>ConfigureClear</c>.
     // The render pipeline will ensure target setup and clearing happens in a performant manner.
 
+    [System.Obsolete("Use ConfigureRenderGraph instead")]
     public override void OnCameraSetup(CommandBuffer cmd, ref RenderingData renderingData)
     {
         // Use cameraColorTargetHandle instead of cameraColorTarget
@@ -33,6 +34,7 @@ public class CustomRenderPass : ScriptableRenderPass
     // https://docs.unity3d.com/ScriptReference/Rendering.ScriptableRenderContext.html
     // You don't have to call ScriptableRenderContext.submit, the render pipeline will call it at specific points in the pipeline.
 
+    [System.Obsolete("Use RenderGraph API instead")]
     public override void Execute(ScriptableRenderContext context, ref RenderingData renderingData)
     {
         CommandBuffer cmd = CommandBufferPool.Get();
@@ -49,9 +51,7 @@ public class CustomRenderPass : ScriptableRenderPass
 
     public override void OnCameraCleanup(CommandBuffer cmd)
     {
-        destination?.Release();
+        if (destination != null)
+            destination.Release();
     }
 }
-
-
-

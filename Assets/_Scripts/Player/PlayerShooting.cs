@@ -26,6 +26,12 @@ public class PlayerShooting : MonoBehaviour
     [SerializeField] private float projectileSpeed = 50f;
     [SerializeField] private float projectileScale = 1f;
     [SerializeField] private float nonTargetedSpeedMultiplier = 2f; // New field for speed multiplier
+
+    [Header("Sound Settings")]
+    [SerializeField] private int maxConcurrentSounds = 3;
+    [SerializeField] private float minTimeBetweenSounds = 0.05f;
+    private float lastSoundTime;
+    private Queue<FMOD.Studio.EventInstance> soundPool;
     #endregion
 
     #region References
@@ -51,6 +57,7 @@ public class PlayerShooting : MonoBehaviour
         }
 
         InitializeLockOnEffectPool();
+        InitializeSoundPool();
         launchDelayWait = new WaitForSeconds(launchDelay);
     }
 
@@ -68,32 +75,66 @@ public class PlayerShooting : MonoBehaviour
         }
     }
 
+    private void InitializeSoundPool()
+    {
+        soundPool = new Queue<FMOD.Studio.EventInstance>();
+        for (int i = 0; i < maxConcurrentSounds; i++)
+        {
+            var instance = RuntimeManager.CreateInstance(randomShootingEvent);
+            soundPool.Enqueue(instance);
+        }
+    }
+
+    private void OnDestroy()
+    {
+        // Clean up FMOD instances
+        if (soundPool != null)
+        {
+            foreach (var instance in soundPool)
+            {
+                instance.release();
+            }
+        }
+    }
+
     public void HandleShootingEffects()
     {
-        PlayRandomShooting();
-        PlayRandomShootTag();
+        if (Time.time - lastSoundTime >= minTimeBetweenSounds)
+        {
+            PlayPooledSound();
+            lastSoundTime = Time.time;
+        }
         StartCoroutine(ShootVibrate());
         shootFeedback.PlayFeedbacks();
     }
 
-    private void PlayRandomShooting() => RuntimeManager.PlayOneShot(randomShootingEvent);
-
-    private void PlayRandomShootTag() => RuntimeManager.PlayOneShot(shootTagEvent);
-
-    private IEnumerator ShootVibrate()
+    private void PlayPooledSound()
     {
-        // Implement vibration logic here
-        yield return new WaitForSeconds(.1f);
+        if (soundPool.Count > 0)
+        {
+            var instance = soundPool.Dequeue();
+            instance.start();
+
+            // Return the instance to the pool after a short delay
+            StartCoroutine(ReturnToPool(instance));
+        }
+    }
+
+    private IEnumerator ReturnToPool(FMOD.Studio.EventInstance instance)
+    {
+        yield return new WaitForSeconds(0.1f);
+        instance.stop(FMOD.Studio.STOP_MODE.ALLOWFADEOUT);
+        soundPool.Enqueue(instance);
     }
 
     public IEnumerator LaunchProjectilesWithDelay()
     {
         ProjectileManager.Instance.CompleteRunningJobs();
-        
+
         crosshairCore.lastProjectileLaunchTime = Time.time;
 
         int lockedProjectileCount = playerLocking.GetLockedProjectileCount();
-        
+
         if (lockedProjectileCount > 0)
         {
             if (playerLocking.enemyTargetList.Count > 0)
@@ -177,5 +218,11 @@ public class PlayerShooting : MonoBehaviour
         {
             ConditionalDebug.LogError("[PlayerShooting] ProjectileSpawner.Instance is null!");
         }
+    }
+
+    private IEnumerator ShootVibrate()
+    {
+        // Implement vibration logic here
+        yield return new WaitForSeconds(.1f);
     }
 }

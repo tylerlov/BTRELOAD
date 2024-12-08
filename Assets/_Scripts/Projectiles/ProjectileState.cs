@@ -13,7 +13,6 @@ public abstract class ProjectileState
 
     public virtual void OnTriggerEnter(Collider other) { }
 
-    // Add this new virtual method
     public virtual void OnCollisionEnter(Collision collision) { }
 
     public virtual void OnDeath() { }
@@ -25,6 +24,14 @@ public abstract class ProjectileState
     public virtual void Update() { }
 
     public virtual void CustomUpdate(float timeScale) { }
+
+    public virtual void UpdatePosition()
+    {
+        if (_projectile != null && _projectile.rb != null)
+        {
+            _projectile.transform.position += _projectile.rb.linearVelocity * Time.deltaTime;
+        }
+    }
 
     public ProjectileStateBased GetProjectile()
     {

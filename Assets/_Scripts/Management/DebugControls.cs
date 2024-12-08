@@ -120,7 +120,7 @@ public class DebugControls : MonoBehaviour, IPointerClickHandler
             return;
         }
 
-        PlayerHealth playerHealth = FindObjectOfType<PlayerHealth>();
+        PlayerHealth playerHealth = FindAnyObjectByType<PlayerHealth>();
         if (playerHealth == null)
         {
             ConditionalDebug.LogError("PlayerHealth component not found in the scene.");
@@ -133,8 +133,7 @@ public class DebugControls : MonoBehaviour, IPointerClickHandler
     private void OnDebugKillAllEnemies()
     {
         // Find all game objects that implement the IDamageable interface
-        var damageables = UnityEngine
-            .Object.FindObjectsOfType<MonoBehaviour>()
+        var damageables = FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None)
             .OfType<IDamageable>();
 
         int killedEnemies = 0;
@@ -150,7 +149,7 @@ public class DebugControls : MonoBehaviour, IPointerClickHandler
         }
 
         // Handle projectiles
-        var projectiles = FindObjectsOfType<ProjectileStateBased>();
+        var projectiles = FindObjectsByType<ProjectileStateBased>(FindObjectsSortMode.None);
         foreach (var projectile in projectiles)
         {
             projectile.Death();
@@ -170,7 +169,7 @@ public class DebugControls : MonoBehaviour, IPointerClickHandler
     private void OnDebugToggleInvincibility()
     {
         isPlayerInvincible = !isPlayerInvincible;
-        PlayerHealth playerHealth = FindObjectOfType<PlayerHealth>();
+        PlayerHealth playerHealth = FindAnyObjectByType<PlayerHealth>();
         if (playerHealth != null)
         {
             playerHealth.SetInvincibleInternal(isPlayerInvincible);
@@ -192,8 +191,7 @@ public class DebugControls : MonoBehaviour, IPointerClickHandler
     public void KillAllEnemies()
     {
         // Find all game objects that implement the IDamageable interface
-        var damageables = UnityEngine
-            .Object.FindObjectsOfType<MonoBehaviour>()
+        var damageables = FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None)
             .OfType<IDamageable>();
 
         int killedEnemies = 0;
@@ -209,7 +207,7 @@ public class DebugControls : MonoBehaviour, IPointerClickHandler
         }
 
         // Handle projectiles
-        var projectiles = FindObjectsOfType<ProjectileStateBased>();
+        var projectiles = FindObjectsByType<ProjectileStateBased>(FindObjectsSortMode.None);
         foreach (var projectile in projectiles)
         {
             projectile.Death();
@@ -228,7 +226,7 @@ public class DebugControls : MonoBehaviour, IPointerClickHandler
 
     public void CallDeathOnLayerObjects(int layer)
     {
-        var gameObjects = FindObjectsOfType(typeof(GameObject)) as GameObject[];
+        var gameObjects = FindObjectsByType<GameObject>(FindObjectsSortMode.None);
 
         foreach (var obj in gameObjects)
         {
@@ -246,9 +244,7 @@ public class DebugControls : MonoBehaviour, IPointerClickHandler
     private void FindUIElement()
     {
         // Find the UI element named "Score" on the "UI" layer
-        uiElement = GameObject
-            .FindObjectsOfType<GameObject>()
-            .FirstOrDefault(go => go.name == "Score" && go.layer == LayerMask.NameToLayer("UI"));
+        uiElement = FindAnyObjectByType<GameObject>();
         if (uiElement == null)
         {
             ConditionalDebug.LogError("UI element named 'Score' not found on the 'UI' layer.");

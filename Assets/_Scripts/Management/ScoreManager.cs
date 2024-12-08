@@ -67,7 +67,7 @@ public class ScoreManager : MonoBehaviour
 
     private void Start()
     {
-        scoreUI = FindObjectOfType<PlayerUI>();
+        scoreUI = FindFirstObjectByType<PlayerUI>();
     }
 
     private void Update()

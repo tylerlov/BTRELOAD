@@ -2,22 +2,15 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+[RequireComponent(typeof(Collider))]
 public class EnemyInstantKill : MonoBehaviour
 {
-    private void OnCollisionEnter(Collision collision)
+    private void OnTriggerEnter(Collider other)
     {
-        if (collision.gameObject.CompareTag("Enemy"))
+        var enemy = other.GetComponent<EnemyBasics>();
+        if (enemy != null)
         {
-            // Assuming the enemy game object has a script that has the Death method
-            EnemyBasicSetup enemyScript = collision.gameObject.GetComponent<EnemyBasicSetup>();
-            if (enemyScript != null)
-            {
-                enemyScript.Damage(1000f);
-            }
-            else
-            {
-                Debug.LogError("EnemyScript not found on enemy game object.");
-            }
+            enemy.TakeDamage(float.MaxValue);
         }
     }
 }

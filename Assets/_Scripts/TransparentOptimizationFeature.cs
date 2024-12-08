@@ -8,75 +8,79 @@ public class TransparentOptimizationFeature : ScriptableRendererFeature
     {
         private RTHandle m_TransparentColor;
         private RTHandle m_TransparentDepth;
+        private ProfilingSampler m_ProfilingSampler;
         
         public TransparentRenderPass()
         {
-            profilingSampler = new ProfilingSampler("Transparent Optimization Pass");
+            m_ProfilingSampler = new ProfilingSampler("Transparent Optimization Pass");
             renderPassEvent = RenderPassEvent.BeforeRenderingTransparents;
         }
 
+        [System.Obsolete("Use RenderGraph API instead")]
         public override void Configure(CommandBuffer cmd, RenderTextureDescriptor cameraTextureDescriptor)
         {
             var colorDesc = cameraTextureDescriptor;
             colorDesc.depthBufferBits = 0;
             
-            RenderingUtils.ReAllocateIfNeeded(ref m_TransparentColor, colorDesc, name: "_TransparentColor");
+            RenderingUtils.ReAllocateHandleIfNeeded(ref m_TransparentColor, colorDesc, name: "_TransparentColor");
             
             var depthDesc = cameraTextureDescriptor;
             depthDesc.colorFormat = RenderTextureFormat.Depth;
             depthDesc.depthBufferBits = 32;
             
-            RenderingUtils.ReAllocateIfNeeded(ref m_TransparentDepth, depthDesc, name: "_TransparentDepth");
+            RenderingUtils.ReAllocateHandleIfNeeded(ref m_TransparentDepth, depthDesc, name: "_TransparentDepth");
             
             ConfigureTarget(m_TransparentColor, m_TransparentDepth);
             ConfigureClear(ClearFlag.All, Color.clear);
         }
 
+        [System.Obsolete("Use RenderGraph API instead")]
         public override void Execute(ScriptableRenderContext context, ref RenderingData renderingData)
         {
-            var sortingSettings = new SortingSettings(renderingData.cameraData.camera)
+            var cmd = CommandBufferPool.Get();
+            using (new ProfilingScope(cmd, m_ProfilingSampler))
             {
-                criteria = SortingCriteria.CommonTransparent | SortingCriteria.QuantizedFrontToBack
-            };
+                var sortingSettings = new SortingSettings(renderingData.cameraData.camera)
+                {
+                    criteria = SortingCriteria.CommonTransparent | SortingCriteria.QuantizedFrontToBack
+                };
 
-            var drawingSettings = CreateDrawingSettings(
-                new ShaderTagId("UniversalForward"), 
-                ref renderingData, 
-                sortingSettings.criteria);
+                var drawingSettings = CreateDrawingSettings(
+                    new ShaderTagId("UniversalForward"), 
+                    ref renderingData, 
+                    sortingSettings.criteria);
 
-            var filteringSettings = new FilteringSettings(
-                RenderQueueRange.transparent);
+                var filteringSettings = new FilteringSettings(RenderQueueRange.transparent);
 
-            context.DrawRenderers(
-                renderingData.cullResults,
-                ref drawingSettings,
-                ref filteringSettings);
+                // Use DrawRenderers directly since we're in compatibility mode
+                context.DrawRenderers(
+                    renderingData.cullResults,
+                    ref drawingSettings,
+                    ref filteringSettings);
+            }
+            
+            context.ExecuteCommandBuffer(cmd);
+            CommandBufferPool.Release(cmd);
         }
 
         public override void OnCameraCleanup(CommandBuffer cmd)
         {
-            m_TransparentColor?.Release();
-            m_TransparentDepth?.Release();
+            if (m_TransparentColor != null)
+                m_TransparentColor.Release();
+            if (m_TransparentDepth != null)
+                m_TransparentDepth.Release();
         }
     }
 
-    private TransparentRenderPass m_TransparentPass;
+    private TransparentRenderPass m_RenderPass;
 
     public override void Create()
     {
-        m_TransparentPass = new TransparentRenderPass();
+        m_RenderPass = new TransparentRenderPass();
     }
 
     public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
     {
-        if (Application.isPlaying)
-        {
-            renderer.EnqueuePass(m_TransparentPass);
-        }
-    }
-
-    protected override void Dispose(bool disposing)
-    {
-        m_TransparentPass?.OnCameraCleanup(null);
+        renderer.EnqueuePass(m_RenderPass);
     }
 }

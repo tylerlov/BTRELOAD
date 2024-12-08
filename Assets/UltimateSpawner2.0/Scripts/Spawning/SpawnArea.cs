@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using Random = UnityEngine.Random;
@@ -110,7 +110,6 @@ namespace UltimateSpawner.Spawning
         /// Limit the total number of spawn locations but eveny distribute the spawn requests.
         /// </summary>
         public int maxAvailableLocations = 16;
-
 
 #if ULTIMATESPAWNER_DEBUG
         /// <summary>
@@ -489,14 +488,13 @@ namespace UltimateSpawner.Spawning
                 if (check == OccupiedCheck.PhysicsOverlap)
                 {
                     // Overlap a box
-                    collidersInsideArea = Physics2D.OverlapBoxNonAlloc(transform.position, size, transform.rotation.z, sharedCollider2DBuffer, collisionLayer);
+                    var colliders = Physics2D.OverlapBox(transform.position, size, transform.rotation.z, collisionLayer);
+                    collidersInsideArea = colliders != null ? 1 : 0;
+                    colliderList = new List<Collider2D> { colliders };
 
-                    // Check if we  have completley filled the array
-                    if (collidersInsideArea == sharedBufferSize)
-                        Debug.LogWarning("Overlap check has filled the shared buffer. It is possible that some colliders have been missed by the check. You may need to increase the buffer size if your scene has a large amount of physics objects");
-
-                    // Get the collider list
-                    colliderList = sharedCollider2DBuffer;
+                    // Check if we have completely filled the array
+                    if (collidersInsideArea > 0)
+                        Debug.LogWarning("Overlap check has detected collisions. You may need to adjust the collision layer settings if this is unintended.");
                 }
                 else if (check == OccupiedCheck.PhysicsTrigger)
                 {
@@ -661,7 +659,7 @@ namespace UltimateSpawner.Spawning
 
         /// <summary>
         /// Force the spawn area to regenerate the colliders it uses for occupied checks.
-        /// This will cause physics components to be added as needed depending upon the current <see cref="OccupiedCheck"/> value. 
+        /// This will cause physics components to be added as needed depending upon the current <see cref="occupiedCheck"/> value. 
         /// </summary>
         public void RebuildColliders()
         {
@@ -961,7 +959,6 @@ namespace UltimateSpawner.Spawning
             Color unavailableInner = unavailableColor;
             availableInner.a = 0.6f;
             unavailableInner.a = 0.6f;
-
 
             // Find the blen amount
             float colorBlend = Mathf.InverseLerp(0, SpawnableItemCapacity, AvailableSpawnableItemCapacity);

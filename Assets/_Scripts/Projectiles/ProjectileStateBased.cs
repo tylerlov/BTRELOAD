@@ -824,4 +824,12 @@ public class ProjectileStateBased : MonoBehaviour
         radarSymbol = symbol;
     }
 
+    public void UpdatePosition()
+    {
+        if (currentState != null)
+        {
+            currentState.UpdatePosition();
+        }
+    }
+
 }

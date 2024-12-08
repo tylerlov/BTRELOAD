@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEngine.Events;
 using System.Collections;
 using System.Collections.Generic;
@@ -245,21 +245,16 @@ namespace SensorToolkit
 
             if (Radius > 0f) 
             {
-                prepareHitsBuffer();
-                hits = hitsBuffer;
-                numberOfHits = Physics2D.CircleCastNonAlloc(transform.position, Radius, direction, hits, Length, combinedLayers);
-                if (numberOfHits == CurrentBufferSize) 
+                var hitResults = Physics2D.CircleCast(transform.position, Radius, direction, Length, combinedLayers);
+                if (hitResults)
                 {
-                    if (DynamicallyIncreaseBufferSize) 
-                    {
-                        CurrentBufferSize *= 2;
-                        testRayMulti();
-                        return;
-                    }
-                    else 
-                    {
-                        logInsufficientBufferSize();
-                    }
+                    hits = new RaycastHit2D[] { hitResults };
+                    numberOfHits = 1;
+                }
+                else
+                {
+                    hits = new RaycastHit2D[0];
+                    numberOfHits = 0;
                 }
             }
             else 

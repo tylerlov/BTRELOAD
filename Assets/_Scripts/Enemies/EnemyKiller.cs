@@ -7,7 +7,7 @@ using UnityEngine.UI; // Add this
 
 public class EnemyKiller : MonoBehaviour, IPointerClickHandler // Implement the IPointerClickHandler interface
 {
-    private EnemyBasicSetup enemyScript;
+    private EnemyBasics enemyScript;
     public GameObject uiElement; // Reference to your UI GameObject
 
     private void Start()

@@ -38,6 +38,11 @@
             "name": "com.unity.inputsystem",
             "expression": "1.0.0",
             "define": "INPUT_SYSTEM_INSTALLED"
+        },
+        {
+            "name": "com.unity.ugui",
+            "expression": "2.0.0",
+            "define": "TEXT_MESH_PRO_INSTALLED"
         }
     ],
     "noEngineReferences": false

@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEngine;
 using System;
 
@@ -532,17 +532,18 @@ namespace UltimateSpawner.Spawning
                         if(is2DSpawner == true)
                         {
                             // Overlap a circle
-                            int collidersInsideArea = Physics2D.OverlapCircleNonAlloc(Center, spawnRadius, sharedCollider2DBuffer, collisionLayer);
+                            var colliders = Physics2D.OverlapCircle(Center, spawnRadius, collisionLayer);
+                            int collidersInsideArea = colliders != null ? 1 : 0;
 
                             // Check if we  have completley filled the array
-                            if (collidersInsideArea == sharedBufferSize)
+                            if (collidersInsideArea == 1)
                                 Debug.LogWarning("Overlap check has filled the shared buffer. It is possible that some colliders have been missed by the check. You may need to increase the buffer size if your scene has a large amount of physics objects");
                             
                             // Check all colliding objects
-                            for (int i = 0; i < collidersInsideArea; i++)
+                            if(colliders != null)
                             {
                                 // Only detect non-trigger physics colliders
-                                if(allowTriggerOccupiedChecks == true || sharedCollider2DBuffer[i].isTrigger == false)
+                                if(allowTriggerOccupiedChecks == true || colliders.isTrigger == false)
                                 {
                                     // The spawn point is occupied
                                     return true;
@@ -597,8 +598,7 @@ namespace UltimateSpawner.Spawning
             // Always update in editor
             Rebuild();
 
-
-            // Calcualte the camera normal
+            // Calculate the camera normal
             Vector3 camNormal = Vector3.back;
 
             // Find the vector from the object to the editor camera

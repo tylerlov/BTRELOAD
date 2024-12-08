@@ -1,5 +1,4 @@
 using UnityEngine;
-using UnityEngine.EventSystems;
 #if INPUT_SYSTEM_INSTALLED && ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.EnhancedTouch;
@@ -9,7 +8,6 @@ using Touch = UnityEngine.InputSystem.EnhancedTouch.Touch;
 #endif
 
 namespace PrimeTweenDemo {
-    [RequireComponent(typeof(EventSystem))]
     public class InputController : MonoBehaviour {
         void Awake() {
             if (isNewInputSystemEnabled && !isLegacyInputManagerEnabled) {
@@ -21,7 +19,9 @@ namespace PrimeTweenDemo {
                 #endif
                 gameObject.SetActive(true);
             } else {
-                gameObject.AddComponent<StandaloneInputModule>();
+                #if UNITY_UGUI_INSTALLED
+                gameObject.AddComponent<UnityEngine.EventSystems.StandaloneInputModule>();
+                #endif
             }
         }
 

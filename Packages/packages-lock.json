@@ -73,13 +73,13 @@
       }
     },
     "com.occasoftware.bloom": {
-      "version": "file:OccaSoftware-bloom-6d8390038102b070088b68387a5271bbbf35eba9",
+      "version": "file:com.occasoftware.bloom",
       "depth": 0,
       "source": "embedded",
       "dependencies": {}
     },
     "com.occasoftware.buto": {
-      "version": "file:OccaSoftware-buto-ab30e95ee6950f86fe6b72feceb70fc2435f8b62",
+      "version": "file:com.occasoftware.buto",
       "depth": 0,
       "source": "embedded",
       "dependencies": {
@@ -87,7 +87,7 @@
       }
     },
     "com.occasoftware.lspp": {
-      "version": "file:OccaSoftware-lspp-f0e5cbf3f5e9d1c9f329d8d11f50359f638b13f1",
+      "version": "file:com.occasoftware.lspp",
       "depth": 0,
       "source": "embedded",
       "dependencies": {
@@ -119,7 +119,7 @@
       }
     },
     "com.occasoftware.vfx-library": {
-      "version": "file:OccaSoftware-vfx-library-9b1c1a84a15f32ef2a97fb74dba95ddaa1367e64",
+      "version": "file:com.occasoftware.vfx-library",
       "depth": 0,
       "source": "embedded",
       "dependencies": {}
@@ -198,7 +198,7 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.entities": {
-      "version": "1.3.5",
+      "version": "1.3.8",
       "depth": 0,
       "source": "registry",
       "dependencies": {

@@ -3,6 +3,7 @@
 
 
 
+
 ///////////////////////////////////////////////////////////////////////////////
 //                      Includes                                             //
 ///////////////////////////////////////////////////////////////////////////////
@@ -10,6 +11,7 @@
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
 // See ShaderVariablesFunctions.hlsl in com.unity.render-pipelines.universal/ShaderLibrary/ShaderVariablesFunctions.hlsl
+
 
 
 
@@ -39,6 +41,7 @@ CBUFFER_END
 
 
 
+
 ///////////////////////////////////////////////////////////////////////////////
 //                      Helper Functions                                     //
 ///////////////////////////////////////////////////////////////////////////////
@@ -48,6 +51,9 @@ float InverseLerp(float a, float b, float v)
 {
 	return (v - a) / (b - a);
 }
+
+#ifndef OS_REMAP_FUNCTIONS
+#define OS_REMAP_FUNCTIONS
 
 float RemapUnclamped(float iMin, float iMax, float oMin, float oMax, float v)
 {
@@ -61,10 +67,12 @@ float Remap(float iMin, float iMax, float oMin, float oMax, float v)
 	return RemapUnclamped(iMin, iMax, oMin, oMax, v);
 }
 
+#endif
+
 float CheapSqrt(float a)
 {
     return 1.0 - ((1.0 - a) * (1.0 - a));
-}
+};
 
 
 // Structs
@@ -238,6 +246,7 @@ float3 EvaluateColorLit(MaterialData materialData)
     #endif
     
     
+    
     color *= albedo;
     
     color += _Emission;
@@ -304,12 +313,9 @@ struct Geoms
 };
 
 
-
-
-
-///////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
 //                      Vertex                                               //
-///////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
 
 Varyings Vertex (Attributes IN)
 {
@@ -329,7 +335,6 @@ Varyings Vertex (Attributes IN)
 ///////////////////////////////////////////////////////////////////////////////
 //                      Geometry                                             //
 ///////////////////////////////////////////////////////////////////////////////
-
 
 [maxvertexcount(3)]
 void Geometry(triangle Varyings IN[3], inout TriangleStream<Geoms> triangleStream)
@@ -397,6 +402,8 @@ void Geometry(triangle Varyings IN[3], inout TriangleStream<Geoms> triangleStrea
     GEO.barycentricCoordinates = coords[2] + longestChord;
     triangleStream.Append(GEO);
 }
+
+
 
 
 

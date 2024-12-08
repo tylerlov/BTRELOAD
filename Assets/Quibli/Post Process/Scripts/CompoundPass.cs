@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System;
 
 // ReSharper disable InconsistentNaming
 
@@ -187,6 +188,7 @@ public class CompoundPass : ScriptableRenderPass {
     /// </summary>
     /// <param name="context">The scriptable render context</param>
     /// <param name="renderingData">Current rendering data</param>
+    [Obsolete]
     public override void Execute(ScriptableRenderContext context, ref RenderingData renderingData) {
         // Copy camera target description for intermediate RTs. Disable multisampling and depth buffer for the
         // intermediate targets.

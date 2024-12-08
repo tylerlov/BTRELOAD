@@ -67,8 +67,8 @@ public class PlayerTimeControl : MonoBehaviour
     {
         crosshairCore = GetComponent<CrosshairCore>();
         playerLocking = GetComponent<PlayerLocking>();
-        splineControl = FindObjectOfType<SplineController>();
-        pMove = FindObjectOfType<PlayerMovement>();
+        splineControl = FindFirstObjectByType<SplineController>();
+        pMove = FindFirstObjectByType<PlayerMovement>();
         audioManager = AudioManager.Instance;
 
         // Store the baseline JPG intensity on startup

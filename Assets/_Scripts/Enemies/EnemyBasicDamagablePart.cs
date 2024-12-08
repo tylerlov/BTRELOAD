@@ -5,7 +5,7 @@ using UnityEngine;
 [RequireComponent(typeof(Collider))]
 public class EnemyBasicDamagablePart : MonoBehaviour, IDamageable
 {
-    public EnemyBasicSetup mainEnemyScript;
+    public EnemyBasics mainEnemyScript;
 
     [SerializeField]
     private GameObject lockOnAnim;
@@ -79,6 +79,20 @@ public class EnemyBasicDamagablePart : MonoBehaviour, IDamageable
     private void TriggerLockDisabledParticles()
     {
         if (lockOnDisabledParticles != null)
+        {
+            lockOnDisabledParticles.GetFromPool(transform.position, Quaternion.identity);
+        }
+    }
+
+    public void SetLockedOnIndicator(bool status)
+    {
+        isLockedOn = status;
+        if (lockOnAnim != null)
+        {
+            lockOnAnim.SetActive(status);
+        }
+
+        if (!status && lockOnDisabledParticles != null)
         {
             lockOnDisabledParticles.GetFromPool(transform.position, Quaternion.identity);
         }

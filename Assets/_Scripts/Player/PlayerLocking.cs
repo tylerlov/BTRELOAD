@@ -263,10 +263,10 @@ public class PlayerLocking : MonoBehaviour
         {
             if (enemy != null)
             {
-                EnemyBasicSetup enemySetup = enemy.GetComponent<EnemyBasicSetup>();
+                EnemyBasics enemySetup = enemy.GetComponent<EnemyBasics>();
                 if (enemySetup != null)
                 {
-                    enemySetup.SetLockOnStatus(false);
+                    enemySetup.SetLockedOnIndicator(false);
                 }
 
                 // Destroy lock highlight
@@ -289,13 +289,13 @@ public class PlayerLocking : MonoBehaviour
         
         if (enemy != null && enemyTargetList.Contains(enemy))
         {
-            EnemyBasicSetup enemySetup = enemy.GetComponent<EnemyBasicSetup>();
+            EnemyBasics enemySetup = enemy.GetComponent<EnemyBasics>();
             EnemyBasicDamagablePart damagablePart = enemy.GetComponent<EnemyBasicDamagablePart>();
 
             if (enemySetup != null)
-                enemySetup.SetLockOnStatus(false);
+                enemySetup.SetLockedOnIndicator(false);
             else if (damagablePart != null)
-                damagablePart.SetLockOnStatus(false);
+                damagablePart.SetLockedOnIndicator(false);
 
             enemyTargetList.Remove(enemy);
             enemyLockTimes.Remove(enemy);
@@ -666,7 +666,7 @@ public class PlayerLocking : MonoBehaviour
         {
             if (enemyTransform != null && enemyTransform.gameObject.activeInHierarchy)
             {
-                EnemyBasicSetup enemy = enemyTransform.GetComponent<EnemyBasicSetup>();
+                EnemyBasics enemy = enemyTransform.GetComponent<EnemyBasics>();
                 if (enemy != null)
                 {
                     enemy.Damage(damagePerEnemy);

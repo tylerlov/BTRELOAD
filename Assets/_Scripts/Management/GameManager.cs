@@ -21,7 +21,7 @@ public class GameManager : MonoBehaviour
     private bool isPlayerInvincible = false;
 
     [Header("Dependencies")]
-    public EnemyShootingManager enemyShootingManager;
+    public EnemyManager enemyManager;
 
     [SerializeField]
     private PauseMenuManager pauseMenuManager;
@@ -77,7 +77,7 @@ public class GameManager : MonoBehaviour
             TimeManager.SetDebugSettings(debugSettings);
         }
 
-        playerUI = FindObjectOfType<PlayerUI>();
+        playerUI = FindAnyObjectByType<PlayerUI>();
         if (playerUI == null)
         {
             ConditionalDebug.LogError("PlayerUI not found in the scene.");
@@ -89,7 +89,7 @@ public class GameManager : MonoBehaviour
         ScoreManager = GetComponent<ScoreManager>();
         TimeManager = GetComponent<TimeManager>();
         SceneManagerBTR = GetComponent<SceneManagerBTR>();
-        AudioManager = FindObjectOfType<AudioManager>();
+        AudioManager = FindAnyObjectByType<AudioManager>();
 
         // Check for required components after assignment
         if (AudioManager == null)
@@ -106,7 +106,7 @@ public class GameManager : MonoBehaviour
     {
         if (playerHealth == null)
         {
-            playerHealth = FindObjectOfType<PlayerHealth>();
+            playerHealth = FindFirstObjectByType<PlayerHealth>();
             if (playerHealth == null)
             {
                 ConditionalDebug.LogError("PlayerHealth component not found in the scene.");
@@ -146,7 +146,7 @@ public class GameManager : MonoBehaviour
                 InitializeCrosshair();
                 InitializeShooterMovement();
 
-                stateDrivenCamera = FindObjectOfType<CinemachineStateDrivenCamera>();
+                stateDrivenCamera = FindFirstObjectByType<CinemachineStateDrivenCamera>();
                 if (stateDrivenCamera == null)
                 {
                     ConditionalDebug.LogError("No Cinemachine State Driven Camera found in the scene.");
@@ -156,7 +156,7 @@ public class GameManager : MonoBehaviour
 
     private void InitializeCameraSwitching()
     {
-        var cameraSwitching = FindObjectOfType<CinemachineCameraSwitching>();
+        var cameraSwitching = FindFirstObjectByType<CinemachineCameraSwitching>();
         if (cameraSwitching != null)
         {
             EventManager.Instance.AddListener(
@@ -184,7 +184,7 @@ public class GameManager : MonoBehaviour
 
     private void InitializeShooterMovement()
     {
-        var shooterMovement = FindObjectOfType<ShooterMovement>();
+        var shooterMovement = FindFirstObjectByType<ShooterMovement>();
         if (shooterMovement != null)
         {
             EventManager.Instance.AddListener(TransCamOffEvent, shooterMovement.ResetToCenter);
@@ -346,10 +346,10 @@ public class GameManager : MonoBehaviour
             }
 
             SetEnemyLockState(enemy, false);
-            EnemyBasicSetup enemySetup = enemy.GetComponent<EnemyBasicSetup>();
+            EnemyBasics enemySetup = enemy.GetComponent<EnemyBasics>();
             if (enemySetup != null)
             {
-                enemySetup.lockedStatus(false);
+                enemySetup.SetLockedOnIndicator(false);
             }
         }
 
@@ -379,10 +379,11 @@ public class GameManager : MonoBehaviour
 
     public void KillAllEnemies()
     {
-        var enemies = FindObjectsOfType<EnemyBasicSetup>();
+        // Find all enemies and kill them
+        var enemies = FindObjectsOfType<EnemyBasics>();
         foreach (var enemy in enemies)
         {
-            Destroy(enemy.gameObject);
+            enemy.TakeDamage(float.MaxValue);
         }
     }
 
@@ -413,7 +414,7 @@ public class GameManager : MonoBehaviour
 
     private void OnDestroy()
     {
-        var cameraSwitching = FindObjectOfType<CinemachineCameraSwitching>();
+        var cameraSwitching = FindFirstObjectByType<CinemachineCameraSwitching>();
         if (cameraSwitching != null)
         {
             EventManager.Instance.RemoveListener(
@@ -431,7 +432,7 @@ public class GameManager : MonoBehaviour
             PlayerLocking.Instance.ReleasePlayerLocks
         );
 
-        var shooterMovement = FindObjectOfType<ShooterMovement>();
+        var shooterMovement = FindFirstObjectByType<ShooterMovement>();
         if (shooterMovement != null)
         {
             EventManager.Instance.RemoveListener("TransCamOff", shooterMovement.ResetToCenter);

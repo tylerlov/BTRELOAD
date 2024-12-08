@@ -166,7 +166,7 @@ namespace PrimeTween {
     }
 
     internal static class ReviewRequest {
-        internal const string version = "1.2.1";
+        internal const string version = "1.2.2";
         const string canAskKey = "PrimeTween.canAskForReview";
         const string versionKey = "PrimeTween.version";
 

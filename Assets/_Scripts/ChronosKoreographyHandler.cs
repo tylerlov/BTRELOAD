@@ -19,7 +19,7 @@ public class ChronosKoreographyHandler : MonoBehaviour
             return;
         }
 
-        Timekeeper timekeeper = FindObjectOfType<Timekeeper>();
+        Timekeeper timekeeper = FindFirstObjectByType<Timekeeper>();
         if (timekeeper == null)
         {
             ConditionalDebug.LogError("Timekeeper not found in the scene.");

@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.Rendering;
+using System.Collections.Generic;
 
 /// <summary>
 /// Async shader compilation is disabled for offscreen cameras by default.
@@ -15,23 +16,23 @@ public class AsyncShaderCompileForCamera : MonoBehaviour
   
     private void OnEnable()
     {
-        RenderPipelineManager.beginFrameRendering += BeginFrame;
-        RenderPipelineManager.endFrameRendering += EndFrame;
+        RenderPipelineManager.beginContextRendering += BeginFrame;
+        RenderPipelineManager.endContextRendering += EndFrame;
     }
     
     private void OnDisable()
     {
-        RenderPipelineManager.beginFrameRendering -= BeginFrame;
-        RenderPipelineManager.endFrameRendering -= EndFrame;
+        RenderPipelineManager.beginContextRendering -= BeginFrame;
+        RenderPipelineManager.endContextRendering -= EndFrame;
     }
   
-    private void BeginFrame(ScriptableRenderContext context, Camera[] cams)
+    private void BeginFrame(ScriptableRenderContext context, List<Camera> cameras)
     {
         m_PrevState = UnityEditor.ShaderUtil.allowAsyncCompilation;
         UnityEditor.ShaderUtil.allowAsyncCompilation = true;
     }
   
-    private void EndFrame(ScriptableRenderContext context, Camera[] cams)
+    private void EndFrame(ScriptableRenderContext context, List<Camera> cameras)
     {
         UnityEditor.ShaderUtil.allowAsyncCompilation = m_PrevState;
     }
